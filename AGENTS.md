@@ -1,30 +1,33 @@
 # EVORA agent instructions
 
-This repository is the shared source of truth for the four-person EVORA team. EVORA is an investigative support research prototype, not a system for determining guilt. Do not portray an unverified finding as fact.
+EVORA is investigative support, not an autonomous guilt or admissibility decision. Do not present uncertain findings as facts. The full initial proposal is fixed build scope; the CSV tracer is a first slice only.
 
 ## Before editing
 
-1. Read `docs/ARCHITECTURE.md`, `docs/FEATURE_SCOPE.md`, `docs/TASK_BREAKDOWN.md`, `docs/ROADMAP.md`, `docs/CONTRACTS.md`, `docs/CONTRACT_REVIEW.md`, `docs/COMMUNICATION.md`, `docs/INTEGRATION.md`, and `specs/openapi.yaml`.
-2. Check `git status`, your branch, and the current repository content. Do not assume features or frameworks exist because they appear in the proposal.
-3. Take exactly one task ID from `docs/TASK_BREAKDOWN.md` with an assigned person/module, allowed paths, dependencies and acceptance check. Work in a fresh task branch/session, not `main`; a whole module or milestone is **never** one agent assignment. Do not modify another task's files without coordination.
-4. If a contract, technology, supported format, or module assignment is marked **TBD**, do not invent a permanent choice. Record the exact issue in `docs/COMMUNICATION.md` or the PR, and describe compatibility impact to affected module contributors. The person coordinating integration keeps the resulting shared spec/version synchronized; they need not design every technical detail. A note is not authorization to reimplement another module or change the accepted contract silently.
+1. Read `docs/PROPOSAL.md`, `docs/PROPOSAL_TRACEABILITY.md`, `docs/ARCHITECTURE.md`, `docs/FEATURE_SCOPE.md`, `docs/TASK_BREAKDOWN.md`, `docs/ROADMAP.md`, `docs/CONTRACTS.md`, `docs/CONTRACT_REVIEW.md`, `docs/COMMUNICATION.md`, `docs/INTEGRATION.md`, `DESIGN.md` and `specs/openapi.yaml`.
+2. Check the actual Git status/branch/base and relevant existing files. Published branch-draft docs/schema are not a working application. Never infer implemented behavior or installed packages from a planned ticket.
+3. Take one task ID with assigned module/person, exact common contract commit, allowed paths, dependency handling and acceptance tests. Use a fresh session and short-lived feature branch; never assign an entire module to one agent or edit `main` autonomously.
+4. Record a needed unresolved choice in the PR/communication queue with exact producer/consumer impact. Resolve that task's gate, not unrelated future choices. Independent implementation against schema-derived fixtures is allowed; real producer integration is required before completion.
 
-## Shared invariants
+## Architecture and integrity invariants
 
-- Use the official name **EVORA**. Old proposal text may use another name; do not reintroduce it.
-- Every derived observation, relationship, finding, triage reason, generated answer and investigator decision must retain case scope and supporting Evidence IDs. Preserve original input bytes and original timestamp/source values alongside normalized data.
-- Keep extraction confidence, source quality, and conclusion reliability distinct. A linked record is an investigative lead, not proof. Avoid claims of forensic certification or court admissibility.
-- Do not invent endpoints, field names, enum values or persistence types. `specs/openapi.yaml` is a **local draft** until one common version is published; after that it is the single authority for HTTP paths and wire models. Coordinate changes with affected module contributors and update consumers and contract tests.
-- Handle uploaded evidence as sensitive: validate type/size, isolate cases, avoid logging file contents, and never send real case evidence to external AI services without an approved policy. Do not commit real evidence, credentials, model keys, or local secrets.
-- Use synthetic/publicly permitted fixtures for tests. No fake test or benchmark output.
+- React + TypeScript frontend uses the API only. FastAPI/Python backend alone accesses SQLite, Neo4j and private original storage. SQLite is authoritative for metadata, immutable processing outputs, analysis snapshots/results and audit. Neo4j is a versioned/rebuildable projection, not the scoring algorithm. Do not create a competing Streamlit dashboard.
+- `specs/openapi.yaml` 0.2.0 is the published coordination-branch draft and sole HTTP authority. Do not invent routes, request bodies, fields or enum values. Generate client types from it. A contract change updates spec, producer/consumer, types, fixtures and checks together.
+- All operations declare invalid input as 400 ApiError. Shared FastAPI validation must explicitly map default validation errors to that contract; the chosen wire mapping is declared, not already implemented/tested.
+- Preserve original private bytes, Evidence.sha256 and source timestamps/values. Every derived edge/finding carries required nonempty unique observation_ids joining to same-case source locators; GraphNode.id is source Evidence/Entity/Event UUID, not an anonymous identifier. Do not require observation_ids on graph nodes.
+- Processing outputs and analysis snapshots/results remain immutable. startAnalysis has **no request body**; freeze AnalysisInputSnapshot per `docs/CONTRACTS.md`. Replay the original run for a repeated key before resnapshotting; new key selects new inputs.
+- SQL pending run/output → idempotent Neo4j case+analysis-run partition → projection verification → SQL completed publication pointer. Hide partial/failed graph partitions. Retry/rebuild safely; never assume distributed transactions or claim success after only one DB write.
+- After polling a completed analysis, UI pins its analysis_run_id across getGraph/listFindings/listTriage and every page. Omitted selector chooses latest completed; pending/failed/missing/foreign selector returns 404. Reject/refetch mismatches, never display mixed runs. listObservations can pin historical completed outputs with processing_run_id.
+- Separate extraction confidence, source reliability, corroboration and conclusion uncertainty. Co-mentions/detections are candidate relationships, not verified identity or guilt. Uploaded evidence without observations is not scored under G02; no fabricated factors or P4 placeholders.
+- Supported answers cite each factual claim to same-case Evidence ID/source_locator; unsupported responses make no unsupported factual assertion and have no citations. Deterministic tracer is not final LLM RAG. Keep versioned model/parser/prompt/parameters/input/output/time/verification provenance in a private authorized store, not raw application logs/public audit fields.
+- Use only synthetic/publicly permitted fixtures. No real evidence, credentials, prompt contents or tokens in Git/logs. No external transfer of real evidence without explicit privacy/provider policy.
 
-## Working agreement
+## Work and verification
 
-- One person works on each of the four modules. If a bounded task needs help, coordinate without creating competing implementations. Do not have two agents write the same branch at once.
-- Each task: state inputs/outputs and acceptance criteria; implement and test; inspect the diff; document actual commands/results and any contract impact; update `docs/ROADMAP.md` in the PR. The person coordinating integration serializes edits to shared documents to prevent conflicts.
-- Push only to a reviewed feature branch when authorized. Open a PR; never merge or push directly to `main` autonomously. No `develop` branch is required unless the team chooses a staging branch.
-- When a decision is blocked, stop and report the precise question rather than silently filling gaps.
+Four people each own one module; one also coordinates integration. Assignees are TBD. Coordinate shared scaffolding, migrations, spec and roadmap changes; do not invent personnel titles or a fifth member. Any help stays bounded with one accountable interface owner.
 
-## Current status
+Write behavior tests appropriate to the ticket, including its negative/failure/case-isolation paths. Run actual commands, inspect the diff and report results and test doubles honestly. Full integration requires real merged producers; artifact lint is not application verification. Coordinate roadmap status changes; never mark a module complete from one row.
 
-The repository initially contained only `README.md`. These files establish coordination, not a working implementation. FastAPI/SQLite/React is selected; the full proposed initial feature scope is the build goal, with a three-CSV **first tracer only**. The API remains an unpublished draft. Technical settings needed by each initial ticket must be documented and one common base published. Windows setup, scoring policy and module assignments remain open in `docs/ROADMAP.md`; none is a request for new feature-scope approval.
+Run OpenAPI lint/bundle, generated client/type compilation, `scripts/verify_coordination.py <bundled-json-path>`, the `test_*.py` unittest suite with EVORA_CONTRACT_BUNDLE set to that bundle (jsonschema==4.25.1) and DESIGN lint according to the shared workflow. Package/model versions and Windows support must be demonstrated in setup tasks. No fabricated benchmark data.
+
+Commit/push only when explicitly authorized for the scoped branch; never stage, commit, push or merge outside the user's scope. Keep changes reviewable. Contract/policy decisions belong in versioned source, not a second prose wire schema or agent memory.

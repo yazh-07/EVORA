@@ -1,25 +1,31 @@
-## EVORA task
+## EVORA bounded task
 
 Task ID / assigned module and person / branch:
-Accepted contract commit:
-Affected module(s) and reviewers:
+Common contract commit:
+Unresolved choices affecting this ticket (C-xx, or none):
 
-## What changed
+## Changes and boundaries
 
-- Inputs / outputs:
-- Contract impact (paths, schema, types): none / describe review + coordinated consumer migration
-- Communication entry for unresolved mismatch (if any):
-- Synthetic fixture(s) used:
-- Known limitations / unimplemented endpoints:
+- Inputs / outputs and producer/consumer modules:
+- Changed files and excluded tasks:
+- Contract impact (operation/schema/status/selector): none / describe coordinated changes
+- Synthetic fixtures and versions:
+- Real producer integration or explicitly declared schema-derived test doubles:
+- Known limitations and next unblocked ticket:
 
-## Verification (paste real commands and results)
+## Verification (actual commands and results)
 
-- [ ] OpenAPI lint passes if the contract changed.
-- [ ] Positive and negative tests pass; no cross-case evidence leak.
-- [ ] Source Evidence IDs, uncertainty, and original-byte integrity are preserved.
-- [ ] Generated client/type check passes if an API consumer changed.
-- [ ] Secrets/real evidence are absent from the diff.
-- [ ] Shared roadmap edit coordinated with the person handling integration; affected modules checked.
-- [ ] Synthetic end-to-end tracer exercised or explicitly marked **not yet possible** with dependencies.
+- [ ] Coordination verifier and negative tooling/schema tests pass.
+- [ ] OpenAPI lint, bundle and generated TypeScript declaration checks pass.
+- [ ] Relevant implementation tests pass, including invalid input and case isolation; or marked not applicable for planning-only edits.
+- [ ] Source locators and immutable original bytes/history are preserved where relevant.
+- [ ] Processing/analysis commands use real run IDs and idempotency; related reads pin a completed analysis snapshot.
+- [ ] Neo4j projection failures/retries cannot publish partial successful analysis where relevant.
+- [ ] Frontend follows DESIGN.md; no fake metrics, status, decorative blinking or gradient filler.
+- [ ] Secrets and real evidence are absent from the diff.
+- [ ] Shared-file edits and producer/consumer changes are coordinated.
+- [ ] Applicable tracer or full-scope integration gate exercised, or explicitly blocked with dependencies.
+
+Do not check application, Windows, browser, AI-model or benchmark verification based solely on a valid spec or planning check. A deterministic Q&A fixture does not complete the full RAG capability.
 
 Commands / results:

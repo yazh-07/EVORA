@@ -1,25 +1,36 @@
-# EVORA cross-module communication and contract changes
+# EVORA cross-module decision and handoff queue
 
-Four people each work on one module. One of the four also coordinates integration. This file records **questions, mismatches, and handoffs**; it is not another API specification or permission for an agent to rewrite a different module.
+Four people each work on one module; one also coordinates integration. This file is a queue for exact questions/mismatches, **not another API authority** or permission to rewrite another module. The spec/docs are published as a coordination-branch draft; the application does not exist yet.
 
-## How to use this file
+## Use
 
-1. When an agent finds a missing parameter, incompatible response, unclear policy, or failing integration test, open an entry below (or include it in its PR if this file is being edited elsewhere). Record the exact operation/schema, observed behavior, expected behavior, affected modules, fixture/test, and task ID. Never silently guess a field or return a fabricated success response.
-2. The people working on affected producer and consumer modules choose one compatible behavior. The person coordinating integration keeps the shared changes in order; this does not assign them responsibility for designing every technical choice.
-3. Change **`specs/openapi.yaml` first** for wire fields/routes/statuses, or the relevant policy document for non-wire behavior. Add/update the producer, consumer, generated types, fixture and contract/integration tests as applicable. Record the common commit and link the implementing ticket/PR. If implementation already exists, open a bounded corrective ticket for the affected module; do not ask a second agent to reimplement a whole module from this note.
-4. Once the versioned contract/policy, implementation (if any), and relevant tests agree, remove the item from the **open** table. Keep the decision and verification in the spec/policy, ticket or PR, and Git history; this file need not accumulate resolved entries. A comment here alone does not change the accepted API. Keep unresolved entries **Open**; agents on dependent tickets must stop or use a clearly declared test double until the choice is recorded.
+1. Record task, operation/schema, observed versus required behavior, affected producer/consumer, proposed bounded correction and fixture/test. Avoid private evidence, credentials, raw model prompts/responses and personally identifying case data.
+2. Affected module contributors choose one compatible behavior; one person synchronizes shared edits alongside their module. There is no personnel title, fifth member or signoff ceremony.
+3. Wire changes go into `specs/openapi.yaml`; internal policy goes into versioned policy/task acceptance. Update producer/consumer/types/fixtures/tests together. A queue comment does not change the API.
+4. On implemented code, file a bounded corrective task rather than a module rewrite. Remove verified resolutions from the open queue; preserve their policy/test/PR/Git record. Serialize queue edits or submit in PRs.
+5. A dependent task cannot guess an unresolved policy. Unaffected scoped work/review/setup and schema-derived test doubles can proceed; integrated completion requires real producers.
 
-**Entry template:** `C-xx | Open | Ticket(s) | Modules | Exact mismatch/question | Chosen contract/policy + commit | Tests/verification`. Do not put credentials, real evidence, private prompts, or personally identifying case data here. Coordinate edits to this shared file rather than asking agents to overwrite it in parallel.
+Entry shape: `ID | affected tickets/modules | exact question | versioned resolution + actual proof needed`.
 
-## Open items from the pre-implementation audit
+## Open gates
 
-| ID | Affected tickets/modules | Question or mismatch | Resolution and proof needed |
+| ID | Affected tickets/modules | Exact question | Resolution and proof needed |
 |---|---|---|---|
-| C-01 | A05, A07, I02; M2/M3 | `docs/INTEGRATION.md` requires each analysis to freeze completed observations, but `AnalysisRun` has no declared input snapshot/manifest reference. Reprocessing an evidence item may otherwise silently change the meaning of an old run. | Choose how completed processing outputs are selected and persisted as an immutable analysis input set; decide whether/how the run exposes a snapshot ID/hash or IDs. Update the spec/policy if this crosses the API boundary. Test two runs before/after new observations and a retry/reprocess without changing historical results. |
-| C-02 | G00, F00, all API consumers; M1–M4 | The prose recommends `400` + `ApiError` for invalid UUID/query/body input, while FastAPI defaults to `422`; several operations do not declare `400`. | Decide status and error mapping once, update all affected OpenAPI responses and shared backend validation, generate client types, and run negative tests for path/query/body errors. |
-| C-03 | G00, F00, U01; M1/M4 | Bearer auth is specified but token issuance, expiration/revocation, case membership rules, test identities and client token handling are not final. | Record a safe local synthetic-data identity/case-access policy before auth/client implementation; test two actors/cases, missing/invalid tokens, and foreign-case IDs. Do not embed a shared production token. |
-| C-04 | G00, F03, P04, P14B; M1/M2 | First CSV limits, BOM/extra/missing columns, declared kind vs content, and `415` versus accepted failed-run behavior are still undecided. | Record byte/row limits and first-format validation/failure semantics; update spec if responses change. Test valid fixtures, malformed rows, unsupported input, oversized upload and retry. |
-| C-05 | G02, A03–A07, I02; M3 with M2/M4 inputs | Exact factor functions, absent-factor behavior, tie-breaking and a golden expected rerank are not settled. A co-mention by itself must not imply identity or guilt. | Version the algorithm policy and construct a positive plus counterexample fixture. Run tests showing a source-backed, explainable earlier-item score/rank change after `messages.csv`; retain old history. |
-| C-06 | G03, A16, U10/U11; M3/M4 with M1 privacy input | Q&A provider, local/remote data handling, supported-answer thresholds and fallback behavior remain choices. | Document privacy/provider policy and no-paid-service CI fallback. Test claim-level same-case source locators and unsupported identity question with zero factual claims/citations. |
+| C-03 | G00/F00/F01/U01; all case APIs | Bearer auth exists in the wire contract, but issue/expiry/revocation, case membership, local test identities and UI token handling are not chosen | Record a safe provider/local synthetic-only policy; test missing/invalid/expired identity, two actors/cases, foreign IDs and no leaked existence; no shared production token |
+| C-04 | F03/P04/P14B/P14D; M1/M2 | CSV byte/row limits, BOM, missing/extra columns, malformed rows and kind/content validation; 415 before run versus accepted failed run | Record first-format policy and actual valid/malformed/unsupported/oversized/retry tests; later adapters choose documented layouts/models/limits before their rows |
+| C-05 | G02/A03–A19/I02/I05/I07/I07B; M3 with M2/M4 | Exact factor functions/quality/count/confidence/missing inputs, independence/weights/bands/ties, anomaly mapping and goldens remain open | Version actual scoring policy and positive/counterexamples; prove new-upload, detector feedback and existing-evidence reprocessing change earlier ranks with faithful explanations/history; no silent new factor enum |
+| C-06 | G03/A16B/U10B/U10C/U11B/I05C/F08E; M3/M4/M1 privacy | Approved LLM provider/model, retrieval/privacy boundary, prompt versions, verification thresholds and fallback | Record policy and exercise approved generation + verification; no-paid CI adapter labeled test-only; same-case claim locators, unsupported zero citations and private provenance audited without raw public logs |
 
-These are **planning blockers for their dependent tickets**, not failures observed in a running application. The draft spec currently has 25 operations; a valid lint/bundle does not settle these behaviors. Later formats/models can add entries when their own tickets are reached without delaying unrelated work.
+Assignees and tested package/Windows/Neo4j/model setup are also open readiness items in `ROADMAP.md`; no names or installation success are implied.
+
+Gates are targeted: P08/P09/P10 need approved OCR/image/video adapter/model/version and private data-boundary decisions under C-04/task acceptance, not G03's final generative provider choice. Deterministic U10 needs approved authorized local retrieval/grounding/privacy behavior, not that choice; full U10B/U10C generation/verification retains G03/C-06. C-05/G02 retains score functions/bands/score-level tie policy; `listTriage` pagination order is already fixed by pinned computed score descending, then evidence UUID ascending, with unscored UUID-ordered items last, never live effective priority.
+
+## Declared resolutions, not running-code claims
+
+C-01 is resolved in draft policy/schema: required frozen AnalysisInputSnapshot, latest completed processing selection, canonical digest, request-based idempotency before resnapshot, derived trigger and immutable historic output. A05/A18/I01/I07B still must execute these tests.
+
+C-02 is resolved in draft wire mapping: **all** operations declare 400 ApiError. G01/F00 still must implement and test FastAPI validation mapping rather than default 422.
+
+Completed-run selectors pin related reads and pages; pending/failed/foreign/missing selectors are 404. A05B/A06/U05D/U06/U07/I01 test consistent analysis_run_id, P04B/U05B test processing_run_id history. These are declared contract behaviors, not observed app failures or completed tests.
+
+The same 25 operationIds remain. Full proposal scope is not awaiting renewed feature approval; unresolved settings block their dependent rows only. Artifact verification status belongs in `PREIMPLEMENTATION_REVIEW.md`, not invented application metrics here.

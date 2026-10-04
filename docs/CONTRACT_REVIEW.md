@@ -1,32 +1,51 @@
-# EVORA shared-contract decision sheet
+# EVORA producer/consumer contract review
 
-**Status: technical recommendations, not a separate approval gate.** This is a decision sheet for the existing draft `specs/openapi.yaml`, not a second API specification. The person working on each affected module helps settle its technical choices with the other modules before an agent depends on them; one person coordinates the common version alongside their own module. The **entire proposed initial feature scope** remains the build goal in `docs/FEATURE_SCOPE.md`. The three-CSV tracer is only the first integrated stage; later formats/models get their own bounded tasks and contract updates, not dropped features.
+**Published branch-draft contract 0.2.0; no new approval ceremony.** The same 25 operations are in `specs/openapi.yaml`; this map reviews their producers/consumers, not a second API. Four people each work on one module; one also coordinates integration. Assignees remain TBD. Full initial proposal scope is fixed; fixture-sized integration does not cut scope.
 
-## Interfaces to check across modules
+## Every operation and its concrete consumer
 
-| Module | Operations produced | Must verify with consumers |
-|---|---|---|
-| M1 Foundation | `createCase`, `listCases`, `getCase`, `uploadEvidence`, `listEvidence`, `getEvidence`, `downloadEvidence`, `listAuditEvents`; shared auth/case guard | M2 can access only authorized original bytes and their ID/hash; M4 can list/download without alternate fields; all modules can append audit events without bypassing case permissions. |
-| M2 Processing | `startProcessing`, `listProcessingRuns`, `getProcessingRun`, `listObservations`, `listEntities`, `listEvents` | M3 receives source-backed `Observation`/`Entity`/`Event` records; `processing_run_id` joins to the run's `processor_version`; M4 can poll queued/running/completed/failed states. |
-| M3 Fusion | `startAnalysis`, `listAnalysisRuns`, `getAnalysisRun`, `getGraph`, `listFindings`, `listTriage`, `getTriageHistory` | M4 sees latest **completed** graph/findings, explained priorities and append-only history; M2's candidate IDs do not imply verified identity. |
-| M4 Investigator Application | `reviewFinding`, `listFindingReviews`, `setPriorityOverride`, `askCaseQuestion`; UI consumes M1–M3 endpoints | M1 audits review/override actors and reasons; M3's computed priority is never overwritten; `CaseAnswer.citations` identify an Evidence ID and source locator for each supported factual claim. |
+| operationId | Backend producer/task | Consumer/task | Required shared verification |
+|---|---|---|---|
+| `createCase` | M1 F01 | U02B | Authorized stable case, invalid title 400, list refresh |
+| `listCases` | M1 F02 | U02 | Authorized-only pagination |
+| `getCase` | M1 F01 | U02/U13 | Same case or indistinguishable 404 |
+| `uploadEvidence` | M1 F03 | U03 | Private immutable bytes/hash/limits |
+| `listEvidence` | M1 F04 | U13 and evidence views | All-page counts/types, not first-page totals |
+| `getEvidence` | M1 F04 | U03/U04 | Source metadata/hash, no foreign-case leak |
+| `downloadEvidence` | M1 F05 | M2 source access/U04 | Original byte/hash round trip and authorization |
+| `startProcessing` | M2 P04/P14D/P15 | U05C; internal deeper policy | Correct adapter, new key vs original-key replay, no invented processing body |
+| `listProcessingRuns` | M2 P04 | U05/U13 | Actual immutable run/status history |
+| `getProcessingRun` | M2 P04 | U05 | Poll real queued/running/completed/failed state |
+| `listObservations` | M2 P04B | M3 A01/A16, U05B | Latest completed by default or historical processing_run_id; source locators/pagination |
+| `listEntities` | M2 P05/P05C | A01/A16B/U13C | Candidate IDs, same-case source observation joins |
+| `listEvents` | M2 P05B/P05C | A01/A16B/U13C | Source time/participants, no invented time/identity |
+| `startAnalysis` | M3 A05/A17 | U05D | No body; immutable snapshot/hash/trigger and request-based idempotency |
+| `listAnalysisRuns` | M3 A05 | UI run/history context | Old resources retained, deterministic latest completed ordering |
+| `getAnalysisRun` | M3 A05 | U05D | Poll completed coherence before pinning ID |
+| `getGraph` | M3 A05B/A01B | U07/A16B | Completed analysis_run_id selector, nonempty run ID, source-backed nodes/edges |
+| `listFindings` | M3 A05B/A17 | U07B/U12A–E/U13B/A16B | Same pinned run across pages, source observation locators and uncertainty |
+| `listTriage` | M3 A06 | U06/U13B/A16B | Same pinned run, not-scored vs result/override, actual factor sums |
+| `getTriageHistory` | M3 A06 | U06B | Append-only automated history distinct from override |
+| `reviewFinding` | M4 backend U08 | U08B/M1 F08C | Reason/actor/action audited once, immutable prior decisions |
+| `listFindingReviews` | M4 backend U08 | U08B | Authorized append-only review history |
+| `setPriorityOverride` | M4 backend U09 | U09B/M1 F08C | Effective priority separate, no automated-history rewrite |
+| `askCaseQuestion` | M4 backend U10/U10B/U10C with M3 retrieval | U11/U11B/M1 F08E | Claim citations, fallback and private provenance; approved LLM exercised for full scope |
+| `listAuditEvents` | M1 F07 | Authorized audit inspection/I09 | Safe case-scoped paginated actor/action/target/reason; not raw private provenance |
 
-The people working on producer and consumer modules check that their fields fit together; no separate sign-off ceremony is needed. All agents use the **same published version** of `Case`, `Evidence`, `Observation`, `Finding`, `TriageResult`, `ApiError` and `AnswerCitation` in `specs/openapi.yaml`. This table maps interfaces to modules, not titles to people.
+All validation failures use the declared 400 ApiError wire shape; backend mapping/tests are future work. analysis_run_id selector foreign/missing/pending/failed yields 404. UI pins the completed run after polling and through every graph/findings/triage page; mismatches cannot be merged. Historic processing outputs use processing_run_id. Reprocess/new upload changes snapshot only for a new analysis key, never replay of an original key.
 
-## Decisions recommended for the first tracer
+## Fixed declarations versus remaining choices
 
-1. **Auth and case access (M1, reviewed by M4):** Retain the spec's bearer-token interface. For a **local synthetic-data prototype only**, recommend random opaque tokens issued by a local CLI for named test investigators; store only token hashes, expiry and actor IDs in SQLite. Keep token values out of Git, logs and hard-coded UI configuration. Use an in-memory token entry in the development UI, not a built-in shared password. Store case membership separately in SQLite: the case creator is an owner; only explicit members may read/write that case. Seed two *different* test actors and cases A/B so the foreign-case 404 test is meaningful. A production identity provider, token distribution/revocation and member-management UI are separate decisions before real evidence or multi-user deployment. **Technical choice needed:** adopt this local strategy or nominate another provider, define who can grant case access and where tokens are stored in the UI.
-2. **HTTP errors and validation (all modules):** Return `401` for missing/invalid token, `404` for nonexistent or unauthorized case-scoped resources (no existence leak), `400` with the shared `ApiError` shape for invalid input/UUID/query parameters, `413` for over-limit upload, `415` for unsupported processing format and `409` for an idempotency-key conflict. FastAPI defaults to a different validation status/body, so M1's shared skeleton must explicitly map validation failures to the common contract, or the spec must be amended instead. **Technical choice needed:** confirm 400 versus FastAPI's default 422 and add/document consistent error responses on every affected operation before implementation.
-3. **Files and extraction (M1 + M2):** First supported processors are *only* the three UTF-8, comma-delimited CSV header layouts in `fixtures/synthetic-case/`. Upload preserves original bytes/hash and records the declared `kind`; processing validates header/rows and fails explicitly for unsupported/malformed input. Never trust a filename, browser MIME header or source label as proof of content or independent provenance. Reject path traversal and oversize uploads before storage; parse without changing the preserved original. **Technical choice needed:** first-tracer byte-size limit, CSV BOM policy, missing/extra column policy and whether a malformed CSV yields `415` before a run or a failed `ProcessingRun` after acceptance. Later document/image/video encodings and resource limits are intentionally deferred.
-4. **IDs, time and location (M2 + M3):** Use opaque UUIDs for wire IDs; keep `D-7`/`D-8` as *candidate* keys, never verified identities. Preserve original timestamps/coordinates and emit normalized UTC/timezone and coordinates only when unambiguous. Do not invent a timezone for a missing zone. Keep `extraction_confidence` distinct from source reliability and link parser version through `processing_run_id`. **Technical choice needed:** coordinate reference system and exact timezone policy for later formats; first CSV fixture uses explicit `Z` timestamps.
-5. **Jobs and snapshots (M2 + M3):** `POST` processing/analysis returns a run; poll `GET` until completed/failed. Same actor+case+operation+idempotency key+same inputs returns the same run; key reused for different inputs returns 409. Analysis captures a set of **completed** observations and an algorithm version; read views return the latest completed snapshot and never partial outputs. A new analysis after the message CSV uses a new key and preserves older runs/results. **Technical choice needed:** exact input fingerprint, retry/restart behavior and whether a completed run is returned immediately or via 202+polling.
-6. **Scoring and association (M3, reviewed by M2/M4):** A co-mention of `D-7` and `D-8` is a weak *candidate* connection. Do not infer a person, ownership or guilt. `G02` must publish versioned factor formulas, missing-factor handling, tie-breaking and a golden synthetic before `A04` scoring: the draft names weights/bands, but **does not define numeric factor computations**. No real score/rank change has been demonstrated yet. **Technical choice needed:** approve that policy and fixture expectations before promising the re-triage result.
-7. **Review, answer and privacy (M4, reviewed by M1/M3):** Human review and priority override require actor, reason and append-only audit; automated score history is immutable. For the first tracer, a deterministic, evidence-limited answer or `supported=false` is preferable to an unapproved remote LLM. Every supported factual claim must have `CaseAnswer.citations` to same-case Evidence IDs and source locators; an unsupported identity question has no factual claim/citation. No real evidence goes to an external provider without an explicit privacy decision. **Technical choice needed:** whether a local deterministic answer suffices for the first tracer and the later Q&A provider/cost policy.
+- **Declared:** bodyless immutable analysis snapshot/digest, request fingerprint/idempotency scope, server-derived trigger, latest completed ordering/selectors, 400 mapping, observation locator trace, supported/unsupported citation cardinality. These require real implementation tests; lint alone does not execute them.
+- **Selected architecture:** React/TypeScript, FastAPI/Python, authoritative SQLite/private originals, derived versioned Neo4j. G01D/A01B handle setup/partition recovery; Neo4j is not scoring. No Streamlit duplicate UI.
+- **Still open C-03:** choose bearer provider/local policy, expiration/revocation/case membership and frontend token handling. A safe local synthetic-only option is opaque hashed expiring tokens with explicit memberships and two actors/cases; this is a recommendation, **not an agreed mechanism**.
+- **Still open C-04:** first CSV validation limits/BOM/columns/malformed behavior and later adapter layouts/resources. MIME/name/source_label are not proof of content or independent origin.
+- **Still open C-05:** version exact G02 functions, absent factors, experimental weights/bands/ties and goldens. A04 initial factors are expanded in A17; A10B/A11B/A13B prove real conflict/gap/anomaly score effects. Co-mention and abnormality are not identity/guilt.
+- **Still open C-06:** approve provider/private retrieval boundary and claim verification fallback. Deterministic tracer is permissible but cannot replace A16B/U10B/U10C/U11B/I05C final grounded generation.
+- **Still open:** assignees, exact shared base handoff and tested package/Windows setup. Pin versions in future setup tasks; do not invent installation outcomes.
 
-## How a technical choice is recorded
+## Change and verification path
 
-1. The contributors of affected modules choose or amend each recommendation needed by the **next dependent ticket**. Capture the final behavior in `specs/openapi.yaml` (wire fields/status) and `docs/INTEGRATION.md`/`docs/CONTRACTS.md` (behavior and policy). Assign one person to each of M1–M4; one of the four coordinates integration. No vote or formal title is needed.
-2. Run contract lint, generated client/type checks and relevant fixtures. Publish **one common versioned base** only when explicitly authorized to commit/push; give each coding agent that exact commit and one bounded ticket. This is technical synchronization, not another permission gate.
-3. As the **remaining full-scope features** are implemented, resolve their format/model/algorithm details before their tickets, update the same contract, and test affected consumers. Do not demand that every later format be specified before the first CSV parser is written; do not silently delete it from the roadmap either.
+Affected module contributors settle a needed technical choice and record it in the canonical spec/policy. One person keeps shared versions/changes synchronized alongside their module; there is no fifth person or four-signoff requirement. Update producer/consumer/types/fixtures/checks together, run the checked lint/bundle/type/coordination/negative/design workflow and record the exact common commit.
 
-**Current result:** these are recommendations, not a chosen auth mechanism, tested Windows build, scoring golden output or working API. The remaining technical options have not been recorded as final. The contract remains local and uncommitted until the user explicitly authorizes publication.
+Independent implementation may use schema-derived fixtures while producers are incomplete. Integration completion requires real merged producers and read-back. Review/setup and unaffected scoped work are ready; dependent unresolved decisions are neither blanket permission to guess nor a reason to stop every task. Full-scope closure is I09/I09B and final evidence/limitations I06, not the first tracer.

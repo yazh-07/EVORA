@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: EVORA case investigation API
-  version: 0.1.0
+  version: 0.2.0
   description: >-
     Proposed v1 wire contract for team review. An investigation aid, not a
     forensic certification or a determination of guilt. All case-scoped
@@ -60,6 +60,7 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/CasePage' }
+        '400': { $ref: '#/components/responses/BadRequest' }
         '401': { $ref: '#/components/responses/Unauthorized' }
   /api/v1/cases/{caseId}:
     parameters:
@@ -74,6 +75,7 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Case' }
+        '400': { $ref: '#/components/responses/BadRequest' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '404': { $ref: '#/components/responses/NotFound' }
   /api/v1/cases/{caseId}/evidence:
@@ -122,6 +124,7 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/EvidencePage' }
+        '400': { $ref: '#/components/responses/BadRequest' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '404': { $ref: '#/components/responses/NotFound' }
   /api/v1/cases/{caseId}/evidence/{evidenceId}:
@@ -138,6 +141,7 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Evidence' }
+        '400': { $ref: '#/components/responses/BadRequest' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '404': { $ref: '#/components/responses/NotFound' }
   /api/v1/cases/{caseId}/evidence/{evidenceId}/content:
@@ -155,6 +159,7 @@ paths:
           content:
             application/octet-stream:
               schema: { type: string, format: binary }
+        '400': { $ref: '#/components/responses/BadRequest' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '404': { $ref: '#/components/responses/NotFound' }
   /api/v1/cases/{caseId}/evidence/{evidenceId}/processing-runs:
@@ -165,7 +170,11 @@ paths:
       tags: [Processing]
       operationId: startProcessing
       summary: Start an evidence processing run
-      description: Idempotency-Key prevents an accidental duplicate submission; a repeat returns the same run.
+      description: >-
+        Freeze a processing configuration at acceptance. Reusing the same key
+        with the same request returns the original run, including failed runs;
+        retry/reprocess with a new key. Different evidence target with the same
+        actor/case/operation key returns 409. Processing output is immutable.
       parameters:
         - { $ref: '#/components/parameters/IdempotencyKey' }
       responses:
@@ -174,6 +183,7 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/ProcessingRun' }
+        '400': { $ref: '#/components/responses/BadRequest' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '404': { $ref: '#/components/responses/NotFound' }
         '409': { $ref: '#/components/responses/Conflict' }
@@ -190,6 +200,7 @@ paths:
               schema:
                 type: array
                 items: { $ref: '#/components/schemas/ProcessingRun' }
+        '400': { $ref: '#/components/responses/BadRequest' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '404': { $ref: '#/components/responses/NotFound' }
   /api/v1/cases/{caseId}/evidence/{evidenceId}/processing-runs/{runId}:
@@ -207,6 +218,7 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/ProcessingRun' }
+        '400': { $ref: '#/components/responses/BadRequest' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '404': { $ref: '#/components/responses/NotFound' }
   /api/v1/cases/{caseId}/observations:
@@ -222,12 +234,21 @@ paths:
         - name: evidence_id
           in: query
           schema: { type: string, format: uuid }
+        - name: processing_run_id
+          in: query
+          description: >-
+            Optional completed run selector for historical provenance. Without
+            it, return outputs of the latest completed run per evidence using
+            finished_at UTC then UUID. Failed/running outputs are never visible.
+            Both filters must identify same-case resources; mismatch returns 404.
+          schema: { type: string, format: uuid }
       responses:
         '200':
           description: Case-scoped normalized observations
           content:
             application/json:
               schema: { $ref: '#/components/schemas/ObservationPage' }
+        '400': { $ref: '#/components/responses/BadRequest' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '404': { $ref: '#/components/responses/NotFound' }
   /api/v1/cases/{caseId}/entities:
@@ -246,6 +267,7 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/EntityPage' }
+        '400': { $ref: '#/components/responses/BadRequest' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '404': { $ref: '#/components/responses/NotFound' }
   /api/v1/cases/{caseId}/events:
@@ -264,6 +286,7 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/EventPage' }
+        '400': { $ref: '#/components/responses/BadRequest' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '404': { $ref: '#/components/responses/NotFound' }
   /api/v1/cases/{caseId}/analysis-runs:
@@ -274,9 +297,16 @@ paths:
       operationId: startAnalysis
       summary: Start or repeat case analysis
       description: >-
-        Compute/recompute graph, findings and triage from current completed
-        observations; retain older runs. The implementation may perform work
-        synchronously but still returns a run resource with the same lifecycle.
+        Freeze input_snapshot at acceptance, selecting the latest completed
+        processing run per evidence by finished_at UTC then UUID. Include all
+        currently uploaded evidence IDs, including unprocessed items. Derive
+        trigger as initial when no completed analysis exists, new_observations
+        when the snapshot hash differs from the latest completed analysis, or
+        manual otherwise. No trigger request field exists. Reusing a key returns
+        the original run before any new snapshot is selected. A new key requests
+        a new run. Publish graph, findings and available triage together only
+        after the case/run-scoped Neo4j projection verifies; hide partial outputs.
+        Never score unprocessed items with fabricated factors. Retain old runs.
       parameters:
         - { $ref: '#/components/parameters/IdempotencyKey' }
       responses:
@@ -285,6 +315,7 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/AnalysisRun' }
+        '400': { $ref: '#/components/responses/BadRequest' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '404': { $ref: '#/components/responses/NotFound' }
         '409': { $ref: '#/components/responses/Conflict' }
@@ -300,6 +331,7 @@ paths:
               schema:
                 type: array
                 items: { $ref: '#/components/schemas/AnalysisRun' }
+        '400': { $ref: '#/components/responses/BadRequest' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '404': { $ref: '#/components/responses/NotFound' }
   /api/v1/cases/{caseId}/analysis-runs/{runId}:
@@ -316,6 +348,7 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/AnalysisRun' }
+        '400': { $ref: '#/components/responses/BadRequest' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '404': { $ref: '#/components/responses/NotFound' }
   /api/v1/cases/{caseId}/graph:
@@ -325,13 +358,20 @@ paths:
       tags: [Analysis]
       operationId: getGraph
       summary: Read the latest case graph
-      description: Latest completed run; empty graph when no run exists.
+      description: >-
+        Latest completed run ordered by created_at UTC then UUID, not finish
+        order; empty graph without analysis_run_id when no completed run exists.
+        Every nonempty graph includes its analysis_run_id. All graph IDs and
+        supporting observations belong to the authorized case/run partition.
+      parameters:
+        - { $ref: '#/components/parameters/AnalysisRunSelector' }
       responses:
         '200':
           description: Evidence-backed relationships
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Graph' }
+        '400': { $ref: '#/components/responses/BadRequest' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '404': { $ref: '#/components/responses/NotFound' }
   /api/v1/cases/{caseId}/findings:
@@ -342,6 +382,7 @@ paths:
       operationId: listFindings
       summary: List latest case findings
       parameters:
+        - { $ref: '#/components/parameters/AnalysisRunSelector' }
         - { $ref: '#/components/parameters/Limit' }
         - { $ref: '#/components/parameters/Offset' }
       responses:
@@ -350,6 +391,7 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/FindingPage' }
+        '400': { $ref: '#/components/responses/BadRequest' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '404': { $ref: '#/components/responses/NotFound' }
   /api/v1/cases/{caseId}/findings/{findingId}/reviews:
@@ -386,6 +428,7 @@ paths:
               schema:
                 type: array
                 items: { $ref: '#/components/schemas/ReviewDecision' }
+        '400': { $ref: '#/components/responses/BadRequest' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '404': { $ref: '#/components/responses/NotFound' }
   /api/v1/cases/{caseId}/triage:
@@ -395,15 +438,38 @@ paths:
       tags: [Analysis]
       operationId: listTriage
       summary: List latest priorities
+      description: >-
+        Select the same-case completed analysis_run_id, or latest completed run by
+        (created_at UTC, id UUID) when omitted; missing, foreign, pending or failed
+        selectors return 404. For a selected completed run, membership is exactly
+        AnalysisRun.input_snapshot.evidence_ids, including unscored evidence, and
+        total is that manifest's count. Return TriagePage.analysis_run_id even for
+        empty or entirely unscored pages; latest_result, when present, belongs to
+        the selected run. Sort scored entries by pinned latest_result.score
+        descending, ties by evidence UUID lexically ascending, then unscored
+        entries by evidence UUID ascending, before limit/offset slicing. Later
+        uploads, processing or analyses cannot change pinned membership, total,
+        automated results or ordering. Only before any completed analysis, an
+        unselected read lists live uploaded case evidence, unscored with no
+        latest_result, live total and evidence UUID ascending order.
+        On each read, override is the live latest authorized same-case override
+        for that evidence by (created_at UTC, id UUID), not an automated snapshot
+        field. effective_priority is its priority, otherwise the selected
+        automated priority, and is omitted if neither exists. Override changes
+        must not reorder the list, change membership/total or cause pagination
+        duplicates/skips; clients must not re-sort by effective priority.
+        getTriageHistory remains immutable append-only automated results.
       parameters:
+        - { $ref: '#/components/parameters/AnalysisRunSelector' }
         - { $ref: '#/components/parameters/Limit' }
         - { $ref: '#/components/parameters/Offset' }
       responses:
         '200':
-          description: Latest automated score and effective override for each evidence item
+          description: Selected-run automated results (or pre-analysis unscored uploads) with live authorized override overlays
           content:
             application/json:
               schema: { $ref: '#/components/schemas/TriagePage' }
+        '400': { $ref: '#/components/responses/BadRequest' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '404': { $ref: '#/components/responses/NotFound' }
   /api/v1/cases/{caseId}/evidence/{evidenceId}/triage-history:
@@ -422,6 +488,7 @@ paths:
               schema:
                 type: array
                 items: { $ref: '#/components/schemas/TriageResult' }
+        '400': { $ref: '#/components/responses/BadRequest' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '404': { $ref: '#/components/responses/NotFound' }
   /api/v1/cases/{caseId}/evidence/{evidenceId}/priority-overrides:
@@ -484,6 +551,7 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/AuditPage' }
+        '400': { $ref: '#/components/responses/BadRequest' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '404': { $ref: '#/components/responses/NotFound' }
 components:
@@ -521,15 +589,29 @@ components:
       name: offset
       in: query
       schema: { type: integer, minimum: 0, default: 0 }
+    AnalysisRunSelector:
+      name: analysis_run_id
+      in: query
+      description: >-
+        Pin a completed same-case snapshot across graph/findings/triage and
+        pagination. Omit for latest completed run by created_at UTC then UUID.
+        Foreign, missing, failed or incomplete run returns 404. Clients pin the
+        returned run ID across related reads to avoid mixed-run displays.
+      schema: { type: string, format: uuid }
     IdempotencyKey:
       name: Idempotency-Key
       in: header
       required: true
       schema: { type: string, minLength: 1, maxLength: 128 }
-      description: Scope to authenticated actor, case and operation; same key + different inputs returns 409.
+      description: >-
+        Scope to authenticated actor, case and operation. Fingerprint method,
+        target path and explicit request parameters/body, not mutable server
+        state. Same key with identical request returns the stored run; changed
+        request returns 409. New data/configuration requires a new key to select
+        a fresh snapshot. Enforce case access again on every replay.
   responses:
     BadRequest:
-      description: Invalid input
+      description: Invalid path, query, header or body input; shared FastAPI validation maps to 400 ApiError.
       content:
         application/json:
           schema: { $ref: '#/components/schemas/ApiError' }
@@ -604,6 +686,23 @@ components:
       type: string
       enum: [queued, running, completed, failed]
     ProcessingRun:
+      allOf:
+        - if:
+            properties:
+              status: { enum: [completed, failed] }
+            required: [status]
+          then:
+            properties:
+              finished_at: { type: string, format: date-time }
+            required: [finished_at]
+        - if:
+            properties:
+              status: { const: failed }
+            required: [status]
+          then:
+            properties:
+              error: { type: string, minLength: 1 }
+            required: [error]
       type: object
       additionalProperties: false
       required: [id, case_id, evidence_id, status, processor_version, created_at]
@@ -681,6 +780,10 @@ components:
         observed_at_utc: { type: string, format: date-time }
         confidence: { type: number, minimum: 0, maximum: 1 }
     GraphNode:
+      description: >-
+        id equals its source Evidence, Entity or Event UUID within the case;
+        kind declares that record category. Reuse identity across analysis
+        versions but partition storage by case_id and analysis_run_id.
       type: object
       additionalProperties: false
       required: [id, case_id, kind, label, evidence_ids]
@@ -697,7 +800,7 @@ components:
     GraphEdge:
       type: object
       additionalProperties: false
-      required: [id, case_id, from_id, to_id, kind, evidence_ids, confidence]
+      required: [id, case_id, from_id, to_id, kind, evidence_ids, observation_ids, confidence]
       properties:
         id: { type: string, format: uuid }
         case_id: { type: string, format: uuid }
@@ -709,8 +812,27 @@ components:
           minItems: 1
           uniqueItems: true
           items: { type: string, format: uuid }
+        observation_ids:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          description: Same-case input observations supporting this result; resolve source locators through Observation.
+          items: { type: string, format: uuid }
         confidence: { type: number, minimum: 0, maximum: 1 }
     Graph:
+      allOf:
+        - if:
+            anyOf:
+              - properties:
+                  nodes: { minItems: 1 }
+                required: [nodes]
+              - properties:
+                  edges: { minItems: 1 }
+                required: [edges]
+          then:
+            properties:
+              analysis_run_id: { type: string, format: uuid }
+            required: [analysis_run_id]
       type: object
       additionalProperties: false
       required: [case_id, nodes, edges]
@@ -729,7 +851,7 @@ components:
     Finding:
       type: object
       additionalProperties: false
-      required: [id, case_id, analysis_run_id, kind, summary, evidence_ids, rule, confidence]
+      required: [id, case_id, analysis_run_id, kind, summary, evidence_ids, observation_ids, rule, confidence]
       properties:
         id: { type: string, format: uuid }
         case_id: { type: string, format: uuid }
@@ -746,17 +868,77 @@ components:
           uniqueItems: true
           items: { type: string, format: uuid }
         rule: { type: string, description: 'Algorithm or rule version and basis' }
+        observation_ids:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          description: Same-case input observations supporting this result; resolve source locators through Observation.
+          items: { type: string, format: uuid }
         confidence: { type: number, minimum: 0, maximum: 1 }
-    AnalysisRun:
+        entity_ids:
+          type: array
+          uniqueItems: true
+          description: Same-case candidate entities involved, including cluster membership when applicable.
+          items: { type: string, format: uuid }
+        missing_information:
+          type: array
+          description: Explicitly unknown or missing information, not assertions of non-occurrence.
+          items: { type: string, minLength: 1 }
+    AnalysisInputSnapshot:
       type: object
       additionalProperties: false
-      required: [id, case_id, status, trigger, algorithm_version, created_at]
+      required: [case_id, evidence_ids, processing_run_ids, observation_ids, sha256]
+      description: >-
+        Immutable acceptance-time input manifest. UUID arrays are unique and
+        sorted lexically. evidence_ids includes every uploaded item in the case;
+        select one latest completed processing run per item by finished_at UTC
+        then UUID, with all its observations. Empty arrays are allowed. sha256 is
+        lowercase SHA-256 of UTF-8 compact JSON with sorted object keys for
+        case_id, evidence_ids, processing_run_ids and observation_ids; exclude
+        sha256 itself. Original evidence hashes and output records are immutable.
+      properties:
+        case_id: { type: string, format: uuid }
+        evidence_ids:
+          type: array
+          uniqueItems: true
+          items: { type: string, format: uuid }
+        processing_run_ids:
+          type: array
+          uniqueItems: true
+          items: { type: string, format: uuid }
+        observation_ids:
+          type: array
+          uniqueItems: true
+          items: { type: string, format: uuid }
+        sha256: { type: string, pattern: '^[0-9a-f]{64}$' }
+    AnalysisRun:
+      allOf:
+        - if:
+            properties:
+              status: { enum: [completed, failed] }
+            required: [status]
+          then:
+            properties:
+              finished_at: { type: string, format: date-time }
+            required: [finished_at]
+        - if:
+            properties:
+              status: { const: failed }
+            required: [status]
+          then:
+            properties:
+              error: { type: string, minLength: 1 }
+            required: [error]
+      type: object
+      additionalProperties: false
+      required: [id, case_id, status, trigger, algorithm_version, input_snapshot, created_at]
       properties:
         id: { type: string, format: uuid }
         case_id: { type: string, format: uuid }
         status: { $ref: '#/components/schemas/RunStatus' }
         trigger: { type: string, enum: [initial, new_observations, manual] }
         algorithm_version: { type: string }
+        input_snapshot: { $ref: '#/components/schemas/AnalysisInputSnapshot' }
         created_at: { type: string, format: date-time }
         finished_at: { type: string, format: date-time }
         error: { type: string }
@@ -858,6 +1040,17 @@ components:
         source_locator: { type: string, minLength: 1, description: 'Row/page/frame/byte range or entire original artifact' }
         observation_id: { type: string, format: uuid }
     CaseAnswer:
+      allOf:
+        - if:
+            properties:
+              supported: { const: true }
+            required: [supported]
+          then:
+            properties:
+              citations: { minItems: 1 }
+          else:
+            properties:
+              citations: { maxItems: 0 }
       type: object
       additionalProperties: false
       required: [case_id, question, supported, answer, citations, retrieval_version]
@@ -872,6 +1065,11 @@ components:
           items: { $ref: '#/components/schemas/AnswerCitation' }
         retrieval_version: { type: string }
         model_version: { type: string }
+        prompt_template_version: { type: string }
+        provenance_id:
+          type: string
+          format: uuid
+          description: Authorized internal provenance record reference; never a storage path or public prompt dump.
     AuditEvent:
       type: object
       additionalProperties: false
@@ -940,10 +1138,27 @@ components:
         limit: { type: integer, minimum: 1 }
         offset: { type: integer, minimum: 0 }
     FindingPage:
+      allOf:
+        - if:
+            anyOf:
+              - properties:
+                  items: { minItems: 1 }
+                required: [items]
+              - properties:
+                  total: { minimum: 1 }
+                required: [total]
+          then:
+            properties:
+              analysis_run_id: { type: string, format: uuid }
+            required: [analysis_run_id]
       type: object
       additionalProperties: false
       required: [items, total, limit, offset]
       properties:
+        analysis_run_id:
+          type: string
+          format: uuid
+          description: Selected completed snapshot ID; required whenever a completed run is selected, even for an empty page. Absent only when no completed analysis exists.
         items:
           type: array
           items: { $ref: '#/components/schemas/Finding' }
@@ -951,10 +1166,28 @@ components:
         limit: { type: integer, minimum: 1 }
         offset: { type: integer, minimum: 0 }
     TriagePage:
+      allOf:
+        - if:
+            properties:
+              items:
+                contains:
+                  type: object
+                  properties:
+                    latest_result: { $ref: '#/components/schemas/TriageResult' }
+                  required: [latest_result]
+            required: [items]
+          then:
+            properties:
+              analysis_run_id: { type: string, format: uuid }
+            required: [analysis_run_id]
       type: object
       additionalProperties: false
       required: [items, total, limit, offset]
       properties:
+        analysis_run_id:
+          type: string
+          format: uuid
+          description: Selected completed snapshot ID; required whenever a completed run is selected, even for an empty page. Absent only when no completed analysis exists.
         items:
           type: array
           items: { $ref: '#/components/schemas/TriageEntry' }

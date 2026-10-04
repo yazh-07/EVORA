@@ -1,32 +1,51 @@
-# EVORA pre-implementation review for the four-person team
+# EVORA pre-implementation review
 
-## Verdict
+## Verdict and actual implementation state
 
-**Ready to discuss and assign modules; not yet a shared implementation baseline.** Four people each work on one of M1–M4; one of those four coordinates integration while working on their module. No personal names or leadership titles are required. The full proposed feature scope is planned in stages. The network/GPS/message CSVs are an initial integration tracer, not the completed product.
+**A full-scope coordination plan, not an implemented EVORA system.** Four contributors work on M1–M4; one of those same four coordinates integration alongside their module. Names and module assignments must be recorded by the team. Independent bounded module work is expected, using the same contract commit and schema-derived fixtures.
 
-This repository currently contains planning documents, a **draft** OpenAPI contract, synthetic fixtures and contract-lint CI. It does **not** contain the FastAPI backend, React frontend, tested scoring, a Windows installation or a running end-to-end system. The local coordination branch has not been committed/pushed; remote `main` remains at its initial README-only commit. Do not give coding agents an unpublished local file as if it were a shared commit.
+The branch contains the source proposal, proposal-to-task traceability, architecture, task catalog, a draft OpenAPI 0.2.0 contract, UI design rules, synthetic fixtures and executable planning checks. It does **not** contain the FastAPI backend, React frontend, Neo4j integration, executed scoring, model inference or a running end-to-end application. The CSV tracer is the first integration slice; it is not an MVP replacing the agreed full proposal scope.
 
-## Checks actually performed
+The earlier draft was already published at `88d2cc43b293cc40f15eff7137c40f09883a283e` on `docs/coordination-foundation`. This rewrite is to be shared on the same branch. Publication and GitHub CI must be verified from the exact remote commit after push; local tests alone do not prove either. Nothing in this report authorizes merging into `main`.
 
-- Compared the feature map against the proposal's 40-section outline: intake/integrity, multimodal processing, entities/events, graph, adaptive triage, conflicts/gaps/clusters/anomalies, uncertainty/explanation, grounded Q&A, human review, audit and evaluation are represented. Complete timeline reconstruction is explicitly future work.
-- Counted **25 unique OpenAPI operations** and **90 unique task IDs**; checked task references for missing IDs and dependency cycles (none found). The common G00–G03 setup entries precede affected tickets.
-- Ran Redocly 2.57.0 lint and bundle on `specs/openapi.yaml`, and generated TypeScript declarations with openapi-typescript 7.10.1. All succeeded. Lint reported one non-blocking `info-license` warning; no repository license was invented.
-- Parsed all three synthetic CSV files: network has `D-7` and `D-9`, GPS has `D-8`, and the later message mentions `D-7` and `D-8`. This supports a candidate link **only after** the message arrives; it does not prove identity, guilt or a numerical rerank without a scoring policy and executed tests.
-- Checked Markdown local links, trailing whitespace, Git diff whitespace and common stale team-title labels. No failures found. Performed a basic plaintext credential-pattern scan of the reviewed coordination files; no match found. This is not a full security audit.
-- Traced the six-step synthetic runbook to bounded tickets: intake/processing/graph/triage (`I01`), later-message rerank (`I02`), review/override (`I02B`), and grounded/unsupported Q&A (`I02C`), followed by Windows/CI (`I03`). Their real software tests have **not** run because the app does not exist yet.
+## Gaps addressed by this rewrite
 
-## Decisions before dependent coding tickets
+- Explicit processing and analysis command UI tickets, not merely status polling and result views; returned run IDs, idempotency and terminal failure states are part of acceptance.
+- Analysis assembly depends on scoring and detectors and publishes graph/findings/available triage only after the same-case/run Neo4j projection verifies. Partial or failed outputs cannot look like completed analysis.
+- An immutable acceptance-time input snapshot, deterministic manifest hashing, server-derived triggers, replay semantics and completed-run selectors prevent moving inputs or mixed-version graph/findings/triage views.
+- Named triage factors have calculation/wiring ownership; conflicts, gaps, anomalies and deeper processing feed the triage-analysis-retriage workflow. A rerun without changed inputs must not invent a ranking change.
+- Full RAG retrieval plus model generation and verification is distinct from the deterministic first-slice Q&A fixture. Model/prompt/retrieval provenance and sensitive audit retention are explicit work, not invented optional output fields.
+- Later full-scope integration/evaluation/reproducibility gates include expansion adapters, algorithms and views. Completion of the CSV tracer does not mark the full project complete.
+- React/TypeScript, FastAPI, Neo4j as a derived graph projection, canonical metadata/audit storage and private immutable originals have distinct boundaries. Neo4j does not automatically implement scoring or uncertainty.
+- `DESIGN.md` constrains the real investigator workspace: evidence table and inspector first, reusable tokens/components, truth-backed states, source links and accessibility; no gradients, blinking, fictional status or fabricated metrics.
+- The full 40-section original proposal is preserved in [`PROPOSAL.md`](PROPOSAL.md) and mapped in [`PROPOSAL_TRACEABILITY.md`](PROPOSAL_TRACEABILITY.md). Complete timeline reconstruction remains future work.
 
-See [`COMMUNICATION.md`](COMMUNICATION.md) for exact ticket/module impact and verification. Its initial entries cover: **C-01** immutable analysis-input snapshot; **C-02** validation status/body and missing error responses; **C-03** identity, token and case-access policy; **C-04** first-format limits/parse failures; **C-05** scoring functions, missing-factor behavior and a measured rerank fixture; **C-06** Q&A provider/privacy/fallback. Resolve only the choices needed by the next tickets; later-format details can wait for their tickets. Record wire decisions in `specs/openapi.yaml`, policy in the relevant docs, and prove changes with tests.
+## Reproducible checks and their limits
 
-## Communication rule
+The exact commands live in [`AGENTS.md`](../AGENTS.md) and CI in [`.github/workflows/contract.yml`](../.github/workflows/contract.yml):
 
-A Markdown communication file is a good **issue/handoff channel**, not an alternative contract. An agent reports the exact missing parameter, operation/schema, affected modules, fixture and failing test. Affected module contributors settle the interface, update the versioned OpenAPI spec and relevant producer/consumer/tests, then a bounded corrective ticket fixes existing code if needed. Another agent must not silently reimplement a whole module from a note in that file.
+1. Redocly 2.57.0 lint/bundle; openapi-typescript 7.10.1 generation and TypeScript 5.9.3 declaration checking.
+2. `scripts/verify_coordination.py`: local schema references, shared errors, critical snapshot/provenance invariants, unique tasks, dependency DAG, task contract names, command UI ownership, scoring assembly and full-scope dependency closure, Markdown links/whitespace, proposal-section coverage and synthetic CSV semantics.
+3. Unit/negative tests for the verifier and JSON Schema validation of explicitly synthetic wire examples using jsonschema 4.25.1. These examples are **not** responses returned by a running backend.
+4. `@google/design.md` 0.4.0 token/reference/contrast lint. This is **not** rendered browser, interaction or accessibility testing.
+5. Git diff whitespace and staged-secret/local-evidence inspection before publication. A basic pattern scan is **not** a complete security audit.
 
-## Share/implementation gate
+The rewrite's local checks passed after review corrections: **25 operations, 118 unique tasks, 40 preserved proposal sections and 40 traceability mappings; 43 verifier/CLI-negative/synthetic-schema tests passed**. Redocly lint/bundle, generated TypeScript compilation, Ruff script lint, DESIGN lint and document/fixture/DAG checks passed. The copied proposal was compared programmatically against the provided original, permitting trailing-whitespace removal only; wording was unchanged. These outcomes validate the planning artifacts, not a running backend, browser, Windows installation or research benchmark. Independent review identified and corrected unrelated final-provider dependencies and unstable pinned-triage membership/override paging; publication and CI still require read-back of the exact pushed commit.
 
-1. Record one person against each of M1–M4; the person coordinating integration remains one of those four. No module for that person has been assumed in these documents.
-2. Settle G00 choices needed by first coding tickets, review the common draft contract across affected modules, and publish **one authorized Git commit** containing the agreed docs/spec/fixtures. This is synchronization, not a four-person approval ceremony.
-3. Have agents branch from that exact commit for **one small ticket at a time**. Check spec-derived types, producer/consumer integration, case isolation, synthetic fixture outputs and negative tests in PRs. Windows and full end-to-end claims require real execution later.
+OpenAPI retains 25 operations. Redocly reports the non-blocking missing `info.license` warning; no project license is invented. Tool outputs, not this prose, determine any later task/test counts and success. CI must exercise the committed tree; it does not validate future application behavior.
 
-**Sharing note:** These documents are currently only on the local `docs/coordination-foundation` branch. A repository link to remote `main` will not show them until publication is explicitly authorized and completed. No commit, push or merge was performed in this review.
+The synthetic network fixture contains D-7/D-9 and GPS contains D-8, with no shared device ID. The later message co-mentions D-7/D-8 and may support a **candidate** connection. Identity, guilt, calibrated confidence and numerical re-ranking require actual policy and execution; they cannot be inferred from the fixture alone.
+
+## Remaining gates before affected implementation tickets
+
+Use [`COMMUNICATION.md`](COMMUNICATION.md) for precise decision status and affected tickets. Authentication/case access, format limits/failure policies, scoring/missing-factor policy, model/provider/privacy and any unresolved graph/runtime or detector decisions must be settled by the contributors implementing those boundaries. The coordinator keeps the shared version aligned, not personally designs every API or algorithm.
+
+Start setup and unblocked bounded tickets; do not block all four modules for a choice that affects only a later task. Shared wire changes must update OpenAPI, generated types, producers, consumers and tests together. Do not silently create alternative routes, use fake observations/confidence or present an unresolved policy as implemented behavior.
+
+## Handoff and completion rules
+
+1. Record one contributor for each module and the exact shared commit used by each task branch.
+2. Resolve only prerequisite choices for the next bounded ticket; use [`TASK_BREAKDOWN.md`](TASK_BREAKDOWN.md), not a whole-module mega-prompt.
+3. Use declared schema-conforming fixtures while a producer is unavailable; replace them with real integration and case-isolation tests before closing integration gates.
+4. Verify the initial tracer, then the full-scope modality/analysis/RAG/UI/evaluation gates separately. Windows installation, browser behavior, accuracy, latency and research benchmarks require real runs later.
+5. Keep original bytes and completed output histories immutable. Human review and overrides remain append-only; priorities are attention order, not conclusions about guilt.
