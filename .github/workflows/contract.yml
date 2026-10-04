@@ -1,0 +1,19 @@
+name: Contract lint
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  openapi:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate the shared HTTP contract
+        run: npx --yes @redocly/cli@2.57.0 lint specs/openapi.yaml

@@ -1,0 +1,26 @@
+# Credentials and local configuration
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets.json
+
+# Local evidence and generated outputs
+/storage/
+/evidence/
+/artifacts/
+/outputs/
+*.db
+*.sqlite
+*.sqlite3
+
+# Python / Node / editors
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+node_modules/
+dist/
+.vscode/
+.idea/
