@@ -6,8 +6,18 @@ EVORA is investigative support, not an autonomous guilt or admissibility decisio
 
 1. Read `docs/PROPOSAL.md`, `docs/PROPOSAL_TRACEABILITY.md`, `docs/ARCHITECTURE.md`, `docs/FEATURE_SCOPE.md`, `docs/TASK_BREAKDOWN.md`, `docs/ROADMAP.md`, `docs/CONTRACTS.md`, `docs/CONTRACT_REVIEW.md`, `docs/COMMUNICATION.md`, `docs/INTEGRATION.md`, `DESIGN.md` and `specs/openapi.yaml`.
 2. Check the actual Git status/branch/base and relevant existing files. Published branch-draft docs/schema are not a working application. Never infer implemented behavior or installed packages from a planned ticket.
-3. Take one task ID with assigned module/person, exact common contract commit, allowed paths, dependency handling and acceptance tests. Use a fresh session and short-lived feature branch; never assign an entire module to one agent or edit `main` autonomously.
+3. Read the exact checkpoint ledger in `docs/ROADMAP.md`; locate the task in the matching `TASK_BREAKDOWN.md` Checkpoint column. Take one task ID with checkpoint, assigned module/person, exact common contract commit, allowed paths, dependency handling and acceptance tests. Use a fresh session and short-lived feature branch; never assign an entire module to one agent or edit `main` autonomously.
 4. Record a needed unresolved choice in the PR/communication queue with exact producer/consumer impact. Resolve that task's gate, not unrelated future choices. Independent implementation against schema-derived fixtures is allowed; real producer integration is required before completion.
+
+## Phase execution rules
+
+- ROADMAP.md alone defines phase/checkpoint order and membership; TASK_BREAKDOWN.md owns row dependencies/acceptance. Table order is not execution order; use the dependency DAG. All implementation starts Backlog. Never skip a gate or claim a whole phase from a subset.
+- G00 establishes the common contract/base containing these artifacts before task branches. Do not start from a README-only main or treat uncommitted local phase edits as published instructions. Record the exact reviewed base in the assignment.
+- Work on one bounded row in a fresh task branch. Later independent rows may use declared schema-derived doubles; finish checkpoints in order with real producers. Do not wait for full modules to integrate.
+- 4A tests remaining analytical producers. U12A/U12B/U12C/U12D/U12E/U13B fixture components may start earlier, but all retain existing dependencies plus A17 and complete integrated real-API acceptance in 4B after coherent assembly/publication, before detector feedback/evaluation. Fixture UI cannot close 4A as real API.
+- Preserve earlier capabilities: run current-task negatives and every previously completed checkpoint regression on the combined candidate before an authorized main merge; run smoke checks on the merged commit. Temporary integration branches are optional.
+- Security, source provenance, safe rendering and labeled evaluation fixtures start with their producers. Full report/evaluation at the end does not postpone those checks. Generation U10B must not be exposed as verified before U10C fallback/citation checks pass.
+- Coordinate shared scaffolding/migrations/spec/generated types/ledger edits; do not overwrite another agent's files or invent a parallel contract. A missing decision blocks affected rows only; record it in COMMUNICATION.md.
 
 ## Architecture and integrity invariants
 
@@ -26,7 +36,7 @@ EVORA is investigative support, not an autonomous guilt or admissibility decisio
 
 Four people each own one module; one also coordinates integration. Assignees are TBD. Coordinate shared scaffolding, migrations, spec and roadmap changes; do not invent personnel titles or a fifth member. Any help stays bounded with one accountable interface owner.
 
-Write behavior tests appropriate to the ticket, including its negative/failure/case-isolation paths. Run actual commands, inspect the diff and report results and test doubles honestly. Full integration requires real merged producers; artifact lint is not application verification. Coordinate roadmap status changes; never mark a module complete from one row.
+Write behavior tests appropriate to the ticket, including its negative/failure/case-isolation paths. Run actual commands, inspect the diff and report results and test doubles honestly. Full integration requires real merged producers; artifact lint is not application verification. Report task/checkpoint, dependency versions, actual read-back and tests, known limitations and next task; checkpoint completion also requires the runbook exit evidence. Coordinate roadmap status changes; never mark a module complete from one row.
 
 Run OpenAPI lint/bundle, generated client/type compilation, `scripts/verify_coordination.py <bundled-json-path>`, the `test_*.py` unittest suite with EVORA_CONTRACT_BUNDLE set to that bundle (jsonschema==4.25.1) and DESIGN lint according to the shared workflow. Package/model versions and Windows support must be demonstrated in setup tasks. No fabricated benchmark data.
 

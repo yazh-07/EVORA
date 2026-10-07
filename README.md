@@ -1,5 +1,17 @@
 # EVORA
 
+## Implementation starts here
+
+**Implementation has not begun.** The full proposal will be delivered in phases, with four people each working on one module. Start with [the phased roadmap](docs/ROADMAP.md): it owns exact checkpoint membership and completion gates. The [task catalog](docs/TASK_BREAKDOWN.md) supplies bounded assignments; [agent cards](docs/AGENT_TASKS.md) explain how to execute one safely.
+
+Phase outcomes: **0 shared skeleton → 1 first network/GPS workflow → 2 adaptive/human-control tracer → 3 all modalities → 4 complete analytical feedback → 5 verified full RAG → 6 evaluation/reproducibility/report**. Checkpoints divide these outcomes into smaller verifiable deliveries; do not assign a whole phase/module to an agent.
+
+In Phase 4, 4A tests remaining analytical producers; 4B assembles/publishes them with A17 and completes U12A/U12B/U12C/U12D/U12E/U13B against real APIs, then detector feedback/evaluation. Earlier fixture-based UI component work cannot close 4A as real API. 4C proves deeper processing of existing evidence.
+
+Before coding, G00 records one shared contract/base commit. Main currently has only a README: use the authorized shared base containing contracts, not a README-only branch. Test combined changes and previous checkpoint regressions **before** promotion to main; smoke-test the merged commit afterward. Later independent tasks may use disclosed schema-derived fixtures, but completion requires real producers.
+
+The published coordination baseline is a draft; this phase revision remains local until published. No application, Windows, model or benchmark success is claimed.
+
 EVORA is an **AI-assisted multimodal forensic evidence fusion and investigation-support research prototype**. The full proposed initial system is the build goal, delivered in stages. It does not determine guilt, replace professional judgment or claim forensic certification. This repository currently holds coordination artifacts, schema and synthetic inputs, not a running application.
 
 ## Read first
@@ -8,7 +20,7 @@ EVORA is an **AI-assisted multimodal forensic evidence fusion and investigation-
 - [Proposal traceability](docs/PROPOSAL_TRACEABILITY.md) — all 40 numbered sections mapped to concrete tasks and acceptance.
 - [Full feature scope](docs/FEATURE_SCOPE.md), [architecture](docs/ARCHITECTURE.md) and [design tokens](DESIGN.md).
 - [API contract](specs/openapi.yaml) — published **coordination-branch draft**, version 0.2.0; one authority for the same 25 HTTP operations and schemas, not evidence of implemented routes.
-- [Task catalog](docs/TASK_BREAKDOWN.md), [roadmap](docs/ROADMAP.md) and [scoped agent prompts](docs/AGENT_TASKS.md).
+- [Phased roadmap](docs/ROADMAP.md) — one authoritative sequence; [task catalog](docs/TASK_BREAKDOWN.md) — exact checkpoint/dependency/acceptance; [scoped agent prompts](docs/AGENT_TASKS.md) — one assignment, not a mega-prompt.
 - [Contract policy](docs/CONTRACTS.md), [producer/consumer review](docs/CONTRACT_REVIEW.md), [decision queue](docs/COMMUNICATION.md) and [integration gates](docs/INTEGRATION.md).
 - [Preimplementation review](docs/PREIMPLEMENTATION_REVIEW.md) — actual artifact verification and remaining readiness limits, not app benchmarks.
 - [Agent rules](AGENTS.md) and [synthetic CSV inputs](fixtures/synthetic-case/).

@@ -7,22 +7,71 @@ from pathlib import Path
 import re
 
 TASK_ID = r"\b[GFPAUI]\d{2}[A-Z]?\b"
+CHECKPOINT_ID = r"(?:0|[1-9]\d*)[A-Z]?"
+CATALOG_SECTIONS = (
+    "Common-base and setup", "M1 — Evidence Foundation", "M2 — Multimodal Processing",
+    "M3 — Evidence Fusion and Adaptive Triage", "M4 — Investigator Application",
+    "Cross-module integration and evaluation",
+)
+CATALOG_HEADERS = (
+    "ID", "One-task scope", "Depends on", "Contract", "Acceptance for this PR", "Checkpoint",
+)
 
 
-def parse_catalog(text):
-    """Read setup and bounded task rows from the Markdown catalog."""
+def named_table(text, heading, headers, label):
+    """Parse the canonical table without filtering malformed data rows away."""
+    lines = text.splitlines()
+    starts = [index for index, line in enumerate(lines) if line.strip() == f"## {heading}"]
+    if len(starts) != 1:
+        raise ValueError(f"Missing/duplicate {label} heading: {heading}")
+    start = starts[0] + 1
+    end = next((index for index in range(start, len(lines))
+                if re.match(r"^#{1,6}\s", lines[index].strip())), len(lines))
+    table_lines = [index for index in range(start, end) if "|" in lines[index]]
+    if not table_lines:
+        raise ValueError(f"Missing {label} table")
+    parsed = []
+    for index in range(table_lines[0], table_lines[-1] + 1):
+        line = lines[index].strip()
+        if not line or not line.startswith("|") or not line.endswith("|"):
+            raise ValueError(f"Malformed {label} row at line {index + 1}")
+        cells = [cell.strip() for cell in line[1:-1].split("|")]
+        parsed.append((index + 1, cells))
+    if tuple(parsed[0][1]) != tuple(headers):
+        raise ValueError(f"Malformed {label} header")
+    if (len(parsed) < 2 or len(parsed[1][1]) != len(headers)
+            or any(not re.fullmatch(r":?-{3,}:?", cell) for cell in parsed[1][1])):
+        raise ValueError(f"Malformed {label} separator")
+    for number, cells in parsed[2:]:
+        if len(cells) != len(headers) or any(not cell for cell in cells):
+            raise ValueError(f"Malformed {label} row at line {number}")
+    return parsed[2:]
+
+
+def parse_catalog(text, strict=False):
+    """Read canonical six-column tables, or legacy row-only helper fixtures."""
     rows = {}
-    for number, line in enumerate(text.splitlines(), 1):
-        cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
+    if strict:
+        source = [row for heading in CATALOG_SECTIONS
+                  for row in named_table(text, heading, CATALOG_HEADERS, "task catalog")]
+    else:
+        source = [(number, [cell.strip() for cell in line.strip().strip("|").split("|")])
+                  for number, line in enumerate(text.splitlines(), 1)]
+    for number, cells in source:
+        if strict and not re.fullmatch(TASK_ID, cells[0]):
+            raise ValueError(f"Malformed task ID {cells[0]} at line {number}")
+        if strict and not re.fullmatch(CHECKPOINT_ID, cells[5]):
+            raise ValueError(f"Malformed task checkpoint {cells[5]} at line {number}")
         if not cells or not re.fullmatch(TASK_ID, cells[0]):
             continue
         task_id = cells[0]
-        if len(cells) not in (4, 5):
+        if len(cells) not in (4, 5, 6):
             raise ValueError(f"Malformed task row {task_id} at line {number}")
         if task_id in rows:
             raise ValueError(f"Duplicate task ID {task_id}")
-        dependencies = set(re.findall(TASK_ID, cells[2])) if len(cells) == 5 else set()
-        rows[task_id] = {"line": number, "cells": cells, "dependencies": dependencies}
+        dependencies = set(re.findall(TASK_ID, cells[2])) if len(cells) >= 5 else set()
+        rows[task_id] = {"line": number, "cells": cells, "dependencies": dependencies,
+                         "checkpoint": cells[5] if len(cells) == 6 else None}
     if not rows:
         raise ValueError("No tasks found")
     return rows
@@ -50,6 +99,168 @@ def dependency_closure(rows):
     for task_id in rows:
         visit(task_id)
     return closures
+
+
+def roadmap_ledger(roadmap):
+    return named_table(
+        roadmap, "Exact checkpoint ledger",
+        ("Checkpoint", "Exact task membership", "Exit gate IDs", "Exit evidence", "State"),
+        "Roadmap ledger",
+    )
+
+
+def exit_gate_ids(value, label, checkpoint):
+    gates = value.split(", ")
+    if not gates or any(not re.fullmatch(TASK_ID, gate) for gate in gates):
+        raise ValueError(f"{label} requires exact exit gate IDs for {checkpoint}")
+    if len(gates) != len(set(gates)):
+        raise ValueError(f"Duplicate {label} exit gate for {checkpoint}")
+    return set(gates)
+
+
+def verify_phases(rows, roadmap):
+    """Compare exhaustive checkpoint assignments with the task catalog."""
+    checkpoints, assigned = {}, {}
+    ledger = roadmap_ledger(roadmap)
+    for number, cells in ledger:
+        if not re.fullmatch(CHECKPOINT_ID, cells[0]):
+            raise ValueError(f"Malformed checkpoint ID {cells[0]} at line {number}")
+        checkpoint = cells[0]
+        if checkpoint in checkpoints:
+            raise ValueError(f"Duplicate checkpoint {checkpoint}")
+        if cells[4] not in {"Backlog", "In Progress", "Complete", "Blocked"}:
+            raise ValueError(f"Invalid checkpoint state {checkpoint}: {cells[4]}")
+        tasks = cells[1].split(", ")
+        if not tasks or any(not re.fullmatch(TASK_ID, task) for task in tasks):
+            raise ValueError(f"Checkpoint {checkpoint} requires exact task IDs, not ranges")
+        checkpoints[checkpoint] = tasks
+        for task in tasks:
+            if task not in rows:
+                raise ValueError(f"Unknown checkpoint task {task}")
+            if task in assigned:
+                raise ValueError(f"Duplicate phase assignment {task}")
+            assigned[task] = checkpoint
+    if not checkpoints:
+        raise ValueError("No phase checkpoints found")
+    natural_order = sorted(checkpoints, key=lambda value: (
+        int(re.findall(r"\d+", value)[0]), re.sub(r"^\d+", "", value)))
+    if list(checkpoints) != natural_order or natural_order[0] != "0":
+        raise ValueError("Checkpoint order must start at 0 and progress numerically")
+    missing = set(rows) - set(assigned)
+    if missing:
+        raise ValueError(f"Unassigned phase tasks {sorted(missing)}")
+    order = {checkpoint: index for index, checkpoint in enumerate(checkpoints)}
+    for task, row in rows.items():
+        if row.get("checkpoint") != assigned[task]:
+            raise ValueError(f"Checkpoint mismatch for {task}: catalog/roadmap")
+        for dependency in row["dependencies"]:
+            if dependency not in assigned:
+                raise ValueError(f"Missing dependency {dependency}")
+            if order[assigned[dependency]] > order[assigned[task]]:
+                raise ValueError(f"Later checkpoint prerequisite: {task} requires {dependency}")
+    for _, cells in ledger:
+        for gate in exit_gate_ids(cells[2], "Roadmap", cells[0]):
+            if assigned.get(gate) != cells[0]:
+                raise ValueError(f"Roadmap exit gate checkpoint mismatch: {cells[0]}/{gate}")
+    return {checkpoint: len(tasks) for checkpoint, tasks in checkpoints.items()}
+
+
+def verify_runbook(rows, checkpoint_tasks, runbook, roadmap):
+    """Require ordered evidence rows with the canonical Roadmap exit gate sets."""
+    canonical_gates = {cells[0]: exit_gate_ids(cells[2], "Roadmap", cells[0])
+                       for _, cells in roadmap_ledger(roadmap)}
+    ledger = named_table(
+        runbook, "Checkpoint execution ledger",
+        ("Checkpoint", "Exit gate IDs", "Required real proof", "Regressions"), "runbook ledger",
+    )
+    seen = []
+    for number, cells in ledger:
+        if not re.fullmatch(CHECKPOINT_ID, cells[0]):
+            raise ValueError(f"Malformed runbook checkpoint {cells[0]} at line {number}")
+        checkpoint = cells[0]
+        if checkpoint not in checkpoint_tasks or checkpoint in seen:
+            raise ValueError(f"Unknown/duplicate runbook checkpoint {checkpoint}")
+        gates = exit_gate_ids(cells[1], "Runbook", checkpoint)
+        for gate in gates:
+            if gate not in rows or rows[gate].get("checkpoint") != checkpoint:
+                raise ValueError(f"Runbook exit gate checkpoint mismatch: {checkpoint}/{gate}")
+        if gates != canonical_gates.get(checkpoint):
+            raise ValueError(f"Runbook exit gate set mismatch: {checkpoint}")
+        if not cells[2] or not cells[3]:
+            raise ValueError(f"Missing runbook exit evidence/regressions for {checkpoint}")
+        seen.append(checkpoint)
+    if seen != list(checkpoint_tasks):
+        raise ValueError("Runbook checkpoint coverage/order does not match roadmap")
+
+
+FEATURE_CAPABILITIES = frozenset((
+    "Case creation/catalog/access",
+    "Immutable original intake/hash/download/source metadata",
+    "Private provenance/audit foundations",
+    "Network records",
+    "GPS/spatial records",
+    "Messages/device mentions",
+    "Documents/reports/text",
+    "OCR for scanned document/image text",
+    "Image object/person/vehicle detection",
+    "CCTV/video observations",
+    "Mobile logs",
+    "Transactions",
+    "Common normalized observations/entities/events",
+    "Processing lifecycle/full dispatch/deeper existing processing",
+    "Versioned graph storage/projection recovery",
+    "Cross-source relationship reasoning",
+    "Relevance and graph-connectivity factors",
+    "Temporal-proximity factor",
+    "Independent corroboration factor/findings",
+    "Source quality, extraction confidence/count and uncertainty",
+    "Potential conflicts and conflict-aware priority",
+    "Evidence gaps and gap-relevant priority",
+    "Clusters and cluster prioritization",
+    "Anomaly detection and triage feedback",
+    "Alternative hypothesis comparison",
+    "Explainable initial scores and analysis/history",
+    "Adaptive new-upload AND detector/deeper-existing-evidence loop",
+    "Faithful findings/triage/model explanations",
+    "Full retrieval context and grounded LLM RAG",
+    "Case/evidence overview and commands/status",
+    "Priority/history/graph/finding/uncertainty/entity-event inspectors",
+    "Conflicts/gaps/clusters/anomalies/hypotheses panels",
+    "Human review and manual priority override",
+    "One accessible evidence-first React dashboard",
+    "Synthetic/permitted datasets and actual research evaluation",
+    "Full integration and clean reproducibility",
+    "Comparative/threat/provenance/limitations report",
+))
+
+
+def verify_feature_checkpoints(rows, checkpoint_tasks, feature_map):
+    """Require the complete fixed inventory and its exact derived phase mirror."""
+    seen = set()
+    ledger = named_table(
+        feature_map, "Complete feature ownership and acceptance",
+        ("Initial capability", "Accountable module", "Concrete tasks/stage",
+         "Evidence needed to claim it works", "Checkpoint coverage"), "feature inventory",
+    )
+    for _, cells in ledger:
+        if cells[0] in seen:
+            raise ValueError(f"Duplicate feature capability: {cells[0]}")
+        seen.add(cells[0])
+        if re.search(r"\b[GFPAUI]\d{2}[A-Z]?\s*[-–—]\s*(?:[GFPAUI]\d{2}[A-Z]?|\d{2}[A-Z]?|[A-Z])\b", cells[2]):
+            raise ValueError(f"Feature task references require exact IDs, not ranges: {cells[0]}")
+        tasks = set(re.findall(TASK_ID, cells[2]))
+        if "all U tasks in the catalog" in cells[2]:
+            tasks.update(task for task in rows if task.startswith("U"))
+        if not tasks or tasks - set(rows):
+            raise ValueError(f"Unknown/missing feature task references: {cells[0]}")
+        expected = {rows[task]["checkpoint"] for task in tasks}
+        ordered = [checkpoint for checkpoint in checkpoint_tasks if checkpoint in expected]
+        if cells[4].split(", ") != ordered:
+            raise ValueError(f"Feature checkpoint coverage mismatch: {cells[0]}")
+    if seen != FEATURE_CAPABILITIES:
+        raise ValueError(f"Feature capability coverage mismatch: missing {sorted(FEATURE_CAPABILITIES - seen)}, "
+                         f"unknown {sorted(seen - FEATURE_CAPABILITIES)}")
+    return len(seen)
 
 
 def verify_spec(spec):
@@ -138,7 +349,7 @@ def main():
     try:
         spec = json.loads(args.bundle.read_text(encoding="utf-8"))
         operations = verify_spec(spec)
-        rows = parse_catalog((root / "docs/TASK_BREAKDOWN.md").read_text(encoding="utf-8"))
+        rows = parse_catalog((root / "docs/TASK_BREAKDOWN.md").read_text(encoding="utf-8"), strict=True)
         closures = dependency_closure(rows)
         schemas = set(spec["components"]["schemas"])
         contract_names = set(operations) | schemas | {"bearerAuth", "specs/openapi.yaml", "docs/INTEGRATION.md"}
@@ -146,7 +357,7 @@ def main():
         finding_names = set(spec["components"]["schemas"]["FindingKind"]["enum"])
         produced = set()
         for name, row in rows.items():
-            if len(row["cells"]) != 5:
+            if len(row["cells"]) < 5:
                 continue
             tokens = re.findall(r"`([^`]+)`", row["cells"][3])
             for token in tokens:
@@ -159,7 +370,7 @@ def main():
         if missing_operations:
             raise ValueError(f"Unassigned operations: {sorted(missing_operations)}")
         for command in ("startProcessing", "startAnalysis", "getAnalysisRun"):
-            if not any(name.startswith("U") and command in row["cells"][3] for name, row in rows.items() if len(row["cells"]) == 5):
+            if not any(name.startswith("U") and command in row["cells"][3] for name, row in rows.items() if len(row["cells"]) >= 5):
                 raise ValueError(f"Missing UI command/status ticket {command}")
         if "A04" not in closures.get("A05", set()):
             raise ValueError("Analysis completion must depend on scoring A04")
@@ -167,6 +378,24 @@ def main():
         uncovered = required_features - closures.get("I09B", set())
         if uncovered:
             raise ValueError(f"Full-scope reproducibility gate misses {sorted(uncovered)}")
+        handoffs = {"F08": {"P14"}, "A05": {"P14", "P14C"}, "U10": {"F06"},
+                    "I01": {"F08", "F08B", "F09", "P14C", "U07B", "A15", "I00B"}}
+        for task, required in handoffs.items():
+            missing = required - closures.get(task, set())
+            if missing:
+                raise ValueError(f"Immutable/audit handoff dependency {task} misses {sorted(missing)}")
+        for task in ("U12A", "U12B", "U12C", "U12D", "U12E", "U13B"):
+            if "A17" not in closures.get(task, set()):
+                raise ValueError(f"Assembled publication dependency {task} requires A17")
+        report_missing = set(rows) - (closures.get("I06", set()) | {"I06"})
+        if report_missing:
+            raise ValueError(f"Final report dependency closure misses {sorted(report_missing)}")
+        roadmap = (root / "docs/ROADMAP.md").read_text(encoding="utf-8")
+        checkpoint_tasks = verify_phases(rows, roadmap)
+        verify_runbook(rows, checkpoint_tasks,
+                       (root / "docs/INTEGRATION.md").read_text(encoding="utf-8"), roadmap)
+        feature_count = verify_feature_checkpoints(
+            rows, checkpoint_tasks, (root / "docs/FEATURE_SCOPE.md").read_text(encoding="utf-8"))
         document_count = verify_documents(root)
         proposal = (root / "docs/PROPOSAL.md").read_text(encoding="utf-8")
         sections = [int(value) for value in re.findall(r"^## \*\*(\d+)\\?\.", proposal, re.M)]
@@ -214,10 +443,14 @@ def main():
         parser.exit(1, f"Coordination validation FAILED: {error}\n")
     print(json.dumps({
         "operations": len(operations), "tasks": len(rows), "markdown_files": document_count,
+        "checkpoint_tasks": checkpoint_tasks, "feature_capabilities": feature_count,
         "proposal_sections": len(sections), "traceability_sections": len(mapped),
         "fixture_rows": {name: len(values) for name, values in fixtures.items()},
         "checks": ["local_refs", "common_errors", "task_contract_names", "dependency_DAG",
                    "UI_commands", "scoring_assembly_dependency", "full_scope_gate",
+                   "immutable_processing_audit_handoff", "assembled_publication_dependencies",
+                   "final_report_all_task_closure",
+                   "exhaustive_phase_membership", "checkpoint_dependency_order", "runbook_checkpoint_gates", "feature_checkpoint_mirror",
                    "markdown_links", "whitespace", "proposal_traceability", "synthetic_fixture"],
         "scope": "planning artifacts only; no application or benchmark verification",
     }, indent=2))

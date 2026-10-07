@@ -29,7 +29,7 @@ jobs:
         run: |
           npx --yes openapi-typescript@7.10.1 specs/openapi.yaml -o "$RUNNER_TEMP/evora-api.d.ts"
           npx --yes --package typescript@5.9.3 tsc --noEmit "$RUNNER_TEMP/evora-api.d.ts"
-      - name: Check task dependencies, scope coverage, docs and fixtures
+      - name: Check phases, task dependencies, scope coverage, docs and fixtures
         run: python scripts/verify_coordination.py "$RUNNER_TEMP/evora-openapi.json"
       - name: Run verifier negative tests and synthetic wire examples
         env:

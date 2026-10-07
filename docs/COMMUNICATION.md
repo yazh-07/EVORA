@@ -12,6 +12,8 @@ Four people each work on one module; one also coordinates integration. This file
 
 Entry shape: `ID | affected tickets/modules | exact question | versioned resolution + actual proof needed`.
 
+Phase/checkpoint membership and promotion rules live only in [ROADMAP.md](ROADMAP.md). Include the affected checkpoint on new queue entries; an open decision blocks its dependent row, not an entire unrelated phase.
+
 ## Open gates
 
 | ID | Affected tickets/modules | Exact question | Resolution and proof needed |

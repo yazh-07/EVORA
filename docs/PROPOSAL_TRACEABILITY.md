@@ -2,7 +2,7 @@
 
 Source: [`PROPOSAL.md`](PROPOSAL.md), preserving the entire original proposal wording with trailing whitespace removed only. All 40 numbered sections appear exactly once below. The full **initial** proposal is fixed build scope; stage sequencing is not scope reduction. Source technology suggestions/diagram order are preserved in the source but clarified by [architecture](ARCHITECTURE.md), [contract policy](CONTRACTS.md), [full feature map](FEATURE_SCOPE.md) and [DESIGN.md](../DESIGN.md).
 
-Concrete task IDs refer to [TASK_BREAKDOWN.md](TASK_BREAKDOWN.md). Acceptance below describes future required proof, not measured outcomes or implemented features. I09/I09B close over every F/P/A/U task; I06 follows those full-scope gates. C-03–C-06, assignments and tested package/Windows setup remain targeted gates.
+Concrete task IDs refer to [TASK_BREAKDOWN.md](TASK_BREAKDOWN.md); its Checkpoint column links every task to the canonical [ROADMAP.md](ROADMAP.md) phase ledger. This mapping preserves proposal coverage; it is not a competing phase schedule. Acceptance below describes future required proof, not measured outcomes or implemented features. I09/I09B close over every F/P/A/U task; I06 follows those full-scope gates. C-03–C-06, assignments and tested package/Windows setup remain targeted gates.
 
 | Section | Proposal heading | Concrete tasks | Acceptance/proof | Initial vs future/context |
 |---|---|---|---|---|

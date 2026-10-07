@@ -1,6 +1,6 @@
 ## EVORA bounded task
 
-Task ID / assigned module and person / branch:
+Task ID / checkpoint (matches ROADMAP and catalog) / assigned module and person / branch:
 Common contract commit:
 Unresolved choices affecting this ticket (C-xx, or none):
 
@@ -15,7 +15,7 @@ Unresolved choices affecting this ticket (C-xx, or none):
 
 ## Verification (actual commands and results)
 
-- [ ] Coordination verifier and negative tooling/schema tests pass.
+- [ ] Coordination verifier, exact phase membership/order/coverage and negative tooling/schema tests pass.
 - [ ] OpenAPI lint, bundle and generated TypeScript declaration checks pass.
 - [ ] Relevant implementation tests pass, including invalid input and case isolation; or marked not applicable for planning-only edits.
 - [ ] Source locators and immutable original bytes/history are preserved where relevant.
@@ -24,7 +24,8 @@ Unresolved choices affecting this ticket (C-xx, or none):
 - [ ] Frontend follows DESIGN.md; no fake metrics, status, decorative blinking or gradient filler.
 - [ ] Secrets and real evidence are absent from the diff.
 - [ ] Shared-file edits and producer/consumer changes are coordinated.
-- [ ] Applicable tracer or full-scope integration gate exercised, or explicitly blocked with dependencies.
+- [ ] Applicable checkpoint exit evidence and all previously completed checkpoint regressions exercised, or explicitly blocked with dependencies.
+- [ ] Combined candidate verified before any authorized main merge; merged-commit smoke/CI evidence recorded separately.
 
 Do not check application, Windows, browser, AI-model or benchmark verification based solely on a valid spec or planning check. A deterministic Q&A fixture does not complete the full RAG capability.
 

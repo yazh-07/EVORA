@@ -17,6 +17,10 @@ A modular monolith preserves four ownership boundaries without four services or 
 
 Neo4j helps store/query relationships. Relevance/connectivity/corroboration/temporal/source-quality/conflict/gap calculations, anomaly mappings, weights and aggregation are versioned backend algorithm policy, not a database feature.
 
+Delivery sequence is owned by [ROADMAP.md](ROADMAP.md), not this architecture: phases span module boundaries. Exact task/checkpoint/dependency/acceptance is in the catalog; this rewrite changes sequencing, not topology or wire semantics.
+
+4A tests remaining analytical producer components; 4B A17 assembles and coherently publishes them before U12A/U12B/U12C/U12D/U12E/U13B complete real-API panels/uncertainty inspection, followed by detector feedback/evaluation. Earlier fixture-based UI work is independent component work, not 4A real-API completion. No architecture or publication boundary changes are implied.
+
 ## Four modules, four people
 
 | Module | Accountable boundary | Main producer/consumer handoff |
@@ -45,6 +49,8 @@ Intake/hash → processing/normalization → frozen snapshot → graph and avail
 Analysis adds relationships/corroboration/conflicts/gaps/clusters/anomalies/hypotheses/uncertainty/explanations, then feeds actual detector outputs into all reviewed factor calculations (A17/A19). Optional deeper/reconfigured processing of **existing Evidence** uses internal backend policy and a new processing key (P15), leaving original bytes/old outputs unchanged; latest completed output enters a new analysis snapshot and changes justified priorities (A18). New file upload (A07) is one feedback path, not the whole adaptive research contribution.
 
 UI starts processing and bodyless analysis, polls resources, then pins the completed analysis ID across graph/findings/triage and all pages. Historical observations are accessed via processing_run_id. Every edge/finding joins observation IDs to original source locators; node IDs are original Evidence/Entity/Event record UUIDs. Alternative hypotheses use optional missing_information and contradictory evidence; clusters may expose entity_ids. Timestamp normalization/basic temporal reasoning are initial scope, not full timeline reconstruction.
+
+For full-context retrieval and analysis-linked uncertainty views, resolve source records through the selected analysis snapshot's immutable observation/processing-run set. Entity/event list APIs have no analysis selector: do not invent one or display their live lists as a historical analysis snapshot. Candidate entity/event inspection is a processing view; historical analytical sources use snapshot references and `listObservations` processing_run_id where applicable.
 
 ## Grounded RAG and privacy
 

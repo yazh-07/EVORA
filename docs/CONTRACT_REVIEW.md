@@ -2,6 +2,10 @@
 
 **Published branch-draft contract 0.2.0; no new approval ceremony.** The same 25 operations are in `specs/openapi.yaml`; this map reviews their producers/consumers, not a second API. Four people each work on one module; one also coordinates integration. Assignees remain TBD. Full initial proposal scope is fixed; fixture-sized integration does not cut scope.
 
+Canonical delivery order is [ROADMAP.md](ROADMAP.md); task checkpoint/dependency/acceptance lives in the catalog. Processing/analysis lifecycle completion requires early immutable provenance and audit; deterministic retrieval records safe audit before any generative provider is required. No HTTP operation changes are introduced by phase planning.
+
+4A validates remaining analytical producer components, not their published real-API panels. U12A/U12B/U12C/U12D/U12E/U13B all retain existing prerequisites and add A17: integrated completion is in 4B after assembled findings/factors are coherently published through A01B/A05 and read through the existing APIs. Earlier schema-derived UI fixtures cannot certify 4A as real API; 4B completes those views before detector feedback/evaluation.
+
 ## Every operation and its concrete consumer
 
 | operationId | Backend producer/task | Consumer/task | Required shared verification |
