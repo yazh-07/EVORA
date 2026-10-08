@@ -1,6 +1,6 @@
 # EVORA scoped agent assignment templates
 
-Published coordination-branch draft, not a running app. Four people each work on one module; one coordinates integration alongside their module. Full initial proposal scope is fixed. Use the canonical phase/checkpoint ledger in [ROADMAP.md](ROADMAP.md). Assign one catalog row, not an entire module, milestone or full dashboard. Assignees/common commit/allowed paths are filled before delegation.
+Published coordination-branch draft, not a running app. Four people each work on one module; confirmed GitHub-handle assignments and integration coordination are in [ROADMAP.md](ROADMAP.md#module-assignment-and-live-task-state). Full initial proposal scope is fixed. Use the canonical phase/checkpoint ledger in [ROADMAP.md](ROADMAP.md). Assign one catalog row, not an entire module, milestone or full dashboard. Copy the module owner into the task card; explicitly assign shared G/I rows and fill the common commit/allowed paths before delegation.
 
 ## Common prefix
 
@@ -11,7 +11,7 @@ Published coordination-branch draft, not a running app. Four people each work on
 | Field | Fill from catalog/shared base |
 |---|---|
 | Task/checkpoint and exact acceptance | One ID/row matching ROADMAP and the catalog, success and negative assertions |
-| Module/person and coordination | One accountable module; assignee, scoped help if needed |
+| Module/person and coordination | Module owner from ROADMAP; explicit G/I assignee and scoped help if needed |
 | Branch/common commit | Short-lived `feat/<id>-<slug>`, exact common spec commit |
 | Paths | Actual component/tests after skeleton; no unrelated module/spec/migration overwrite |
 | Dependencies | Exact prerequisite IDs and commits; real merged producer or disclosed schema-derived fixture; no false integrated claim |

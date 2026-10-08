@@ -27,11 +27,11 @@ EVORA is an **AI-assisted multimodal forensic evidence fusion and investigation-
 
 ## Scope, stack and readiness
 
-Four people each work on one module; one coordinates integration alongside their module. Module assignees are still TBD. Use React + TypeScript for the frontend, FastAPI/Python for the backend, SQLite for authoritative metadata/processing outputs/audit, private files for originals and Neo4j for a versioned/rebuildable derived graph projection. Only the backend accesses databases; Neo4j is graph storage/querying, **not** the triage scoring algorithm. No second Streamlit dashboard is planned.
+Four people each work on one module; the confirmed GitHub-handle assignments and integration coordination are recorded in [ROADMAP.md](docs/ROADMAP.md#module-assignment-and-live-task-state). Assignment does not complete G00 or implementation work. Use React + TypeScript for the frontend, FastAPI/Python for the backend, SQLite for authoritative metadata/processing outputs/audit, private files for originals and Neo4j for a versioned/rebuildable derived graph projection. Only the backend accesses databases; Neo4j is graph storage/querying, **not** the triage scoring algorithm. No second Streamlit dashboard is planned.
 
 The three-CSV tracer validates the first path, not the whole product. Full delivery also includes documents/OCR/images/CCTV/mobile/transactions, entities/events, all triage factors, detector-driven and existing-evidence reprocessing feedback, clusters, hypotheses, uncertainty, explanations, approved grounded LLM RAG, human review, private provenance, dashboard and measured evaluation. Full timeline reconstruction is future work.
 
-Ready for review, setup and unaffected scoped work. Auth/membership and client token handling (C-03), CSV limits/malformed behavior (C-04), precise scoring/golden outputs (C-05), RAG provider/privacy (C-06), assignments and tested package/Windows setup are not an agreed implementation baseline. Independent work may use accepted-schema fixtures; integrated completion requires real producers. Record the exact common contract commit before task branches depend on it.
+Ready for review, setup and unaffected scoped work. Auth/membership and client token handling (C-03), CSV limits/malformed behavior (C-04), precise scoring/golden outputs (C-05), RAG provider/privacy (C-06), task-specific handoffs and tested package/Windows setup are not an agreed implementation baseline. Independent work may use accepted-schema fixtures; integrated completion requires real producers. Record the exact common contract commit before task branches depend on it.
 
 ## Coordination verification (not application tests)
 

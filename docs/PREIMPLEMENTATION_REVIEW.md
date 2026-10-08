@@ -39,7 +39,7 @@ Non-blocking existing warning: Redocly reports missing `info.license`; no projec
 
 ## What remains open
 
-- Module/person assignments, allowed paths and the exact shared reviewed contract/base commit must be recorded through G00/task handoff. Do not start from a README-only main or unpublished local instructions.
+- Module owners and integration coordination are now recorded by GitHub handle in [ROADMAP.md](ROADMAP.md#module-assignment-and-live-task-state). Allowed paths, bounded shared G/I assignees and the exact shared reviewed contract/base commit still require G00/task handoff; ownership alone does not complete G00. Do not start from a README-only main or unpublished local instructions.
 - C-03 auth/token/membership before protected tasks; C-04 first CSV policy before intake/processing and later format/model/resource policies before their adapters; C-05 exact scoring/goldens before scores; approved local grounding/privacy before deterministic Q&A; C-06/G03 before full generation.
 - G01/G01B/G01D must establish actual tested package/database versions and commands; G01C/I03/I09B must prove their respective Windows/CI scopes. No installed product stack is implied here.
 - All product tasks and checkpoints remain Backlog. Real producers, browser behavior, model/provider execution, accuracy, latency/security/recovery and research results must be exercised during their implementation phases. A valid spec or this plan cannot certify them.

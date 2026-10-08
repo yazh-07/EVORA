@@ -34,7 +34,7 @@ EVORA is investigative support, not an autonomous guilt or admissibility decisio
 
 ## Work and verification
 
-Four people each own one module; one also coordinates integration. Assignees are TBD. Coordinate shared scaffolding, migrations, spec and roadmap changes; do not invent personnel titles or a fifth member. Any help stays bounded with one accountable interface owner.
+Four people each own one module; confirmed GitHub handles and integration coordination are in `docs/ROADMAP.md` under "Module assignment and live task state". Use that table in each task card; G/I assignments and allowed shared paths still require an explicit handoff. Coordinate shared scaffolding, migrations, spec and roadmap changes; do not invent personnel titles or a fifth member. Any help stays bounded with one accountable interface owner.
 
 Write behavior tests appropriate to the ticket, including its negative/failure/case-isolation paths. Run actual commands, inspect the diff and report results and test doubles honestly. Full integration requires real merged producers; artifact lint is not application verification. Report task/checkpoint, dependency versions, actual read-back and tests, known limitations and next task; checkpoint completion also requires the runbook exit evidence. Coordinate roadmap status changes; never mark a module complete from one row.
 

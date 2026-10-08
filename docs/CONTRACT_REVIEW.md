@@ -1,6 +1,6 @@
 # EVORA producer/consumer contract review
 
-**Published branch-draft contract 0.2.0; no new approval ceremony.** The same 25 operations are in `specs/openapi.yaml`; this map reviews their producers/consumers, not a second API. Four people each work on one module; one also coordinates integration. Assignees remain TBD. Full initial proposal scope is fixed; fixture-sized integration does not cut scope.
+**Published branch-draft contract 0.2.0; no new approval ceremony.** The same 25 operations are in `specs/openapi.yaml`; this map reviews their producers/consumers, not a second API. Four people each work on one module; confirmed GitHub-handle assignments and integration coordination are in [ROADMAP.md](ROADMAP.md#module-assignment-and-live-task-state). Full initial proposal scope is fixed; fixture-sized integration does not cut scope.
 
 Canonical delivery order is [ROADMAP.md](ROADMAP.md); task checkpoint/dependency/acceptance lives in the catalog. Processing/analysis lifecycle completion requires early immutable provenance and audit; deterministic retrieval records safe audit before any generative provider is required. No HTTP operation changes are introduced by phase planning.
 
@@ -46,7 +46,7 @@ All validation failures use the declared 400 ApiError wire shape; backend mappin
 - **Still open C-04:** first CSV validation limits/BOM/columns/malformed behavior and later adapter layouts/resources. MIME/name/source_label are not proof of content or independent origin.
 - **Still open C-05:** version exact G02 functions, absent factors, experimental weights/bands/ties and goldens. A04 initial factors are expanded in A17; A10B/A11B/A13B prove real conflict/gap/anomaly score effects. Co-mention and abnormality are not identity/guilt.
 - **Still open C-06:** approve provider/private retrieval boundary and claim verification fallback. Deterministic tracer is permissible but cannot replace A16B/U10B/U10C/U11B/I05C final grounded generation.
-- **Still open:** assignees, exact shared base handoff and tested package/Windows setup. Pin versions in future setup tasks; do not invent installation outcomes.
+- **Still open:** exact shared base/task handoffs, bounded G/I assignees and tested package/Windows setup. Module owners are already recorded in ROADMAP. Pin versions in future setup tasks; do not invent installation outcomes.
 
 ## Change and verification path
 

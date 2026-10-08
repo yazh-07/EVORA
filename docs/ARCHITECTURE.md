@@ -30,7 +30,7 @@ Delivery sequence is owned by [ROADMAP.md](ROADMAP.md), not this architecture: p
 | M3 Fusion and Adaptive Triage | Source-backed graph, relationships/detectors/factors, versioned coherent analysis and retriage, retrieval context | Completed pinned graph/findings/triage to M4; feedback to optional deeper processing policy |
 | M4 Investigator Application | One React dashboard, command/status/read views, audited review/override APIs, grounded generation and verification | API-only UI, same-case claim citations/private Q&A provenance and human decisions |
 
-Each person works on one module; one coordinates integration alongside their own module. Assignees remain TBD. M2/M3 are the heaviest boundaries: loan bounded adapter/factor/test help rather than create competing implementations or a fifth person. A module is not an agent prompt.
+Each person works on one module; confirmed GitHub-handle assignments and integration coordination are in [ROADMAP.md](ROADMAP.md#module-assignment-and-live-task-state). M2/M3 are the heaviest boundaries: loan bounded adapter/factor/test help rather than create competing implementations or a fifth person. A module is not an agent prompt.
 
 ## Publish and recover without pretending SQL/Neo4j are one transaction
 
@@ -62,4 +62,4 @@ Processing/model provenance records inputs, output refs, versions, parameters an
 
 The full initial feature set is fixed. Future-only: complete timeline reconstruction/visualization, physical acquisition/disk imaging/live banking, custom large-model training and court-admissible deployment; optional additional model integrations need independent privacy/evaluation review.
 
-C-03–C-06, assignments and tested package/Windows setup remain gates for dependent work. This architecture declares coordination policy; it does not claim completed app tests or an agreed auth/scoring/RAG baseline.
+C-03–C-06, task-specific handoffs and tested package/Windows setup remain gates for dependent work. This architecture declares coordination policy; it does not claim completed app tests or an agreed auth/scoring/RAG baseline.

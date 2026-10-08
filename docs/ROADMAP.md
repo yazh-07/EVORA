@@ -8,7 +8,7 @@ EVORA's workflow is **preserve evidence → extract/normalize → connect and pr
 
 This file is the **single authority for phase order, checkpoint membership and milestone status**. [TASK_BREAKDOWN.md](TASK_BREAKDOWN.md) owns each task's dependencies, contract and acceptance; its Checkpoint column mirrors this ledger and is checked automatically. [INTEGRATION.md](INTEGRATION.md) owns the real execution procedure and negative checks. [FEATURE_SCOPE.md](FEATURE_SCOPE.md) and [PROPOSAL_TRACEABILITY.md](PROPOSAL_TRACEABILITY.md) retain feature/source coverage. Do not create a second phase list or treat a phase as an agent prompt.
 
-1. Record one person per module and who coordinates shared edits alongside their own module; no fifth person or personnel title.
+1. Use the confirmed GitHub-handle assignments in the module table below. `whale2186` coordinates shared edits alongside M3; no fifth person or personnel title. Ownership alone does not complete G00 or an implementation task.
 2. G00 establishes one reviewed, published common contract/base commit **before task branches depend on it**. Current remote main has only a README; do not branch implementation from a README-only base. Land the planning/contracts through an authorized PR or use an explicitly chosen shared coordination base. No automatic main merge is authorized by this plan.
 3. Select one bounded task in the earliest unfinished checkpoint, resolve only its needed choices, fill the assignment card in [AGENT_TASKS.md](AGENT_TASKS.md), and use a short-lived task branch.
 4. Implement/test and integrate frequently. A test double permits independent work, not checkpoint completion. Run real producers/consumers and all previously completed checkpoint regressions before promotion.
@@ -86,14 +86,14 @@ See [COMMUNICATION.md](COMMUNICATION.md) and [CONTRACTS.md](CONTRACTS.md) for co
 
 ## Module assignment and live task state
 
-| Module | Assigned person | Accountable boundary | State |
+| Module | Assigned GitHub handle | Accountable boundary | State |
 |---|---|---|---|
-| M1 Evidence Foundation | TBD | Case/access, private originals/hash, metadata and audit/provenance foundations | Backlog |
-| M2 Multimodal Processing | TBD | Adapters, normalization/entities/events, immutable processing runs and deeper processing | Backlog |
-| M3 Fusion and Adaptive Triage | TBD | Derived graph, factors/detectors/snapshots/retriage and retrieval context | Backlog |
-| M4 Investigator Application | TBD | React UI plus review/override and grounded-generation/verification backend APIs | Backlog |
+| M1 Evidence Foundation | sharmelas-925 | Case/access, private originals/hash, metadata and audit/provenance foundations | Backlog |
+| M2 Multimodal Processing | yazh-07 | Adapters, normalization/entities/events, immutable processing runs and deeper processing | Backlog |
+| M3 Fusion and Adaptive Triage | whale2186 | Derived graph, factors/detectors/snapshots/retriage and retrieval context | Backlog |
+| M4 Investigator Application | JebasJ | React UI plus review/override and grounded-generation/verification backend APIs | Backlog |
 
-One of these same four coordinates shared files/integration alongside their module. G/I work is bounded shared work assigned to an existing contributor, not a fifth module/person. A module is not standalone software and not an agent mega-task.
+`whale2186` coordinates shared files/integration alongside M3. G/I work is bounded shared work assigned to an existing contributor, not automatically to the person coordinating and not a fifth module/person. A module is not standalone software and not an agent mega-task. The confirmed ownership does not choose task branches, allowed paths or the exact reviewed common base; G00 and all implementation tasks/checkpoints remain Backlog.
 
 For each assigned task record `task ID | checkpoint | module/person | branch/common spec commit | state | consumed/produced interface | actual commands/results + test doubles | PR/next task`. Serialize ledger edits. States: **Backlog**, **In Progress**, **Complete** (acceptance and real dependency integration verified), **Blocked** (exact needed decision). Current task state defaults to Backlog; no implementation completion is claimed here.
 
