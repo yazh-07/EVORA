@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: EVORA case investigation API
-  version: 0.2.0
+  version: 0.3.0
   description: >-
     Proposed v1 wire contract for team review. An investigation aid, not a
     forensic certification or a determination of guilt. All case-scoped
@@ -152,7 +152,12 @@ paths:
       tags: [Evidence]
       operationId: downloadEvidence
       summary: Download original evidence bytes
-      description: Authorized download of unmodified original bytes; never expose a server path.
+      description: >-
+        Authorized download of unmodified original bytes; never expose a server path.
+        U14 uses these bytes in an in-memory media Blob/object URL for local playback
+        and seeks using media-time source_locator offsets. Revoke URLs on disposal;
+        no persistent browser evidence cache, remote media URL, new playback endpoint
+        or HTTP Range/206 support is promised by this contract.
       responses:
         '200':
           description: Original bytes
@@ -248,6 +253,81 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/ObservationPage' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/v1/cases/{caseId}/observations/{observationId}/transcript-revisions:
+    parameters:
+      - { $ref: '#/components/parameters/CaseId' }
+      - name: observationId
+        in: path
+        required: true
+        description: Original machine transcript.segment observation, never a derived correction observation.
+        schema: { type: string, format: uuid }
+    post:
+      tags: [Investigation]
+      operationId: appendTranscriptRevision
+      summary: Append an immutable human transcript correction
+      description: >-
+        U14B: authorize every referenced resource in the same case and evidence.
+        The path observation must be a machine transcript.segment in the supplied
+        original completed processing_run_id. Missing/foreign/mismatched references
+        return 404; a non-transcript target returns 400. Require base_processing_run_id
+        to be the latest completed output for this evidence and expected_latest_revision_id
+        to equal this source segment's latest revision (null for the first); stale
+        values or a base no longer containing the original segment lineage return
+        409; do not auto-rebase across re-transcription. Prepare a complete derived
+        output from that base, copying
+        unaffected observations with new IDs and retaining their provenance, replacing
+        this segment's effective text and rebuilding dependent candidate entities/events.
+        Atomically append revision, publish a new completed ProcessingRun and all its
+        output, and append one safe audit reference without transcript/reason contents.
+        Completion ordering must be strictly after the base; serialize with concurrent
+        processing publication. Carry forward other segments' effective revisions.
+        Every copied transcript segment exposes source_observation_id pointing to its
+        original machine root, even when it has no correction/revision yet.
+        Compare both preconditions again
+        at publication; failures expose no revision or partial output. Preserve original
+        bytes/hash, machine transcript, earlier revisions/runs and analysis snapshots.
+        New analysis keys select this derived completed run through existing snapshot
+        rules; original-key replay retains old inputs. Neither startProcessing nor
+        startAnalysis gains a request body. Replayed identical revision requests return
+        the original 201 result before checking stale preconditions, with access rechecked.
+      parameters:
+        - { $ref: '#/components/parameters/IdempotencyKey' }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateTranscriptRevision' }
+      responses:
+        '201':
+          description: Immutable revision and complete derived processing output published atomically
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TranscriptRevision' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+    get:
+      tags: [Investigation]
+      operationId: listTranscriptRevisions
+      summary: List immutable corrections against the original machine segment
+      description: >-
+        Same-case original machine transcript.segment only; missing/foreign target
+        returns 404, non-transcript target returns 400. Order by created_at UTC then
+        revision UUID ascending before pagination. History is never a mutable overlay
+        on historical observations or analytical snapshots.
+      parameters:
+        - { $ref: '#/components/parameters/Limit' }
+        - { $ref: '#/components/parameters/Offset' }
+      responses:
+        '200':
+          description: Append-only correction history, oldest first
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TranscriptRevisionPage' }
         '400': { $ref: '#/components/responses/BadRequest' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '404': { $ref: '#/components/responses/NotFound' }
@@ -666,7 +746,7 @@ components:
         created_at: { type: string, format: date-time }
     EvidenceKind:
       type: string
-      enum: [document, image, video, message, network_log, mobile_log, transaction, gps]
+      enum: [document, image, video, audio, message, network_log, mobile_log, transaction, gps]
     Evidence:
       type: object
       additionalProperties: false
@@ -716,6 +796,51 @@ components:
         finished_at: { type: string, format: date-time }
         error: { type: string }
     Observation:
+      description: >-
+        P16 local audio/video speech transcription emits transcript.segment observations;
+        raw_value is the immutable machine text and normalized_value is effective text.
+        Unclear spans use [unclear], not invented words; silence/no audio emits one
+        transcript.status with normalized_value silence or no_audio and no segments.
+        extraction_confidence is an uncalibrated model score, not truth, identity or
+        source reliability; unavailable model score uses 0 with private provenance.
+        Human correction retains the original machine raw_value and confidence, adds
+        transcript_revision_id and source_observation_id, and changes effective text
+        only in a new derived completed processing output. All materialized copies
+        retain provenance privately, including predecessor IDs and original source.
+      allOf:
+        - if:
+            properties:
+              kind: { const: transcript.segment }
+            required: [kind]
+          then:
+            properties:
+              source_locator:
+                pattern: '^media:start_ms=(0|[1-9][0-9]*);end_ms=(0|[1-9][0-9]*)$'
+              raw_value: { minLength: 1 }
+              normalized_value: { minLength: 1 }
+        - if:
+            properties:
+              kind: { const: transcript.status }
+            required: [kind]
+          then:
+            properties:
+              normalized_value: { enum: [silence, no_audio] }
+        - if:
+            properties:
+              source_observation_id: { type: string, format: uuid }
+            required: [source_observation_id]
+          then:
+            properties:
+              kind: { const: transcript.segment }
+        - if:
+            properties:
+              transcript_revision_id: { type: string, format: uuid }
+            required: [transcript_revision_id]
+          then:
+            required: [source_observation_id]
+            properties:
+              source_observation_id: { type: string, format: uuid }
+              kind: { const: transcript.segment }
       type: object
       additionalProperties: false
       required: [id, case_id, evidence_id, processing_run_id, kind, source_locator, raw_value, normalized_value, extraction_confidence]
@@ -725,13 +850,92 @@ components:
         evidence_id: { type: string, format: uuid }
         processing_run_id: { type: string, format: uuid }
         kind: { type: string, description: 'Namespaced string, e.g. network.ip or gps.location' }
-        source_locator: { type: string, description: 'Row/page/frame/byte range in original evidence' }
+        source_locator:
+          type: string
+          minLength: 1
+          description: >-
+            Row/page/frame/byte range in original evidence. transcript.segment uses
+            media:start_ms=<integer>;end_ms=<integer>, nonnegative elapsed milliseconds
+            from the ORIGINAL artifact media timeline, end strictly greater than start
+            and within decoded duration. Account for extracted track offsets; never
+            substitute capture UTC, processing time or clip-local zero. Other locator
+            forms are unchanged. See transcript conditional and runtime bounds checks.
         raw_value: { type: string }
         normalized_value: { type: string }
         observed_at_raw: { type: string }
         observed_at_utc: { type: string, format: date-time }
         extraction_confidence: { type: number, minimum: 0, maximum: 1 }
         entity_key: { type: string, description: 'Candidate identifier, NOT a verified identity' }
+        source_observation_id:
+          type: string
+          format: uuid
+          description: >-
+            Original same-case machine segment UUID for every materialized transcript
+            copy, including unchanged segments without a correction. Omitted on the
+            original machine segment itself. Enables correction UI to address the root.
+        transcript_revision_id:
+          type: string
+          format: uuid
+          description: Immutable human correction used by this derived segment, never a live overlay.
+    CreateTranscriptRevision:
+      type: object
+      additionalProperties: false
+      required: [processing_run_id, base_processing_run_id, expected_latest_revision_id, corrected_text, reason]
+      properties:
+        processing_run_id:
+          type: string
+          format: uuid
+          description: Original completed machine run containing the path source observation; not the derived base run.
+        base_processing_run_id:
+          type: string
+          format: uuid
+          description: Expected latest completed same-evidence output to materialize; stale or lineage no longer present returns 409.
+        expected_latest_revision_id:
+          type: [string, 'null']
+          format: uuid
+          description: Latest revision for this original segment, or explicit null for the first; stale returns 409.
+        corrected_text:
+          type: string
+          minLength: 1
+          maxLength: 20000
+          pattern: '\S'
+          description: Full replacement effective segment text; [unclear] for unintelligible speech. No speaker identity or timestamp editing.
+        reason: { type: string, minLength: 1, maxLength: 2000, pattern: '\S' }
+    TranscriptRevision:
+      type: object
+      additionalProperties: false
+      required: [id, case_id, evidence_id, source_observation_id, processing_run_id, base_processing_run_id, previous_revision_id, corrected_text, reason, actor_id, created_at, derived_processing_run_id, derived_observation_id]
+      description: >-
+        Immutable server-authored lineage, actor and time. All referenced records must
+        join to the same authorized case/evidence. Source observation/run always identify
+        the original machine segment, even on later corrections. derived_processing_run_id
+        identifies a new complete completed materialization, not a mutation of any base.
+        Original locator, raw machine text and machine confidence remain unchanged.
+      properties:
+        id: { type: string, format: uuid }
+        case_id: { type: string, format: uuid }
+        evidence_id: { type: string, format: uuid }
+        source_observation_id: { type: string, format: uuid }
+        processing_run_id: { type: string, format: uuid }
+        base_processing_run_id: { type: string, format: uuid }
+        previous_revision_id: { type: [string, 'null'], format: uuid }
+        corrected_text: { type: string, minLength: 1, maxLength: 20000, pattern: '\S' }
+        reason: { type: string, minLength: 1, maxLength: 2000, pattern: '\S' }
+        actor_id: { type: string, minLength: 1 }
+        created_at: { type: string, format: date-time }
+        derived_processing_run_id: { type: string, format: uuid }
+        derived_observation_id: { type: string, format: uuid }
+    TranscriptRevisionPage:
+      type: object
+      additionalProperties: false
+      required: [items, total, limit, offset]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/TranscriptRevision' }
+        total: { type: integer, minimum: 0 }
+        limit: { type: integer, minimum: 1 }
+        offset: { type: integer, minimum: 0 }
     Entity:
       type: object
       additionalProperties: false

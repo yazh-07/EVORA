@@ -22,7 +22,7 @@ EVORA is investigative support, not an autonomous guilt or admissibility decisio
 ## Architecture and integrity invariants
 
 - React + TypeScript frontend uses the API only. FastAPI/Python backend alone accesses SQLite, Neo4j and private original storage. SQLite is authoritative for metadata, immutable processing outputs, analysis snapshots/results and audit. Neo4j is a versioned/rebuildable projection, not the scoring algorithm. Do not create a competing Streamlit dashboard.
-- `specs/openapi.yaml` 0.2.0 is the published coordination-branch draft and sole HTTP authority. Do not invent routes, request bodies, fields or enum values. Generate client types from it. A contract change updates spec, producer/consumer, types, fixtures and checks together.
+- `specs/openapi.yaml` 0.3.0 is the coordination-branch draft and sole HTTP authority. Do not invent routes, request bodies, fields or enum values. Generate client types from it. A contract change updates spec, producer/consumer, types, fixtures and checks together.
 - All operations declare invalid input as 400 ApiError. Shared FastAPI validation must explicitly map default validation errors to that contract; the chosen wire mapping is declared, not already implemented/tested.
 - Preserve original private bytes, Evidence.sha256 and source timestamps/values. Every derived edge/finding carries required nonempty unique observation_ids joining to same-case source locators; GraphNode.id is source Evidence/Entity/Event UUID, not an anonymous identifier. Do not require observation_ids on graph nodes.
 - Processing outputs and analysis snapshots/results remain immutable. startAnalysis has **no request body**; freeze AnalysisInputSnapshot per `docs/CONTRACTS.md`. Replay the original run for a repeated key before resnapshotting; new key selects new inputs.
@@ -31,6 +31,10 @@ EVORA is investigative support, not an autonomous guilt or admissibility decisio
 - Separate extraction confidence, source reliability, corroboration and conclusion uncertainty. Co-mentions/detections are candidate relationships, not verified identity or guilt. Uploaded evidence without observations is not scored under G02; no fabricated factors or P4 placeholders.
 - Supported answers cite each factual claim to same-case Evidence ID/source_locator; unsupported responses make no unsupported factual assertion and have no citations. Deterministic tracer is not final LLM RAG. Keep versioned model/parser/prompt/parameters/input/output/time/verification provenance in a private authorized store, not raw application logs/public audit fields.
 - Use only synthetic/publicly permitted fixtures. No real evidence, credentials, prompt contents or tokens in Git/logs. No external transfer of real evidence without explicit privacy/provider policy.
+
+## Approved audio/video speech-transcription addition
+
+The full proposal remains required; FEATURE_SCOPE.md also records user-approved initial-scope speech transcription, not an original proposal requirement. P16/P16B and U14/U14B/U14C add local extraction, source playback/search and immutable human corrections. Video visuals/audio/transcripts share source lineage, not independent corroboration. Media offsets are not capture UTC or the time an utterance describes. Preserve machine text, revisions, source locators and frozen history; follow CONTRACTS.md rather than mutating completed outputs. Transcripts and spoken claims are unverified observations. No speaker identification, voice matching, emotion inference, diarization or translation. Distinguish silence/no-audio from decoder/model failure.
 
 ## Work and verification
 

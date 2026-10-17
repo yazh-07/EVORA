@@ -204,6 +204,8 @@ FEATURE_CAPABILITIES = frozenset((
     "OCR for scanned document/image text",
     "Image object/person/vehicle detection",
     "CCTV/video observations",
+    "Local audio/video speech transcription (approved addition)",
+    "Transcript playback/search and audited corrections (approved addition)",
     "Mobile logs",
     "Transactions",
     "Common normalized observations/entities/events",
@@ -263,6 +265,29 @@ def verify_feature_checkpoints(rows, checkpoint_tasks, feature_map):
     return len(seen)
 
 
+def verify_transcription_handoffs(rows, closures):
+    """Keep the approved speech addition connected to real publication gates."""
+    checkpoints = {"P16": "3B", "P16B": "3B", "U14": "3C", "U14B": "3C", "U14C": "3C"}
+    for task, checkpoint in checkpoints.items():
+        if task not in rows or rows[task].get("checkpoint") != checkpoint:
+            raise ValueError(f"Transcription checkpoint {task} must be {checkpoint}")
+    # Direct edges make these ownership handoffs explicit even if another path exists.
+    handoffs = {
+        "P16": {"P04", "P14"}, "P16B": {"P16", "P13B"},
+        "P05C": {"P16B"}, "U14": {"P16B", "U05B", "U04"},
+        "U14B": {"P16", "P16B", "P14C", "F06", "F00"}, "U14C": {"U14", "U14B"},
+        "I03B": {"U14C"},
+    }
+    for task, required in handoffs.items():
+        missing = required - rows.get(task, {}).get("dependencies", set())
+        if missing:
+            raise ValueError(f"Transcription handoff {task} misses {sorted(missing)}")
+    for gate in ("I09", "I09B", "I06"):
+        missing = set(checkpoints) - closures.get(gate, set())
+        if missing:
+            raise ValueError(f"Transcription full-scope gate {gate} misses {sorted(missing)}")
+
+
 def verify_spec(spec):
     """Check local references and critical cross-module contract invariants."""
     methods = {"get", "post", "put", "patch", "delete", "head", "options", "trace"}
@@ -281,8 +306,21 @@ def verify_spec(spec):
                 raise ValueError(f"Missing common 401 response: {name}")
             if "{caseId}" in path and operation["responses"].get("404") != {"$ref": "#/components/responses/NotFound"}:
                 raise ValueError(f"Missing common 404 response: {name}")
-    if len(operations) != 25:
-        raise ValueError(f"Expected preserved 25 operationIds, got {len(operations)}")
+    expected_operations = {
+        "listCases", "createCase", "getCase", "listEvidence", "uploadEvidence",
+        "getEvidence", "downloadEvidence", "startProcessing", "getProcessingRun",
+        "listProcessingRuns", "listObservations", "listEntities", "listEvents",
+        "startAnalysis", "getAnalysisRun", "listAnalysisRuns", "getGraph",
+        "listFindings", "listTriage", "getTriageHistory", "reviewFinding",
+        "listFindingReviews", "setPriorityOverride", "askCaseQuestion", "listAuditEvents",
+        "listTranscriptRevisions", "appendTranscriptRevision",
+    }
+    if set(operations) != expected_operations:
+        raise ValueError(f"Expected preserved operations plus transcript revisions; "
+                         f"missing {sorted(expected_operations - set(operations))}, "
+                         f"unexpected {sorted(set(operations) - expected_operations)}")
+    if spec["info"]["version"] != "0.3.0":
+        raise ValueError("Expected transcription draft version 0.3.0")
 
     def references(value):
         if isinstance(value, dict):
@@ -392,6 +430,7 @@ def main():
             raise ValueError(f"Final report dependency closure misses {sorted(report_missing)}")
         roadmap = (root / "docs/ROADMAP.md").read_text(encoding="utf-8")
         checkpoint_tasks = verify_phases(rows, roadmap)
+        verify_transcription_handoffs(rows, closures)
         verify_runbook(rows, checkpoint_tasks,
                        (root / "docs/INTEGRATION.md").read_text(encoding="utf-8"), roadmap)
         feature_count = verify_feature_checkpoints(
@@ -449,7 +488,7 @@ def main():
         "checks": ["local_refs", "common_errors", "task_contract_names", "dependency_DAG",
                    "UI_commands", "scoring_assembly_dependency", "full_scope_gate",
                    "immutable_processing_audit_handoff", "assembled_publication_dependencies",
-                   "final_report_all_task_closure",
+                   "final_report_all_task_closure", "transcription_handoffs",
                    "exhaustive_phase_membership", "checkpoint_dependency_order", "runbook_checkpoint_gates", "feature_checkpoint_mirror",
                    "markdown_links", "whitespace", "proposal_traceability", "synthetic_fixture"],
         "scope": "planning artifacts only; no application or benchmark verification",

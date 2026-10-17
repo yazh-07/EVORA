@@ -47,6 +47,10 @@ Concrete task IDs refer to [TASK_BREAKDOWN.md](TASK_BREAKDOWN.md); its Checkpoin
 | 39 | Final Working of EVORA | A05, A17, P15, A18, A19, U10C, U08B, I09 | Full intake→processing→graph/factors→triage→feedback→grounded interaction→human verification/private audit; graph-dependent score follows graph | Initial complete working; source diagram preserved but ordering clarified |
 | 40 | Conclusion | I08, I09, I09B, I06 | Full adaptive evidence-grounded auditable prototype with measured limits and source trace, not autonomous guilt judgment | Initial conclusion/context; timeline future |
 
+## Approved scope addition — not a source requirement
+
+The user approved **local audio/video speech transcription** after the original proposal. PROPOSAL.md and its 40 source mappings remain unchanged; the addition is recorded in FEATURE_SCOPE.md rather than attributed to original section 6. P16/P16B provide local timestamped transcription and source-backed candidate entity/event extraction in 3B. U14/U14B/U14C add source playback, transcript search and append-only human corrections in 3C. P05C/P14D/F08D/I03B integrate it; I08/I09/I09B/I06 cover measured quality, full integration, reproducibility and limitations. Original machine text/source bytes and frozen analytical history remain immutable. No speaker identity, voice matching, emotion inference, diarization or translation is added.
+
 ## Explicit design interpretations, not source edits
 
 - Section 30's suggested Streamlit dashboard is superseded by one React + TypeScript dashboard; FastAPI/Python, SQLite authoritative metadata/outputs/audit, private originals and Neo4j derived graph are the selected architecture. Package/model techniques are tested selections, not invented installations or a mandate to duplicate every suggested algorithm.

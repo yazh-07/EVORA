@@ -153,6 +153,156 @@ class WireExamples(unittest.TestCase):
         run["error"] = "Synthetic projection failure"
         self.validator("AnalysisRun").validate(run)
 
+    def transcript_segment(self):
+        return {
+            "id": OBSERVATION_ID, "case_id": CASE_ID, "evidence_id": EVIDENCE_ID,
+            "processing_run_id": RUN_ID, "kind": "transcript.segment",
+            "source_locator": "media:start_ms=1250;end_ms=3500",
+            "raw_value": "Meet [unclear] at the station.",
+            "normalized_value": "Meet [unclear] at the station.",
+            "extraction_confidence": 0.4,
+        }
+
+    def revision_request(self):
+        return {
+            "processing_run_id": RUN_ID, "base_processing_run_id": RUN_ID,
+            "expected_latest_revision_id": None,
+            "corrected_text": "Meet D-7 at the station.",
+            "reason": "Synthetic permitted listening check.",
+        }
+
+    def revision(self):
+        return {
+            "id": "00000000-0000-4000-8000-000000000005",
+            "case_id": CASE_ID, "evidence_id": EVIDENCE_ID,
+            "source_observation_id": OBSERVATION_ID, "processing_run_id": RUN_ID,
+            "base_processing_run_id": RUN_ID, "previous_revision_id": None,
+            "corrected_text": "Meet D-7 at the station.",
+            "reason": "Synthetic permitted listening check.", "actor_id": "synthetic-actor",
+            "created_at": "2026-01-12T10:06:00Z",
+            "derived_processing_run_id": "00000000-0000-4000-8000-000000000006",
+            "derived_observation_id": "00000000-0000-4000-8000-000000000007",
+        }
+
+    def test_draft_preserves_original_operations_and_adds_only_revision_pair(self):
+        original = {
+            "createCase", "listCases", "getCase", "uploadEvidence", "listEvidence",
+            "getEvidence", "downloadEvidence", "startProcessing", "listProcessingRuns",
+            "getProcessingRun", "listObservations", "listEntities", "listEvents",
+            "startAnalysis", "listAnalysisRuns", "getAnalysisRun", "getGraph",
+            "listFindings", "reviewFinding", "listFindingReviews", "listTriage",
+            "getTriageHistory", "setPriorityOverride", "askCaseQuestion", "listAuditEvents",
+        }
+        actual = [operation["operationId"] for path in self.spec["paths"].values()
+                  for method, operation in path.items()
+                  if method in {"get", "post", "put", "patch", "delete"}]
+        expected = original | {"appendTranscriptRevision", "listTranscriptRevisions"}
+        self.assertEqual(set(actual), expected)
+        self.assertEqual(len(actual), len(expected))
+        self.assertEqual(self.spec["info"]["version"], "0.3.0")
+
+    def test_audio_kind_and_existing_video_kind_are_valid(self):
+        for kind in ("audio", "video"):
+            with self.subTest(kind=kind):
+                self.validator("EvidenceKind").validate(kind)
+
+    def test_speech_unclear_and_unavailable_score_examples(self):
+        segment = self.transcript_segment()
+        self.validator("Observation").validate(segment)
+        self.assertNotIn("observed_at_utc", segment)
+        segment["extraction_confidence"] = 0  # Unavailable-score sentinel, not calibration.
+        self.validator("Observation").validate(segment)
+
+    def test_media_locator_syntax_rejects_utc_negative_and_noncanonical_offsets(self):
+        for locator in ("2026-01-12T10:00:00Z", "media:start_ms=-1;end_ms=10",
+                        "media:start_ms=01;end_ms=10", "media:start_ms=1.5;end_ms=10",
+                        "row 2", "media:start_ms=10"):
+            with self.subTest(locator=locator):
+                segment = self.transcript_segment()
+                segment["source_locator"] = locator
+                self.assertFalse(self.validator("Observation").is_valid(segment))
+        # Increasing end/duration bounds and capture-time mapping require runtime
+        # decoding checks; JSON Schema validates syntax, not those relationships.
+
+    def test_no_audio_and_silence_status_examples(self):
+        for status in ("no_audio", "silence"):
+            with self.subTest(status=status):
+                observation = self.transcript_segment()
+                observation.update(kind="transcript.status", source_locator="entire original artifact",
+                                   raw_value="", normalized_value=status, extraction_confidence=0)
+                self.validator("Observation").validate(observation)
+        observation["normalized_value"] = "invented speech"
+        self.assertFalse(self.validator("Observation").is_valid(observation))
+
+    def test_corrected_segment_keeps_machine_text_and_links_revision(self):
+        machine = self.transcript_segment()
+        derived = copy.deepcopy(machine)
+        revision = self.revision()
+        derived.update(id=revision["derived_observation_id"],
+                       processing_run_id=revision["derived_processing_run_id"],
+                       normalized_value=revision["corrected_text"],
+                       source_observation_id=OBSERVATION_ID, transcript_revision_id=revision["id"])
+        self.validator("Observation").validate(derived)
+        for field in ("raw_value", "source_locator", "extraction_confidence", "evidence_id"):
+            self.assertEqual(derived[field], machine[field])
+        del derived["source_observation_id"]
+        self.assertFalse(self.validator("Observation").is_valid(derived))
+
+    def test_uncorrected_materialized_segment_exposes_machine_root_without_revision(self):
+        segment = self.transcript_segment()
+        segment.update(id=self.revision()["derived_observation_id"],
+                       processing_run_id=self.revision()["derived_processing_run_id"],
+                       source_observation_id=OBSERVATION_ID)
+        self.validator("Observation").validate(segment)
+        self.assertNotIn("transcript_revision_id", segment)
+
+    def test_revision_request_requires_original_run_base_and_explicit_precondition(self):
+        request = self.revision_request()
+        self.validator("CreateTranscriptRevision").validate(request)
+        for field in ("processing_run_id", "base_processing_run_id", "expected_latest_revision_id"):
+            with self.subTest(field=field):
+                invalid = copy.deepcopy(request)
+                del invalid[field]
+                self.assertFalse(self.validator("CreateTranscriptRevision").is_valid(invalid))
+        request["expected_latest_revision_id"] = self.revision()["id"]
+        self.validator("CreateTranscriptRevision").validate(request)
+
+    def test_revision_rejects_blank_text_reason_and_client_authorship(self):
+        for field, value in (("corrected_text", ""), ("corrected_text", " \n\t"),
+                             ("reason", ""), ("reason", "  "), ("actor_id", "forged"),
+                             ("created_at", "2026-01-12T10:06:00Z"),
+                             ("source_locator", "media:start_ms=0;end_ms=1"),
+                             ("speaker_id", "person-1")):
+            with self.subTest(field=field, value=value):
+                request = self.revision_request()
+                request[field] = value
+                self.assertFalse(self.validator("CreateTranscriptRevision").is_valid(request))
+
+    def test_revision_response_and_history_require_complete_lineage(self):
+        revision = self.revision()
+        self.validator("TranscriptRevision").validate(revision)
+        page = {"items": [revision], "total": 1, "limit": 20, "offset": 0}
+        self.validator("TranscriptRevisionPage").validate(page)
+        for field in ("source_observation_id", "processing_run_id", "base_processing_run_id",
+                      "previous_revision_id", "actor_id", "created_at",
+                      "derived_processing_run_id", "derived_observation_id"):
+            with self.subTest(field=field):
+                invalid = copy.deepcopy(revision)
+                del invalid[field]
+                self.assertFalse(self.validator("TranscriptRevision").is_valid(invalid))
+        # Same-case/evidence joins cannot be proven by UUID-shaped synthetic data.
+        # U14B must execute real two-case and immutable snapshot acceptance tests.
+
+    def test_revision_routes_and_bodyless_existing_commands(self):
+        path = "/api/v1/cases/{caseId}/observations/{observationId}/transcript-revisions"
+        endpoint = self.spec["paths"][path]
+        self.assertEqual(endpoint["post"]["operationId"], "appendTranscriptRevision")
+        self.assertEqual(endpoint["get"]["operationId"], "listTranscriptRevisions")
+        self.assertEqual(set(endpoint["post"]["responses"]), {"201", "400", "401", "404", "409"})
+        for route in ("/api/v1/cases/{caseId}/analysis-runs",
+                      "/api/v1/cases/{caseId}/evidence/{evidenceId}/processing-runs"):
+            self.assertNotIn("requestBody", self.spec["paths"][route]["post"])
+
     def test_invalid_uuid_is_rejected(self):
         answer = self.answer(True)
         answer["case_id"] = "foreign-invalid-id"

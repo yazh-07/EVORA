@@ -1,6 +1,6 @@
 # EVORA cross-module decision and handoff queue
 
-Four people each work on one module; one also coordinates integration. This file is a queue for exact questions/mismatches, **not another API authority** or permission to rewrite another module. The spec/docs are published as a coordination-branch draft; the application does not exist yet.
+Four people each work on one module; one also coordinates integration. This file is a queue for exact questions/mismatches, **not another API authority** or permission to rewrite another module. The 0.3.0 spec/docs are a coordination-branch draft; Git history and the remote ref establish publication state, not this document. The application does not exist yet.
 
 ## Use
 
@@ -27,6 +27,10 @@ Module owners and integration coordination are confirmed by GitHub handle in [RO
 
 Gates are targeted: P08/P09/P10 need approved OCR/image/video adapter/model/version and private data-boundary decisions under C-04/task acceptance, not G03's final generative provider choice. Deterministic U10 needs approved authorized local retrieval/grounding/privacy behavior, not that choice; full U10B/U10C generation/verification retains G03/C-06. C-05/G02 retains score functions/bands/score-level tie policy; `listTriage` pagination order is already fixed by pinned computed score descending, then evidence UUID ascending, with unscored UUID-ordered items last, never live effective priority.
 
+## Transcription handoff decisions
+
+The user has approved initial local audio/video speech transcription; this is not waiting for another feature vote. C-04 for P16/P16B still needs tested model/runtime/version/license, supported languages/codecs/audio-track selection and stream offsets, duration/byte/compute/time limits, private temporary derivative cleanup, no-audio/silence versus failure policy and labeled quality controls. C-03 applies to U14 playback and U14B/U14C corrections; C-05 must not count visual/audio/transcript derivatives as independent corroboration. CONTRACTS.md defines immutable correction revisions and later processing consumption. U14 transcript search uses all pages of selected completed observations, not an invented HTTP search parameter. G03 is not a prerequisite for local transcription. Do not send evidence to a cloud speech API.
+
 ## Declared resolutions, not running-code claims
 
 C-01 is resolved in draft policy/schema: required frozen AnalysisInputSnapshot, latest completed processing selection, canonical digest, request-based idempotency before resnapshot, derived trigger and immutable historic output. A05/A18/I01/I07B still must execute these tests.
@@ -35,4 +39,4 @@ C-02 is resolved in draft wire mapping: **all** operations declare 400 ApiError.
 
 Completed-run selectors pin related reads and pages; pending/failed/foreign/missing selectors are 404. A05B/A06/U05D/U06/U07/I01 test consistent analysis_run_id, P04B/U05B test processing_run_id history. These are declared contract behaviors, not observed app failures or completed tests.
 
-The same 25 operationIds remain. Full proposal scope is not awaiting renewed feature approval; unresolved settings block their dependent rows only. Artifact verification status belongs in `PREIMPLEMENTATION_REVIEW.md`, not invented application metrics here.
+Draft 0.3.0 preserves the original 25 operationIds and adds listTranscriptRevisions/appendTranscriptRevision for the user-approved transcription workflow. Publication requires explicit authorization and verification of the exact remote commit and CI. Full proposal scope is not awaiting renewed feature approval; unresolved settings block their dependent rows only. Artifact verification status belongs in `PREIMPLEMENTATION_REVIEW.md`, not invented application metrics here.

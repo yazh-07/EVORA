@@ -10,7 +10,7 @@ In Phase 4, 4A tests remaining analytical producers; 4B assembles/publishes them
 
 Before coding, G00 records one shared contract/base commit. Main currently has only a README: use the authorized shared base containing contracts, not a README-only branch. Test combined changes and previous checkpoint regressions **before** promotion to main; smoke-test the merged commit afterward. Later independent tasks may use disclosed schema-derived fixtures, but completion requires real producers.
 
-The published coordination baseline is a draft; this phase revision remains local until published. No application, Windows, model or benchmark success is claimed.
+The coordination branch contains draft planning/contracts; publication does not establish implementation readiness or completion. No application, Windows, model or benchmark success is claimed.
 
 EVORA is an **AI-assisted multimodal forensic evidence fusion and investigation-support research prototype**. The full proposed initial system is the build goal, delivered in stages. It does not determine guilt, replace professional judgment or claim forensic certification. This repository currently holds coordination artifacts, schema and synthetic inputs, not a running application.
 
@@ -19,8 +19,8 @@ EVORA is an **AI-assisted multimodal forensic evidence fusion and investigation-
 - [Original proposal](docs/PROPOSAL.md) — preserved wording, trailing whitespace removed only.
 - [Proposal traceability](docs/PROPOSAL_TRACEABILITY.md) — all 40 numbered sections mapped to concrete tasks and acceptance.
 - [Full feature scope](docs/FEATURE_SCOPE.md), [architecture](docs/ARCHITECTURE.md) and [design tokens](DESIGN.md).
-- [API contract](specs/openapi.yaml) — published **coordination-branch draft**, version 0.2.0; one authority for the same 25 HTTP operations and schemas, not evidence of implemented routes.
-- [Phased roadmap](docs/ROADMAP.md) — one authoritative sequence; [task catalog](docs/TASK_BREAKDOWN.md) — exact checkpoint/dependency/acceptance; [scoped agent prompts](docs/AGENT_TASKS.md) — one assignment, not a mega-prompt.
+- [API contract](specs/openapi.yaml) — **coordination-branch draft**, version 0.3.0; one authority for 27 HTTP operations (25 preserved plus two transcript-revision operations) and schemas, not evidence of implemented routes.
+- [Phased roadmap](docs/ROADMAP.md) — one authoritative sequence; [task catalog](docs/TASK_BREAKDOWN.md) — exact checkpoint/dependency/acceptance; [copy-paste Codex prompts](docs/AGENT_TASKS.md#copy-this-into-codex) — fill your GitHub handle; Codex selects and implements your next eligible task from the repo.
 - [Contract policy](docs/CONTRACTS.md), [producer/consumer review](docs/CONTRACT_REVIEW.md), [decision queue](docs/COMMUNICATION.md) and [integration gates](docs/INTEGRATION.md).
 - [Preimplementation review](docs/PREIMPLEMENTATION_REVIEW.md) — actual artifact verification and remaining readiness limits, not app benchmarks.
 - [Agent rules](AGENTS.md) and [synthetic CSV inputs](fixtures/synthetic-case/).
@@ -29,9 +29,13 @@ EVORA is an **AI-assisted multimodal forensic evidence fusion and investigation-
 
 Four people each work on one module; the confirmed GitHub-handle assignments and integration coordination are recorded in [ROADMAP.md](docs/ROADMAP.md#module-assignment-and-live-task-state). Assignment does not complete G00 or implementation work. Use React + TypeScript for the frontend, FastAPI/Python for the backend, SQLite for authoritative metadata/processing outputs/audit, private files for originals and Neo4j for a versioned/rebuildable derived graph projection. Only the backend accesses databases; Neo4j is graph storage/querying, **not** the triage scoring algorithm. No second Streamlit dashboard is planned.
 
-The three-CSV tracer validates the first path, not the whole product. Full delivery also includes documents/OCR/images/CCTV/mobile/transactions, entities/events, all triage factors, detector-driven and existing-evidence reprocessing feedback, clusters, hypotheses, uncertainty, explanations, approved grounded LLM RAG, human review, private provenance, dashboard and measured evaluation. Full timeline reconstruction is future work.
+The three-CSV tracer validates the first path, not the whole product. Full delivery also includes documents/OCR/images/CCTV/mobile/transactions and local audio/video speech transcription, entities/events, all triage factors, detector-driven and existing-evidence reprocessing feedback, clusters, hypotheses, uncertainty, explanations, approved grounded LLM RAG, human review, private provenance, dashboard and measured evaluation. Full timeline reconstruction is future work.
 
 Ready for review, setup and unaffected scoped work. Auth/membership and client token handling (C-03), CSV limits/malformed behavior (C-04), precise scoring/golden outputs (C-05), RAG provider/privacy (C-06), task-specific handoffs and tested package/Windows setup are not an agreed implementation baseline. Independent work may use accepted-schema fixtures; integrated completion requires real producers. Record the exact common contract commit before task branches depend on it.
+
+## Approved addition — local audio/video speech transcription
+
+Planned initial scope now includes timestamped speech-to-text for standalone audio and video audio tracks, source playback, transcript search/candidate entity-event extraction and audited append-only human corrections. This is a user-approved addition, not an original proposal requirement or an implemented capability. P16/P16B belong to checkpoint 3B; U14/U14B/U14C complete the transcript inspector and correction workflow in 3C. Model/runtime, languages, codecs and resource limits still require tested adapter decisions. Speaker identification, voice matching, emotion inference, diarization and translation are excluded. See [feature scope](docs/FEATURE_SCOPE.md) and [contract policy](docs/CONTRACTS.md).
 
 ## Coordination verification (not application tests)
 

@@ -1,12 +1,41 @@
 # EVORA scoped agent assignment templates
 
-Published coordination-branch draft, not a running app. Four people each work on one module; confirmed GitHub-handle assignments and integration coordination are in [ROADMAP.md](ROADMAP.md#module-assignment-and-live-task-state). Full initial proposal scope is fixed. Use the canonical phase/checkpoint ledger in [ROADMAP.md](ROADMAP.md). Assign one catalog row, not an entire module, milestone or full dashboard. Copy the module owner into the task card; explicitly assign shared G/I rows and fill the common commit/allowed paths before delegation.
+Coordination-branch draft 0.3.0, not a running app. Four people each work on one module; confirmed GitHub-handle assignments and integration coordination are in [ROADMAP.md](ROADMAP.md#module-assignment-and-live-task-state). Full initial proposal scope is fixed. Use the canonical phase/checkpoint ledger in [ROADMAP.md](ROADMAP.md). Assign one catalog row, not an entire module, milestone or full dashboard. Codex fills the task card from recorded repository decisions before editing. Missing common-base/allowed-path choices or a shared G/I assignee need a short clarification, not a guessed assignment.
 
-## Common prefix
+## Copy this into Codex
 
-> Work on EVORA in `[REPO_PATH]`, branch `[TASK_BRANCH]`, common contract commit `[COMMIT]`. Read AGENTS.md, docs/PROPOSAL.md, docs/PROPOSAL_TRACEABILITY.md, docs/ARCHITECTURE.md, docs/FEATURE_SCOPE.md, docs/TASK_BREAKDOWN.md, docs/ROADMAP.md, docs/CONTRACTS.md, docs/CONTRACT_REVIEW.md, docs/COMMUNICATION.md, docs/INTEGRATION.md, DESIGN.md and specs/openapi.yaml. Inspect actual Git status/files before editing. Confirm `[CHECKPOINT]` matches the task catalog and ROADMAP; follow actual dependency edges, not file row order. Implement only `[TASK_ID + acceptance]` for `[MODULE/PERSON]` within `[ALLOWED PATHS]`. Use canonical OpenAPI 0.2.0 operations/schemas, never alternate endpoints/fields/enums. Needed unresolved gates must be recorded/resolved with affected contributors, not guessed. Write relevant failing behavior tests, then implement and exercise success/failure/case-isolation paths. Use `[FIXTURE]` and `[REAL DEPENDENCY OR DECLARED SCHEMA-DERIVED DOUBLE]`; independent fixture work is allowed, but integrated completion requires real producers. Preserve originals/hash/source locators/immutable completed outputs, case scope and uncertainty where relevant. Frontend uses API only; backend alone accesses SQLite/private storage/derived Neo4j. Report actual commands/results/test doubles/limitations, inspect diff for secrets/unrelated edits and coordinate ledger updates. Do not commit/push/merge beyond explicit branch authorization; never edit main autonomously.
+Open Codex inside the EVORA repository. Replace only `[GITHUB_HANDLE]`. Codex selects and implements the next eligible task; you do not need to find or enter its ID.
 
-## Assignment card (required fields)
+```text
+I am [GITHUB_HANDLE], working on EVORA.
+
+Read AGENTS.md and follow its instructions. Use docs/ROADMAP.md
+and docs/TASK_BREAKDOWN.md to select my next eligible task using
+the automatic-selection rules in docs/AGENT_TASKS.md.
+
+Briefly state the task ID and why it is next, fill its assignment
+card from the repo, then implement and test it without asking me
+to choose a task. Preserve existing work and the API contract.
+
+Ask only if a required decision, assignment or safe shared base
+is missing. Do not guess, skip dependencies or take another person's work.
+Report actual results, blockers and the next eligible task when finished.
+Include a "How you can test it" checklist with exact setup/run commands
+or UI steps, synthetic test inputs, expected results and one failure case.
+Clearly label anything you could not test. Wait for my review before
+starting another task; do not mark unintegrated work Complete.
+Do not commit, push or merge unless I explicitly ask.
+```
+
+This authorizes **automatic selection and implementation of one bounded task per run**, not an unlimited loop or automatic publication. Start a fresh session for the next task after the previous change has been reviewed/integrated or an explicit safe dependency handoff has been recorded. A prompt alone is not a background scheduler.
+
+The detailed sections below are **reference for Codex**, not extra text the user needs to paste. All AGENTS.md reading, privacy, evidence-integrity, dependency and verification rules still apply.
+
+### Optional: choose a specific task
+
+Add `Use task [TASK_ID] instead of automatic selection.` to the prompt. All ownership, dependency and readiness checks still apply.
+
+## Assignment card (Codex fills this before editing)
 
 | Field | Fill from catalog/shared base |
 |---|---|
@@ -21,6 +50,16 @@ Published coordination-branch draft, not a running app. Four people each work on
 | Handoff | Changed paths/interfaces, known limits, next ticket/PR and coordinated status |
 
 ## Choosing the next task
+
+### Automatic-selection rules
+
+1. Read the live module-owner and task state in ROADMAP, the exact checkpoint ledger, catalog dependencies and relevant communication gates. Read Git status and verify the recorded common-base commit is available and includes the required shared contract. An uncommitted draft is not an implementation base.
+2. Limit candidates to the caller's module, or a G/I task explicitly assigned to that handle. Coordination responsibility does not automatically assign shared tasks. Do not take another person's task or an already active branch. Resume an existing In Progress task only when its recorded assignee/branch and the user's session match.
+3. In the earliest unfinished checkpoint, choose an unclaimed Backlog task whose prerequisites, base and required decisions are ready. If several qualify, use catalog row order as a tie-break only after checking dependencies. Do not ask the user to pick among equally eligible tasks. Later independent fixture work needs an explicit recorded assignment; automatic selection must not skip checkpoint gates.
+4. Fill the card with the exact task/checkpoint/owner/base, allowed paths and tests from recorded decisions. Briefly announce the selection, then work without another approval request. If a necessary base/path/policy decision is absent, ask one focused question; if no task is eligible, report the blocking dependency rather than inventing work or polling indefinitely.
+5. Use a fresh task branch from the verified common base. Do not move, stash, reset or overwrite unrelated local changes to make the checkout fit. If existing edits prevent isolation, stop and ask for a safe branch/worktree handoff. Coordinate any shared ledger claim before edits to avoid two agents choosing the same row.
+6. Execute the task's real acceptance/negative tests and required prior-checkpoint regressions. Report fixture-only work as such. A locally passing unintegrated change is not integrated Complete; record branch/results and pending integration honestly under ROADMAP's state rules.
+7. Finish with the task ID, actual tests, blockers, a **How you can test it** checklist and next eligible ID (or exact dependency blocking it). The checklist supplies prerequisites, exact setup/run commands or UI actions, synthetic/permitted input, expected observable results, one relevant failure case and any cleanup. Do not expose secrets or require real evidence. State which steps Codex actually exercised and which remain untested; a manual checklist is not proof those steps passed. If the full UI or upstream dependency is absent, give the available component/API verification and label what cannot yet be tested end to end. Do not automatically commit/push/merge or mark a whole checkpoint complete. Stop for user review after this bounded task; the next fresh run re-reads current state rather than assuming the previously suggested next task is still available.
 
 Start in the earliest unfinished checkpoint with a dependency-ready bounded row. G00 is the first common task. After the shared base is recorded, G01 and G01B can proceed independently; G01C verifies their skeletons. In 1A, F00 needs C-03 and U01 needs real F00 or a disclosed fixture. In 1B, adapter/lifecycle/UI rows follow actual dependencies; I00B is their real integration gate. In 1C, G01D/G02 precede projection/scoring; I01 requires early provenance/audit and explanations. Never prompt an agent with all checkpoint IDs as one implementation request.
 
@@ -37,6 +76,8 @@ In 4A select remaining analytical producer rows for component tests, not real-AP
 ### M2 — one Pxx row
 
 > For adapter rows, document supported format/model/limits first, then source-located raw/normalized outputs and uncertainty; detection is not a person's identity. Lifecycle rows test idempotency/atomic completed publication, latest completed selection and processing_run_id historical output. P14/P14D preserve private versioned provenance; P15 selects deeper/reconfigured existing-evidence processing internally with a new key, unchanged original and immutable old output. Never invent processing request fields or claim another modality from a single CSV test.
+
+P16/P16B add local audio/video speech with segment offsets, private model/decoder provenance and candidate extraction. Resolve C-04 model/language/codec/resources before adapter work, not G03. U14/U14B/U14C add playback/search and append-only corrections under the canonical contract. Preserve machine text and frozen analytical sources; no automatic speaker identity or spoken-event truth, and no double-counted video/audio/transcript corroboration.
 
 ### M3 — one Axx row
 

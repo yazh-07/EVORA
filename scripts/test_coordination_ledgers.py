@@ -67,7 +67,7 @@ class FeatureInventoryTests(unittest.TestCase):
                           if line.startswith("| Case creation/catalog/access |"))
 
     def test_complete_original_inventory_passes(self):
-        self.assertEqual(audit.verify_feature_checkpoints(self.rows, self.counts, self.feature_map), 37)
+        self.assertEqual(audit.verify_feature_checkpoints(self.rows, self.counts, self.feature_map), 39)
 
     def test_all_u_tasks_prose_reference_is_supported(self):
         dashboard = next(line for line in self.feature_map.splitlines()
@@ -75,7 +75,7 @@ class FeatureInventoryTests(unittest.TestCase):
         cells = dashboard.split("|")
         cells[3] = " G01B/all U tasks in the catalog; I09 "
         feature_map = self.feature_map.replace(dashboard, "|".join(cells))
-        self.assertEqual(audit.verify_feature_checkpoints(self.rows, self.counts, feature_map), 37)
+        self.assertEqual(audit.verify_feature_checkpoints(self.rows, self.counts, feature_map), 39)
 
     def test_numeric_task_ranges_are_rejected(self):
         for reference in ("F00-F09", "F00–F09", "F00—F09", "F00–09"):
@@ -121,12 +121,12 @@ class FeatureInventoryTests(unittest.TestCase):
     def test_indented_valid_inventory_passes(self):
         indented = "\n".join("    " + line if line.startswith("|") else line
                              for line in self.feature_map.splitlines())
-        self.assertEqual(audit.verify_feature_checkpoints(self.rows, self.counts, indented), 37)
+        self.assertEqual(audit.verify_feature_checkpoints(self.rows, self.counts, indented), 39)
 
     def test_only_named_inventory_counts_capabilities(self):
         unrelated = "\n## Other inventory\n" + self.first + "\n"
         self.assertEqual(audit.verify_feature_checkpoints(
-            self.rows, self.counts, self.feature_map + unrelated), 37)
+            self.rows, self.counts, self.feature_map + unrelated), 39)
 
 
 if __name__ == "__main__":

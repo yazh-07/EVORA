@@ -1,6 +1,6 @@
 # EVORA architecture
 
-**Published coordination-branch draft; no implementation claim.** [Proposal](PROPOSAL.md), [all-section traceability](PROPOSAL_TRACEABILITY.md), [full scope](FEATURE_SCOPE.md), [task catalog](TASK_BREAKDOWN.md) and [DESIGN.md](../DESIGN.md) define the build. Same 25 API operations, version 0.2.0, live only in `specs/openapi.yaml`.
+**Coordination-branch draft 0.3.0; no implementation claim.** [Proposal](PROPOSAL.md), [all-section traceability](PROPOSAL_TRACEABILITY.md), [full scope](FEATURE_SCOPE.md), [task catalog](TASK_BREAKDOWN.md) and [DESIGN.md](../DESIGN.md) define the build. 27 API operations (25 preserved plus two transcript-revision operations), version 0.3.0, live only in `specs/openapi.yaml`.
 
 ## Topology and data authority
 
@@ -26,7 +26,7 @@ Delivery sequence is owned by [ROADMAP.md](ROADMAP.md), not this architecture: p
 | Module | Accountable boundary | Main producer/consumer handoff |
 |---|---|---|
 | M1 Evidence Foundation | Cases/access, immutable originals/hash, metadata, private provenance/audit foundations | Authorized source access to M2; evidence/audit APIs to M4; provenance hooks to all |
-| M2 Multimodal Processing | Tested adapters for network/GPS/messages/text/OCR/images/CCTV/mobile/transactions; raw/normalized observations/entities/events | Source-located immutable completed outputs to M3 and M4 |
+| M2 Multimodal Processing | Tested adapters for network/GPS/messages/text/OCR/images/CCTV/mobile/transactions plus local audio/video speech; raw/normalized observations/entities/events | Source-located immutable completed outputs to M3 and M4 |
 | M3 Fusion and Adaptive Triage | Source-backed graph, relationships/detectors/factors, versioned coherent analysis and retriage, retrieval context | Completed pinned graph/findings/triage to M4; feedback to optional deeper processing policy |
 | M4 Investigator Application | One React dashboard, command/status/read views, audited review/override APIs, grounded generation and verification | API-only UI, same-case claim citations/private Q&A provenance and human decisions |
 
@@ -51,6 +51,14 @@ Analysis adds relationships/corroboration/conflicts/gaps/clusters/anomalies/hypo
 UI starts processing and bodyless analysis, polls resources, then pins the completed analysis ID across graph/findings/triage and all pages. Historical observations are accessed via processing_run_id. Every edge/finding joins observation IDs to original source locators; node IDs are original Evidence/Entity/Event record UUIDs. Alternative hypotheses use optional missing_information and contradictory evidence; clusters may expose entity_ids. Timestamp normalization/basic temporal reasoning are initial scope, not full timeline reconstruction.
 
 For full-context retrieval and analysis-linked uncertainty views, resolve source records through the selected analysis snapshot's immutable observation/processing-run set. Entity/event list APIs have no analysis selector: do not invent one or display their live lists as a historical analysis snapshot. Candidate entity/event inspection is a processing view; historical analytical sources use snapshot references and `listObservations` processing_run_id where applicable.
+
+## Local audio/video speech processing — approved addition
+
+The original proposal stays preserved; transcription is a later user-approved initial-scope addition. M2 owns P16 local transcription and P16B candidate entity/event extraction. A local decoder reads standalone audio or a selected video audio track into a private temporary derivative; original bytes/hash stay unchanged. One completed video output must retain both enabled visual and speech observations; latest-completed selection must not silently discard one branch. Segments trace offsets back to the original media stream. Relative media offsets are not capture UTC, nor the time of an event mentioned in speech. Spoken names do not identify the speaker; model scores are extraction diagnostics, not truth probabilities.
+
+M4 owns U14 authorized source playback and paginated transcript search, U14B correction API and U14C correction UI. Playback reuses downloadEvidence, without persistent browser evidence storage. CONTRACTS.md defines immutable corrections and later processing/analysis consumption; never mutate machine observations or inject live corrections into old analytical snapshots/RAG. Video visuals, audio, transcripts and corrections share source lineage and do not independently corroborate each other.
+
+Initial tests cover clear recordings in tested languages/codecs, timestamp alignment, silent/no-audio/unclear inputs, decoder/model failures and resource limits. Pin/test a local pretrained model/runtime during adapter work; Whisper is a candidate, not a required or installed dependency. Speaker identification, voice matching, emotion inference, diarization and translation are excluded.
 
 ## Grounded RAG and privacy
 

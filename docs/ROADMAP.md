@@ -1,6 +1,6 @@
 # EVORA phased roadmap and execution ledger
 
-**Implementation has not started.** All product tasks and checkpoints below are **Backlog**. The published coordination baseline is not a running system; this phase revision remains local until published. The full initial proposal, four modules, selected architecture and OpenAPI 0.2.0 remain unchanged.
+**Implementation has not started.** All product tasks and checkpoints below are **Backlog**. The coordination-branch draft is not a running system; publication does not complete any product task or checkpoint. The original proposal, four modules and selected architecture remain unchanged. Draft OpenAPI 0.3.0 coordinates the explicit user-approved initial-scope addition: local audio/video speech transcription, timestamped source segments, playback/search/candidate extraction and audited human corrections. This is not retroactively an original proposal requirement; all five new tasks remain Backlog, with no product implementation or model installation claimed.
 
 ## Start here
 
@@ -40,8 +40,8 @@ Comma-separated IDs below are **exhaustive assignments**, not ranges. Each catal
 | 2B | U08, U08B, U09, U09B, F08C, I02B | I02B | I02B proves audited reviews and overrides, live override overlay with stable pinned page membership/order and unchanged automated history. | Backlog |
 | 2C | A16, U10, U11, I02C, I03 | I02C, I03 | I02C proves claim/source-locator navigation and unsupported answers with safe retrieval audit; I03 proves clean tracer Windows/CI execution, not full LLM RAG. | Backlog |
 | 3A | P07, P11, P12, P13, P13B, I04 | I04 | Supported text/mobile/transaction adapters and text entities/events pass real source/failure tests; I04 executes labeled extraction/link evaluation with actual counts. | Backlog |
-| 3B | P08, P09, P10 | P08, P09, P10 | Approved OCR/image/video adapters pass source region/page/frame/time, uncertainty, malformed/unavailable-model and resource-limit tests; not named-person identification. | Backlog |
-| 3C | P05C, P14D, F08D, U13C, I03B | I03B | I03B proves full supported dispatch/common entity-event outputs, private provenance and real locator-to-original UI navigation; earlier checkpoints rerun. | Backlog |
+| 3B | P08, P09, P10, P16, P16B | P08, P09, P10, P16, P16B | Approved OCR/image/video-visual and local audio/video-speech adapters pass source region/page/frame/original-media timestamp, uncertainty, malformed/unavailable-model and resource-limit tests; P16/P16B prove silence/no-audio versus failure, timestamp alignment and source-backed candidate extraction/search support. No named-person or speaker identification. | Backlog |
+| 3C | P05C, P14D, F08D, U13C, U14, U14B, U14C, I03B | I03B | I03B proves full supported dispatch/common entity-event outputs, private provenance, real locator-to-original UI navigation and transcript playback/all-page local search plus audited append-only corrections/history; machine outputs and frozen analysis remain intact; earlier checkpoints rerun. | Backlog |
 | 4A | A03C, A08, A09, A10, A10B, A11, A11B, A12, A12B, A13, A13B, A14 | A03C, A08, A09, A10B, A11B, A12B, A13B, A14 | Every remaining analytical factor/detector producer has real positive/negative/source tests. Component success is not assembled publication, real-API panel/inspector completion or pipeline feedback completion. Earlier declared-fixture UI work cannot close 4A as real API. | Backlog |
 | 4B | A17, A19, U12A, U12B, U12C, U12D, U12E, U13B, I07, I05B | A17, U12A, U12B, U12C, U12D, U12E, U13B, I07, I05B | A17 assembles every stage and coherently publishes factors/findings; U12A/U12B/U12C/U12D/U12E/U13B complete real-API same-run panels/uncertainty inspection with positive/negative/source, empty/error and immutable snapshot-source tests. Then I07 proves detector → actual factor → earlier priority/history changes; I05B measures false positives/misses and controls. | Backlog |
 | 4C | P15, A18, I07B, I05 | I07B, I05 | I07B proves same Evidence/hash with deeper processing, new frozen snapshot and justified rerank plus failure/replay fallback; I05 measures all feedback paths and weight sensitivity. | Backlog |
@@ -62,6 +62,10 @@ Four people keep their module responsibility and contribute the part needed for 
 - Security, safe rendering, provenance and honest error states apply from their first producer/view. F06 precedes integrated intake; P14/F08 precede integrated processing; F08B/A15 precede integrated analysis; U08/U09 write their own audit records before F08C regression.
 - Build labeled positive/negative fixtures and threat/privacy controls alongside each feature. I04/I05B/I05/I05C execute in the phases that introduce the measured behavior. Phase 6 consolidates evaluation; it is not the first testing phase.
 
+Speech segments retain original Evidence/hash/run and original-timeline media offsets; video clock origin may remain uncertain, not an invented wall-clock event time. Silence/no-audio is honest empty output; decoding/model failure is failed processing. Unclear speech remains unverified and model confidence is not generic probability. Original video and its audio derivative are not independent corroboration. No speaker identification, voice matching, emotion inference, diarization or translation in initial scope. U14B/U14C use only draft 0.3.0 listTranscriptRevisions/appendTranscriptRevision for immutable append-only human corrections separately from machine outputs and frozen analysis; base transcripts remain Observation/ProcessingRun with downloadEvidence for playback.
+
+I08 measures speech transcription errors and segment timestamp alignment with labeled controls plus correction/history preservation; I09 closes every new task P16/P16B/U14/U14B/U14C. I09B demonstrates clean local speech model/runtime/language/codec/resource setup and offline execution. I06 reports measured speech/hallucination/alignment/clock-origin/language/codec/correction limitations, not fabricated accuracy or forensic certainty.
+
 ## Promotion and regression procedure
 
 1. Use `feat/<task-id>-<slug>` PRs, not one huge module/phase implementation branch. Shared skeleton/migration/spec/generated-client/ledger edits are serialized or explicitly partitioned.
@@ -76,7 +80,7 @@ Four people keep their module responsibility and contribute the part needed for 
 |---|---|---|
 | C-03 | F00/U01 in 1A and every protected API | Identity/token expiry/revocation/membership and client handling; no hard-coded shared production token |
 | C-04 first CSV | F03 in 1A; P04/P14B in 1B | Intake/content/byte/row/BOM/malformed/unsupported/failure policy and fixtures |
-| C-04 later adapters | Their 3A/3B tasks | Supported layouts/models/versions/resources and private data boundaries, independent of final LLM provider |
+| C-04 later adapters | Their 3A/3B tasks, including P16/P16B | Supported layouts/models/versions/resources and private data boundaries, independent of final LLM provider; select/test approved local pretrained speech model/version/runtime/languages/codec support and duration/compute/memory limits, not chosen or installed here; no external evidence transfer |
 | C-05/G02 | A03/A03B/A04 in 1C, then later factor wiring | Exact factor/missing/weight/band/tie/independence/confidence policy and goldens; proposal numbers remain experimental examples |
 | Local deterministic grounding/privacy | A16/U10 in 2C | Authorized retrieval/claim support/unsupported and safe audit policy; no final provider requirement |
 | C-06/G03 | 5A/5B generation and evaluation | Approved provider/model/private boundary/cost/credentials/thresholds/fallback and actual-provider vs no-paid CI proof |

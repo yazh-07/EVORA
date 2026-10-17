@@ -66,7 +66,7 @@ class ContractAuditTests(unittest.TestCase):
 
     def test_actual_contract_passes(self):
         self.assertTrue(callable(getattr(audit, "verify_spec", None)), "Spec verifier missing")
-        self.assertEqual(len(audit.verify_spec(self.spec)), 25)
+        self.assertEqual(len(audit.verify_spec(self.spec)), 27)
 
     def test_missing_error_response_is_rejected(self):
         self.assertTrue(callable(getattr(audit, "verify_spec", None)), "Spec verifier missing")
@@ -191,7 +191,31 @@ class CommandLineTests(unittest.TestCase):
             "| 1B | I00B |", "| 1B | I00B, P01 |", 1))
         result = self.execute()
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        self.assertEqual(json.loads(result.stdout)["tasks"], 121)
+        self.assertEqual(json.loads(result.stdout)["tasks"], 126)
+
+    def test_cli_rejects_missing_transcription_common_output_handoff(self):
+        def remove_speech(text):
+            lines = text.splitlines()
+            for index, line in enumerate(lines):
+                if line.startswith("| P05C |"):
+                    cells = line.split("|")
+                    cells[3] = ", ".join(value.strip() for value in cells[3].split(",")
+                                         if value.strip() != "P16B")
+                    lines[index] = "|".join(cells)
+            return "\n".join(lines) + "\n"
+        self.mutate("docs/TASK_BREAKDOWN.md", remove_speech)
+        self.assert_failure("Transcription handoff P05C")
+
+    def test_cli_rejects_missing_transcript_revision_operation(self):
+        def remove_revision(text):
+            spec = json.loads(text)
+            for item in spec["paths"].values():
+                for method, operation in list(item.items()):
+                    if isinstance(operation, dict) and operation.get("operationId") == "appendTranscriptRevision":
+                        del item[method]
+            return json.dumps(spec)
+        self.mutate("bundle.json", remove_revision)
+        self.assert_failure("Expected preserved operations")
 
     def test_cli_rejects_same_checkpoint_exit_gate_substitution(self):
         self.mutate("docs/INTEGRATION.md", lambda text: text.replace("| 1B | I00B |", "| 1B | P01 |", 1))
@@ -353,7 +377,7 @@ class CommandLineTests(unittest.TestCase):
             self.mutate(relative, lambda text: text + "\n## Unrelated example\n| 1B | P01 | bogus | Bogus |\n")
         result = self.execute()
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        self.assertEqual(json.loads(result.stdout)["feature_capabilities"], 37)
+        self.assertEqual(json.loads(result.stdout)["feature_capabilities"], 39)
 
     def test_cli_accepts_transitive_assembled_publication_dependency(self):
         self.mutate("docs/TASK_BREAKDOWN.md", lambda text: "\n".join(
@@ -366,7 +390,7 @@ class CommandLineTests(unittest.TestCase):
     def test_actual_tree_cli_passes(self):
         result = self.execute()
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        self.assertEqual(json.loads(result.stdout)["operations"], 25)
+        self.assertEqual(json.loads(result.stdout)["operations"], 27)
 
     def test_cli_reports_phase_membership(self):
         result = self.execute()
