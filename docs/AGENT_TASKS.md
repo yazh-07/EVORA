@@ -67,6 +67,20 @@ Add `Use task [TASK_ID] instead of automatic selection.` to the prompt. All owne
 
 This card records the user's bounded shared-file handoff before the G00 ledger/review edits. Final results are in PREIMPLEMENTATION_REVIEW; local verification does not publish these changes or complete a product milestone.
 
+### G01 assignment — 2026-10-18
+
+| Field | Recorded assignment |
+|---|---|
+| Task/checkpoint and exact acceptance | **G01 / 0**: shared FastAPI/Python + SQLite skeleton, tested pinned versions and test command, real startup/database test and shared HTTP 400 `ApiError` request-validation mapping with schema assertions; no domain features or new public routes |
+| Module/person and coordination | Shared integration coordination explicitly assigned by the user to **whale2186**, alongside M3; this handoff authorizes the bounded shared scaffold and three ledger edits |
+| Branch/common commit | `feat/g01-backend-skeleton`; exact common contract/base **1721bfff9640263d2799434455cdb9c4f345ac35** (`feat/g00-coordination-base`); starting clean HEAD and local `origin/feat/g00-coordination-base` both read back at this commit |
+| Paths | Only `backend/`, `pyproject.toml` / `requirements.txt`, `docs/ROADMAP.md`, `docs/AGENT_TASKS.md`, `docs/PREIMPLEMENTATION_REVIEW.md`; leave `specs/openapi.yaml` unchanged; generated artifacts/environments under `/tmp` |
+| Dependencies | **G00 at 1721bfff9640263d2799434455cdb9c4f345ac35**, explicitly accepted as the common base by this user handoff. Actual committed coordination artifacts are consumed; no remote CI/main integration claim |
+| Input/output | Consume draft 0.3.0 `ApiError` and shared stack policy; produce app factory, SQLite connection/lifespan foundation, validation handler, tests and local run instructions. Test-only routes exercise actual FastAPI validation; they are synthetic probes, not domain producers |
+| Gate | No unresolved choice blocks G01. C-03–C-06 remain open for their dependent rows. No health endpoint exists in the contract, so startup/SQLite are tested directly without adding one |
+| Commands and proof | [G01 verification](PREIMPLEMENTATION_REVIEW.md#g01-verification--2026-10-18): **14 backend / 122 coordination tests pass**, real SQLite and synthetic test-only HTTP validation probes, verifier/lint/bundle/generated strict TypeScript/cached DESIGN checks pass. CPython 3.14.8 and 22 tested package pins; Uvicorn startup succeeds but socket binding is denied. Clean index installation/Windows/remote CI remain unverified; no earlier completed checkpoint exists |
+| Handoff | **In Progress**, locally implemented/verified, awaiting review/integration; no stage/commit/push/merge. Exact commands and failure checklist in `backend/README.md` (see [G01 verification](PREIMPLEMENTATION_REVIEW.md#g01-verification--2026-10-18)). G01B remains the independent Checkpoint 0 candidate with an explicit shared-task handoff; G01C needs both skeletons and Python-baseline/Windows/CI setup proof |
+
 ### Automatic-selection rules
 
 1. Read the live module-owner and task state in ROADMAP, the exact checkpoint ledger, catalog dependencies and relevant communication gates. Read Git status and verify the recorded common-base commit is available and includes the required shared contract. An uncommitted draft is not an implementation base.

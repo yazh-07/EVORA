@@ -2,7 +2,7 @@
 
 ## Current state
 
-**Product implementation has not started.** This repository contains planning, contracts, synthetic inputs and validation tooling, not a running FastAPI/React application or executed ASR/scoring/RAG system. G00 and Checkpoint 0 are In Progress; G01/G01B/G01C and other product tasks/checkpoints remain Backlog. A standalone visual prototype outside this Git tree is not product implementation.
+**G01 is locally implemented and verified, awaiting review/integration (In Progress).** The user accepted committed G00 `1721bfff9640263d2799434455cdb9c4f345ac35` as this task's common base. The tree now includes a minimal FastAPI/SQLite skeleton alongside planning/contracts/tooling; it has no domain routes, React app or executed ASR/scoring/RAG system. Checkpoint 0 remains In Progress; G01B/G01C and domain tasks/checkpoints remain Backlog. The earlier verification records below are historical; the G01 record describes current local evidence.
 
 Prepublication verification covered the transcription and simplified Codex-prompt revision on `docs/coordination-foundation`, originally based on `d36ac5cd63b5dcf431af6fca34411653a6ffe50f`. Before publication the branch fast-forwarded to `815b2eca5b0b5a77af93d4db69e12793bd48144b`, whose tree is identical; collaborator history was preserved. The inspected local main tree contains only README. Publication is tracked by the exact Git commit/remote ref and its CI run, not by a self-referential commit ID here. No main merge or Windows application run is claimed. G00 must record the reviewed common base before implementation branches depend on it.
 
@@ -113,3 +113,56 @@ Run from the repository root. The canonical commands need registry access or pop
 - [ ] `git diff --check` and `git diff --exit-code 114c3824a40cfd36e04f22b9d7a61f01e8fd6ddb -- specs/openapi.yaml` — exit 0; `git diff --name-only` lists only the four authorized documentation paths. Checkpoint 0 must read In Progress and G01/G01B/G01C Backlog.
 
 All artifact equivalents and the full negative suite were exercised locally. The canonical npx commands failed in this environment; the clean review-venv installation and remote/Windows runs are untested. Scratch artifacts remain under `/tmp`; no original evidence or repository-generated client was written.
+
+## G01 verification — 2026-10-18
+
+**G01 / Checkpoint 0 / whale2186 / shared integration coordination / In Progress**, locally verified and pending review/integration. Task branch **feat/g01-backend-skeleton**; exact common contract/base and dependency **G00 at 1721bfff9640263d2799434455cdb9c4f345ac35**. Starting `git status --short --branch` was clean; `git rev-parse HEAD origin/feat/g00-coordination-base` read back this SHA twice. The user explicitly selected this committed common base; no fresh network fetch, remote CI or main merge is claimed. Allowed paths and dependency handling are in the [G01 card](AGENT_TASKS.md#g01-assignment--2026-10-18).
+
+### Implementation and actual boundaries
+
+- `backend/app.py`: factory, environment/explicit SQLite file configuration, real connection check on lifespan startup and shared validation registration. No public health/docs/OpenAPI/domain routes and no application tables/migrations.
+- `backend/database.py`: per-unit-of-work SQLite connections, foreign keys, commit/rollback and unconditional close. Tests read back actual persisted synthetic rows and verify failure/connection isolation; this is not F00 case-access verification.
+- `backend/errors.py`: invalid path/query/header/body or malformed JSON produces **400**, exactly `{"code":"INVALID_INPUT","message":"Invalid request input."}`. No submitted input/exception dump is echoed or logged; response-validation errors remain 500. This uses the [documented FastAPI RequestValidationError override](https://fastapi.tiangolo.com/tutorial/handling-errors/#override-request-validation-exceptions).
+- Tests invoke the real FastAPI application through HTTPX async ASGI transport with explicit lifespan contexts and real temporary SQLite files. The `/_test/...` handlers are synthetic test-only validation probes; production apps have zero registered routes. Every invalid response is validated against `ApiError` from the actual shared bundle; no local replacement wire schema or application producer double is claimed. Missing bundle fails tests instead of skipping schema assertions.
+- `requirements.txt` pins all **22** runtime/test dependency distributions; `backend/.python-version` pins **CPython 3.14.8**. Local SQLite is **3.54.0**, FastAPI **0.143.1**, Starlette **1.8.0**, Pydantic **2.14.1**, Uvicorn **0.54.0**, HTTPX **0.28.1**, jsonschema **4.25.1**. Every pin matched observed distribution metadata. The backend README (`backend/README.md`) defines setup/run/configuration and the backend test command.
+
+### Commands and observed results
+
+Environment: Linux, Python **3.14.8**, Node **22.23.3**, npm **12.2.0**. `python -m venv --system-site-packages /tmp/evora-g01-venv` succeeded. Initial `/tmp/evora-g01-venv/bin/python -m pip install --disable-pip-version-check --retries 0 --timeout 8 jsonschema==4.25.1` failed with no matching distribution available from the index. Copied `jsonschema` and `jsonschema-4.25.1.dist-info` from the pre-existing cache `/home/whale2186/.cache/uv/archive-v0/Vs02wiBg28l1Fmlz` into that scratch environment. The full `pip install -r requirements.txt` then exited 0 with every pin already satisfied. This is a tested existing-package/cache environment, **not a clean index installation**.
+
+| Check | Observed result |
+|---|---|
+| Backend suite below, also with `-W error::ResourceWarning` | **Pass, 14 tests, no skips**; startup/database success and failure, persistence/rollback/close/foreign keys, app isolation, absent routes, valid request, invalid body/path/query/header/JSON, schema shape/redaction and server-error separation |
+| Uvicorn factory with `--lifespan on --no-access-log` | Real **startup complete and shutdown complete**; exit 3 when localhost binding was denied. A separate ephemeral socket bind returned `PermissionError`, errno 1 (`Operation not permitted`); no external HTTP listener claimed |
+| Redocly 2.57.0 lint/bundle | **Pass**, fresh `/tmp/evora-openapi.json`; one pre-existing `info-license` warning |
+| openapi-typescript 7.10.1 / TypeScript 5.9.3 `--noEmit --strict` | **Pass**, fresh `/tmp/evora-api.d.ts`; no repository client/type files written |
+| Coordination verifier | **Pass**, 27 operations / 126 tasks / 18 checkpoints / 39 capabilities / 40 source mappings |
+| Coordination unittest suite with jsonschema 4.25.1 | **Pass, 122 tests, no skips**; full output `/tmp/evora-g01-coordination-tests.log` |
+| Requested `npx --yes @google/design.md@0.4.0 lint DESIGN.md` | **Failed**, registry DNS `EAI_AGAIN`; writable logs and zero retries used |
+| Cached exact DESIGN 0.4.0 CLI | **Pass**, zero errors/warnings |
+| `git diff --check`; spec comparison against exact G00 base | **Pass**, unchanged `specs/openapi.yaml`; only allowed paths changed |
+
+Initial synchronous Starlette TestClient startup stalled inside its cross-thread portal; a bounded reproduction timed out. The passing suite uses HTTPX async ASGI transport and explicit real lifespan startup/shutdown, avoiding that portal. An initial test-owned SQLite read-back connection produced a ResourceWarning; it was corrected with explicit closing, and the final warning-strict suite passed. No application failure is hidden by a skipped test.
+
+Exact locally successful verification commands, from the repository root:
+
+```sh
+node /home/whale2186/.npm/_npx/e8a7a01167a46cae/node_modules/@redocly/cli/bin/cli.js lint specs/openapi.yaml
+node /home/whale2186/.npm/_npx/e8a7a01167a46cae/node_modules/@redocly/cli/bin/cli.js bundle specs/openapi.yaml --output /tmp/evora-openapi.json
+node /home/whale2186/.npm/_npx/2ffac754ed3026da/node_modules/openapi-typescript/bin/cli.js specs/openapi.yaml -o /tmp/evora-api.d.ts
+node /home/whale2186/.npm/_npx/a322a253dbd59f36/node_modules/typescript/bin/tsc --noEmit --strict /tmp/evora-api.d.ts
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json /tmp/evora-g01-venv/bin/python -W error::ResourceWarning -m unittest discover -s backend/tests -v
+/tmp/evora-g01-venv/bin/python scripts/verify_coordination.py /tmp/evora-openapi.json
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json /tmp/evora-g01-venv/bin/python -m unittest discover -s scripts -p 'test_*.py' -v
+node /home/whale2186/.npm/_npx/453056feeae89689/node_modules/@google/design.md/dist/index.js lint DESIGN.md
+git diff --check
+git diff --exit-code 1721bfff9640263d2799434455cdb9c4f345ac35 -- specs/openapi.yaml
+```
+
+The cached CLI paths above are machine-local tool locations; the canonical shared-workflow equivalents use `npx --yes @redocly/cli@2.57.0 lint specs/openapi.yaml`, `npx --yes @redocly/cli@2.57.0 bundle specs/openapi.yaml --output /tmp/evora-openapi.json`, `npx --yes openapi-typescript@7.10.1 specs/openapi.yaml -o /tmp/evora-api.d.ts`, `npx --yes --package typescript@5.9.3 tsc --noEmit --strict /tmp/evora-api.d.ts`, and `npx --yes @google/design.md@0.4.0 lint DESIGN.md`. Use an activated environment with the pinned requirements for both Python suites. No previously completed checkpoint exists to regress beyond these G00 artifact checks.
+
+### How you can test it
+
+The backend checklist in `backend/README.md` contains exact setup, run, success and malformed-JSON/database failure commands, expected results and cleanup. The backend command is `EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -m unittest discover -s backend/tests -v` (**14 tests, OK**); coordination uses `EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -m unittest discover -s scripts -p 'test_*.py' -v` (**122 tests, OK**). Run the verifier and shared workflow commands above, then `git diff --check` and the exact-base spec comparison. All local test/CLI equivalents were exercised; new package downloads, external HTTP listening, Windows, Python 3.12 application compatibility and remote CI remain unverified.
+
+No unresolved policy blocks this G01 implementation. C-03–C-06 remain open only for their dependent domain rows. G01C must reconcile this tested Python baseline with the current Python 3.12 artifact-only workflow and prove clean Windows/CI skeleton setup; no changes outside G01 paths were made to preempt it. **G01 stays In Progress awaiting review/integration; Checkpoint 0 stays In Progress.** Next dependency-ready task is **G01B**, with an explicit assignee/path handoff; G01C depends on both skeletons. No stage, commit, push, merge, main smoke or another task is authorized or claimed.

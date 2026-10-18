@@ -1,0 +1,27 @@
+"""SQLite connections owned by one unit of work, never shared across requests."""
+
+from collections.abc import Iterator
+from contextlib import contextmanager
+from dataclasses import dataclass
+from pathlib import Path
+import sqlite3
+
+
+@dataclass(frozen=True)
+class SQLiteDatabase:
+    """File-backed SQLite foundation; domain schemas belong to later tasks."""
+
+    path: Path
+
+    @contextmanager
+    def connect(self) -> Iterator[sqlite3.Connection]:
+        """Commit on success, roll back on failure, and always close."""
+        self.path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+        connection = sqlite3.connect(self.path, timeout=5.0)
+        try:
+            connection.row_factory = sqlite3.Row
+            connection.execute("PRAGMA foreign_keys = ON")
+            with connection:
+                yield connection
+        finally:
+            connection.close()
