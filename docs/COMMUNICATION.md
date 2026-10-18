@@ -45,8 +45,14 @@ The user has approved initial local audio/video speech transcription; this is no
 
 C-01 is resolved in draft policy/schema: required frozen AnalysisInputSnapshot, latest completed processing selection, canonical digest, request-based idempotency before resnapshot, derived trigger and immutable historic output. A05/A18/I01/I07B still must execute these tests.
 
-C-02 is resolved in draft wire mapping: **all** operations declare 400 ApiError. G01/F00 still must implement and test FastAPI validation mapping rather than default 422.
+C-02 is resolved in draft wire mapping: **all** operations declare 400 ApiError. G01/F00 still must implement and test FastAPI validation mapping rather than default 422. G01 implemented and verified this shared mapping.
 
-Completed-run selectors pin related reads and pages; pending/failed/foreign/missing selectors are 404. A05B/A06/U05D/U06/U07/I01 test consistent analysis_run_id, P04B/U05B test processing_run_id history. These are declared contract behaviors, not observed app failures or completed tests.
+C-03 is resolved in coordination policy for F00/U01:
+- Bearer authentication format uses standard HTTP `Authorization: Bearer <token>`.
+- For local development and testing, authentication uses a synthetic token verifier with two test identities: `investigator-1` and `investigator-2`.
+- Missing or invalid tokens return HTTP 401 with `ApiError` (`code: "UNAUTHORIZED"`, `message: "Authentication required."`).
+- Case access checks require the authenticated actor to be an authorized member of the case. Accessing an unauthorized case or a nonexistent case returns HTTP 404 with `ApiError` (`code: "NOT_FOUND"`, `message: "Resource not found."`) to prevent case existence leakage.
+- Frontend (U01) stores tokens in memory only (no localStorage or persistent browser storage).
+- Zero production secrets committed to Git. F00 implements the backend guard; U01 consumes it.
 
 Draft 0.3.0 preserves the original 25 operationIds and adds listTranscriptRevisions/appendTranscriptRevision for the user-approved transcription workflow. Publication requires explicit authorization and verification of the exact remote commit and CI. Full proposal scope is not awaiting renewed feature approval; unresolved settings block their dependent rows only. Artifact verification status belongs in `PREIMPLEMENTATION_REVIEW.md`, not invented application metrics here.

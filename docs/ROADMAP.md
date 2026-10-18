@@ -78,7 +78,7 @@ I08 measures speech transcription errors and segment timestamp alignment with la
 
 | Gate | Resolve before | Required record |
 |---|---|---|
-| C-03 | F00/U01 in 1A and every protected API | **Open (G00 review 2026-10-18):** M1 F00/F01 identity/token expiry/revocation/membership policy must support M4 U01 client handling and later protected reads/writes; no hard-coded shared production token |
+| C-03 | F00/U01 in 1A and every protected API | **Resolved (coordination policy 2026-10-18):** synthetic bearer token verifier (`investigator-1`, `investigator-2`), in-memory client token handling, and non-leaking 404 case-membership guard. Implementation in F00/U01; no hard-coded shared production token |
 | C-04 first CSV | F03 in 1A; P04/P14B in 1B | **Open:** M1 F03 intake and M2 P04/P14B processing need compatible content/byte/row/BOM/malformed/unsupported/failure policy and fixtures; M4 U03/U05 must display the declared rejection/failed-run outcomes |
 | C-04 later adapters | Their 3A/3B tasks, including P16/P16B | **Open:** supported layouts/models/versions/resources and private data boundaries, independent of final LLM provider; select/test approved local pretrained speech model/version/runtime/languages/codec support and duration/compute/memory limits, not chosen or installed here; M2 outputs feed M3 analysis and M4 source/playback/correction views; no external evidence transfer |
 | C-05/G02 | A03/A03B/A04 in 1C, then later factor wiring | **Open:** M3 G02 must version factor/missing/weight/band/tie/independence/confidence policy and goldens for M2 source-lineage inputs and M4 explanations; proposal numbers remain experimental examples |
