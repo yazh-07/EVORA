@@ -1,6 +1,6 @@
 # EVORA phased roadmap and execution ledger
 
-**Implementation has not started.** All product tasks and checkpoints below are **Backlog**. The coordination-branch draft is not a running system; publication does not complete any product task or checkpoint. The original proposal, four modules and selected architecture remain unchanged. Draft OpenAPI 0.3.0 coordinates the explicit user-approved initial-scope addition: local audio/video speech transcription, timestamped source segments, playback/search/candidate extraction and audited human corrections. This is not retroactively an original proposal requirement; all five new tasks remain Backlog, with no product implementation or model installation claimed.
+**Product implementation has not started.** G00 coordination work and Checkpoint 0 are **In Progress**; G01/G01B/G01C and all other tasks/checkpoints remain **Backlog**. The coordination-branch draft is not a running system; publication does not complete any product task or checkpoint. The original proposal, four modules and selected architecture remain unchanged. Draft OpenAPI 0.3.0 coordinates the explicit user-approved initial-scope addition: local audio/video speech transcription, timestamped source segments, playback/search/candidate extraction and audited human corrections. This is not retroactively an original proposal requirement; all five new tasks remain Backlog, with no product implementation or model installation claimed.
 
 ## Start here
 
@@ -32,7 +32,7 @@ Comma-separated IDs below are **exhaustive assignments**, not ranges. Each catal
 
 | Checkpoint | Exact task membership | Exit gate IDs | Exit evidence | State |
 |---|---|---|---|---|
-| 0 | G00, G01, G01B, G01C | G00, G01, G01B, G01C | G00 records the shared base; G01/G01B start and pass real skeleton tests/type checks; G01C proves clean skeleton Windows/CI setup. No requirement to choose every future provider/model. | Backlog |
+| 0 | G00, G01, G01B, G01C | G00, G01, G01B, G01C | G00 records the shared base; G01/G01B start and pass real skeleton tests/type checks; G01C proves clean skeleton Windows/CI setup. No requirement to choose every future provider/model. | In Progress |
 | 1A | F00, F01, F02, F03, F04, F05, F06, F07, F09, U01, U02, U02B, U03, U04, I00 | I00 | I00 proves real authorized create/list/upload/hash/metadata/download and safe intake audit, two actors/cases and negative access/input paths. | Backlog |
 | 1B | P01, P02, P03, P03B, P03C, P04, P04B, P05, P05B, P14, P14B, P14C, F08, U05C, U05, U05B, U13, I00B | I00B | I00B proves UI start/poll and immutable network/GPS observations/entities/events, raw/normalized source values, private provenance, atomic retries/failures and all-page overview. | Backlog |
 | 1C | G01D, G02, A01, A02, A03, A03B, A04, A01B, A05, A05B, A06, A15, F08B, U05D, U06, U07, U07B, I01 | I01 | I01 proves coherent SQL/Neo4j publication, source-backed graph/findings and initial relevance/connectivity scores, explanations, pinned reads/pagination and crash/recovery/auth negatives. | Backlog |
@@ -78,12 +78,12 @@ I08 measures speech transcription errors and segment timestamp alignment with la
 
 | Gate | Resolve before | Required record |
 |---|---|---|
-| C-03 | F00/U01 in 1A and every protected API | Identity/token expiry/revocation/membership and client handling; no hard-coded shared production token |
-| C-04 first CSV | F03 in 1A; P04/P14B in 1B | Intake/content/byte/row/BOM/malformed/unsupported/failure policy and fixtures |
-| C-04 later adapters | Their 3A/3B tasks, including P16/P16B | Supported layouts/models/versions/resources and private data boundaries, independent of final LLM provider; select/test approved local pretrained speech model/version/runtime/languages/codec support and duration/compute/memory limits, not chosen or installed here; no external evidence transfer |
-| C-05/G02 | A03/A03B/A04 in 1C, then later factor wiring | Exact factor/missing/weight/band/tie/independence/confidence policy and goldens; proposal numbers remain experimental examples |
+| C-03 | F00/U01 in 1A and every protected API | **Open (G00 review 2026-10-18):** M1 F00/F01 identity/token expiry/revocation/membership policy must support M4 U01 client handling and later protected reads/writes; no hard-coded shared production token |
+| C-04 first CSV | F03 in 1A; P04/P14B in 1B | **Open:** M1 F03 intake and M2 P04/P14B processing need compatible content/byte/row/BOM/malformed/unsupported/failure policy and fixtures; M4 U03/U05 must display the declared rejection/failed-run outcomes |
+| C-04 later adapters | Their 3A/3B tasks, including P16/P16B | **Open:** supported layouts/models/versions/resources and private data boundaries, independent of final LLM provider; select/test approved local pretrained speech model/version/runtime/languages/codec support and duration/compute/memory limits, not chosen or installed here; M2 outputs feed M3 analysis and M4 source/playback/correction views; no external evidence transfer |
+| C-05/G02 | A03/A03B/A04 in 1C, then later factor wiring | **Open:** M3 G02 must version factor/missing/weight/band/tie/independence/confidence policy and goldens for M2 source-lineage inputs and M4 explanations; proposal numbers remain experimental examples |
 | Local deterministic grounding/privacy | A16/U10 in 2C | Authorized retrieval/claim support/unsupported and safe audit policy; no final provider requirement |
-| C-06/G03 | 5A/5B generation and evaluation | Approved provider/model/private boundary/cost/credentials/thresholds/fallback and actual-provider vs no-paid CI proof |
+| C-06/G03 | 5A/5B generation and evaluation | **Open:** approved provider/model/private boundary/cost/credentials/thresholds/fallback and actual-provider vs no-paid CI proof for M3 retrieval, M4 generation/verification and M1 private provenance; deterministic/local speech work does not choose this provider |
 | Assignment/common base/setup | Each task handoff | Module/person, allowed paths, exact common spec commit and tested commands/versions; no guessed installation |
 
 See [COMMUNICATION.md](COMMUNICATION.md) and [CONTRACTS.md](CONTRACTS.md) for concrete choices; this ledger does not choose them by implication.
@@ -97,8 +97,16 @@ See [COMMUNICATION.md](COMMUNICATION.md) and [CONTRACTS.md](CONTRACTS.md) for co
 | M3 Fusion and Adaptive Triage | whale2186 | Derived graph, factors/detectors/snapshots/retriage and retrieval context | Backlog |
 | M4 Investigator Application | JebasJ | React UI plus review/override and grounded-generation/verification backend APIs | Backlog |
 
-`whale2186` coordinates shared files/integration alongside M3. G/I work is bounded shared work assigned to an existing contributor, not automatically to the person coordinating and not a fifth module/person. A module is not standalone software and not an agent mega-task. The confirmed ownership does not choose task branches, allowed paths or the exact reviewed common base; G00 and all implementation tasks/checkpoints remain Backlog.
+`whale2186` coordinates shared files/integration alongside M3. G/I work is bounded shared work assigned to an existing contributor, not automatically to the person coordinating and not a fifth module/person. A module is not standalone software and not an agent mega-task. The user explicitly assigned G00 as recorded below; other shared-task assignees and paths still need their own handoffs. All product implementation tasks remain Backlog.
 
 For each assigned task record `task ID | checkpoint | module/person | branch/common spec commit | state | consumed/produced interface | actual commands/results + test doubles | PR/next task`. Serialize ledger edits. States: **Backlog**, **In Progress**, **Complete** (acceptance and real dependency integration verified), **Blocked** (exact needed decision). Current task state defaults to Backlog; no implementation completion is claimed here.
+
+### G00 live record — 2026-10-18
+
+**G00 / Checkpoint 0 / shared integration coordination / whale2186 / In Progress.** The user assigned `feat/g00-coordination-base` from exact shared base **114c3824a40cfd36e04f22b9d7a61f01e8fd6ddb**, matching both starting HEAD and local `origin/docs/coordination-foundation`. The base contains the coordination artifacts and unchanged `specs/openapi.yaml` draft 0.3.0. Dependencies: none. Allowed paths: `docs/ROADMAP.md`, `docs/PREIMPLEMENTATION_REVIEW.md`, `docs/COMMUNICATION.md`, `docs/AGENT_TASKS.md`; see the [filled assignment](AGENT_TASKS.md#g00-assignment--2026-10-18).
+
+Verification on Linux with Node 22.23.3, npm 12.2.0, Python 3.14.8 and scratch jsonschema 4.25.1: requested npx commands failed registry DNS (`EAI_AGAIN`); equivalent cached **Redocly 2.57.0** lint/bundle, **openapi-typescript 7.10.1** generation, **TypeScript 5.9.3** compilation and **DESIGN 0.4.0** lint passed. Lint retains one nonblocking missing-license warning; DESIGN has zero errors/warnings. The coordination verifier passed **27 operations / 126 tasks / 18 checkpoints / 39 capabilities / 40 proposal mappings**; **122 unittests passed**, including mutation negatives and synthetic schema fixtures. Final edited-tree checks and exact commands are recorded in [G00 verification](PREIMPLEMENTATION_REVIEW.md#g00-verification--2026-10-18). These are artifact checks, with no application doubles presented as real producers. No earlier checkpoint is complete.
+
+C-03/C-04/C-05/C-06 remain **Open** with the targeted producer/consumer effects above and in the review/communication queue. This task does not settle auth, adapters, scoring or providers. Local documentation is ready for review; no new commit, push, merge, remote CI or Windows/skeleton run is claimed. Checkpoint 0 remains **In Progress**, with **G01/G01B/G01C Backlog**. Next dependency-ready scopes after G00 handoff acceptance are **G01**, or independent **G01B**; explicit G/I assignee/allowed-path records are still required. G01C waits for both real skeletons. Do not infer G01/G01B ownership from module coordination or start them in this session.
 
 Full timeline reconstruction/chronological visualization remains future. Basic time normalization, temporal factors, conflict/gap reasoning and event inspection remain initial scope. Completion of Phases 1/2 is an integration slice, not completion of the full proposal. I09/I09B cover every feature task; I06 follows full closure.

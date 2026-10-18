@@ -51,6 +51,22 @@ Add `Use task [TASK_ID] instead of automatic selection.` to the prompt. All owne
 
 ## Choosing the next task
 
+### G00 assignment — 2026-10-18
+
+| Field | Recorded assignment |
+|---|---|
+| Task/checkpoint and exact acceptance | **G00 / 0**: record the published common base, actual lint/bundle/type/coordination/unittest/DESIGN results and targeted C-03–C-06 gates; no all-policy settlement or four-signoff ceremony |
+| Module/person and coordination | Shared integration coordination explicitly assigned by the user to **whale2186**, alongside the existing M3 ownership in ROADMAP; no additional contributor |
+| Branch/common commit | `feat/g00-coordination-base`; exact common contract/base **114c3824a40cfd36e04f22b9d7a61f01e8fd6ddb** (`origin/docs/coordination-foundation`); clean starting HEAD and local remote-tracking ref both read back at this commit |
+| Paths | Only `docs/ROADMAP.md`, `docs/PREIMPLEMENTATION_REVIEW.md`, `docs/COMMUNICATION.md`, `docs/AGENT_TASKS.md`; generated bundle/types and environment tooling stay in `/tmp` |
+| Dependencies | None (—); real published Git base contains the planning artifacts and draft 0.3.0 contract. No application producer, model or API test double is used or claimed |
+| Input/output | Consume unchanged `specs/openapi.yaml` draft 0.3.0, shared workflow and planning/fixture checks; produce an assignment, verification record and bounded handoff. No HTTP interface change |
+| Gate | C-03 auth, C-04 adapter policy, C-05 scoring and C-06 RAG/privacy remain **Open**, with producer/consumer impact recorded in PREIMPLEMENTATION_REVIEW and ROADMAP; none requires selecting future policy to review this base |
+| Commands and proof | [G00 verification and test checklist](PREIMPLEMENTATION_REVIEW.md#g00-verification--2026-10-18): cached exact-version tools pass artifact checks and 122 tests with jsonschema 4.25.1; requested npx invocations fail registry DNS resolution. No earlier completed checkpoint exists to regress |
+| Handoff | **In Progress**, locally verified documentation awaiting review/publication; no commit/push/merge authorized. Checkpoint 0 stays In Progress; G01/G01B/G01C stay Backlog. Next scopes are G01 or independent G01B after G00 handoff acceptance, each requiring explicit shared-task assignee/paths; G01C needs both real skeletons |
+
+This card records the user's bounded shared-file handoff before the G00 ledger/review edits. Final results are in PREIMPLEMENTATION_REVIEW; local verification does not publish these changes or complete a product milestone.
+
 ### Automatic-selection rules
 
 1. Read the live module-owner and task state in ROADMAP, the exact checkpoint ledger, catalog dependencies and relevant communication gates. Read Git status and verify the recorded common-base commit is available and includes the required shared contract. An uncommitted draft is not an implementation base.
