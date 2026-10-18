@@ -2,7 +2,7 @@
 
 ## Current state
 
-**G01 is locally implemented and verified, awaiting review/integration (In Progress).** The user accepted committed G00 `1721bfff9640263d2799434455cdb9c4f345ac35` as this task's common base. The tree now includes a minimal FastAPI/SQLite skeleton alongside planning/contracts/tooling; it has no domain routes, React app or executed ASR/scoring/RAG system. Checkpoint 0 remains In Progress; G01B/G01C and domain tasks/checkpoints remain Backlog. The earlier verification records below are historical; the G01 record describes current local evidence.
+**G01C is locally implemented/verified and In Progress pending native Windows/hosted CI evidence and review.** The user accepted committed common base `328c103d0f0383c7b4979bd8199b4201408e2a68`, containing G00/G01/G01B. The tree includes real FastAPI/SQLite and React/TypeScript skeletons, with clean Linux dependency installs and combined regression checks recorded below. Checkpoint 0 remains In Progress until all four exit gates pass, including native Windows/CI execution. Domain tasks/checkpoints remain Backlog; no domain routes, ASR/scoring/RAG system or main merge is claimed. Earlier verification records retain their historical environment/results; the G01C record is current.
 
 Prepublication verification covered the transcription and simplified Codex-prompt revision on `docs/coordination-foundation`, originally based on `d36ac5cd63b5dcf431af6fca34411653a6ffe50f`. Before publication the branch fast-forwarded to `815b2eca5b0b5a77af93d4db69e12793bd48144b`, whose tree is identical; collaborator history was preserved. The inspected local main tree contains only README. Publication is tracked by the exact Git commit/remote ref and its CI run, not by a self-referential commit ID here. No main merge or Windows application run is claimed. G00 must record the reviewed common base before implementation branches depend on it.
 
@@ -44,8 +44,8 @@ Existing nonblocking warning: OpenAPI `info.license` is missing; no project lice
 - C-04 tested format/limits/failure policy before each adapter. P16/P16B/U14 need local model/runtime/version/license, languages/codecs, track/offset policy, duration/byte/compute limits, private derivative cleanup and browser compatibility. Whisper is a candidate, not a selected/installed model.
 - C-05 precise scoring/independence/confidence/goldens; do not double-count audio/video/transcripts.
 - Approved local retrieval/grounding/privacy before deterministic Q&A; C-06/G03 before final generation. Local speech does not depend on the final LLM provider; no cloud speech transfer is authorized.
-- G00's local record below supplies its exact shared commit, assignee/paths and validation versions; review/publication of these edits remains pending. Later task handoffs still need their own scoped assignments. Confirmed module owners remain in ROADMAP; ownership is not completion.
-- G01/G01B/G01D pin real product package/database versions. G01C/I03/I09B prove Windows/CI scopes. I03B proves real media/correction behavior; I08 measures speech errors/alignment and other research metrics; I09/I09B/I06 retain full integration/reproducibility/report closure.
+- The G01C handoff accepts exact committed G00/G01/G01B ancestry and records scoped assignee/paths. G01C edits await review and native Windows/hosted CI evidence. Later task handoffs still need their own assignments. Confirmed module owners remain in ROADMAP; ownership is not completion.
+- G01/G01B package pins are now exercised together on Linux; G01D still needs Neo4j setup proof. G01C/I03/I09B prove their respective Windows/CI scopes. I03B proves real media/correction behavior; I08 measures speech errors/alignment and other research metrics; I09/I09B/I06 retain full integration/reproducibility/report closure.
 
 Use the earliest dependency-ready bounded task and [agent assignment card](AGENT_TASKS.md). Disclosed schema-derived doubles permit independent work, not integrated completion. Rerun every completed checkpoint regression before an authorized main promotion; verify the merged commit/CI/smoke results afterward. Artifact checks cannot close product milestones.
 
@@ -206,3 +206,117 @@ Runtime: **Node 26.7.0, npm 11.19.0, Python 3.14.8**.
 7. `git diff --check` and `git diff --exit-code e0257a6ad231105b93ae98a97f176ed233a25412 -- specs/openapi.yaml` — exit 0.
 
 Checkpoint 0 remains **In Progress**; G01C remains **Backlog**. Next task is **G01C** (Verify skeleton Windows and CI setup).
+
+## G01C verification — 2026-10-18
+
+**G01C / Checkpoint 0 / whale2186 / shared integration coordination / In Progress.** Branch `feat/g01c-skeleton-ci`; exact user-selected common contract/base **328c103d0f0383c7b4979bd8199b4201408e2a68** (`feat/g01b-frontend-skeleton`). Starting `git status --short` was empty, and branch/HEAD matched the assignment. `git log` and local branch refs read back real **G01 e0257a6ad231105b93ae98a97f176ed233a25412**, **G01B 328c103d0f0383c7b4979bd8199b4201408e2a68** and **G00 1721bfff9640263d2799434455cdb9c4f345ac35** in the accepted ancestry. No fresh remote fetch or hosted CI/main result is inferred. See [assignment](AGENT_TASKS.md#g01c-assignment--2026-10-18) and [live exit-gate record](ROADMAP.md#g01c-live-record--2026-10-18).
+
+### Changes and supported baseline
+
+- `.github/workflows/contract.yml`: one matrix runs **ubuntu-latest/Bash** and **windows-latest/PowerShell**, with fail-fast disabled so one OS cannot cancel the other's evidence. Read-only repository permission and existing PR/push triggers remain. Each command has a separate step; native command failures cannot be hidden by a later successful PowerShell command.
+- CPython **3.14.8** comes from `backend/.python-version`; Node **22.23.3** and npm **12.2.0** match the frontend manifest, replacing the old Python 3.12 artifact-only workflow and reconciling the frontend README's historical Node 26/npm 11 claim. CI asserts runtime versions, prints SQLite, installs `requirements.txt`, runs `pip check`, and clean-installs the committed frontend lockfile with `npm ci`.
+- Both OS legs run OpenAPI lint/bundle, independent generated declaration compilation, coordination verifier/negative/schema tests, warning-strict backend tests, frontend `check:api`/`typecheck`/`test`/`build`, DESIGN lint and commit whitespace checks. Bundle paths are quoted and use `runner.temp` in step contexts. Actionlint initially rejected `runner.temp` at job-env scope; moving the bundle env to each Python suite's step resolved it.
+- `PYTHONUTF8=1` is explicit in both legs and PowerShell instructions because existing tests use default-encoding reads of UTF-8 planning files. Backend/frontend READMEs contain exact native PowerShell setup/run/negative commands and version/platform limits. No cross-directory Markdown link from `docs/` to a backend/frontend file was added; these paths are code mentions.
+- Only the six authorized files changed. `specs/openapi.yaml` 0.3.0, requirements, frontend package/lockfile, generated API types and application/tests remain unchanged. No new domain producers or doubles were introduced. Backend probes exercise real FastAPI/HTTPX/SQLite with synthetic test-only routes; frontend tests render the real React shell without domain/API data.
+
+### Commands and observed results
+
+Local host: **Linux, CPython 3.14.8 / SQLite 3.54.0, Node 22.23.3 / npm 12.2.0**. Unlike earlier sessions, package-registry access worked. A new `/tmp/evora-g01c-clean-venv` was created with **no system site packages**; installation from `requirements.txt` passed, using ordinary registry downloads/cache, without manual package copying. All **22 pins** matched distribution metadata, including FastAPI **0.143.1**, Starlette **1.8.0**, Pydantic **2.14.1**, Uvicorn **0.54.0**, HTTPX **0.28.1**, jsonschema **4.25.1**. `pip check` found no broken requirements. Frontend `npm ci` installed the lockfile with React/React DOM **19.3.0**, TypeScript **5.9.3**, esbuild **0.28.1**, openapi-typescript **7.10.1**; it reported zero vulnerabilities at this run.
+
+| Check | Actual result |
+|---|---|
+| Clean backend install / pip check / metadata read-back | **Pass**, 22 pins match in isolated venv |
+| `npm --prefix frontend ci` | **Pass**, lockfile unchanged; npm warned that esbuild's postinstall was blocked by its script policy, but the installed platform binary supported all subsequent tests/builds without a policy override |
+| Redocly **2.57.0** lint and fresh JSON bundle | **Pass**, one pre-existing missing `info.license` warning |
+| openapi-typescript **7.10.1** generation / TypeScript **5.9.3** `--noEmit --strict` | **Pass**, scratch declarations compile; committed types unchanged |
+| Coordination verifier | **Pass**, 27 operations / 126 tasks / 18 checkpoints / 39 capabilities / 40 proposal mappings; 18 Markdown files |
+| Full `scripts/test_*.py` suite, jsonschema **4.25.1** | **Pass, 122 tests, no skips**; includes mutation negatives and synthetic wire examples; log `/tmp/evora-g01c-coordination-tests.log` |
+| Backend warning-strict suite, clean venv | **Pass, 14 tests, no skips**, real SQLite read-back/rollback/close/isolation/startup failure and HTTP 400 schema validation |
+| Requested backend regression using `/tmp/evora-g01-venv/bin/python` | **Pass, 14 tests**, `-W error::ResourceWarning` |
+| Frontend API freshness / typecheck / test / build | **Pass**, 2 tests, no skips; `dist/index.html`, `dist/assets/main.js` and `main.css` produced |
+| DESIGN **0.4.0** via requested npx command | **Pass**, zero errors/warnings |
+| Actionlint **1.7.7** on final workflow | **Pass**, no diagnostics; installed only under `/tmp/evora-g01c-bin` |
+| Missing-bundle negative | **Pass**, deliberately missing scratch bundle makes the focused backend schema test exit **1** with `FileNotFoundError`; it cannot silently skip validation |
+| Stale declaration negative | **Pass**, scratch stale declaration makes openapi-typescript `--check` exit **1**, `Generated types are not up-to-date!`; scratch contents and source declarations stay unchanged |
+| Localhost server smoke | **Pass**: Uvicorn on `127.0.0.1:18000` completed startup, created temporary SQLite, returned **404** for `/`, then completed shutdown (exit 0); frontend dev server on `127.0.0.1:5173` returned **200** with the root mount element, then was stopped with SIGINT |
+| Whitespace, exact-base spec/package/type comparison and index check | **Pass**, only authorized paths changed; nothing staged |
+
+Exact successful Linux commands, from the repository root (the environment below already exists from this run):
+
+```sh
+python -m venv /tmp/evora-g01c-clean-venv
+/tmp/evora-g01c-clean-venv/bin/python -m pip install --disable-pip-version-check --retries 0 --timeout 10 -r requirements.txt
+/tmp/evora-g01c-clean-venv/bin/python -m pip check
+node --version
+npm --version
+npm --prefix frontend ci
+npx --yes @redocly/cli@2.57.0 lint specs/openapi.yaml
+npx --yes @redocly/cli@2.57.0 bundle specs/openapi.yaml --output /tmp/evora-openapi.json
+npx --yes openapi-typescript@7.10.1 specs/openapi.yaml -o /tmp/evora-api.d.ts
+npx --yes --package typescript@5.9.3 tsc --noEmit --strict /tmp/evora-api.d.ts
+python scripts/verify_coordination.py /tmp/evora-openapi.json
+PYTHONUTF8=1 EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json /tmp/evora-g01c-clean-venv/bin/python -m unittest discover -s scripts -p 'test_*.py' -v
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json /tmp/evora-g01c-clean-venv/bin/python -W error::ResourceWarning -m unittest discover -s backend/tests -v
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json /tmp/evora-g01-venv/bin/python -W error::ResourceWarning -m unittest discover -s backend/tests -v
+npm --prefix frontend run check:api
+npm --prefix frontend run typecheck
+npm --prefix frontend run test
+npm --prefix frontend run build
+npx --yes @google/design.md@0.4.0 lint DESIGN.md
+/tmp/evora-g01c-bin/actionlint .github/workflows/contract.yml
+git diff --check
+git diff --exit-code 328c103d0f0383c7b4979bd8199b4201408e2a68 -- specs/openapi.yaml requirements.txt frontend/package.json frontend/package-lock.json frontend/src/api/schema.d.ts
+git diff --cached --exit-code
+```
+
+The local npx/npm network attempts set `npm_config_fetch_retries=0` and `npm_config_fetch_timeout=10000` to bound registry waits; the same pinned commands passed with normal cache/download resolution. Actionlint setup was `GOBIN=/tmp/evora-g01c-bin go install github.com/rhysd/actionlint/cmd/actionlint@v1.7.7`. This optional local workflow lint is not a substitute for hosted runner execution.
+
+### Windows PowerShell reproduction — pending execution
+
+Supported target: **Windows x64, PowerShell 7, CPython 3.14.8 with `py` launcher, Node 22.23.3, npm 12.2.0**, writable checkout/temp/package prefix and package-registry access. No clean Windows execution is claimed here. Use a fresh checkout without an existing `.venv`; run from the repository root. Commands use `.cmd` wrappers and the venv executable directly, avoiding activation-script policy changes.
+
+```powershell
+py -3.14 -c "import platform; print(platform.python_version()); assert platform.python_version() == '3.14.8'"
+node --version
+npm.cmd install --global npm@12.2.0
+npm.cmd --version
+py -3.14 -m venv .venv
+$env:PYTHONUTF8 = '1'
+& .\.venv\Scripts\python.exe -m pip install -r requirements.txt
+& .\.venv\Scripts\python.exe -m pip check
+& .\.venv\Scripts\python.exe -c "import sqlite3; from importlib.metadata import version; print('SQLite', sqlite3.sqlite_version, 'jsonschema', version('jsonschema'))"
+npm.cmd --prefix frontend ci
+$env:EVORA_CONTRACT_BUNDLE = Join-Path $env:TEMP 'evora-openapi.json'
+$apiTypes = Join-Path $env:TEMP 'evora-api.d.ts'
+npx.cmd --yes @redocly/cli@2.57.0 lint specs/openapi.yaml
+npx.cmd --yes @redocly/cli@2.57.0 bundle specs/openapi.yaml --output "$env:EVORA_CONTRACT_BUNDLE"
+npx.cmd --yes openapi-typescript@7.10.1 specs/openapi.yaml -o "$apiTypes"
+npx.cmd --yes --package typescript@5.9.3 tsc --noEmit --strict "$apiTypes"
+& .\.venv\Scripts\python.exe scripts/verify_coordination.py "$env:EVORA_CONTRACT_BUNDLE"
+& .\.venv\Scripts\python.exe -m unittest discover -s scripts -p 'test_*.py' -v
+& .\.venv\Scripts\python.exe -W error::ResourceWarning -m unittest discover -s backend/tests -v
+npm.cmd --prefix frontend run check:api
+npm.cmd --prefix frontend run typecheck
+npm.cmd --prefix frontend run test
+npm.cmd --prefix frontend run build
+npx.cmd --yes @google/design.md@0.4.0 lint DESIGN.md
+git diff --check
+```
+
+Each command must exit **0**; stop if `$LASTEXITCODE` is nonzero before continuing manually. Expected: versions above (record actual bundled SQLite), no broken requirements, jsonschema **4.25.1**, verifier counts above, **122 coordination / 14 backend / 2 frontend tests**, generated types compile, build assets exist, DESIGN zero errors/warnings. The existing missing-license warning is nonblocking. CI runs commands in separate steps and fails the leg on any nonzero exit.
+
+Run backend in one window with `& .\.venv\Scripts\python.exe -m uvicorn backend.app:create_app --factory --host 127.0.0.1 --port 8000 --lifespan on --no-access-log`, then `curl.exe -i http://127.0.0.1:8000/` in another: expect startup completion and **404**. Run `npm.cmd --prefix frontend run dev` and open `http://127.0.0.1:5173`: expect the shell's no-case/unavailable-access state. Stop each with Ctrl+C. These native Windows/server/browser steps remain untested in this session.
+
+Known setup boundaries: wrong/missing runtime, unwritable package prefix/private storage, registry failure or unavailable native wheels/binaries must fail setup rather than justify changing pins or bypassing checks. Keep esbuild optional platform dependencies enabled and do not reuse Linux `node_modules` on Windows. SQLite is bundled with Python and can differ by build. POSIX mode 0700 does not establish Windows ACLs; use private synthetic storage and do not infer production privacy from this skeleton. No native Windows/browser/accessibility, Neo4j, model/provider or full-scope reproducibility result is established here. The npm esbuild script-policy warning above did not block Linux build/test and no policy was relaxed.
+
+### How you can test it
+
+- [ ] Run the complete Linux sequence above in the pinned environment: expect every positive command to exit **0**, with **122 / 14 / 2 tests** and unchanged contract/package/type artifacts. Linux commands and combined regression were exercised here; use a new scratch venv path to independently repeat a clean install.
+- [ ] Run the PowerShell sequence and server steps above on native Windows: expect the same checks/counts, startup/404 and the honest frontend shell. **Pending**, not demonstrated by the Linux tests or actionlint.
+- [ ] Failure case, after building the bundle, run `EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json /tmp/evora-g01c-clean-venv/bin/python -m unittest backend.tests.test_validation.ValidationTests.test_malformed_json_returns_400_api_error -v`: expect one test **OK**, proving malformed synthetic JSON returns schema-valid **400** without echoing input. PowerShell equivalent: `& .\.venv\Scripts\python.exe -m unittest backend.tests.test_validation.ValidationTests.test_malformed_json_returns_400_api_error -v` with the bundle env already set. The Linux negative was exercised in both full backend suites.
+- [ ] Check the freshness failure without editing repository files: `printf '%s\n' '// Synthetic stale declaration' > /tmp/evora-g01c-stale-api.d.ts`, then `npx --yes openapi-typescript@7.10.1 specs/openapi.yaml -o /tmp/evora-g01c-stale-api.d.ts --check`: expect exit **1** and `Generated types are not up-to-date!`. Remove only that scratch probe with `rm /tmp/evora-g01c-stale-api.d.ts`. The same negative passed using an automatically cleaned temporary directory; exact PowerShell equivalent is in `frontend/README.md`.
+- [ ] When publication is separately authorized, inspect both matrix jobs on the exact reviewed commit/PR. Record CI run/commit, OS, versions and each suite result in this record; a workflow definition or push alone is not success. Current triggers run on PRs and pushes to `main`/`docs/coordination-foundation`; a feature-branch push alone does not trigger it. This session made no stage/commit/push/merge or hosted run.
+
+Tests use synthetic content and clean their temporary SQLite/probe files. Manual server use leaves an ignored `storage/evora.sqlite3`; remove only your own synthetic database after shutdown. Bundle/types/env artifacts stay in ignored or scratch locations. Backend and frontend runtime smoke cover HTTP startup and shell delivery, not an end-to-end domain application or browser audit.
+
+**Remaining exit gate: native Windows clean installation/build/test and hosted CI proof for G01C, followed by review/integration. Checkpoint 0 stays In Progress.** Update its canonical ledger to **Complete only after all G00/G01/G01B/G01C exit evidence is verified**; no earlier completed checkpoint exists, and all prior artifact/skeleton checks were rerun here. Next action is finishing G01C verification; after closure, **F00 / sharmelas-925 / 1A** requires C-03, then **U01 / JebasJ** consumes it. whale2186 has no automatically assigned next shared row; G01D/G02 in 1C need a separate handoff. C-03–C-06 remain targeted future gates, not blockers to this CI implementation. No further task was started.

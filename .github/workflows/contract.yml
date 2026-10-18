@@ -1,4 +1,4 @@
-name: Coordination and contract checks
+name: Skeleton and coordination checks
 
 on:
   pull_request:
@@ -10,31 +10,69 @@ permissions:
 
 jobs:
   coordination:
-    runs-on: ubuntu-latest
+    name: Skeleton and coordination (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            shell: bash
+          - os: windows-latest
+            shell: pwsh
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    defaults:
+      run:
+        shell: ${{ matrix.shell }}
+    env:
+      # Existing tests read UTF-8 docs with the platform default encoding.
+      PYTHONUTF8: '1'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: '22.23.3'
+      - name: Select pinned npm
+        run: npm install --global npm@12.2.0
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
-      - name: Install wire-example validation dependency
-        run: python -m pip install jsonschema==4.25.1
+          python-version-file: backend/.python-version
+      - name: Read back Python and SQLite versions
+        run: python -c "import platform, sqlite3; print('Python', platform.python_version(), 'SQLite', sqlite3.sqlite_version); assert platform.python_version() == '3.14.8'"
+      - name: Read back Node and npm versions
+        run: node -e "const {execSync} = require('node:child_process'); const npm = execSync('npm --version').toString().trim(); console.log('Node', process.version, 'npm', npm); if (process.version !== 'v22.23.3' || npm !== '12.2.0') process.exit(1)"
+      - name: Install pinned backend and validation dependencies
+        run: python -m pip install -r requirements.txt
+      - name: Check Python dependency consistency
+        run: python -m pip check
+      - name: Install locked frontend dependencies
+        run: npm --prefix frontend ci
       - name: Validate shared OpenAPI contract
         run: npx --yes @redocly/cli@2.57.0 lint specs/openapi.yaml
       - name: Bundle contract for structural checks
-        run: npx --yes @redocly/cli@2.57.0 bundle specs/openapi.yaml --output "$RUNNER_TEMP/evora-openapi.json"
-      - name: Generate and check TypeScript declarations
-        run: |
-          npx --yes openapi-typescript@7.10.1 specs/openapi.yaml -o "$RUNNER_TEMP/evora-api.d.ts"
-          npx --yes --package typescript@5.9.3 tsc --noEmit "$RUNNER_TEMP/evora-api.d.ts"
+        run: npx --yes @redocly/cli@2.57.0 bundle specs/openapi.yaml --output "${{ runner.temp }}/evora-openapi.json"
+      - name: Generate TypeScript declarations
+        run: npx --yes openapi-typescript@7.10.1 specs/openapi.yaml -o "${{ runner.temp }}/evora-api.d.ts"
+      - name: Compile generated TypeScript declarations
+        run: npx --yes --package typescript@5.9.3 tsc --noEmit --strict "${{ runner.temp }}/evora-api.d.ts"
       - name: Check phases, task dependencies, scope coverage, docs and fixtures
-        run: python scripts/verify_coordination.py "$RUNNER_TEMP/evora-openapi.json"
+        run: python scripts/verify_coordination.py "${{ runner.temp }}/evora-openapi.json"
       - name: Run verifier negative tests and synthetic wire examples
         env:
           EVORA_CONTRACT_BUNDLE: ${{ runner.temp }}/evora-openapi.json
         run: python -m unittest discover -s scripts -p 'test_*.py' -v
+      - name: Test real backend skeleton and validation mapping
+        env:
+          EVORA_CONTRACT_BUNDLE: ${{ runner.temp }}/evora-openapi.json
+        run: python -W error::ResourceWarning -m unittest discover -s backend/tests -v
+      - name: Check frontend API declaration freshness
+        run: npm --prefix frontend run check:api
+      - name: Typecheck frontend
+        run: npm --prefix frontend run typecheck
+      - name: Test frontend skeleton
+        run: npm --prefix frontend run test
+      - name: Build frontend skeleton
+        run: npm --prefix frontend run build
       - name: Validate design tokens and contrast
         run: npx --yes @google/design.md@0.4.0 lint DESIGN.md
       - name: Check commit whitespace

@@ -26,18 +26,58 @@ python -m venv .venv
 python -m pip install -r requirements.txt
 ```
 
-On Windows PowerShell the activation command is `.\.venv\Scripts\Activate.ps1`.
-These are setup instructions, not Windows verification. The existing
-coordination workflow selects Python 3.12 and runs artifact checks only; **G01C
-must reconcile/test the shared Python baseline and add actual skeleton CI and
-Windows evidence after G01B**. No Python 3.12 application compatibility is claimed.
+G01C clean-installed all 22 pins in a new isolated Linux environment
+(`/tmp/evora-g01c-clean-venv`, without system site packages); `pip check`, package
+metadata read-back and all 14 warning-strict backend tests passed. Earlier G01
+cache-only results remain historical in the verification record.
 
-This session could not install dependencies from the package index. Tests used
-`/tmp/evora-g01-venv`, a Python 3.14.8 environment with system site packages and
-jsonschema 4.25.1 copied, with distribution metadata, from the existing cache.
-Every requirements pin was checked against imported distribution metadata.
-This demonstrates execution with those packages, not clean-install reproducibility.
-See [actual verification](../docs/PREIMPLEMENTATION_REVIEW.md#g01-verification--2026-10-18).
+The shared `.github/workflows/contract.yml` now selects CPython **3.14.8** from
+`backend/.python-version`, Node **22.23.3** and npm **12.2.0**, and runs coordination,
+backend and frontend checks on `ubuntu-latest` (Bash) and `windows-latest`
+(PowerShell). Windows is a configured target awaiting a native runner result;
+this Linux session cannot certify Windows or hosted CI. Other Python versions
+are unverified. SQLite's bundled version can differ by OS/build.
+See [G01C verification](../docs/PREIMPLEMENTATION_REVIEW.md#g01c-verification--2026-10-18).
+
+## Windows PowerShell setup and run
+
+Prerequisites: Windows x64, PowerShell 7, Git, CPython **3.14.8** with the `py`
+launcher, Node **22.23.3** on PATH, package-registry access and a writable checkout.
+Run from the repository root in a fresh checkout without an existing `.venv`.
+Use the venv executable directly; activation/execution-policy changes are unnecessary.
+Use `npm.cmd`/`npx.cmd` to avoid PowerShell choosing their `.ps1` wrappers.
+
+```powershell
+py -3.14 -c "import platform; print(platform.python_version()); assert platform.python_version() == '3.14.8'"
+node --version
+npm.cmd install --global npm@12.2.0
+npm.cmd --version
+py -3.14 -m venv .venv
+$env:PYTHONUTF8 = '1'
+& .\.venv\Scripts\python.exe -m pip install -r requirements.txt
+& .\.venv\Scripts\python.exe -m pip check
+& .\.venv\Scripts\python.exe -c "import sqlite3; from importlib.metadata import version; print('SQLite', sqlite3.sqlite_version, 'jsonschema', version('jsonschema'))"
+$env:EVORA_CONTRACT_BUNDLE = Join-Path $env:TEMP 'evora-openapi.json'
+npx.cmd --yes @redocly/cli@2.57.0 bundle specs/openapi.yaml --output "$env:EVORA_CONTRACT_BUNDLE"
+& .\.venv\Scripts\python.exe -W error::ResourceWarning -m unittest discover -s backend/tests -v
+& .\.venv\Scripts\python.exe -m uvicorn backend.app:create_app --factory --host 127.0.0.1 --port 8000 --lifespan on --no-access-log
+```
+
+Expected: Node `v22.23.3`, npm `12.2.0`, `pip check` reports no broken requirements,
+jsonschema `4.25.1`, **14 tests, OK**, then `Application startup complete`.
+In a second PowerShell window, `curl.exe -i http://127.0.0.1:8000/` should return
+**404**. Stop the server with Ctrl+C. It creates only the ignored local
+`storage/evora.sqlite3`; no domain API is available. Exact full coordination
+commands are in the G01C verification record linked above.
+
+Known limits: these PowerShell commands and native Windows execution remain
+unverified locally. `PYTHONUTF8=1` matches CI and ensures existing tests read the
+UTF-8 planning documents consistently across Windows locales. Python installation
+must include SQLite; package downloads
+and native dependency wheels must be available for the selected runtime/OS.
+The directory mode 0700 applies on POSIX; this skeleton does not configure Windows
+ACLs. Use a private writable local directory for synthetic work. No Neo4j, model,
+authentication or full-system Windows support is established by skeleton tests.
 
 ## Run and configuration
 
@@ -100,13 +140,13 @@ Every invalid request response is validated against the shared bundle's
 ## How you can test it
 
 - [ ] Run the setup commands above with CPython 3.14.8; installation should exit 0.
-  Package-index installation was unavailable here; it remains unverified.
+  Clean isolated Linux installation passed in G01C; native Windows is pending.
 - [ ] Build the bundle and run the backend command above: **14 tests, OK**.
-  Locally exercised with cached packages. To repeat using this session's environment:
-  `EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json /tmp/evora-g01-venv/bin/python -m unittest discover -s backend/tests -v`.
+  Locally exercised with clean-installed packages. To repeat using G01C's environment:
+  `EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json /tmp/evora-g01c-clean-venv/bin/python -W error::ResourceWarning -m unittest discover -s backend/tests -v`.
 - [ ] Run the Uvicorn command: expect startup completion and a localhost listener;
   `curl -i http://127.0.0.1:8000/` should return 404. Startup/shutdown was exercised
-  here, but the sandbox forbids socket binding, so external HTTP was not verified.
+  in G01; G01C records its own localhost smoke result in the verification record.
 - [ ] Failure case:
   `EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -m unittest backend.tests.test_validation.ValidationTests.test_malformed_json_returns_400_api_error -v`.
   Expect one test `OK`: synthetic malformed JSON returns HTTP 400 with exactly
@@ -116,9 +156,9 @@ Every invalid request response is validated against the shared bundle's
   Expect one test `OK`: using a directory as the SQLite file raises an actual
   `sqlite3.OperationalError` before startup completes. Both negatives were exercised.
 - [ ] Run the shared artifact commands in
-  [the G01 verification record](../docs/PREIMPLEMENTATION_REVIEW.md#g01-verification--2026-10-18)
-  and `git diff --check`; expect no new errors. DESIGN npx requires registry access;
-  the cached exact-version CLI passed locally.
+  [the G01C verification record](../docs/PREIMPLEMENTATION_REVIEW.md#g01c-verification--2026-10-18)
+  and `git diff --check`; expect no new errors. Native Windows and remote CI
+  are pending; the Linux results are recorded separately.
 
 Tests clean up their temporary files. A manual server run leaves its ignored
 SQLite file for inspection; remove only your own synthetic test file when finished.

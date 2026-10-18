@@ -95,6 +95,20 @@ This card records the user's bounded shared-file handoff before the G00 ledger/r
 | Commands and proof | Frontend install/generation freshness/typecheck/render test/build/start; shared OpenAPI lint/bundle, coordination verifier/unittests with jsonschema 4.25.1, warning-strict backend suite, DESIGN lint and `git diff --check`. Actual results recorded in PREIMPLEMENTATION_REVIEW; registry DNS currently unavailable, investigate cache installation without claiming network/Windows reproducibility |
 | Handoff | **In Progress**, implementation authorized but stage/commit/push/merge prohibited. Checkpoint 0 stays In Progress. Next candidate **G01C** after reviewed G01B handoff, requiring its own bounded shared-task assignment and real Windows/CI evidence |
 
+### G01C assignment — 2026-10-18
+
+| Field | Recorded assignment |
+|---|---|
+| Task/checkpoint and exact acceptance | **G01C / 0**: Linux and Windows CI must clean-install pinned backend/frontend dependencies and run coordination lint/bundle/generated types/verifier/unit tests/DESIGN plus both real skeleton suites/build. Document exact PowerShell setup/run commands, versions and failures; close Checkpoint 0 only with all four exit gates verified |
+| Module/person and coordination | Shared integration coordination explicitly assigned by the user to **whale2186**, alongside M3; module ownership remains unchanged |
+| Branch/common commit | `feat/g01c-skeleton-ci`; exact user-selected common contract/base **328c103d0f0383c7b4979bd8199b4201408e2a68** (`feat/g01b-frontend-skeleton`); starting branch/HEAD and clean worktree read back at this SHA |
+| Paths | Only `.github/workflows/`, `backend/README.md`, `frontend/README.md`, `docs/ROADMAP.md`, `docs/AGENT_TASKS.md`, `docs/PREIMPLEMENTATION_REVIEW.md`; no spec, requirements, lockfile or application changes |
+| Dependencies | Real **G01 at e0257a6ad231105b93ae98a97f176ed233a25412** and **G01B at 328c103d0f0383c7b4979bd8199b4201408e2a68**, including **G00 at 1721bfff9640263d2799434455cdb9c4f345ac35**, accepted by the user's exact-base handoff. These are committed ancestors, not domain API doubles or a main-merge claim |
+| Input/output | Skeleton build/test commands and unchanged draft 0.3.0; produce a two-OS CI matrix, setup/run documentation and actual verification record. Backend tests use real SQLite/FastAPI with test-only validation probes; frontend tests render the real shell without domain producers |
+| Gate | No C-03–C-06 choice blocks skeleton CI. Use backend's CPython **3.14.8** and frontend manifest's Node **22.23.3** / npm **12.2.0**. Native Windows and hosted CI results must be read back before claiming G01C/Checkpoint 0 Complete |
+| Commands and proof | [G01C verification](PREIMPLEMENTATION_REVIEW.md#g01c-verification--2026-10-18): clean isolated backend install/all 22 pins/pip check and lockfile frontend install pass on Linux; **122 coordination / 14 backend / 2 frontend tests**, lint/bundle/generated strict types/freshness/typecheck/build/DESIGN/actionlint pass. Real server startup/HTTP responses and scratch stale-type/missing-bundle negatives exercised; all G00/G01/G01B checks rerun on the combined candidate |
+| Handoff | **In Progress** pending native Windows/hosted CI evidence and review/integration. No stage/commit/push/merge authorized or performed. Checkpoint 0 stays In Progress until every exit gate passes. Remaining work is G01C verification; after checkpoint closure, F00/sharmelas-925 in 1A needs C-03, then U01/JebasJ; no automatic next shared-task assignment to whale2186 |
+
 ### Automatic-selection rules
 
 1. Read the live module-owner and task state in ROADMAP, the exact checkpoint ledger, catalog dependencies and relevant communication gates. Read Git status and verify the recorded common-base commit is available and includes the required shared contract. An uncommitted draft is not an implementation base.
