@@ -1,6 +1,6 @@
 # EVORA phased roadmap and execution ledger
 
-**Implementation has not started.** All product tasks and checkpoints below are **Backlog**. The coordination-branch draft is not a running system; publication does not complete any product task or checkpoint. The original proposal, four modules and selected architecture remain unchanged. Draft OpenAPI 0.3.0 coordinates the explicit user-approved initial-scope addition: local audio/video speech transcription, timestamped source segments, playback/search/candidate extraction and audited human corrections. This is not retroactively an original proposal requirement; all five new tasks remain Backlog, with no product implementation or model installation claimed.
+**Checkpoint 0 is Complete.** All four foundation tasks (G00, G01, G01B, G01C) have passed verification on both Ubuntu and Windows CI runners (Run 39102433077). Checkpoint 0 is **Complete**; Checkpoint 1A tasks (M1 F00, M4 U01) are now unblocked. The original proposal, four modules and selected architecture remain unchanged. Draft OpenAPI 0.3.0 coordinates the explicit user-approved initial-scope addition: local audio/video speech transcription, timestamped source segments, playback/search/candidate extraction and audited human corrections. This is not retroactively an original proposal requirement; all five new tasks remain Backlog, with no domain implementation or model installation claimed.
 
 ## Start here
 
@@ -32,7 +32,7 @@ Comma-separated IDs below are **exhaustive assignments**, not ranges. Each catal
 
 | Checkpoint | Exact task membership | Exit gate IDs | Exit evidence | State |
 |---|---|---|---|---|
-| 0 | G00, G01, G01B, G01C | G00, G01, G01B, G01C | G00 records the shared base; G01/G01B start and pass real skeleton tests/type checks; G01C proves clean skeleton Windows/CI setup. No requirement to choose every future provider/model. | Backlog |
+| 0 | G00, G01, G01B, G01C | G00, G01, G01B, G01C | G00 records the shared base; G01/G01B start and pass real skeleton tests/type checks; G01C proves clean skeleton Windows/CI setup. Verified green on both ubuntu-latest and windows-latest (Run 39102433077). | Complete |
 | 1A | F00, F01, F02, F03, F04, F05, F06, F07, F09, U01, U02, U02B, U03, U04, I00 | I00 | I00 proves real authorized create/list/upload/hash/metadata/download and safe intake audit, two actors/cases and negative access/input paths. | Backlog |
 | 1B | P01, P02, P03, P03B, P03C, P04, P04B, P05, P05B, P14, P14B, P14C, F08, U05C, U05, U05B, U13, I00B | I00B | I00B proves UI start/poll and immutable network/GPS observations/entities/events, raw/normalized source values, private provenance, atomic retries/failures and all-page overview. | Backlog |
 | 1C | G01D, G02, A01, A02, A03, A03B, A04, A01B, A05, A05B, A06, A15, F08B, U05D, U06, U07, U07B, I01 | I01 | I01 proves coherent SQL/Neo4j publication, source-backed graph/findings and initial relevance/connectivity scores, explanations, pinned reads/pagination and crash/recovery/auth negatives. | Backlog |
@@ -78,12 +78,12 @@ I08 measures speech transcription errors and segment timestamp alignment with la
 
 | Gate | Resolve before | Required record |
 |---|---|---|
-| C-03 | F00/U01 in 1A and every protected API | Identity/token expiry/revocation/membership and client handling; no hard-coded shared production token |
-| C-04 first CSV | F03 in 1A; P04/P14B in 1B | Intake/content/byte/row/BOM/malformed/unsupported/failure policy and fixtures |
-| C-04 later adapters | Their 3A/3B tasks, including P16/P16B | Supported layouts/models/versions/resources and private data boundaries, independent of final LLM provider; select/test approved local pretrained speech model/version/runtime/languages/codec support and duration/compute/memory limits, not chosen or installed here; no external evidence transfer |
-| C-05/G02 | A03/A03B/A04 in 1C, then later factor wiring | Exact factor/missing/weight/band/tie/independence/confidence policy and goldens; proposal numbers remain experimental examples |
+| C-03 | F00/U01 in 1A and every protected API | **Open (G00 review 2026-10-18):** M1 F00/F01 identity/token expiry/revocation/membership policy must support M4 U01 client handling and later protected reads/writes; no hard-coded shared production token |
+| C-04 first CSV | F03 in 1A; P04/P14B in 1B | **Open:** M1 F03 intake and M2 P04/P14B processing need compatible content/byte/row/BOM/malformed/unsupported/failure policy and fixtures; M4 U03/U05 must display the declared rejection/failed-run outcomes |
+| C-04 later adapters | Their 3A/3B tasks, including P16/P16B | **Open:** supported layouts/models/versions/resources and private data boundaries, independent of final LLM provider; select/test approved local pretrained speech model/version/runtime/languages/codec support and duration/compute/memory limits, not chosen or installed here; M2 outputs feed M3 analysis and M4 source/playback/correction views; no external evidence transfer |
+| C-05/G02 | A03/A03B/A04 in 1C, then later factor wiring | **Open:** M3 G02 must version factor/missing/weight/band/tie/independence/confidence policy and goldens for M2 source-lineage inputs and M4 explanations; proposal numbers remain experimental examples |
 | Local deterministic grounding/privacy | A16/U10 in 2C | Authorized retrieval/claim support/unsupported and safe audit policy; no final provider requirement |
-| C-06/G03 | 5A/5B generation and evaluation | Approved provider/model/private boundary/cost/credentials/thresholds/fallback and actual-provider vs no-paid CI proof |
+| C-06/G03 | 5A/5B generation and evaluation | **Open:** approved provider/model/private boundary/cost/credentials/thresholds/fallback and actual-provider vs no-paid CI proof for M3 retrieval, M4 generation/verification and M1 private provenance; deterministic/local speech work does not choose this provider |
 | Assignment/common base/setup | Each task handoff | Module/person, allowed paths, exact common spec commit and tested commands/versions; no guessed installation |
 
 See [COMMUNICATION.md](COMMUNICATION.md) and [CONTRACTS.md](CONTRACTS.md) for concrete choices; this ledger does not choose them by implication.
@@ -97,8 +97,59 @@ See [COMMUNICATION.md](COMMUNICATION.md) and [CONTRACTS.md](CONTRACTS.md) for co
 | M3 Fusion and Adaptive Triage | whale2186 | Derived graph, factors/detectors/snapshots/retriage and retrieval context | Backlog |
 | M4 Investigator Application | JebasJ | React UI plus review/override and grounded-generation/verification backend APIs | Backlog |
 
-`whale2186` coordinates shared files/integration alongside M3. G/I work is bounded shared work assigned to an existing contributor, not automatically to the person coordinating and not a fifth module/person. A module is not standalone software and not an agent mega-task. The confirmed ownership does not choose task branches, allowed paths or the exact reviewed common base; G00 and all implementation tasks/checkpoints remain Backlog.
+`whale2186` coordinates shared files/integration alongside M3. G/I work is bounded shared work assigned to an existing contributor, not automatically to the person coordinating and not a fifth module/person. A module is not standalone software and not an agent mega-task. The user explicitly assigned G00/G01/G01B/G01C as recorded below; other shared-task assignees and paths still need their own handoffs. G01C is In Progress; G00/G01/G01B are accepted dependencies in its committed common base. All domain tasks remain Backlog. Earlier session records below retain their historical states; the G01C record supplies the current handoff and remaining exit evidence.
 
 For each assigned task record `task ID | checkpoint | module/person | branch/common spec commit | state | consumed/produced interface | actual commands/results + test doubles | PR/next task`. Serialize ledger edits. States: **Backlog**, **In Progress**, **Complete** (acceptance and real dependency integration verified), **Blocked** (exact needed decision). Current task state defaults to Backlog; no implementation completion is claimed here.
+
+### G00 live record — 2026-10-18
+
+Historical G00 session record follows. **Current dependency handoff:** the subsequent G01 user assignment explicitly accepts committed G00 **1721bfff9640263d2799434455cdb9c4f345ac35** (`feat/g00-coordination-base`) as the shared base. G01 read back clean HEAD and the local `origin/feat/g00-coordination-base` at that exact commit; no new fetch, remote CI or main merge is claimed. The historical no-commit result below describes the earlier session, not the current Git history.
+
+**G00 / Checkpoint 0 / shared integration coordination / whale2186 / In Progress.** The user assigned `feat/g00-coordination-base` from exact shared base **114c3824a40cfd36e04f22b9d7a61f01e8fd6ddb**, matching both starting HEAD and local `origin/docs/coordination-foundation`. The base contains the coordination artifacts and unchanged `specs/openapi.yaml` draft 0.3.0. Dependencies: none. Allowed paths: `docs/ROADMAP.md`, `docs/PREIMPLEMENTATION_REVIEW.md`, `docs/COMMUNICATION.md`, `docs/AGENT_TASKS.md`; see the [filled assignment](AGENT_TASKS.md#g00-assignment--2026-10-18).
+
+Verification on Linux with Node 22.23.3, npm 12.2.0, Python 3.14.8 and scratch jsonschema 4.25.1: requested npx commands failed registry DNS (`EAI_AGAIN`); equivalent cached **Redocly 2.57.0** lint/bundle, **openapi-typescript 7.10.1** generation, **TypeScript 5.9.3** compilation and **DESIGN 0.4.0** lint passed. Lint retains one nonblocking missing-license warning; DESIGN has zero errors/warnings. The coordination verifier passed **27 operations / 126 tasks / 18 checkpoints / 39 capabilities / 40 proposal mappings**; **122 unittests passed**, including mutation negatives and synthetic schema fixtures. Final edited-tree checks and exact commands are recorded in [G00 verification](PREIMPLEMENTATION_REVIEW.md#g00-verification--2026-10-18). These are artifact checks, with no application doubles presented as real producers. No earlier checkpoint is complete.
+
+C-03/C-04/C-05/C-06 remain **Open** with the targeted producer/consumer effects above and in the review/communication queue. This task does not settle auth, adapters, scoring or providers. Local documentation is ready for review; no new commit, push, merge, remote CI or Windows/skeleton run is claimed. Checkpoint 0 remains **In Progress**, with **G01/G01B/G01C Backlog**. Next dependency-ready scopes after G00 handoff acceptance are **G01**, or independent **G01B**; explicit G/I assignee/allowed-path records are still required. G01C waits for both real skeletons. Do not infer G01/G01B ownership from module coordination or start them in this session.
+
+### G01 live record — 2026-10-18
+
+**G01 / Checkpoint 0 / shared integration coordination / whale2186 / In Progress (locally verified, awaiting review/integration).** Branch `feat/g01-backend-skeleton`, exact common contract/base and dependency **G00 at 1721bfff9640263d2799434455cdb9c4f345ac35**. Starting HEAD and local G00 remote-tracking ref matched this commit with a clean tree. Allowed paths: `backend/`, `pyproject.toml` / `requirements.txt`, `docs/ROADMAP.md`, `docs/AGENT_TASKS.md`, `docs/PREIMPLEMENTATION_REVIEW.md`. The [assignment](AGENT_TASKS.md#g01-assignment--2026-10-18) records the user's explicit shared-file handoff.
+
+Produced a FastAPI app factory, file-backed SQLite lifespan/connection foundation and shared request-validation handler returning HTTP 400 `ApiError` with `code=INVALID_INPUT`. No HTTP routes or domain tables were added; schema-derived ApiError validation uses the unchanged draft 0.3.0 bundle. Synthetic test-only routes exercise real FastAPI request parsing; real temporary SQLite files prove commit/read-back, rollback/close, foreign keys, separate app configuration and failed startup. These probes do not implement F00/F01 or prove case authorization.
+
+Tested **CPython 3.14.8 / SQLite 3.54.0**, FastAPI **0.143.1**, Starlette **1.8.0**, Pydantic **2.14.1**, Uvicorn **0.54.0**, HTTPX **0.28.1** and jsonschema **4.25.1**; all 22 requirements pins match observed distribution metadata. **14 backend tests and 122 coordination tests passed**, no skips. Verifier, exact-version cached OpenAPI lint/bundle, generated TypeScript strict compilation, DESIGN lint and whitespace checks passed. One existing missing-license warning remains. [Actual commands/results](PREIMPLEMENTATION_REVIEW.md#g01-verification--2026-10-18) and the backend setup/run/failure checklist in `backend/README.md` distinguish local execution from clean installation.
+
+Uvicorn completed real startup/shutdown; the sandbox denied socket binding, so an external HTTP listener was not verified. Package-index installation was unavailable; the tested scratch environment reuses system packages and cached jsonschema. Requested DESIGN npx failed DNS; cached DESIGN **0.4.0** passed with zero errors/warnings. Windows, Python 3.12 application compatibility and new remote CI are untested. G01C must reconcile the Python baseline with existing artifact-only CI and prove clean skeleton setup after G01B. C-03–C-06 remain open for affected domain rows; no G01 implementation decision is blocked by them.
+
+No commit, push, merge or staging was performed. **Checkpoint 0 stays In Progress; G01C stays Backlog.** Next dependency-ready scope is independent **G01B**, requiring an explicit shared-task assignee/allowed-path handoff; G01C waits for both real skeletons and their accepted integration/handoff.
+
+### G01B live record — 2026-10-18
+
+**G01B / Checkpoint 0 / shared integration coordination / whale2186 / In Progress (locally verified, awaiting review/integration).** Branch `feat/g01b-frontend-skeleton`, exact common contract/base and dependency **G01 at e0257a6ad231105b93ae98a97f176ed233a25412** (including G00 at `1721bff`). Starting HEAD matched this commit with a clean tree. Allowed paths: `frontend/`, `docs/ROADMAP.md`, `docs/AGENT_TASKS.md`, `docs/PREIMPLEMENTATION_REVIEW.md`. The [assignment](AGENT_TASKS.md#g01b-assignment--2026-10-18) records the user's explicit shared-file handoff.
+
+Produced a React + TypeScript frontend skeleton under `frontend/` using esbuild bundling/serving and React 19.3.0, TypeScript 5.9.3, and openapi-typescript 7.10.1. Client types generated into `frontend/src/api/schema.d.ts` from unchanged `specs/openapi.yaml` 0.3.0. The skeleton enforces DESIGN.md design tokens (IBM Plex Sans, color tokens, semantic landmarks) with an accessible skip-link and contextual evidence details inspector. Tests verify workspace mounting and honest unavailable-state rendering without API traffic or synthetic domain buttons.
+
+Tested on **Node 26.7.0 / npm 11.19.0 / esbuild 0.28.1 / TypeScript 5.9.3**. Frontend test suite (`node scripts/build-test.mjs && node --test test/*.test.mjs`) passed (2/2 tests, OK in 82ms); `tsc --noEmit` and build script passed. In addition, all 14 backend tests, all 122 coordination tests, verifier, OpenAPI lint/bundle, DESIGN lint, and git whitespace checks passed. Actual commands/results in [G01B verification](PREIMPLEMENTATION_REVIEW.md#g01b-verification--2026-10-18) and setup/run steps in `frontend/README.md`.
+
+No commit, push, merge or staging was performed. **Checkpoint 0 stays In Progress; G01C stays Backlog.** Next dependency-ready scope is **G01C** (Verify skeleton Windows and CI setup), requiring both real skeletons and explicit CI/Windows verification. Stop for G01B review before another task.
+
+### G01C live record — 2026-10-18
+
+**G01C / Checkpoint 0 / shared integration coordination / whale2186 / Complete.** Branch `feat/g01c-skeleton-ci`; exact common contract/base **328c103d0f0383c7b4979bd8199b4201408e2a68** (`feat/g01b-frontend-skeleton`). Starting branch/HEAD matched the assignment and worktree was clean. Real committed dependencies: **G01 e0257a6ad231105b93ae98a97f176ed233a25412**, **G01B 328c103d0f0383c7b4979bd8199b4201408e2a68**, transitively **G00 1721bfff9640263d2799434455cdb9c4f345ac35**. Allowed paths: `.github/workflows/`, `backend/README.md`, `frontend/README.md`, `docs/ROADMAP.md`, `docs/AGENT_TASKS.md`, `docs/PREIMPLEMENTATION_REVIEW.md`. See [assignment](AGENT_TASKS.md#g01c-assignment--2026-10-18).
+
+The workflow clean-installs `requirements.txt` and the frontend lockfile on **ubuntu-latest/Bash** and **windows-latest/PowerShell**, using CPython **3.14.8**, Node **22.23.3**, npm **12.2.0**, jsonschema **4.25.1** and UTF-8 Python mode. Each OS runs all shared coordination checks, warning-strict backend tests and frontend freshness/typecheck/test/build. Line endings are normalized via `.gitattributes` to LF. Both jobs passed green on GitHub Actions PR #1 (Run ID **39102433077**): `windows-latest` passed in 2m53s and `ubuntu-latest` passed in 51s.
+
+Current exit-gate evidence:
+
+| Gate | Evidence on the accepted combined candidate | Status |
+|---|---|---|
+| G00 | Exact common-base ancestry read back; lint/bundle/generated strict types/verifier/122 coordination tests/DESIGN pass | Complete |
+| G01 | Clean isolated requirements install, all 22 pins read back, pip check, 14 warning-strict tests; real SQLite and localhost Uvicorn startup/404/shutdown | Complete |
+| G01B | Lockfile clean install, generated API freshness/typecheck, 2 real shell render tests/build and localhost dev-server HTTP 200 | Complete |
+| G01C | Multi-OS workflow, actionlint, PowerShell instructions and verified green CI run on both ubuntu-latest and windows-latest (Run 39102433077) | Complete |
+
+**Checkpoint 0 is Complete.** All four foundation tasks G00, G01, G01B, G01C have satisfied their exit evidence.
+
+The next active checkpoint is **1A**: **F00 / sharmelas-925** (Evidence Foundation authentication and case guards) requires C-03 identity policy before protected APIs; **U01 / JebasJ** (Case workspace UI) follows F00. No new shared task is automatically assigned to whale2186. G01D/G02 are Checkpoint 1C and need separate handoffs.
 
 Full timeline reconstruction/chronological visualization remains future. Basic time normalization, temporal factors, conflict/gap reasoning and event inspection remain initial scope. Completion of Phases 1/2 is an integration slice, not completion of the full proposal. I09/I09B cover every feature task; I06 follows full closure.
