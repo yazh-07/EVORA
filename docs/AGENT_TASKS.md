@@ -107,7 +107,7 @@ This card records the user's bounded shared-file handoff before the G00 ledger/r
 | Input/output | Skeleton build/test commands and unchanged draft 0.3.0; produce a two-OS CI matrix, setup/run documentation and actual verification record. Backend tests use real SQLite/FastAPI with test-only validation probes; frontend tests render the real shell without domain producers |
 | Gate | No C-03–C-06 choice blocks skeleton CI. Use backend's CPython **3.14.8** and frontend manifest's Node **22.23.3** / npm **12.2.0**. Native Windows and hosted CI results must be read back before claiming G01C/Checkpoint 0 Complete |
 | Commands and proof | [G01C verification](PREIMPLEMENTATION_REVIEW.md#g01c-verification--2026-10-18): clean isolated backend install/all 22 pins/pip check and lockfile frontend install pass on Linux; **122 coordination / 14 backend / 2 frontend tests**, lint/bundle/generated strict types/freshness/typecheck/build/DESIGN/actionlint pass. Real server startup/HTTP responses and scratch stale-type/missing-bundle negatives exercised; all G00/G01/G01B checks rerun on the combined candidate |
-| Handoff | **In Progress** pending native Windows/hosted CI evidence and review/integration. No stage/commit/push/merge authorized or performed. Checkpoint 0 stays In Progress until every exit gate passes. Remaining work is G01C verification; after checkpoint closure, F00/sharmelas-925 in 1A needs C-03, then U01/JebasJ; no automatic next shared-task assignment to whale2186 |
+| Handoff | **Complete**. Multi-OS workflow verified green on GitHub Actions PR #1 (Run 39102433077) across ubuntu-latest and windows-latest. Checkpoint 0 is Complete. Next active checkpoint is 1A (M1 F00 / sharmelas-925, M4 U01 / JebasJ) |
 
 ### Automatic-selection rules
 
