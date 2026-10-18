@@ -81,6 +81,20 @@ This card records the user's bounded shared-file handoff before the G00 ledger/r
 | Commands and proof | [G01 verification](PREIMPLEMENTATION_REVIEW.md#g01-verification--2026-10-18): **14 backend / 122 coordination tests pass**, real SQLite and synthetic test-only HTTP validation probes, verifier/lint/bundle/generated strict TypeScript/cached DESIGN checks pass. CPython 3.14.8 and 22 tested package pins; Uvicorn startup succeeds but socket binding is denied. Clean index installation/Windows/remote CI remain unverified; no earlier completed checkpoint exists |
 | Handoff | **In Progress**, locally implemented/verified, awaiting review/integration; no stage/commit/push/merge. Exact commands and failure checklist in `backend/README.md` (see [G01 verification](PREIMPLEMENTATION_REVIEW.md#g01-verification--2026-10-18)). G01B remains the independent Checkpoint 0 candidate with an explicit shared-task handoff; G01C needs both skeletons and Python-baseline/Windows/CI setup proof |
 
+### G01B assignment — 2026-10-18
+
+| Field | Recorded assignment |
+|---|---|
+| Task/checkpoint and exact acceptance | **G01B / 0**: pinned tested Node/packages and lockfile; React/TypeScript/Vite shell; generate declarations from unchanged draft 0.3.0; start/build/`tsc --noEmit`; real render test and negative checks; DESIGN tokens and API-only boundary; preserve shared/backend checks |
+| Module/person and coordination | Shared integration coordination explicitly assigned by the user to **whale2186**, alongside M3. M4 remains owned by **JebasJ**; this bounded scaffold does not assign M4 domain work |
+| Branch/common commit | `feat/g01b-frontend-skeleton`; exact common contract/base **e0257a6ad231105b93ae98a97f176ed233a25412** (`feat/g01-backend-skeleton`); clean starting worktree and HEAD read back at this SHA |
+| Paths | Only `frontend/`, `package.json`, `docs/ROADMAP.md`, `docs/AGENT_TASKS.md`, `docs/PREIMPLEMENTATION_REVIEW.md`; lockfile stays under `frontend/`; do not modify `specs/openapi.yaml`, backend, workflow or other shared files |
+| Dependencies | **G00 at 1721bfff9640263d2799434455cdb9c4f345ac35**, included in user-accepted **G01 at e0257a6ad231105b93ae98a97f176ed233a25412**. Real committed skeleton/contract consumed; no main merge or remote CI claim |
+| Input/output | Consume sole HTTP authority `specs/openapi.yaml` 0.3.0 and DESIGN.md. Produce generated declarations and a frontend setup shell, commands/tests/docs; no invented API routes, wire fields or domain producer doubles |
+| Gate | No C-03–C-06 decision blocks the static shell/type generation. Auth/base URL/runtime error client belongs to U01 after F00. No health endpoint or domain routes exist in G01; do not probe or fabricate availability |
+| Commands and proof | Frontend install/generation freshness/typecheck/render test/build/start; shared OpenAPI lint/bundle, coordination verifier/unittests with jsonschema 4.25.1, warning-strict backend suite, DESIGN lint and `git diff --check`. Actual results recorded in PREIMPLEMENTATION_REVIEW; registry DNS currently unavailable, investigate cache installation without claiming network/Windows reproducibility |
+| Handoff | **In Progress**, implementation authorized but stage/commit/push/merge prohibited. Checkpoint 0 stays In Progress. Next candidate **G01C** after reviewed G01B handoff, requiring its own bounded shared-task assignment and real Windows/CI evidence |
+
 ### Automatic-selection rules
 
 1. Read the live module-owner and task state in ROADMAP, the exact checkpoint ledger, catalog dependencies and relevant communication gates. Read Git status and verify the recorded common-base commit is available and includes the required shared contract. An uncommitted draft is not an implementation base.

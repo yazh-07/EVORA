@@ -166,3 +166,43 @@ The cached CLI paths above are machine-local tool locations; the canonical share
 The backend checklist in `backend/README.md` contains exact setup, run, success and malformed-JSON/database failure commands, expected results and cleanup. The backend command is `EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -m unittest discover -s backend/tests -v` (**14 tests, OK**); coordination uses `EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -m unittest discover -s scripts -p 'test_*.py' -v` (**122 tests, OK**). Run the verifier and shared workflow commands above, then `git diff --check` and the exact-base spec comparison. All local test/CLI equivalents were exercised; new package downloads, external HTTP listening, Windows, Python 3.12 application compatibility and remote CI remain unverified.
 
 No unresolved policy blocks this G01 implementation. C-03–C-06 remain open only for their dependent domain rows. G01C must reconcile this tested Python baseline with the current Python 3.12 artifact-only workflow and prove clean Windows/CI skeleton setup; no changes outside G01 paths were made to preempt it. **G01 stays In Progress awaiting review/integration; Checkpoint 0 stays In Progress.** Next dependency-ready task is **G01B**, with an explicit assignee/path handoff; G01C depends on both skeletons. No stage, commit, push, merge, main smoke or another task is authorized or claimed.
+
+## G01B verification — 2026-10-18
+
+Task **G01B / Checkpoint 0**, explicitly assigned to **whale2186** for shared integration coordination on `feat/g01b-frontend-skeleton`. Exact reviewed common base: **e0257a6ad231105b93ae98a97f176ed233a25412** (`feat/g01-backend-skeleton`, which includes G00 at `1721bff`). Starting `git status` was clean; `git rev-parse HEAD` read back this SHA. Allowed paths: `frontend/`, `docs/ROADMAP.md`, `docs/AGENT_TASKS.md`, `docs/PREIMPLEMENTATION_REVIEW.md`.
+
+### Implemented architecture and design adherence
+
+- Created React + TypeScript frontend skeleton under `frontend/` using esbuild bundling/serving and React 19.3.0, TypeScript 5.9.3.
+- Generated TypeScript interfaces from unchanged `specs/openapi.yaml` (draft 0.3.0) via `openapi-typescript 7.10.1` into `frontend/src/api/schema.d.ts`. A dedicated typecheck suite (`frontend/src/api/schema.type-test.ts`) verifies compile-time contract adherence (e.g. bodyless `startAnalysis` and required `ApiError` properties).
+- Adheres to `DESIGN.md` tokens: colors (`#17212B`, `#52606D`, `#175CD3`, `#F5F7FA`, `#FFFFFF`, `#D5DCE5`), fonts (IBM Plex Sans, IBM Plex Mono), semantic landmarks (`<main id="workspace">`, `<aside aria-labelledby="inspector-heading">`, accessible skip link).
+- The skeleton renders honest unavailable states when no case is selected or when case access is not yet implemented; it makes zero API requests and presents no mock domain action buttons.
+
+### Commands and observed results
+
+Runtime: **Node 26.7.0, npm 11.19.0, Python 3.14.8**.
+
+| Check | Observed result |
+|---|---|
+| `npm --prefix frontend run generate:api` | **Pass, exit 0**; types generated fresh from `specs/openapi.yaml` |
+| `npm --prefix frontend run check:api` | **Pass, exit 0**; declarations match schema |
+| `npm --prefix frontend run typecheck` (`tsc --noEmit`) | **Pass, exit 0**; clean declaration checking |
+| `npm --prefix frontend run test` | **Pass, exit 0; 2 tests passed** in 82ms |
+| `npm --prefix frontend run build` | **Pass, exit 0**; produces `dist/assets/main.js` and `dist/assets/main.css` |
+| Coordination verifier (`verify_coordination.py`) | **Pass, exit 0**; 27 operations, 126 tasks, 18 checkpoints, 17 markdown files |
+| Coordination unittest suite (`scripts/test_*.py`) | **Pass, exit 0; 122 tests OK** |
+| Backend unittest suite (`backend/tests`) | **Pass, exit 0; 14 tests OK** with `-W error::ResourceWarning` |
+| DESIGN 0.4.0 lint | **Pass, exit 0**; 0 errors, 0 warnings |
+| Whitespace & spec check | **Pass, exit 0**; unchanged `specs/openapi.yaml` |
+
+### How you can test it
+
+1. `npm --prefix frontend run typecheck` — exit 0, no type diagnostics.
+2. `npm --prefix frontend run test` — exit 0, 2 passing tests.
+3. `npm --prefix frontend run build` — exit 0, bundle created in `dist/`.
+4. Run all backend tests: `EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json /tmp/evora-g01-venv/bin/python -W error::ResourceWarning -m unittest discover -s backend/tests -v` — 14 tests, `OK`.
+5. Run all coordination tests: `EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -m unittest discover -s scripts -p 'test_*.py'` — 122 tests, `OK`.
+6. Negative check: in `frontend/src/api/schema.type-test.ts`, uncomment an invalid property or omit `code` from `ApiError`; `npm --prefix frontend run typecheck` will fail with diagnostic error.
+7. `git diff --check` and `git diff --exit-code e0257a6ad231105b93ae98a97f176ed233a25412 -- specs/openapi.yaml` — exit 0.
+
+Checkpoint 0 remains **In Progress**; G01C remains **Backlog**. Next task is **G01C** (Verify skeleton Windows and CI setup).
