@@ -320,3 +320,43 @@ Known setup boundaries: wrong/missing runtime, unwritable package prefix/private
 Tests use synthetic content and clean their temporary SQLite/probe files. Manual server use leaves an ignored `storage/evora.sqlite3`; remove only your own synthetic database after shutdown. Bundle/types/env artifacts stay in ignored or scratch locations. Backend and frontend runtime smoke cover HTTP startup and shell delivery, not an end-to-end domain application or browser audit.
 
 **Checkpoint 0 exit evidence is complete.** Both `ubuntu-latest` and `windows-latest` CI jobs passed on GitHub Actions PR #1 (Run ID **39102433077**). Checkpoint 0 is **Complete**. Next active checkpoint is **1A**: **F00 / sharmelas-925** requires C-03 identity policy before protected APIs; **U01 / JebasJ** consumes F00. No new shared task is automatically assigned to whale2186. G01D/G02 in 1C need a separate handoff.
+
+## G02 verification — 2026-10-21
+
+Task **G02 / Checkpoint 1C**, assigned to **whale2186** (M3 Fusion and Adaptive Triage) on branch `feat/g02-triage-policy`. Common contract/base commit: **6496c5e9e17f2000b64a64f79d2fb166c6ce2094** (`origin/docs/coordination-foundation`). Started early per ROADMAP instruction: *"G02 is needed before score implementation; define golden positive/counterexamples early."* Allowed paths: `backend/triage/`, `backend/tests/test_triage_policy.py`, `docs/ROADMAP.md`, `docs/AGENT_TASKS.md`, `docs/PREIMPLEMENTATION_REVIEW.md`, `docs/COMMUNICATION.md`.
+
+### Implemented policy and rules
+
+- **Factor functions (`backend/triage/policy.py`):** Defined pure mathematical functions for all 7 factors in `TriageFactor.name`: `relevance`, `connectivity`, `corroboration`, `gap_relevance`, `source_quality`, `conflict_relevance`, `temporal_proximity`. All return values bounded in `[0, 1]`.
+- **Base weights:** relevance=0.25, connectivity=0.20, corroboration=0.15, gap_relevance=0.15, source_quality=0.10, conflict_relevance=0.10, temporal_proximity=0.05 (sum = 1.00).
+- **Absent-factor normalization:** When only a subset of factors is available, unobserved/inapplicable factors are omitted (never fabricated as 0.0), and available weights are normalized proportionally: `normalized_weight_i = base_weight_i / sum(available_weights)`.
+- **Contribution and Score:** Each factor contribution is `round(value * normalized_weight * 100, 2)`. Final score is `min(100.0, round(sum(contributions), 2))`, clamped to `[0, 100]`.
+- **Priority bands:** P1 [80, 100], P2 [60, 80), P3 [40, 60), P4 [0, 40).
+- **Unprocessed evidence invariant:** Evidence with 0 observations has no TriageResult (not scored, distinct from P4).
+- **Tie-breaking comparator:** Pinned score descending, then evidence UUID ascending. Unscored items last by evidence UUID ascending.
+- **Source independence:** Duplicate records from the same file/source and media derivatives sharing source lineage (e.g. video visual detections and video audio speech transcripts from the same video file) do not count as independent corroboration.
+- **Anomaly mapping:** Detector anomalies map to `conflict_relevance` or `relevance` without introducing an undeclared factor enum.
+- **Canonical golden fixtures (`backend/triage/goldens.py`):** Defined positive P1–P4 test cases and negative counterexamples (false corroboration control, media derivative control, unprocessed control, tie-breaking control).
+
+### Commands and observed results
+
+| Check | Command | Observed Result |
+|---|---|---|
+| Backend unit tests (47 tests) | `EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json /tmp/evora-g01-venv/bin/python -W error::ResourceWarning -m unittest discover -s backend/tests -v` | **Pass, 47 tests OK** (33 new triage policy tests, 14 skeleton tests) in 0.16s |
+| Coordination unit tests (122 tests) | `EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -m unittest discover -s scripts -p 'test_*.py' -v` | **Pass, 122 tests OK** in 2.2s |
+| Coordination verifier | `python scripts/verify_coordination.py /tmp/evora-openapi.json` | **Pass**, 27 operations, 126 tasks, 18 checkpoints |
+| OpenAPI lint & bundle | `npx @redocly/cli@2.57.0 bundle specs/openapi.yaml` | **Pass** |
+| TypeScript declaration check | `npx --package typescript@5.9.3 tsc --noEmit --strict /tmp/evora-api.d.ts` | **Pass** |
+| Frontend checks | `npm --prefix frontend run check:api && npm --prefix frontend run typecheck && npm --prefix frontend run test && npm --prefix frontend run build` | **Pass**, 2/2 tests OK, build completed in 35ms |
+| DESIGN.md lint | `npx @google/design.md@0.4.0 lint DESIGN.md` | **Pass**, 0 errors, 0 warnings |
+| Whitespace & diff checks | `git diff --check` and contract diff against base | **Pass**, `specs/openapi.yaml` untouched |
+
+### How you can test it
+
+1. `EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json /tmp/evora-g01-venv/bin/python -W error::ResourceWarning -m unittest discover -s backend/tests -v` — 47 tests, OK.
+2. `EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json /tmp/evora-g01-venv/bin/python -m unittest backend.tests.test_triage_policy.ScoringPolicy.test_canonical_false_corroboration_and_media_derivative_controls -v` — OK, proves duplicates and audio/video derivatives from the same media do not inflate corroboration scores.
+3. `EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json /tmp/evora-g01-venv/bin/python -m unittest backend.tests.test_triage_policy.ScoringPolicy.test_unprocessed_canonical_control_never_creates_p4 -v` — OK, proves evidence lacking observations is not scored.
+4. `python scripts/verify_coordination.py /tmp/evora-openapi.json` — exit 0.
+5. `git diff --check` — exit 0.
+
+Checkpoint 1A remains active for M1 (`F00`) and M4 (`U01`). G02 pure policy is ready for downstream M3 tasks (A03–A19). No commit, push, or merge performed.

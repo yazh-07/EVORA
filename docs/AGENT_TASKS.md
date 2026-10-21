@@ -51,6 +51,20 @@ Add `Use task [TASK_ID] instead of automatic selection.` to the prompt. All owne
 
 ## Choosing the next task
 
+### G02 assignment — 2026-10-21
+
+| Field | Recorded assignment |
+|---|---|
+| Task/checkpoint and exact acceptance | **G02 / 1C**: version all seven factor functions/ranges, independence/confidence/count/quality rules, proportional missing-factor weights, score cap/bands/ties and canonical positive/counterexample outputs; no score for zero observations |
+| Module/person and coordination | **M3 / whale2186**, explicitly assigned this shared policy task and the four documentation paths by the user; later independent policy work authorized while 1A remains the active checkpoint |
+| Branch/common commit | `feat/g02-triage-policy`; exact reviewed base **6496c5e9e17f2000b64a64f79d2fb166c6ce2094** (`origin/docs/coordination-foundation`); starting branch, HEAD and local remote-tracking ref read back, clean tree; no fresh fetch claimed |
+| Paths | `backend/triage/`, `backend/tests/test_triage_policy.py`, `docs/COMMUNICATION.md`, `docs/AGENT_TASKS.md`, `docs/ROADMAP.md`, `docs/PREIMPLEMENTATION_REVIEW.md`; generated verification artifacts in `/tmp` only |
+| Dependencies | G00 **1721bfff9640263d2799434455cdb9c4f345ac35**, present in the approved base; G01/G01B/G01C skeletons are real regression dependencies. Factor inputs, source lineage and complete wire examples are synthetic policy fixtures, not real graph/detector/API integration |
+| Input/output | Unchanged OpenAPI 0.3.0 `TriageFactor`, `Priority`, `TriageResult`; internal versioned pure functions and synthetic goldens. No HTTP, persistence, spec or generated-client changes |
+| Gate | Resolve **C-05 policy** here. User confirms per-factor `round(value * normalized_weight * 100, 2)` and final `min(100.0, round(sum(contributions), 2))`. Real producer wiring/reranking/history remain A03–A19 and I02/I05/I07/I07B acceptance |
+| Commands and proof | [G02 verification](PREIMPLEMENTATION_REVIEW.md#g02-verification--2026-10-21): **33 triage / 14 skeleton / 47 total backend tests pass**, 122 coordination tests, OpenAPI lint/bundle/strict TypeScript compilation, frontend API freshness/typecheck/tests/build, DESIGN lint, whitespace and link checks pass. |
+| Handoff | **In Progress**, locally verified pure policy awaiting review/integration; no staging, commit, push or merge authorized. Checkpoint 1A remains active; next M3 producer A03 requires accepted G02 plus real A02 |
+
 ### G00 assignment — 2026-10-18
 
 | Field | Recorded assignment |

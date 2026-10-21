@@ -20,7 +20,7 @@ Phase/checkpoint membership and promotion rules live only in [ROADMAP.md](ROADMA
 |---|---|---|---|
 | C-03 | G00/F00/F01/U01; all case APIs | Bearer auth exists in the wire contract, but issue/expiry/revocation, case membership, local test identities and UI token handling are not chosen | Record a safe provider/local synthetic-only policy; test missing/invalid/expired identity, two actors/cases, foreign IDs and no leaked existence; no shared production token |
 | C-04 | F03/P04/P14B/P14D; M1/M2 | CSV byte/row limits, BOM, missing/extra columns, malformed rows and kind/content validation; 415 before run versus accepted failed run | Record first-format policy and actual valid/malformed/unsupported/oversized/retry tests; later adapters choose documented layouts/models/limits before their rows |
-| C-05 | G02/A03–A19/I02/I05/I07/I07B; M3 with M2/M4 | Exact factor functions/quality/count/confidence/missing inputs, independence/weights/bands/ties, anomaly mapping and goldens remain open | Version actual scoring policy and positive/counterexamples; prove new-upload, detector feedback and existing-evidence reprocessing change earlier ranks with faithful explanations/history; no silent new factor enum |
+| C-05 | G02/A03–A19/I02/I05/I07/I07B; M3 with M2/M4 | **Resolved (G02 policy 2026-10-21):** Defined exact scoring functions for all 7 factors, base weights summing to 1.0, proportional missing-factor normalization, score capped at 100.00, P1-P4 bands, tie-breaking by evidence UUID ascending, unprocessed evidence unscored invariant, source independence (no duplicate or media derivative corroboration), and anomaly mapping to conflict/relevance. Real producer integration in A03–A19 |
 | C-06 | G03/A16B/U10B/U10C/U11B/I05C/F08E; M3/M4/M1 privacy | Approved LLM provider/model, retrieval/privacy boundary, prompt versions, verification thresholds and fallback | Record policy and exercise approved generation + verification; no-paid CI adapter labeled test-only; same-case claim locators, unsupported zero citations and private provenance audited without raw public logs |
 
 Module owners and integration coordination are confirmed by GitHub handle in [ROADMAP.md](ROADMAP.md#module-assignment-and-live-task-state). G00 now records the user's exact common-base/shared-task handoff below; later task handoffs, shared G/I assignees and tested package/Windows/Neo4j/model setup remain open readiness items. Ownership does not imply G00 completion or installation success.
@@ -54,5 +54,18 @@ C-03 is resolved in coordination policy for F00/U01:
 - Case access checks require the authenticated actor to be an authorized member of the case. Accessing an unauthorized case or a nonexistent case returns HTTP 404 with `ApiError` (`code: "NOT_FOUND"`, `message: "Resource not found."`) to prevent case existence leakage.
 - Frontend (U01) stores tokens in memory only (no localStorage or persistent browser storage).
 - Zero production secrets committed to Git. F00 implements the backend guard; U01 consumes it.
+
+C-05 is resolved in versioned scoring policy `backend/triage/policy.py` (policy version `g02-triage-v1`):
+- All 7 allowed factors defined with strict [0, 1] range: `relevance`, `connectivity`, `corroboration`, `gap_relevance`, `source_quality`, `conflict_relevance`, `temporal_proximity`.
+- Base weights sum to 1.00: relevance (0.25), connectivity (0.20), corroboration (0.15), gap_relevance (0.15), source_quality (0.10), conflict_relevance (0.10), temporal_proximity (0.05).
+- Proportional normalization: unobserved factors are omitted, remaining weights normalized by `base_weight / sum(available_weights)`.
+- Contribution formula: `round(value * normalized_weight * 100, 2)`.
+- Final score: `min(100.0, round(sum(contributions), 2))`, clamped to [0, 100].
+- Priority bands: P1 [80, 100], P2 [60, 80), P3 [40, 60), P4 [0, 40).
+- Unprocessed evidence invariant: evidence with 0 observations has no TriageResult (not scored, distinct from P4).
+- Tie breaking: score descending, then evidence UUID ascending. Unscored items last by evidence UUID ascending.
+- Source independence: duplicate records and video visual/speech derivatives from the same source do not count as independent corroboration.
+- Anomaly mapping: anomalies map to existing factor `conflict_relevance` or `relevance` without introducing an undeclared enum.
+- Golden test fixtures and counterexamples in `backend/triage/goldens.py`. Tested in `backend/tests/test_triage_policy.py`.
 
 Draft 0.3.0 preserves the original 25 operationIds and adds listTranscriptRevisions/appendTranscriptRevision for the user-approved transcription workflow. Publication requires explicit authorization and verification of the exact remote commit and CI. Full proposal scope is not awaiting renewed feature approval; unresolved settings block their dependent rows only. Artifact verification status belongs in `PREIMPLEMENTATION_REVIEW.md`, not invented application metrics here.
