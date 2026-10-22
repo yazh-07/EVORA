@@ -320,3 +320,107 @@ Known setup boundaries: wrong/missing runtime, unwritable package prefix/private
 Tests use synthetic content and clean their temporary SQLite/probe files. Manual server use leaves an ignored `storage/evora.sqlite3`; remove only your own synthetic database after shutdown. Bundle/types/env artifacts stay in ignored or scratch locations. Backend and frontend runtime smoke cover HTTP startup and shell delivery, not an end-to-end domain application or browser audit.
 
 **Checkpoint 0 exit evidence is complete.** Both `ubuntu-latest` and `windows-latest` CI jobs passed on GitHub Actions PR #1 (Run ID **39102433077**). Checkpoint 0 is **Complete**. Next active checkpoint is **1A**: **F00 / sharmelas-925** requires C-03 identity policy before protected APIs; **U01 / JebasJ** consumes F00. No new shared task is automatically assigned to whale2186. G01D/G02 in 1C need a separate handoff.
+
+## U01 verification — 2026-10-22
+
+**U01 / Checkpoint 1A / M4 / JebasJ / In Progress**, branch
+`feat/u01-authenticated-api-client`, exact published coordination base
+**6496c5e9e17f2000b64a64f79d2fb166c6ce2094**. Clean starting HEAD and freshly
+fetched `origin/docs/coordination-foundation` matched; remote main was inspected
+and still contains only the initial README. No other active U01 branch was
+published. The base includes accepted G01B **328c103d0f0383c7b4979bd8199b4201408e2a68**
+and G01 **e0257a6ad231105b93ae98a97f176ed233a25412** ancestry. The task is selected
+under the user's one-task automatic assignment; no M1 or shared G/I work is taken.
+See [assignment](AGENT_TASKS.md#u01-assignment--2026-10-22) and
+[live state](ROADMAP.md#u01-live-record--2026-10-22).
+
+The shared typed Fetch client derives its API from committed generated `paths`,
+with one configurable server origin, closure-held bearer token, shared
+HTTP/protocol/network errors, explicit JSON/multipart/byte transport and session
+invalidation. Token replacement/logout/401 abort requests and reject late old
+session data; a stale old-session 401 cannot clear the new actor's token.
+The React provider shares the client and resets descendant UI state on session
+changes. No login/refresh endpoint, hard-coded runtime token, case UI, backend
+route or new package is added. The sole API/schema, generated types, dependency
+manifests, backend and entire FEATURE_SCOPE (including approved transcription
+and corrections) remain unchanged. Only the assignment/live/result entries in
+shared docs are changed for this task.
+
+**Dependency disclosure:** F00 is absent. The automatic-selection reference
+allows U01 against a disclosed fixture. Fetch doubles and temporary localhost
+HTTP servers serve only schema-derived synthetic responses for transport tests;
+they do not implement or prove backend authentication, token expiry/revocation,
+membership or browser CORS. C-03's later declared resolution supplies bearer,
+memory-only token and 401/404 handling; no unresolved provider choice is guessed.
+Successful JSON is statically typed, not fully schema-validated by the runtime
+client. The seven synthetic fixture objects were separately validated against
+the actual bundled contract using jsonschema 4.25.1 plus format checking.
+
+Actual Windows environment: **Python 3.14.8 / SQLite 3.50.4 / Node 22.23.3 /
+npm 12.2.0 / jsonschema 4.25.1**, existing isolated `.venv` and locked frontend
+dependencies prepared earlier. `pip check` passes. No system configuration,
+new dependency installation, model/provider execution or new hosted CI run.
+
+| Check | Actual result |
+|---|---|
+| Frontend generated API freshness/typecheck/build | **Pass**, no type errors; committed declarations unchanged; compile negatives enforce path/method/body/query/header/result contract |
+| Frontend suite including prior skeleton regressions | **19 tests pass, no skips**: client transport/session/failure tests, provider/static rendering and original two shell tests |
+| Focused `401 invalidates` failure case | **1 selected test passes**: clears token, aborts outstanding work, rejects late prior-session response, no retry/refresh |
+| Real Fetch/HTTP fixture | **Pass**, actual localhost response read-back and redirect refused before destination receives any request; fixture is not F00 |
+| Synthetic fixtures checked against bundle | **7 responses pass** Draft 2020-12 validation and format checking (`Case` x2, `CasePage` x2, `ApiError`, `Evidence`, `AnalysisRun`) |
+| OpenAPI lint/bundle and scratch generated strict TypeScript | **Pass**, existing missing `info.license` warning remains |
+| Coordination verifier | **Pass**, 27 operations / 126 tasks / 18 checkpoints / 39 capabilities / 40 proposal mappings / 18 Markdown files |
+| Full coordination Python suite | **122 tests pass, no skips**; `.cache/u01/coordination-tests.log` |
+| Warning-strict backend regression | **14 tests pass, no skips**; real SQLite/FastAPI probes, `.cache/u01/backend-tests.log` |
+| DESIGN 0.4.0 | **Pass**, zero errors/warnings, explicit `designmd` alias avoids Windows name collision with DESIGN.md |
+| Real skeleton startup/HTTP regression | **Pass**, backend startup creates temporary synthetic SQLite and returns 404 `/`; frontend serves root/JS/CSS with 200; own server processes stop and synthetic DB is removed |
+| Diff/scope/whitespace/index review | **Pass**, allowed frontend/docs paths only; full scope/spec/generated declarations/package pins/backend unchanged; nothing staged |
+
+### How you can test it
+
+From `C:\Users\jebas\EVORA\EVORA`, start the prepared tool shell with
+`.\.cache\setup\evora-shell.cmd` (local helper only; no system changes).
+The checked frontend/backend READMEs supply fresh-machine prerequisites. Run:
+
+```powershell
+npm.cmd --prefix frontend run check:api
+npm.cmd --prefix frontend run typecheck
+npm.cmd --prefix frontend run test
+npm.cmd --prefix frontend run build
+node --test --test-name-pattern="401 invalidates" frontend/test/api-client.test.mjs
+npx.cmd --yes @redocly/cli@2.57.0 lint specs/openapi.yaml
+npx.cmd --yes @redocly/cli@2.57.0 bundle specs/openapi.yaml --output .cache/u01/evora-openapi.json
+npx.cmd --yes openapi-typescript@7.10.1 specs/openapi.yaml -o .cache/u01/evora-api.d.ts
+npx.cmd --yes --package typescript@5.9.3 tsc --noEmit --strict .cache/u01/evora-api.d.ts
+$env:EVORA_CONTRACT_BUNDLE = Join-Path (Get-Location) '.cache/u01/evora-openapi.json'
+& .\.venv\Scripts\python.exe scripts/verify_coordination.py "$env:EVORA_CONTRACT_BUNDLE"
+& .\.venv\Scripts\python.exe -m unittest discover -s scripts -p 'test_*.py' -v
+& .\.venv\Scripts\python.exe -W error::ResourceWarning -m unittest discover -s backend/tests -v
+npx.cmd --yes --package @google/design.md@0.4.0 designmd lint DESIGN.md
+git diff --check
+```
+
+- [ ] Expect positive commands to exit 0, **19 / 122 / 14** full-suite passes,
+  **1** focused 401 test pass, no type diagnostics, the existing license warning
+  only, and successful JS/CSS build. These commands were actually exercised.
+- [ ] Synthetic inputs are two UUID cases/tokens and original bytes
+  `[0,255,10,13,42]`; fixtures and expected errors live in `frontend/test/`.
+  The selected 401 test is the relevant failure case; no real evidence required.
+- [ ] `$env:EVORA_API_BASE_URL='http://127.0.0.1:8000'` then
+  `npm.cmd --prefix frontend run dev`: expect the existing no-case/unavailable
+  shell at `http://127.0.0.1:5173`, not a functioning sign-in/case workflow.
+  Stop with Ctrl+C and remove that process-local environment setting if set.
+  Automated HTTP smoke was exercised; interactive browser/accessibility and
+  React DOM remount verification were **not** exercised.
+- [ ] After F00 is available, run client tests against the real producer with
+  its approved synthetic identities and same/foreign/missing cases, browser
+  origin/CORS and session changes. This real integration remains **untested**
+  and is required before U01 can be Complete; a fixture is not that proof.
+
+The prior Checkpoint 0 regressions passed locally, but no new Linux/Windows
+hosted CI run, production identity or end-to-end investigation is claimed.
+U01 remains **In Progress**, awaiting user review and real F00 integration.
+U02 is the next catalog row, blocked on accepted U01 and real F02; F00 remains
+M1/sharmelas-925's prerequisite. The user subsequently authorized committing and
+pushing this scoped task branch on 2026-10-22. No second task or merge is authorized;
+publication does not establish real F00 integration or mark U01 Complete.

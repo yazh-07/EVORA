@@ -1,4 +1,98 @@
-# G01B frontend skeleton
+# EVORA frontend skeleton and shared API client
+
+## U01 authenticated client — independent work, awaiting F00 integration
+
+**U01 / Checkpoint 1A / M4 / JebasJ**, branch `feat/u01-authenticated-api-client`,
+common contract/base `6496c5e9e17f2000b64a64f79d2fb166c6ce2094`.
+The real G01B skeleton is present; F00 is not implemented in this base.
+Client tests use explicitly synthetic, generated-schema-derived Fetch/localhost
+fixtures. They do not establish real backend authentication, membership or CORS.
+U01 remains **In Progress**, pending review and real producer integration.
+
+`src/api/client.ts` derives method/path/path-parameter/query/header/body/result
+types from the committed generated `schema.d.ts`. It adds no routes or wire
+schemas and installs no new packages. JSON responses, multipart requests and
+in-memory Blob downloads share one transport; this is not implementation of the
+later upload, processing, analysis or source-playback workflows. Compile-only
+negative assertions in `client.type-test.ts` reject invented routes/fields,
+missing path parameters/idempotency keys, and an analysis request body.
+Successful JSON has compile-time contract types, not full runtime schema
+validation. Invalid JSON/content types fail as protocol errors.
+
+`ApiProvider` supplies one client to the React tree. `useApiClient()` obtains it
+in future views. The public server origin is configured when building/starting:
+
+```powershell
+$env:EVORA_API_BASE_URL = 'http://127.0.0.1:8000'
+npm.cmd --prefix frontend run dev
+```
+
+The default is the OpenAPI local server origin `http://127.0.0.1:8000`.
+Supply an HTTP(S) origin, optionally with a trailing slash, without credentials,
+path, query or fragment. Generated paths already contain `/api/v1`; do not append
+it to the base URL. Restart/rebuild after changing the environment variable.
+This value is public in the browser bundle; never put a token in it.
+Real browser requests need same-origin hosting or an explicitly configured
+backend CORS policy; no permissive backend change is made by this task.
+
+The client starts without a token and makes no startup request. A future
+authorized caller supplies a token with `client.setToken(token)`; there is no
+invented login/refresh endpoint or built-in demo credential. Tokens are held in
+a closure, never persistent browser storage. `clearToken()`, token replacement,
+and HTTP 401 abort pending requests and invalidate late data from the old
+session. The provider remounts descendants on session changes to discard prior
+actor/case UI state. That React browser remount behavior still needs browser
+integration verification; session invalidation and provider rendering are
+covered by the automated tests.
+
+All requests omit cookies, disable HTTP caching/referrers, and refuse redirects;
+the configured origin cannot be changed through a request. Required caller
+idempotency keys are preserved; the client does not retry writes or issue keys.
+`ApiHttpError` exposes actual HTTP status and, where valid, `ApiError`; 401/404
+use the non-leaking C-03 messages. Other non-JSON/malformed error bodies are not
+exposed as a wire error. `ApiClientError.kind` distinguishes local configuration,
+request, authentication, changed-session, protocol and network failures.
+Cancellation throws `AbortError`. Error messages do not include request URLs,
+tokens, evidence or raw server bodies. Consumers must render server error text
+as untrusted plain text and must not log private payloads.
+
+### How you can test U01
+
+From the repository root with pinned Node 22.23.3/npm 12.2.0 and dependencies
+installed (use `.\.cache\setup\evora-shell.cmd` on this prepared local machine):
+
+- [ ] `npm.cmd --prefix frontend run check:api` and
+  `npm.cmd --prefix frontend run typecheck`: exit 0, committed types fresh;
+  generated request/result signatures and compile-only negatives pass.
+- [ ] `npm.cmd --prefix frontend run test`: expect all frontend tests to pass.
+  Synthetic inputs are two UUID cases, two memory-only test tokens, one 5-byte
+  artifact and schema-derived `ApiError`/queued-run responses. Tests exercise
+  JSON/query/headers/multipart/byte read-back, shared error handling, no-token
+  rejection, cancellation, token replacement/logout, late old-actor responses,
+  and an actual Fetch request to a temporary localhost fixture server.
+- [ ] Failure case: after the test build, from repository root run
+  `node --test --test-name-pattern="401 invalidates" frontend/test/api-client.test.mjs`.
+  Expect one passing selected test: synthetic HTTP 401 clears the token, aborts
+  another pending request, rejects late old-session data and prevents another
+  request. No real F00 authorization is claimed.
+- [ ] `npm.cmd --prefix frontend run build`: exit 0, assets under
+  `frontend/dist/`. `npm.cmd --prefix frontend run dev` serves the unchanged
+  no-case/unavailable-access workspace at `http://127.0.0.1:5173`; there is no
+  case sign-in/list/upload feature yet. Stop with Ctrl+C; unset the temporary
+  origin setting with `Remove-Item Env:EVORA_API_BASE_URL` if it was set.
+- [ ] Run Checkpoint 0 regressions using the shared workflow: OpenAPI
+  lint/bundle, scratch generated strict TypeScript compilation, coordination
+  verifier/122 Python tests, 14 warning-strict backend tests, DESIGN lint and
+  whitespace checks. On Windows use the explicit DESIGN binary alias:
+  `npx.cmd --yes --package @google/design.md@0.4.0 designmd lint DESIGN.md`.
+
+Test servers close automatically and use no real evidence or external provider.
+After review, integrate and verify against real F00 before claiming U01 Complete.
+U02 additionally waits for F02; U02B/U03/U04 retain their existing dependencies.
+The entire initial scope and approved speech/correction addition remain in
+FEATURE_SCOPE, unchanged by this client task.
+
+## G01B foundation verification record
 
 Task **G01B / Checkpoint 0**, `whale2186`, branch `feat/g01b-frontend-skeleton`,
 common contract/base `e0257a6ad231105b93ae98a97f176ed233a25412`.
