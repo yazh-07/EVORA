@@ -14,7 +14,10 @@ const options = {
   target: ['es2022'],
   jsx: 'automatic',
   minify: !serve,
-  define: { 'process.env.NODE_ENV': JSON.stringify(serve ? 'development' : 'production') },
+  define: {
+    'process.env.NODE_ENV': JSON.stringify(serve ? 'development' : 'production'),
+    __EVORA_API_BASE_URL__: JSON.stringify(process.env.EVORA_API_BASE_URL ?? 'http://127.0.0.1:8000'),
+  },
   logLevel: 'info',
 };
 

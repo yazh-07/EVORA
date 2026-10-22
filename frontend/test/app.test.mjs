@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { App } from '../.test-build/App.mjs';
+import { App } from '../.test-build/src/App.mjs';
 
 test('root renders the workspace, skip link and contextual inspector', () => {
   const html = renderToStaticMarkup(createElement(App));

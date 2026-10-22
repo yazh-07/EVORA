@@ -101,6 +101,34 @@ See [COMMUNICATION.md](COMMUNICATION.md) and [CONTRACTS.md](CONTRACTS.md) for co
 
 For each assigned task record `task ID | checkpoint | module/person | branch/common spec commit | state | consumed/produced interface | actual commands/results + test doubles | PR/next task`. Serialize ledger edits. States: **Backlog**, **In Progress**, **Complete** (acceptance and real dependency integration verified), **Blocked** (exact needed decision). Current task state defaults to Backlog; no implementation completion is claimed here.
 
+### U01 live record — 2026-10-22
+
+**U01 / Checkpoint 1A / M4 / JebasJ / In Progress.** Automatically selected from
+the user's one-task assignment on `feat/u01-authenticated-api-client`, from exact
+published coordination base **6496c5e9e17f2000b64a64f79d2fb166c6ce2094**. Clean HEAD
+matched the freshly fetched origin branch; remote main is still README-only.
+The base includes real G01B **328c103d0f0383c7b4979bd8199b4201408e2a68** and its
+accepted G00/G01 ancestry. F00 is absent, so this is independent client work with
+explicitly disclosed schema-derived Fetch/localhost fixtures under AGENT_TASKS,
+not real backend authorization or integrated completion. C-03's later declared
+resolution supplies memory-only bearer handling and 401/404 policy; no provider,
+token issuance or expiry mechanism is chosen here.
+
+Allowed paths and acceptance are in [the U01 assignment](AGENT_TASKS.md#u01-assignment--2026-10-22).
+Consumes unchanged draft 0.3.0 generated API types; produces a shared typed Fetch
+client and React provider with a configurable origin, in-memory token lifecycle,
+safe shared failures and old-session response invalidation. No domain routes,
+case UI, models, package pins or full-scope feature decisions change.
+**19 frontend / 122 coordination / 14 backend tests pass**, no skips; frontend
+freshness/typecheck/build, OpenAPI lint/bundle/generated strict types, verifier,
+DESIGN and whitespace checks pass. Seven synthetic responses validate against
+the contract; focused 401 negative and real Fetch redirect refusal pass.
+Actual skeleton localhost smoke returns backend 404/frontend 200 and stops both
+servers. [Exact commands and limits](PREIMPLEMENTATION_REVIEW.md#u01-verification--2026-10-22)
+distinguish fixtures/HTTP checks from absent real F00 and browser integration.
+U01 stays **In Progress**, awaiting review and real F00 integration; Checkpoint
+1A stays Backlog. U02 requires accepted U01 and F02; no second task is started.
+
 ### G00 live record — 2026-10-18
 
 Historical G00 session record follows. **Current dependency handoff:** the subsequent G01 user assignment explicitly accepts committed G00 **1721bfff9640263d2799434455cdb9c4f345ac35** (`feat/g00-coordination-base`) as the shared base. G01 read back clean HEAD and the local `origin/feat/g00-coordination-base` at that exact commit; no new fetch, remote CI or main merge is claimed. The historical no-commit result below describes the earlier session, not the current Git history.
