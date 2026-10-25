@@ -101,6 +101,34 @@ See [COMMUNICATION.md](COMMUNICATION.md) and [CONTRACTS.md](CONTRACTS.md) for co
 
 For each assigned task record `task ID | checkpoint | module/person | branch/common spec commit | state | consumed/produced interface | actual commands/results + test doubles | PR/next task`. Serialize ledger edits. States: **Backlog**, **In Progress**, **Complete** (acceptance and real dependency integration verified), **Blocked** (exact needed decision). Current task state defaults to Backlog; no implementation completion is claimed here.
 
+### F00 live record — 2026-10-25
+
+**F00 / Checkpoint 1A / M1 / sharmelas-925 / In Progress.** Automatically selected
+as the first unclaimed, dependency-ready M1 row in the earliest unfinished
+checkpoint, on `feat/f00-auth-case-guard` from freshly fetched, clean coordination
+base **f8c5fe7b7abf62a02d8dd96fd89ad7bd6e57b029**. Verified G00/G01 ancestry and
+C-03's later declared resolution; older open-gate entries are historical.
+The [assignment](AGENT_TASKS.md#f00-assignment--2026-10-25) bounds auth/access
+implementation and tests. Reusable guards reject malformed/missing/invalid bearer
+identity, validate case UUIDs with the shared 400 mapping and check current
+membership before handlers. Foreign and missing cases have identical 404 bodies
+and headers. Defaults reject all credentials and case access; explicit local
+synthetic configuration contains no built-in token. F01 persistence is absent;
+test-only routes/SQLite memberships are disclosed producer doubles, not F01.
+
+**19 focused F00 / 33 combined backend / 122 coordination / 19 frontend tests
+pass**, no skips. Focused foreign/missing failure case, lint/bundle, generated
+strict types, API freshness/typecheck/build, verifier, DESIGN and whitespace
+checks pass. Backend/frontend localhost smoke returns expected 404/200 and stops
+both servers. [Exact evidence and limits](PREIMPLEMENTATION_REVIEW.md#f00-verification--2026-10-25)
+record local Windows results, not new hosted CI or browser acceptance. No public
+route, package/spec/full-scope change, staging, commit, push or merge. F00 stays
+**In Progress**, awaiting review and real producer/client integration; Checkpoint
+1A stays Backlog. Next M1 row is F01 after accepted F00 dependency handoff.
+The user subsequently authorized this scoped branch's commit, push and merge
+into `docs/coordination-foundation` on 2026-10-25; that publication does not
+establish real F01/U01 integration or mark F00 Complete.
+
 ### U01 live record — 2026-10-22
 
 **U01 / Checkpoint 1A / M4 / JebasJ / In Progress.** Automatically selected from

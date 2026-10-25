@@ -123,6 +123,21 @@ This card records the user's bounded shared-file handoff before the G00 ledger/r
 | Commands and proof | **19 frontend / 122 coordination / 14 backend tests pass**, no skips in the full suites; frontend API freshness/typecheck/build, OpenAPI lint/bundle, scratch generated strict types, verifier, DESIGN and whitespace pass. Seven synthetic responses validate against the bundle; focused 401 negative passes. Real Fetch reaches a localhost fixture and rejects redirects; actual skeleton HTTP smoke returns backend 404/frontend 200. [Exact results and commands](PREIMPLEMENTATION_REVIEW.md#u01-verification--2026-10-22); real F00/browser integration and new hosted CI remain untested |
 | Handoff | **In Progress**; independent client work only, awaiting review and real F00 integration. Preserve every feature and approved addition in FEATURE_SCOPE. Do not mark U01 or Checkpoint 1A Complete. The user subsequently authorized committing and pushing this scoped task branch on 2026-10-22; no merge authorized |
 
+### F00 assignment — 2026-10-25
+
+| Field | Recorded assignment |
+|---|---|
+| Task/checkpoint and exact acceptance | **F00 / Checkpoint 1A**: authenticate requests and enforce a case-access guard without evidence logic; missing/invalid identity is 401, foreign and missing cases have indistinguishable 404 responses |
+| Module/person and coordination | **M1 / sharmelas-925**, automatically selected from the user's one-task assignment; no shared G/I task or other module's work taken |
+| Branch/common commit | `feat/f00-auth-case-guard`, verified published coordination base **f8c5fe7b7abf62a02d8dd96fd89ad7bd6e57b029**; clean HEAD matched freshly fetched `origin/docs/coordination-foundation` |
+| Paths | `backend/auth.py`, auth wiring in `backend/app.py`, access-error mapping in `backend/errors.py`, `backend/tests/test_auth.py`, `backend/README.md`; bounded assignment/live-result records in `docs/AGENT_TASKS.md`, `docs/ROADMAP.md`, `docs/PREIMPLEMENTATION_REVIEW.md`. No schema, package, frontend, case-persistence or feature-scope changes |
+| Dependencies | Real G00 **1721bfff9640263d2799434455cdb9c4f345ac35** and G01 **e0257a6ad231105b93ae98a97f176ed233a25412** are verified ancestors; use the real FastAPI factory/validation mapping and isolated SQLite connection foundation |
+| Input/output | Consume unchanged `bearerAuth`/`ApiError` and C-03's declared local synthetic policy; produce reusable authentication and same-case dependencies, no new public HTTP operation |
+| Gate | Later ROADMAP/COMMUNICATION C-03 resolution supplies two synthetic identities (`investigator-1`, `investigator-2`) and exact 401/404 policy. No production provider, token issuance/expiry or frontend login is selected. Default configuration must deny access; explicit development tokens are supplied by the caller, never built in |
+| Dependency handling | F01 owns real cases/membership persistence and is not implemented. Exercise an explicitly test-only SQLite membership producer with two actors/cases; expose a deny-by-default membership interface for F01, without claiming F01 or U01 integration |
+| Commands and proof | **19 F00 / 33 combined backend / 122 coordination / 19 frontend tests pass**, no skips; focused foreign/missing failure case passes. OpenAPI lint/bundle, scratch generated strict TypeScript, API freshness/typecheck/build, coordination verifier, DESIGN and whitespace checks pass. Real skeleton localhost smoke returns backend 404/frontend 200 and stops both servers. Exact commands, fixtures and limits are in the F00 verification record |
+| Handoff | **In Progress**, locally verified; F01 membership persistence and real U01/browser integration remain absent. No production identity/expiry mechanism or integrated completion claimed. Next M1 row is F01 after accepted F00 dependency handoff. The user subsequently authorized committing, pushing and merging this scoped branch into `docs/coordination-foundation` on 2026-10-25; no second task is authorized |
+
 ### Automatic-selection rules
 
 1. Read the live module-owner and task state in ROADMAP, the exact checkpoint ledger, catalog dependencies and relevant communication gates. Read Git status and verify the recorded common-base commit is available and includes the required shared contract. An uncommitted draft is not an implementation base.

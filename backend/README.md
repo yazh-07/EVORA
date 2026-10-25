@@ -1,4 +1,76 @@
-# G01 backend skeleton
+# EVORA backend skeleton and access guards
+
+## F00 authentication and case-access dependencies
+
+**F00 / Checkpoint 1A / M1 / sharmelas-925 / In Progress**, branch
+`feat/f00-auth-case-guard`, common contract/base
+`f8c5fe7b7abf62a02d8dd96fd89ad7bd6e57b029`.
+
+`backend.auth.authenticated_actor` accepts one well-formed HTTP bearer header.
+Missing, malformed, duplicate or rejected credentials return HTTP 401 with
+`{"code":"UNAUTHORIZED","message":"Authentication required."}` and
+`WWW-Authenticate: Bearer`. Query parameters, cookies and actor headers cannot
+supply identity. `require_case_access` validates the contract's UUID `caseId`
+path parameter and checks current membership before the route handler runs.
+Foreign and missing cases return identical HTTP 404 bodies and headers:
+`{"code":"NOT_FOUND","message":"Resource not found."}`. Both access errors
+use `ApiError` and `Cache-Control: no-store`; malformed authenticated case IDs
+use the existing safe 400 mapping. No submitted credential or case ID is echoed
+by these errors or logged by the guards.
+
+The app factory accepts keyword-only `token_verifier` and `case_access` adapters.
+It defaults to rejecting every token and denying all case access. Explicit local
+development callers can supply `SyntheticTokenVerifier({token: actor_id})` for
+C-03's two synthetic identities, `investigator-1` and `investigator-2`. Supply
+opaque tokens privately; actor IDs themselves are not built-in credentials.
+The verifier copies configuration and retains token digests, not plaintext
+tokens. No shared token, token issuance/login route, automatic expiration or
+production identity provider is implemented. Replacing the verifier applies on
+the next request without a cached identity. Future adapters must enforce their
+selected expiry/revocation policy and return `None` for rejected credentials.
+
+Future case routes use `Depends(authenticated_actor)`; case-scoped routes use
+`Depends(require_case_access)`, whose immutable internal result carries the
+authenticated actor and authorized case UUID. F01 must supply a `CaseAccess`
+adapter whose `allows(actor_id, case_id)` returns true only for an existing case
+with that actor's authoritative membership. Membership is checked on every
+request; storage errors propagate as server failures without reaching the route
+handler. This dependency adds no persistence schema or public operation. Child
+resource producers must still check their own same-case joins. Protect every
+future route explicitly; F00 does not automatically authenticate arbitrary routes.
+
+### How you can test F00
+
+Use the pinned Python 3.14.8 environment and `requirements.txt` installation
+described below. On the locally prepared machine, open
+`.\.cache\setup\evora-shell.cmd` from the repository root to select the isolated
+Python/Node/npm toolchain. In that CMD shell:
+
+```bat
+npx.cmd --yes @redocly/cli@2.57.0 bundle specs/openapi.yaml --output .cache\setup\evora-openapi.json
+set "EVORA_CONTRACT_BUNDLE=%CD%\.cache\setup\evora-openapi.json"
+python -W error::ResourceWarning -m unittest backend.tests.test_auth -v
+python -W error::ResourceWarning -m unittest backend.tests.test_auth.AuthenticationTests.test_foreign_and_missing_cases_have_identical_status_body_and_headers -v
+python -W error::ResourceWarning -m unittest discover -s backend/tests -v
+```
+
+Expected: **19 focused F00 tests**, **1 selected foreign/missing failure-case
+test**, and **33 combined backend tests** pass without skips. The tests exercise
+real FastAPI dependency resolution, HTTPX ASGI transport, the shared contract's
+`ApiError` schema and real temporary file-backed SQLite. Inputs are two synthetic
+tokens/actors and two UUID cases plus one missing UUID. Test-only `/_test/...`
+routes and SQLite membership tables stand in for the absent F01 producer; they
+are never registered/created by the application factory. Denied synthetic writes
+leave the test table empty; a failed membership lookup returns a server error
+and never reaches a protected handler. Temporary databases clean up automatically.
+
+The default server still exposes no public operations: `GET /` returns 404,
+and no sign-in/case/evidence UI can be tested end to end yet. F01 persistence,
+real U01/browser/CORS integration, production authentication and remote CI on this
+uncommitted branch are unverified. Full initial scope and approved additions are
+unchanged. F00 stays In Progress pending review and real producer integration.
+
+## G01 backend skeleton
 
 Task **G01 / Checkpoint 0**, `whale2186`, branch `feat/g01-backend-skeleton`,
 common contract/base `1721bfff9640263d2799434455cdb9c4f345ac35`.

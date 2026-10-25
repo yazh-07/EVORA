@@ -1,5 +1,102 @@
 # EVORA scope/contract verification and implementation readiness
 
+## F00 verification — 2026-10-25
+
+**F00 / Checkpoint 1A / M1 / sharmelas-925 / In Progress**, branch
+`feat/f00-auth-case-guard`. The user requested automatic selection of one eligible
+task. M1 ownership, earliest unfinished Checkpoint 1A and Backlog F00 identify
+this row; C-03's later declared synthetic policy supplies its current gate.
+The starting checkout was clean at **f8c5fe7b7abf62a02d8dd96fd89ad7bd6e57b029**,
+matching freshly fetched `origin/docs/coordination-foundation`. G00
+**1721bfff9640263d2799434455cdb9c4f345ac35** and G01
+**e0257a6ad231105b93ae98a97f176ed233a25412** were verified ancestors. A separate
+task branch was created at that common base; main was not used or changed.
+The F00 assignment card records allowed paths and dependency handling.
+
+### Implemented boundary and dependency disclosure
+
+- `backend/auth.py`: immutable internal actor/grant values, injectable token and
+  membership interfaces, explicit caller-configured synthetic token verifier for
+  C-03's two development identities, and reusable request/case dependencies.
+  No built-in credential; synthetic token digests are retained instead of raw
+  tokens. The factory defaults to rejecting all credentials and case access.
+- `backend/app.py` wires per-app adapters and the safe access-error handler;
+  `backend/errors.py` emits exact C-03 401/404 `ApiError` bodies, no-store headers
+  and a Bearer challenge on 401. Duplicate/malformed headers fail before a
+  membership query. Case UUID validation uses the existing 400 handler. Every
+  authorized request checks membership; storage failure cannot grant access.
+- `backend/tests/test_auth.py` uses real FastAPI dependency resolution, HTTPX
+  ASGI transport, shared bundled `ApiError`, real temporary SQLite and synthetic
+  two-actor/two-case fixtures. Its `/_test/...` routes, memberships and write probe
+  are **test-only F01 producer doubles**, never production routes/tables. F01 owns
+  case persistence; real F01/U01/browser integration remains absent. No evidence
+  logic, wire route, package, production provider or token issuance/automatic
+  expiry policy is implemented. No real evidence, credentials or external service.
+
+### Commands and actual results
+
+Native Windows / PowerShell 7.6.5 / Git 2.53.0.windows.3, local CPython **3.14.8**,
+SQLite **3.50.4**, Node **22.23.3**, npm **12.2.0**, jsonschema **4.25.1**.
+The existing isolated `.venv` and locked frontend installation were used;
+`pip check` passes. No new dependency or model installation was needed.
+
+| Check | Observed result |
+|---|---|
+| F00 focused suite | **19 pass**, no skips; two identities/cases, malformed/duplicate credentials, no query/cookie/actor impersonation, default denial, app isolation, membership/token replacement, failed membership lookup and safe errors |
+| Selected foreign/missing failure | **1 test pass**; both actors get identical 404 bodies/headers for foreign and nonexistent cases |
+| All backend regressions | **33 pass**, no skips, `-W error::ResourceWarning`; includes previous 14 skeleton/validation tests |
+| All coordination tests | **122 pass**, no skips, using the fresh contract bundle and jsonschema 4.25.1 |
+| Frontend regression suite | **19 pass**, no skips; existing U01 fixtures remain fixtures |
+| OpenAPI 2.57.0 lint/bundle | **Pass**; one existing missing `info.license` warning |
+| Scratch generated types / strict TypeScript | **Pass**, openapi-typescript 7.10.1 and TypeScript 5.9.3 |
+| Frontend API freshness/typecheck/build | **Pass**; committed declarations unchanged |
+| Coordination verifier | **Pass**, full task/checkpoint/source/feature/fixture checks; planning-artifact verification only |
+| DESIGN 0.4.0 / whitespace | **Pass**, zero DESIGN errors/warnings; `git diff --check` passes |
+| Real skeleton localhost startup | **Pass**: Uvicorn root 404 with synthetic SQLite; frontend root/JS/CSS 200; own servers stopped |
+
+From the repository root in the prepared shell
+(`.\.cache\setup\evora-shell.cmd`), the reproducible CMD commands are:
+
+```bat
+npx.cmd --yes @redocly/cli@2.57.0 lint specs/openapi.yaml
+npx.cmd --yes @redocly/cli@2.57.0 bundle specs/openapi.yaml --output .cache\setup\evora-openapi.json
+set "EVORA_CONTRACT_BUNDLE=%CD%\.cache\setup\evora-openapi.json"
+python -W error::ResourceWarning -m unittest backend.tests.test_auth -v
+python -W error::ResourceWarning -m unittest backend.tests.test_auth.AuthenticationTests.test_foreign_and_missing_cases_have_identical_status_body_and_headers -v
+python -W error::ResourceWarning -m unittest discover -s backend/tests -v
+python scripts/verify_coordination.py "%EVORA_CONTRACT_BUNDLE%"
+python -m unittest discover -s scripts -p "test_*.py" -v
+npx.cmd --yes openapi-typescript@7.10.1 specs/openapi.yaml -o .cache\setup\evora-api.d.ts
+frontend\node_modules\.bin\tsc.cmd --noEmit --strict .cache\setup\evora-api.d.ts
+npm.cmd --prefix frontend run check:api
+npm.cmd --prefix frontend run typecheck
+npm.cmd --prefix frontend run test
+npm.cmd --prefix frontend run build
+npx.cmd --yes --package @google/design.md@0.4.0 designmd lint DESIGN.md
+git diff --check
+```
+
+These commands were exercised directly or through the ignored local
+`.cache/setup/verify.ps1` equivalent, with output in `.cache/f00/checkpoint0.log`
+and `.cache/setup/*-tests.log`. Focused/failure logs are in `.cache/f00/`.
+The native localhost smoke used the ignored `.cache/f00/smoke.py`; it starts
+only its own processes and stops them in `finally`. No rendered browser,
+accessibility, production auth, actual F01 membership persistence or remote CI
+on this uncommitted candidate is certified. The selected synthetic verifier has
+no automatic expiry; future production authentication requires its own approved
+provider/issuance/expiry/revocation policy. The default app still exposes no
+domain operations; the reusable guards must be attached to future routes.
+
+All initial features and approved transcription/correction additions remain
+unchanged in FEATURE_SCOPE. Spec, generated declarations, requirements, frontend
+and proposal diff against the common base are empty. Nothing staged, committed,
+pushed or merged. **F00 remains In Progress**, locally verified and awaiting user
+review plus real producer/client integration. **F01** is the next M1 row after
+an accepted F00 dependency handoff; it was not started. Checkpoint 1A stays Backlog.
+The user subsequently authorized committing/pushing F00 and merging it into
+`docs/coordination-foundation` on 2026-10-25. Publication does not itself close
+the real-producer/client integration limits above; F00 remains In Progress.
+
 ## Current state
 
 **G01C is locally implemented/verified and In Progress pending native Windows/hosted CI evidence and review.** The user accepted committed common base `328c103d0f0383c7b4979bd8199b4201408e2a68`, containing G00/G01/G01B. The tree includes real FastAPI/SQLite and React/TypeScript skeletons, with clean Linux dependency installs and combined regression checks recorded below. Checkpoint 0 remains In Progress until all four exit gates pass, including native Windows/CI execution. Domain tasks/checkpoints remain Backlog; no domain routes, ASR/scoring/RAG system or main merge is claimed. Earlier verification records retain their historical environment/results; the G01C record is current.
