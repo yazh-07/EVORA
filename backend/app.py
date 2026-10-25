@@ -8,11 +8,17 @@ from pathlib import Path
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 
+from backend.auth import CaseAccess, DenyCaseAccess, RejectTokens, TokenVerifier
 from backend.database import SQLiteDatabase
-from backend.errors import invalid_request
+from backend.errors import AccessError, access_error, invalid_request
 
 
-def create_app(database_path: str | Path | None = None) -> FastAPI:
+def create_app(
+    database_path: str | Path | None = None,
+    *,
+    token_verifier: TokenVerifier | None = None,
+    case_access: CaseAccess | None = None,
+) -> FastAPI:
     """Configure an isolated app; opening SQLite is deferred until startup."""
     configured_path = (
         database_path
@@ -40,7 +46,10 @@ def create_app(database_path: str | Path | None = None) -> FastAPI:
         redoc_url=None,
     )
     app.state.database = database
+    app.state.token_verifier = token_verifier if token_verifier is not None else RejectTokens()
+    app.state.case_access = case_access if case_access is not None else DenyCaseAccess()
     app.add_exception_handler(RequestValidationError, invalid_request)
+    app.add_exception_handler(AccessError, access_error)
     return app
 
 
