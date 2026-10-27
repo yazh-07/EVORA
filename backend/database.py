@@ -9,7 +9,7 @@ import sqlite3
 
 @dataclass(frozen=True)
 class SQLiteDatabase:
-    """File-backed SQLite foundation; domain schemas belong to later tasks."""
+    """File-backed SQLite connection manager; startup initializes domain schemas."""
 
     path: Path
 

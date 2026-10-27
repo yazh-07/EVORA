@@ -25,9 +25,9 @@ class SkeletonTests(unittest.IsolatedAsyncioTestCase):
             with app.state.database.connect() as connection:
                 self.assertEqual(connection.execute("SELECT 1").fetchone()[0], 1)
                 self.assertEqual(connection.execute("PRAGMA foreign_keys").fetchone()[0], 1)
-                self.assertEqual(connection.execute(
-                    "SELECT name FROM sqlite_master WHERE type='table'"
-                ).fetchall(), [])
+                self.assertEqual([row[0] for row in connection.execute(
+                    "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"
+                )], ["case_members", "cases"])
         # Lifespan has left no open connection; reconnect after shutdown.
         with closing(sqlite3.connect(self.path)) as connection:
             self.assertEqual(connection.execute("PRAGMA integrity_check").fetchone()[0], "ok")
@@ -62,18 +62,17 @@ class SkeletonTests(unittest.IsolatedAsyncioTestCase):
         with database.connect() as connection:
             self.assertEqual(connection.execute("SELECT COUNT(*) FROM child").fetchone()[0], 0)
 
-    async def test_no_routes_or_generated_contract_are_exposed(self):
+    async def test_only_f01_routes_are_exposed(self):
         app = create_app(self.path)
-        self.assertEqual(app.routes, [])
         async with app.router.lifespan_context(app), AsyncClient(
             transport=ASGITransport(app), base_url="http://test"
         ) as client:
             for path in ("/", "/health", "/status", "/docs", "/redoc", "/openapi.json",
-                         "/api/v1/cases", "/_test/input"):
+                         "/_test/input"):
                 with self.subTest(path=path):
                     self.assertEqual((await client.get(path)).status_code, 404)
             self.assertEqual((await client.post("/api/v1/cases", json={"title": "Synthetic"})).status_code,
-                             404)
+                             401)
 
     def test_environment_configuration_and_explicit_override(self):
         with patch.dict(os.environ, {"EVORA_DATABASE_PATH": str(self.path)}):
@@ -93,7 +92,9 @@ class SkeletonTests(unittest.IsolatedAsyncioTestCase):
             with first.state.database.connect() as connection:
                 connection.execute("CREATE TABLE first_only (value TEXT)")
             with second.state.database.connect() as connection:
-                self.assertEqual(connection.execute("SELECT name FROM sqlite_master").fetchall(), [])
+                self.assertIsNone(connection.execute(
+                    "SELECT name FROM sqlite_master WHERE name = 'first_only'"
+                ).fetchone())
 
     async def test_database_open_failure_prevents_startup(self):
         # An existing directory cannot be opened as a SQLite database file.

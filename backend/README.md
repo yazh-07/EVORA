@@ -1,4 +1,62 @@
-# EVORA backend skeleton and access guards
+# EVORA backend
+
+## F01 case persistence (current behavior)
+
+**F01 / Checkpoint 1A / M1 / sharmelas-925 / In Progress**, branch
+`feat/f01-case-persistence`, exact common base
+`86f14eedc575032d636a77233b19f13bf665c077` (includes merged F00).
+The earlier F00/G01 sections below retain their historical verification results;
+F01 supersedes their statements that domain routes/tables are absent.
+
+Startup initializes `cases(id TEXT PRIMARY KEY, title TEXT NOT NULL,
+description TEXT, created_at TEXT NOT NULL)` and
+`case_members(case_id TEXT NOT NULL REFERENCES cases(id) ON DELETE CASCADE,
+actor_id TEXT NOT NULL, PRIMARY KEY(case_id, actor_id))`. Both writes commit in
+one SQLiteDatabase unit of work; failed membership insertion rolls back the case.
+Connections remain request-owned and always close. Startup is repeatable and
+preserves existing cases. SQLite is authoritative; there is no in-memory store.
+
+- `POST /api/v1/cases` (`createCase`) requires `authenticated_actor` and returns
+  201 with a UUID4, unchanged title/description and UTC `created_at`. The creating
+  actor receives membership. Title is a strict string of 1–200 characters and
+  must contain non-whitespace text; optional description is a strict string of
+  at most 5000 characters. Explicit null and additional properties are rejected.
+  Absent description is omitted from the response.
+- `GET /api/v1/cases/{caseId}` (`getCase`) uses `require_case_access` and returns
+  the persisted Case. `SQLiteCaseAccess` is the default adapter, queries current
+  membership on every request and uses the same indexed query for foreign and
+  nonexistent UUIDs. Both denials use the existing fixed 404 body and no-store
+  headers. Storage failures propagate as server errors. Identical code/query
+  paths avoid existence-specific branches; no constant-time guarantee is claimed.
+
+Authentication still defaults to rejecting all tokens. Configure the existing
+`SyntheticTokenVerifier` privately for the two local synthetic actors; no token
+issuance or production provider is introduced. Explicit case-access injection
+remains available. No list, upload or other task's endpoint is added.
+
+The unchanged contract currently requires flat `ApiError` bodies, for example
+`{"code":"NOT_FOUND","message":"Resource not found."}`. Validation uses the
+existing flat `INVALID_INPUT` mapping. The task request's nested `error` envelope
+and `BAD_REQUEST` conflict with that contract and F00/U01 consumers; the F01
+assignment records the pending decision. Current checks verify the existing
+contract, not the requested alternate envelope.
+
+```sh
+npx @redocly/cli bundle specs/openapi.yaml --output /tmp/evora-openapi.json
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -W error::ResourceWarning -m unittest backend.tests.test_cases
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -W error::ResourceWarning -m unittest discover -s backend/tests
+```
+
+Use the pinned requirements environment described below. Focused tests use real
+FastAPI, file-backed SQLite, synthetic identities and temporary directories that
+clean up after tests. They cover persistence across app restart, absent optional
+fields, validation/authentication/path negatives, same-response case isolation,
+revocation, rollback, foreign keys/cascade and real membership-storage failure.
+Case and error responses validate against the bundle when configured. See the
+[F01 verification record](../docs/PREIMPLEMENTATION_REVIEW.md#f01-verification--2026-10-25)
+for actual results and limits. Next M1 task is F02 after F01 acceptance;
+Checkpoint 1A and browser integration are not complete.
+
 
 ## F00 authentication and case-access dependencies
 

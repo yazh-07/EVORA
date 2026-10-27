@@ -123,6 +123,21 @@ This card records the user's bounded shared-file handoff before the G00 ledger/r
 | Commands and proof | **19 frontend / 122 coordination / 14 backend tests pass**, no skips in the full suites; frontend API freshness/typecheck/build, OpenAPI lint/bundle, scratch generated strict types, verifier, DESIGN and whitespace pass. Seven synthetic responses validate against the bundle; focused 401 negative passes. Real Fetch reaches a localhost fixture and rejects redirects; actual skeleton HTTP smoke returns backend 404/frontend 200. [Exact results and commands](PREIMPLEMENTATION_REVIEW.md#u01-verification--2026-10-22); real F00/browser integration and new hosted CI remain untested |
 | Handoff | **In Progress**; independent client work only, awaiting review and real F00 integration. Preserve every feature and approved addition in FEATURE_SCOPE. Do not mark U01 or Checkpoint 1A Complete. The user subsequently authorized committing and pushing this scoped task branch on 2026-10-22; no merge authorized |
 
+### F01 assignment — 2026-10-25
+
+| Field | Recorded assignment |
+|---|---|
+| Task/checkpoint and exact acceptance | **F01 / Checkpoint 1A**: persist/read one case with stable UUID, reject invalid title, deny another actor |
+| Module/person and coordination | **M1 / sharmelas-925**; bounded case persistence and existing authentication integration |
+| Branch/common commit | `feat/f01-case-persistence`, clean starting HEAD **86f14eedc575032d636a77233b19f13bf665c077**, matching the user-specified merged F00 coordination base; no fresh fetch claimed |
+| Paths | `backend/cases.py`, `backend/app.py`, SQLite manager documentation in `backend/database.py`, `backend/tests/test_cases.py`, F01 startup/route expectations in `backend/tests/test_skeleton.py`, `backend/README.md`; bounded records in `docs/AGENT_TASKS.md`, `docs/ROADMAP.md`, `docs/PREIMPLEMENTATION_REVIEW.md`. No spec, frontend or dependency edits |
+| Dependencies | Real F00 **94aa2a8** included through merge **86f14ee**; real G01 SQLiteDatabase and safe validation handler from the same base |
+| Input/output | Consume unchanged draft 0.3.0 `CreateCase`, `Case`, `ApiError`, bearer identity and case grant; produce `createCase`, `getCase` and authoritative SQLite membership |
+| Gate | **F01-E01 pending**: task requests nested `error` bodies and BAD_REQUEST, while unchanged ApiError/F00/U01 require flat code/message and existing INVALID_INPUT. M1 error producer and M4 generated/client error consumers would need a coordinated spec/types/fixture/test change for an envelope change. User clarification requested; current verification retains the existing contract pending resolution |
+| Dependency handling | Real F00 guards and SQLite connections used; synthetic verifier supplies only test identities. No membership producer double in F01 tests. Earlier F00 tests retain their disclosed isolated doubles |
+| Commands and proof | 11 focused F01 / 44 combined backend / 122 coordination / 19 frontend tests pass; OpenAPI bundle/lint, generated strict types, frontend freshness/typecheck/build, verifier, DESIGN and whitespace checks pass. Exact commands/environment and limits in [F01 verification](PREIMPLEMENTATION_REVIEW.md#f01-verification--2026-10-25) |
+| Handoff | **In Progress** pending F01-E01 resolution and review. No staging, commit, push or merge authorized. Next M1 row F02 after F01 acceptance; no Checkpoint 1A completion or real browser integration claimed |
+
 ### F00 assignment — 2026-10-25
 
 | Field | Recorded assignment |
