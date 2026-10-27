@@ -1,5 +1,32 @@
 # EVORA backend
 
+## F02 authorized case listing
+
+`GET /api/v1/cases` (`listCases`) requires `authenticated_actor` and returns
+200 `CasePage` with `items`, `total`, `limit`, `offset`. Only current SQLite
+`case_members` memberships for the authenticated actor are returned. Cases sort
+by `created_at DESC, id ASC`; absent descriptions are omitted. Count and page
+share one database read snapshot. `total` counts all accessible cases before
+pagination. No cases or an offset at/beyond total returns empty `items` while
+preserving the total and requested pagination values.
+
+`limit` defaults to 20 (1–100), `offset` to 0 (minimum 0). Invalid pagination
+returns 400 `{"code":"INVALID_INPUT","message":"Invalid request input."}`;
+missing/invalid bearer credentials return the existing 401 ApiError.
+No production identity provider is configured by default.
+
+To test with synthetic identities and automatically cleaned temporary SQLite:
+
+```sh
+npx @redocly/cli bundle specs/openapi.yaml --output /tmp/evora-openapi.json
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -W error::ResourceWarning -m unittest backend.tests.test_cases -v
+```
+
+Use the pinned requirements environment. Expect 14 tests to pass, including
+23-case pagination with timestamp ties, actor isolation/revocation, empty pages,
+limit boundaries and rejected `limit=0/101/abc`, `offset=-1`, missing/invalid auth.
+See [F02 verification](../docs/PREIMPLEMENTATION_REVIEW.md#f02-verification--2026-10-25).
+
 ## F01 case persistence (current behavior)
 
 **F01 / Checkpoint 1A / M1 / sharmelas-925 / In Progress**, branch
@@ -32,7 +59,7 @@ preserves existing cases. SQLite is authoritative; there is no in-memory store.
 Authentication still defaults to rejecting all tokens. Configure the existing
 `SyntheticTokenVerifier` privately for the two local synthetic actors; no token
 issuance or production provider is introduced. Explicit case-access injection
-remains available. No list, upload or other task's endpoint is added.
+remains available. F02 adds listing above; upload remains outside these tasks.
 
 The unchanged contract currently requires flat `ApiError` bodies, for example
 `{"code":"NOT_FOUND","message":"Resource not found."}`. Validation uses the

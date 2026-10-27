@@ -101,6 +101,26 @@ See [COMMUNICATION.md](COMMUNICATION.md) and [CONTRACTS.md](CONTRACTS.md) for co
 
 For each assigned task record `task ID | checkpoint | module/person | branch/common spec commit | state | consumed/produced interface | actual commands/results + test doubles | PR/next task`. Serialize ledger edits. States: **Backlog**, **In Progress**, **Complete** (acceptance and real dependency integration verified), **Blocked** (exact needed decision). Current task state defaults to Backlog; no implementation completion is claimed here.
 
+### F02 live record — 2026-10-25
+
+**F02 / Checkpoint 1A / M1 / sharmelas-925 / In Progress.** Scoped branch
+`feat/f02-case-listing`, clean starting common contract/base
+**a10a81ecf4820b2330bd04edfba7f15d2764c745**, includes merged F00/F01.
+The [assignment](AGENT_TASKS.md#f02-assignment--2026-10-25) records bounded paths
+and real dependencies. GET `listCases` uses current SQLite membership and a
+shared read snapshot for total/page, ordered by created_at descending then ID
+ascending. Optional absent descriptions are omitted. Existing flat validation
+and authentication contracts are preserved.
+
+**14 focused case / 47 backend / 122 coordination / 19 frontend tests pass**,
+no skips. Lint/bundle, verifier, frontend generated-type freshness/typecheck/build,
+DESIGN and whitespace pass; existing OpenAPI missing-license warning remains.
+[Verification](PREIMPLEMENTATION_REVIEW.md#f02-verification--2026-10-25) records
+Linux execution on 2026-10-27 with real FastAPI/SQLite and synthetic identities.
+No browser/Windows/hosted CI or Checkpoint 1A closure is claimed. Changes await
+review; nothing staged, committed or pushed. Next M1 row is F03 after review
+and its own policy/dependency check.
+
 ### F01 live record — 2026-10-25
 
 **F01 / Checkpoint 1A / M1 / sharmelas-925 / In Progress.** Scoped branch

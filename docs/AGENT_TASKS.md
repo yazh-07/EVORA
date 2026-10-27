@@ -51,6 +51,20 @@ Add `Use task [TASK_ID] instead of automatic selection.` to the prompt. All owne
 
 ## Choosing the next task
 
+### F02 assignment — 2026-10-25
+
+| Field | Recorded assignment |
+|---|---|
+| Task/checkpoint and exact acceptance | **F02 / 1A**: list authorized cases with correct total/limit/offset, deterministic pagination, empty pages and authentication/validation negatives |
+| Module/person and coordination | **M1 / sharmelas-925**; user-authorized bounded implementation and these documentation records |
+| Branch/common commit | `feat/f02-case-listing`; clean starting HEAD/common contract base **a10a81ecf4820b2330bd04edfba7f15d2764c745**, `docs/coordination-foundation`, including merged F00/F01 |
+| Paths | Only `backend/cases.py`, `backend/tests/test_cases.py`, `backend/README.md`, `docs/ROADMAP.md`, `docs/AGENT_TASKS.md`, `docs/PREIMPLEMENTATION_REVIEW.md`; no spec/frontend/dependency changes |
+| Dependencies | Real F01 at **a10a81ecf4820b2330bd04edfba7f15d2764c745**, including F00 through merge **86f14eedc575032d636a77233b19f13bf665c077**; no case producer double; synthetic bearer identities only |
+| Input/output | Consume draft 0.3.0 `listCases`, `CasePage`, `Case`, existing authenticated_actor and SQLiteDatabase; produce authorized paginated GET API |
+| Gate | User confirms existing flat INVALID_INPUT mapping for F02; no unresolved choice blocks this row |
+| Commands and proof | [F02 verification](PREIMPLEMENTATION_REVIEW.md#f02-verification--2026-10-25): bundled-schema API tests, all backend/coordination/frontend regressions, lint/bundle, types/build, DESIGN and diff checks |
+| Handoff | **In Progress**, locally verified for review; Checkpoint 1A remains open. No commit/push/merge authorized. Next M1 row F03 requires its own dependency/policy review |
+
 ### G00 assignment — 2026-10-18
 
 | Field | Recorded assignment |
