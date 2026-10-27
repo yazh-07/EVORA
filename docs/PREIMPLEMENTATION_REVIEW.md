@@ -1,5 +1,82 @@
 # EVORA scope/contract verification and implementation readiness
 
+### F01 verification — 2026-10-25
+
+**F01 / Checkpoint 1A / M1 / sharmelas-925 / In Progress**, branch
+`feat/f01-case-persistence`, clean starting HEAD/common contract base
+**86f14eedc575032d636a77233b19f13bf665c077**. This includes F00
+**94aa2a8** through its reviewed merge. Local branch/base were read back;
+no remote fetch, commit, push or merge was performed. Execution date was
+**2026-10-27 (Linux)**; the heading retains the requested assignment date.
+
+Implemented real POST/GET case operations, startup tables, default SQLiteCaseAccess,
+atomic case/membership creation, strict request validation, omitted absent
+description and unchanged persisted source values. Updated G01 skeleton assertions
+only where F01 introduces tables/routes; connection cleanup, startup failure,
+foreign keys and per-app isolation checks remain. No spec, frontend or package
+file changes. F01 uses real F00 guards/storage; only bearer identities are synthetic.
+Earlier F00 tests retain explicitly test-only membership producers.
+
+F01-E01 is pending in the assignment/communication queue: requested nested error
+objects and BAD_REQUEST conflict with the unchanged flat ApiError/F00/U01 wire.
+User clarification was requested. All results below exercise the existing flat
+contract and INVALID_INPUT mapping, not the alternate requested wire shape.
+No constant-time result is claimed: denied requests share the same membership
+query/control flow and exact HTTP status/body/headers; runtime latency varies.
+
+Environment: CPython **3.14.8**, SQLite **3.54.0**, Node **22.23.3**, npm
+**12.2.1** (workflow pin is 12.2.0). A clean isolated venv at
+`/tmp/evora-f01-venv` installed all unchanged requirements, including FastAPI
+**0.143.1**, Pydantic **2.14.1**, jsonschema **4.25.1**; pip check passed.
+Initial shell packages differed (FastAPI 0.156.8/jsonschema 4.26.0), so recorded
+backend/coordination acceptance uses the isolated pinned environment.
+
+Commands/results (all listed final checks exit 0):
+
+```sh
+python -m venv /tmp/evora-f01-venv
+/tmp/evora-f01-venv/bin/python -m pip install -r requirements.txt
+/tmp/evora-f01-venv/bin/python -m pip check
+npx @redocly/cli bundle specs/openapi.yaml --output /tmp/evora-openapi.json
+npx --yes @redocly/cli@2.57.0 lint specs/openapi.yaml
+npx --yes openapi-typescript@7.10.1 specs/openapi.yaml -o /tmp/evora-f01-api.d.ts
+npx --yes --package typescript@5.9.3 tsc --noEmit --strict /tmp/evora-f01-api.d.ts
+/tmp/evora-f01-venv/bin/python scripts/verify_coordination.py /tmp/evora-openapi.json
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json /tmp/evora-f01-venv/bin/python -m unittest discover -s scripts -p 'test_*.py'
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json /tmp/evora-f01-venv/bin/python -W error::ResourceWarning -m unittest backend.tests.test_cases -v
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json /tmp/evora-f01-venv/bin/python -W error::ResourceWarning -m unittest discover -s backend/tests
+npm --prefix frontend run test
+npm --prefix frontend run build
+npx --yes @google/design.md@0.4.0 lint DESIGN.md
+git diff --check
+```
+
+- Bundle succeeded using Redocly **2.71.2** selected by the requested unversioned
+  command. Workflow-pinned Redocly **2.57.0** lint passed with the existing single
+  missing-license warning. Generated strict TypeScript compilation passed.
+- Coordination verifier passed (27 operations, 126 tasks); **122 tests, OK**,
+  no skips, with jsonschema 4.25.1. These are artifact checks.
+- Focused F01: **11 tests, OK**, no skips. Combined backend: **44 tests, OK**,
+  no skips, ResourceWarning promoted to errors. Case/ApiError responses validate
+  against the actual bundle. Temporary database directories clean up automatically.
+- Read-back proves UUID4 stability, exact title/description/UTC timestamp through
+  API/SQL and app restart, omitted optional description, validation boundaries,
+  empty/whitespace/oversized/non-string/extra/null failures, missing/malformed
+  authentication, malformed UUID, identical foreign/missing 404, immediate
+  revocation, atomic failed membership rollback, FK/cascade and real SQLite
+  membership failure returning 500 rather than granting access or false 404.
+- Frontend **19 tests pass**, no skips; API declaration freshness, typecheck and
+  production build pass. Frontend files were not edited. DESIGN lint reports
+  zero errors/warnings. Whitespace check passes.
+
+An initial shell-package run found two outdated skeleton assertions after F01
+startup changes; their final updated checks pass with pinned packages. No hosted
+CI, native Windows, browser/CORS integration or full Checkpoint 1A exit is claimed.
+F01 remains In Progress pending F01-E01 resolution/review; next M1 task is F02
+once F01 is accepted. Default identity still rejects tokens, and no production
+identity provider, list/upload API or other task is implemented.
+
+
 ## F00 verification — 2026-10-25
 
 **F00 / Checkpoint 1A / M1 / sharmelas-925 / In Progress**, branch

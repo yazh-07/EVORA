@@ -1,4 +1,4 @@
-"""App factory and startup check; G01 exposes no HTTP operations."""
+"""App factory, SQLite startup and F01 case operations."""
 
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
@@ -8,8 +8,9 @@ from pathlib import Path
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 
-from backend.auth import CaseAccess, DenyCaseAccess, RejectTokens, TokenVerifier
+from backend.auth import CaseAccess, RejectTokens, TokenVerifier
 from backend.database import SQLiteDatabase
+from backend.cases import SQLiteCaseAccess, initialize_cases, router
 from backend.errors import AccessError, access_error, invalid_request
 
 
@@ -31,10 +32,7 @@ def create_app(
 
     @asynccontextmanager
     async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
-        # Fail startup if SQLite cannot open the configured file. No domain
-        # migrations/tables or fictional health success are introduced here.
-        with database.connect() as connection:
-            connection.execute("SELECT 1").fetchone()
+        initialize_cases(database)
         yield
 
     app = FastAPI(
@@ -47,9 +45,10 @@ def create_app(
     )
     app.state.database = database
     app.state.token_verifier = token_verifier if token_verifier is not None else RejectTokens()
-    app.state.case_access = case_access if case_access is not None else DenyCaseAccess()
+    app.state.case_access = case_access if case_access is not None else SQLiteCaseAccess(database)
     app.add_exception_handler(RequestValidationError, invalid_request)
     app.add_exception_handler(AccessError, access_error)
+    app.include_router(router)
     return app
 
 

@@ -101,6 +101,32 @@ See [COMMUNICATION.md](COMMUNICATION.md) and [CONTRACTS.md](CONTRACTS.md) for co
 
 For each assigned task record `task ID | checkpoint | module/person | branch/common spec commit | state | consumed/produced interface | actual commands/results + test doubles | PR/next task`. Serialize ledger edits. States: **Backlog**, **In Progress**, **Complete** (acceptance and real dependency integration verified), **Blocked** (exact needed decision). Current task state defaults to Backlog; no implementation completion is claimed here.
 
+### F01 live record — 2026-10-25
+
+**F01 / Checkpoint 1A / M1 / sharmelas-925 / In Progress.** Scoped branch
+`feat/f01-case-persistence` started clean at exact common contract/base
+**86f14eedc575032d636a77233b19f13bf665c077**, including real merged F00
+**94aa2a8** and its G01 SQLite/authentication foundations. No fresh fetch claimed.
+The [assignment](AGENT_TASKS.md#f01-assignment--2026-10-25) bounds paths,
+acceptance, dependencies and the F01-E01 error-envelope decision.
+
+Real `createCase`/`getCase` use SQLite cases/membership, atomic creation, stable
+UUID4, UTC creation time, strict body validation and real F00 actor/case guards.
+Default membership reads use SQLiteCaseAccess on every request; rejected tokens
+remain the default identity configuration. Foreign/missing cases share one
+membership query and identical status/body/headers. Timing equality is not
+certified. Synthetic identities exercise real API/storage; no F01 producer double.
+
+**11 focused F01 / 44 combined backend / 122 coordination / 19 frontend tests
+pass**, with no skips. OpenAPI lint/bundle, generated strict types, frontend API
+freshness/typecheck/build, verifier, DESIGN and whitespace checks pass. One
+pre-existing OpenAPI missing-license warning remains. [Exact evidence and limits](PREIMPLEMENTATION_REVIEW.md#f01-verification--2026-10-25)
+record Linux execution on 2026-10-27, not Windows/hosted CI/browser acceptance.
+Current flat ApiError behavior is verified; the requested nested envelope conflicts
+with the unchanged contract and awaits F01-E01 resolution. No schema, frontend,
+package, full-scope, commit, push or merge change. F01 remains **In Progress**;
+Checkpoint 1A remains open. Next M1 row is F02 after accepted F01 handoff.
+
 ### F00 live record — 2026-10-25
 
 **F00 / Checkpoint 1A / M1 / sharmelas-925 / In Progress.** Automatically selected
