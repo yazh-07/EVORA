@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 from typing import Annotated
 from uuid import UUID, uuid4
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Query, Request
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from backend.auth import Actor, CaseAccessGrant, authenticated_actor, require_case_access
@@ -60,7 +60,37 @@ class Case(BaseModel):
     created_at: datetime
 
 
+class CasePage(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    items: list[Case]
+    total: int
+    limit: int
+    offset: int
+
+
 router = APIRouter()
+
+
+@router.get("/api/v1/cases", operation_id="listCases", status_code=200,
+            response_model=CasePage, response_model_exclude_none=True)
+def list_cases(request: Request,
+               actor: Annotated[Actor, Depends(authenticated_actor)],
+               limit: Annotated[int, Query(ge=1, le=100)] = 20,
+               offset: Annotated[int, Query(ge=0)] = 0):
+    with request.app.state.database.connect() as connection:
+        # Count and page share one SQLite read snapshot.
+        connection.execute("BEGIN")
+        total = connection.execute(
+            "SELECT count(*) FROM case_members WHERE actor_id = ?", (actor.id,),
+        ).fetchone()[0]
+        rows = connection.execute(
+            "SELECT c.id, c.title, c.description, c.created_at FROM cases AS c "
+            "JOIN case_members AS m ON m.case_id = c.id WHERE m.actor_id = ? "
+            "ORDER BY c.created_at DESC, c.id ASC LIMIT ? OFFSET ?",
+            (actor.id, limit, offset),
+        ).fetchall()
+    return CasePage(items=[Case(**dict(row)) for row in rows],
+                    total=total, limit=limit, offset=offset)
 
 
 @router.post("/api/v1/cases", operation_id="createCase", status_code=201,

@@ -33,12 +33,64 @@ class CaseTests(unittest.IsolatedAsyncioTestCase):
     def check_response(self, response, status, schema):
         self.assertEqual(response.status_code, status, response.text)
         if self.spec:
-            Draft202012Validator(self.spec["components"]["schemas"][schema],
+            Draft202012Validator({**self.spec["components"]["schemas"][schema], "components": self.spec["components"]},
                                  format_checker=FormatChecker()).validate(response.json())
         return response.json()
 
     async def create(self, **body):
         return self.check_response(await self.client.post("/api/v1/cases", json=body), 201, "Case")
+
+    async def list_page(self, **params):
+        return self.check_response(await self.client.get("/api/v1/cases", params=params),
+                                   200, "CasePage")
+
+    async def test_list_isolation_defaults_and_empty_actor(self):
+        own = await self.create(title="Own synthetic case")
+        headers = {"Authorization": "Bearer synthetic-f01-b"}
+        response = await self.client.get("/api/v1/cases", headers=headers)
+        self.assertEqual(self.check_response(response, 200, "CasePage"),
+                         {"items": [], "total": 0, "limit": 20, "offset": 0})
+        foreign = self.check_response(await self.client.post(
+            "/api/v1/cases", json={"title": "Foreign synthetic case"}, headers=headers), 201, "Case")
+        self.assertEqual(await self.list_page(),
+                         {"items": [own], "total": 1, "limit": 20, "offset": 0})
+        response = await self.client.get("/api/v1/cases", headers=headers)
+        self.assertEqual(self.check_response(response, 200, "CasePage")["items"], [foreign])
+        with self.app.state.database.connect() as connection:
+            connection.execute("DELETE FROM case_members WHERE case_id = ?", (own["id"],))
+        self.assertEqual((await self.list_page())["total"], 0)
+
+    async def test_list_pagination_and_stable_order(self):
+        cases = [await self.create(title=f"Synthetic {i}", **(
+            {"description": "Preserved description"} if i == 0 else {})) for i in range(23)]
+        with self.app.state.database.connect() as connection:
+            for i, case in enumerate(cases):
+                case["created_at"] = f"2026-10-{25 if i < 12 else 26}T00:00:00Z"
+                connection.execute("UPDATE cases SET created_at = ? WHERE id = ?",
+                                   (case["created_at"], case["id"]))
+        expected = sorted(cases, key=lambda case: case["id"])
+        expected.sort(key=lambda case: case["created_at"], reverse=True)
+        self.assertEqual(await self.list_page(),
+                         {"items": expected[:20], "total": 23, "limit": 20, "offset": 0})
+        collected = []
+        for offset in range(0, 25, 5):
+            page = await self.list_page(limit=5, offset=offset)
+            self.assertEqual(page, {"items": expected[offset:offset + 5],
+                                   "total": 23, "limit": 5, "offset": offset})
+            collected.extend(page["items"])
+        self.assertEqual(collected, expected)
+        for offset in (23, 100):
+            self.assertEqual(await self.list_page(limit=100, offset=offset),
+                             {"items": [], "total": 23, "limit": 100, "offset": offset})
+        self.assertEqual((await self.list_page(limit=1))["items"], expected[:1])
+
+    async def test_list_invalid_pagination(self):
+        for params in ({"limit": 0}, {"limit": 101}, {"offset": -1}, {"limit": "abc"}):
+            with self.subTest(params=params):
+                response = await self.client.get("/api/v1/cases", params=params)
+                self.check_response(response, 400, "ApiError")
+                self.assertEqual(response.json(), {"code": "INVALID_INPUT",
+                                                   "message": "Invalid request input."})
 
     async def test_roundtrip_and_restart_preserve_original_values(self):
         case = await self.create(title=" Synthetic case ", description="Synthetic description")
@@ -87,6 +139,7 @@ class CaseTests(unittest.IsolatedAsyncioTestCase):
                 for method, path, kwargs in (
                     (client.post, "/api/v1/cases", {"json": {"title": "Synthetic"}}),
                     (client.get, '/api/v1/cases/' + case["id"], {}),
+                    (client.get, "/api/v1/cases", {}),
                 ):
                     self.check_response(await method(path, headers=headers, **kwargs), 401, "ApiError")
 

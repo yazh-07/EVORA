@@ -1,5 +1,58 @@
 # EVORA scope/contract verification and implementation readiness
 
+### F02 verification — 2026-10-25
+
+**F02 / Checkpoint 1A / M1 / sharmelas-925 / In Progress**, branch
+`feat/f02-case-listing`, clean starting HEAD/common contract base
+**a10a81ecf4820b2330bd04edfba7f15d2764c745**, including real merged F00/F01. Execution date:
+**2026-10-27, Linux**. No remote fetch, staging, commit, push or merge.
+
+Implemented `listCases`/`CasePage` using authenticated actor membership, SQLite
+count/page read snapshot, deterministic created_at DESC/id ASC ordering and
+omitted absent descriptions. Tests use real FastAPI/SQLite/F00/F01, synthetic
+bearer identities, and temporary databases removed automatically. No case
+producer double, spec/frontend/package changes or new error envelope.
+
+Commands below exited 0. Python commands use the existing isolated pinned
+requirements environment `/tmp/evora-f01-venv` (jsonschema 4.25.1), rather than
+the shell's jsonschema 4.26.0.
+
+```sh
+export PATH=/tmp/evora-f01-venv/bin:$PATH
+npx @redocly/cli bundle specs/openapi.yaml --output /tmp/evora-openapi.json
+python scripts/verify_coordination.py /tmp/evora-openapi.json
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -m unittest discover -s scripts -p 'test_*.py'
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -W error::ResourceWarning -m unittest discover -s backend/tests
+npm --prefix frontend run test
+npm --prefix frontend run build
+npx --yes @redocly/cli@2.57.0 lint specs/openapi.yaml
+npx --yes @google/design.md@0.4.0 lint DESIGN.md
+git diff --check
+```
+
+| Check | Actual result |
+|---|---|
+| Bundle/lint | Pass; existing missing info.license warning only |
+| Coordination verifier | Pass; 27 operations, 126 tasks |
+| Coordination suite | 122 tests, OK, no skips |
+| Warning-strict backend suite | 47 tests, OK, no skips; 14 case tests including 3 new F02 tests |
+| CasePage/Case/ApiError validation | Pass against actual bundle, including nested Case references and format checking |
+| Listing read-back | Only caller memberships, immediate revocation, default 20/0, 23 cases across pages, timestamp tie ID ordering, preserved description, absent description omitted, limit 1/100, empty actor and offset at/beyond total |
+| Negative read-back | limit 0/101/abc and offset -1 return exact flat 400 INVALID_INPUT; missing/malformed/rejected auth returns 401 ApiError |
+| Frontend regression | 19 tests pass, no skips; generated declarations freshness, TypeScript and production build pass |
+| DESIGN | Zero errors/warnings |
+| Diff review | Allowed six files only; whitespace clean; no staged changes |
+
+How you can test: use the pinned requirements environment and bundle command
+above, then run `EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -W
+error::ResourceWarning -m unittest backend.tests.test_cases -v` on one line.
+Expect 14 passing tests; synthetic cases/tokens are defined in the test file.
+The invalid-pagination test verifies the relevant failure responses. Temporary
+SQLite directories clean up automatically. These API/component checks were
+exercised; interactive browser, native Windows, hosted CI and full Checkpoint
+1A exit evidence were not. F02 awaits review; next M1 task is F03 subject to
+its own gate and dependency review.
+
 ### F01 verification — 2026-10-25
 
 **F01 / Checkpoint 1A / M1 / sharmelas-925 / In Progress**, branch
