@@ -19,8 +19,8 @@ from backend.auth import SyntheticTokenVerifier
 
 class EvidenceTests(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
-        root = Path(self.enterContext(TemporaryDirectory()))
-        self.storage = root / "private"
+        root = Path(self.enterContext(TemporaryDirectory())).resolve()
+        self.storage = (root / "private").resolve()
         self.app = create_app(root / "db.sqlite3", storage_dir=self.storage,
                               token_verifier=SyntheticTokenVerifier({
                                   "synthetic-a": "investigator-1", "synthetic-b": "investigator-2"}))
@@ -64,7 +64,7 @@ class EvidenceTests(unittest.IsolatedAsyncioTestCase):
         with self.app.state.database.connect() as connection:
             row = dict(connection.execute('SELECT * FROM evidence WHERE id = ?', (first['id'],)).fetchone())
         path = Path(row.pop('storage_path'))
-        self.assertEqual(path, self.storage / self.case['id'] / (first['id'] + '.bin'))
+        self.assertEqual(path.resolve(), (self.storage / self.case['id'] / (first['id'] + '.bin')).resolve())
         self.assertEqual(path.read_bytes(), content)
         self.assertIsNone(row.pop('acquired_at'))
         self.assertEqual(row, first)
