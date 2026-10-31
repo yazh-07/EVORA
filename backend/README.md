@@ -1,5 +1,38 @@
 # EVORA backend
 
+## F04 evidence metadata and listing
+
+`GET /api/v1/cases/{caseId}/evidence` (`listEvidence`) returns 200
+`EvidencePage` with `items`, `total`, `limit`, `offset`. It reads only the
+authorized case's SQLite evidence, ordered by `created_at DESC, id ASC`.
+Count and page share one read snapshot. `limit` defaults to 20 (1–100) and
+`offset` to 0 (minimum 0). An empty case or offset at/beyond the total returns
+empty `items` with the accurate total and requested pagination values.
+
+`GET /api/v1/cases/{caseId}/evidence/{evidenceId}` (`getEvidence`) returns
+200 `Evidence` from the same authorized case. Both routes omit absent
+`acquired_at`, preserve stored timestamp text, and exclude private storage paths.
+Both require bearer authentication and current case membership. Missing/invalid
+credentials return 401; inaccessible/missing cases and missing/mismatched
+evidence return 404 `{"code":"NOT_FOUND","message":"Resource not found."}`.
+Invalid UUIDs or pagination return 400
+`{"code":"INVALID_INPUT","message":"Invalid request input."}`.
+
+Using the pinned requirements environment, run the real upload/read integration
+and bundled-schema checks from the repository root:
+
+```sh
+npx @redocly/cli bundle specs/openapi.yaml --output /tmp/evora-openapi.json
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -W error::ResourceWarning -m unittest backend.tests.test_evidence -v
+```
+
+The 16 evidence tests cover upload regressions and metadata reads, 23-item
+pagination with timestamp ties, limits/empty pages, two actors and multiple
+cases, revoked membership, UUID/input/authentication errors and omission of
+private paths. They use real FastAPI/SQLite/private temporary storage with
+synthetic identities and evidence. F04 verification and platform limits are
+recorded in `docs/PREIMPLEMENTATION_REVIEW.md`.
+
 ## F02 authorized case listing
 
 `GET /api/v1/cases` (`listCases`) requires `authenticated_actor` and returns

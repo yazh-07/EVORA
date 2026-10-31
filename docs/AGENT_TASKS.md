@@ -263,3 +263,17 @@ Coordination checks: lint/bundle, generated client/TypeScript compilation, `scri
 | Gate | F03 intake policy: 50 MiB original bytes, opaque content without inline parsing, reject traversal/separators/control characters/unsafe portable filename punctuation; RFC 3339 acquisition text preserved. P04/P14B own parser/BOM/row/layout validation; U03 consumes 400/413. Remaining C-04 parser choices stay open |
 | Verification | Required shared commands plus OpenAPI lint, generated type freshness/typecheck/build; actual results in PREIMPLEMENTATION_REVIEW.md |
 | Handoff | In Progress for review; no commit/push/merge; next M1 task F04 after review, F05 and real I00 integration still required |
+
+### F04 assignment — 2026-10-31
+
+| Field | Recorded assignment |
+|---|---|
+| Task/checkpoint and exact acceptance | **F04 / 1A**: read evidence metadata and list case evidence; case-scoped records, pagination and not-found behavior tested |
+| Module/person and coordination | **M1 / sharmelas-925**; user-authorized bounded implementation and documentation handoff |
+| Branch/common commit | `feat/f04-evidence-metadata`; clean starting HEAD and merge-base with `docs/coordination-foundation`: **e5273a61e444a2fdf46b236e1f4a56700ac52f57** |
+| Paths | Only `backend/evidence.py`, `backend/tests/test_evidence.py`, `backend/README.md`, `docs/AGENT_TASKS.md`, `docs/ROADMAP.md`, `docs/PREIMPLEMENTATION_REVIEW.md`; no spec, frontend or dependency edits |
+| Dependencies | Real F03 at **e5273a61e444a2fdf46b236e1f4a56700ac52f57**, with merged F00/F01/F02/U01/U02/U02B; real FastAPI/SQLite/upload producer, synthetic authentication identities only |
+| Input/output | Unchanged draft 0.3.0 `listEvidence`, `getEvidence`, `EvidencePage`, `Evidence`; existing `require_case_access` and SQLite metadata; omit absent acquisition time and private storage paths |
+| Gate | Existing flat INVALID_INPUT 400 and NOT_FOUND 404 mapping confirmed by user; no unresolved choice blocks F04. Future parser/provider policy remains outside this row |
+| Commands and proof | Required bundle, coordination verifier/tests, warning-strict backend tests, frontend tests, OpenAPI lint, generated API/type compilation, DESIGN lint and diff checks; actual results in F04 verification in `PREIMPLEMENTATION_REVIEW.md` |
+| Handoff | **In Progress**, pending review/integration; no staging/commit/push/merge authorized. Checkpoint 1A remains open; next M1 row F05 needs a separate assignment |
