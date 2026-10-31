@@ -136,3 +136,16 @@ button:disabled { color: var(--color-secondary); cursor: default; }
 .case-creation input, .case-creation textarea { width: 100%; min-width: 0; color: var(--color-primary); background: var(--color-surface); }
 .case-creation textarea { font: inherit; min-height: 100px; padding: var(--space-sm); border: 1px solid var(--color-border); border-radius: var(--radius-sm); resize: vertical; }
 .case-creation button { justify-self: start; }
+
+.evidence-workspace { display: grid; gap: var(--space-md); margin-top: var(--space-md); }
+.upload-form { margin-top: var(--space-md); }
+.upload-form fieldset { display: grid; gap: var(--space-sm); min-width: 0; margin: 0; padding: var(--space-md); border: 1px solid var(--color-border); }
+.upload-form input, .upload-form select { width: 100%; min-width: 0; color: var(--color-primary); background: var(--color-surface); }
+.upload-form select { font: inherit; min-height: 44px; padding: var(--space-sm); border: 1px solid var(--color-border); border-radius: var(--radius-sm); }
+.upload-form button { justify-self: start; }
+.evidence-list { list-style: none; padding: 0; }
+.evidence-card { padding-block: var(--space-md); border-bottom: 1px solid var(--color-border); overflow-wrap: anywhere; }
+.evidence-card button { text-align: left; overflow-wrap: anywhere; }
+.evidence-metadata { margin-block: var(--space-md); overflow-wrap: anywhere; }
+.evidence-metadata dt { margin-top: var(--space-sm); font-weight: 600; }
+.evidence-metadata dd { margin: 0; }

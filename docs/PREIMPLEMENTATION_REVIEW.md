@@ -963,3 +963,88 @@ local regressions pass, but no new Windows setup proof is claimed. I00's full
 assembled intake/download/audit/UI exit evidence remains outstanding;
 Checkpoint 1A stays open. F04 remains In Progress pending review/integration.
 Next M1 row is F05 under its own assignment; no second task was implemented.
+
+### U03 verification — 2026-10-31
+
+**U03 / Checkpoint 1A / M4 / JebasJ / In Progress**, locally verified pending
+review/integration. Starting branch `feat/u03-evidence-upload-ui` was clean at
+**69f2e8269b6e6d639889941926bc604a415e3f05**, matching local
+`docs/coordination-foundation`; no fresh fetch or remote CI claimed. Real
+U01/F03/F04 and F00/F01/F02/U02/U02B are ancestors of that common base. Only
+user-allowed frontend and three documentation paths changed; no backend,
+specification, dependency or generated-type edits. Nothing staged/committed/
+pushed/merged. Draft 0.3.0 remains the sole HTTP authority.
+
+The selected-case UI uses `uploadEvidence`, `listEvidence` and `getEvidence`
+through the existing generated client. It sends real FormData file bytes,
+validates required file/nonblank label before HTTP, constrains source labels
+to 200 characters, disables the upload fieldset/button while submitting and
+renders server errors as escaped alert text. Optional acquisition time is
+explicitly labeled UTC and sent as RFC 3339; unknown time is omitted. Successful
+uploads reset form controls, refresh the first page and display server-computed
+ID/hash/size in the inspector. Confirmed metadata survives refresh failure.
+Case/session changes abort reads/uploads and discard late responses; development
+StrictMode effect reconnect is covered. Pagination uses real server totals and
+empty/out-of-range states; detail responses must match selected case/item.
+
+All commands below exited 0 on Linux. Python commands used
+`source /tmp/evora-f03-pinned/bin/activate` (existing isolated pinned environment),
+with CPython 3.14.8, FastAPI 0.143.1, Starlette 1.8.0, Pydantic 2.14.1,
+httpx 0.28.1, python-multipart 0.0.32 and **jsonschema 4.25.1**. The system
+Python has newer FastAPI/jsonschema and was not used for acceptance tests.
+Node 22.23.4/npm 12.2.1 were used; repository pins remain 22.23.3/12.2.0.
+No package/model installation or Windows setup result is claimed.
+
+| Exact command from repository root | Result |
+|---|---|
+| `npx @redocly/cli bundle specs/openapi.yaml --output /tmp/evora-openapi.json` | Bundle produced |
+| `python scripts/verify_coordination.py /tmp/evora-openapi.json` | Planning/contract verifier passes |
+| `EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -m unittest discover -s scripts -p 'test_*.py'` | 122 tests pass |
+| `EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -W error::ResourceWarning -m unittest discover -s backend/tests` | 63 tests pass |
+| `npm --prefix frontend run check:api` | Committed generated types fresh |
+| `npm --prefix frontend run typecheck` | TypeScript passes |
+| `npm --prefix frontend run test` | 39 tests pass, no skips; eight new U03 tests |
+| `npm --prefix frontend run build` | API check, TypeScript and production bundle pass |
+| `EVORA_TEST_PYTHON=/tmp/evora-f03-pinned/bin/python node frontend/test/cases.integration.mjs` | Real U03 and U02/U02B HTTP integration passes |
+| `npx @redocly/cli lint specs/openapi.yaml` | Pass; existing missing-license warning |
+| `npx @google/design.md@0.4.0 lint DESIGN.md` | Zero errors/warnings |
+| `git diff --check` | Pass |
+
+Read-back: the real localhost FastAPI process uses F00 memberships, F01/F02
+cases, F03 original-byte intake and F04 reads with SQLite/private files in an
+owned temporary directory. Identity tokens and data are synthetic; no API,
+database or evidence producer doubles are used for integration. A synthetic
+`network.csv` File is uploaded through the UI's store/client; HTTP 201 is
+observed, the expected SHA-256 is independently computed from original bytes,
+size equals byte length, the refreshed list equals confirmed metadata and
+`getEvidence` returns the same record. Acquired UTC is read back exactly.
+Missing-file/blank-label local checks send no request. Direct real invalid
+kind/blank-label uploads return 400. An actual 50 MiB + 1 byte upload returns
+413, surfaces the server message and leaves the count unchanged. Another actor
+cannot list/get that evidence, and an evidence UUID under the wrong case returns
+404. Prior U02/U02B creation/pagination/session/isolation HTTP checks also pass.
+The helper stores originals beside its temporary database and cleans both up.
+
+Unit tests use synthetic Fetch responses and static React rendering, explicitly
+including simulated 400/413/415, malicious text escaping, refresh failure,
+malformed/foreign metadata, duplicate submit prevention, pagination, late
+responses, session replacement/disposal and effect reconnect. The real F03
+accepts opaque MIME content; a simulated 415 proves display handling only,
+not backend content-type detection. There is no fabricated content-verification
+or scoring result. Artifact lint is separate from these application tests.
+
+Reproduce the targeted negative check after the test build:
+`node --test --test-name-pattern='400, 413 and 415' frontend/test/evidence.test.mjs`.
+Expect one passing selected test with escaped alerts. Run the integration command
+above for real byte-limit/invalid-kind/blank-label and cross-case failures.
+Use an interpreter with `requirements.txt` installed if the local temporary
+pinned environment is unavailable.
+
+Limits: no browser event/focus/form-reset execution, native Windows or hosted CI
+was performed. Those browser behaviors are implemented but static render/store
+checks do not prove DOM events. Earlier completed Checkpoint 0 local artifact/
+build/backend regressions pass; this does not replace its historical Windows
+proof. Checkpoint 1A remains open pending remaining rows and I00's assembled
+intake/download/audit/UI exit evidence. U03 stays **In Progress** for review and
+integration. Next M4 row U04 needs real F05 and its own bounded assignment;
+no additional task was implemented.

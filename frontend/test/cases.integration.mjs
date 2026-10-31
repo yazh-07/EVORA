@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { spawn } from 'node:child_process';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -7,6 +8,7 @@ import { once } from 'node:events';
 import { fileURLToPath } from 'node:url';
 import { createApiClient } from '../.test-build/src/api/client.mjs';
 import { createCaseStore } from '../.test-build/src/cases/store.mjs';
+import { createEvidenceStore } from '../.test-build/src/cases/CaseWorkspace.mjs';
 
 // Run explicitly after npm test + build. Real HTTP, FastAPI and SQLite; synthetic identities/data only.
 const temporary = await mkdtemp(join(tmpdir(), 'evora-u02-'));
@@ -79,8 +81,37 @@ try {
   const listed = await client.request('get', '/api/v1/cases', { query: { limit: 20, offset: 0 } });
   assert.ok(listed.items.some(item => item.id === created.id));
   await assert.rejects(client.request('post', '/api/v1/cases', { body: { title: '   ' } }), { status: 400 });
+  const evidenceStore = createEvidenceStore(client, created.id);
+  await evidenceStore.load(); assert.equal(evidenceStore.getSnapshot().page.total, 0);
+  const bytes = new TextEncoder().encode('Synthetic U03 evidence bytes\n');
+  statuses.length = 0;
+  assert.equal(await evidenceStore.upload(null, 'network_log', 'source'), false);
+  assert.equal(await evidenceStore.upload(new File([bytes], 'network.csv'), 'network_log', '   '), false);
+  assert.equal(statuses.length, 0);
+  assert.equal(await evidenceStore.upload(new File([bytes], 'network.csv', { type: 'text/csv' }), 'network_log', 'Synthetic U03 source', '2026-10-31T12:34'), true);
+  assert.ok(statuses.some(item => item.method === 'POST' && item.status === 201));
+  const evidence = evidenceStore.getSnapshot().detail;
+  assert.equal(evidence.sha256, createHash('sha256').update(bytes).digest('hex'));
+  assert.equal(evidence.size_bytes, bytes.length);
+  assert.equal(evidence.acquired_at, '2026-10-31T12:34:00Z');
+  assert.deepEqual(evidenceStore.getSnapshot().page.items[0], evidence);
+  await evidenceStore.select(evidence.id);
+  assert.deepEqual(evidenceStore.getSnapshot().detail, evidence);
+  for (const [kind, label] of [['network_log', '   '], ['unsupported', 'source']]) {
+    const body = new FormData(); body.set('file', new File([bytes], 'network.csv')); body.set('kind', kind); body.set('source_label', label);
+    await assert.rejects(client.request('post', '/api/v1/cases/{caseId}/evidence', { path: { caseId: created.id }, body }), { status: 400 });
+  }
+  // Actual F03 byte limit, not a simulated transport error.
+  assert.equal(await evidenceStore.upload(new File([new Uint8Array(50 * 1024 * 1024 + 1)], 'large.bin'), 'document', 'Synthetic oversize'), false);
+  assert.equal(evidenceStore.getSnapshot().uploadMessage, 'Upload exceeds configured limit.');
+  await evidenceStore.load(); assert.equal(evidenceStore.getSnapshot().page.total, 1);
+  evidenceStore.dispose();
   client.setToken('u02-synthetic-one'); await store.load();
   assert.ok(store.getSnapshot().page.items.every(item => item.id !== created.id));
+  await assert.rejects(client.request('get', '/api/v1/cases/{caseId}/evidence', { path: { caseId: created.id } }), { status: 404 });
+  await assert.rejects(client.request('get', '/api/v1/cases/{caseId}/evidence/{evidenceId}', { path: { caseId: created.id, evidenceId: evidence.id } }), { status: 404 });
+  await assert.rejects(client.request('get', '/api/v1/cases/{caseId}/evidence/{evidenceId}', { path: { caseId: first.items[0].id, evidenceId: evidence.id } }), { status: 404 });
+  console.log('PASS U03 real HTTP/FastAPI/SQLite: multipart 201, exact SHA-256/size/list/detail/acquired UTC, local validation, server blank-label/invalid-kind 400, oversize 413, case/actor isolation 404.');
   client.setToken('invalid-synthetic-token'); await store.load();
   assert.equal(client.hasToken(), false); await store.load(); assert.equal(store.getSnapshot().status, 'signed-out');
   store.dispose();
