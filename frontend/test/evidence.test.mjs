@@ -4,6 +4,7 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { createApiClient } from '../.test-build/src/api/client.mjs';
 import { createEvidenceStore, EvidencePanels } from '../.test-build/src/cases/CaseWorkspace.mjs';
+import { ApiProvider } from '../.test-build/src/api/ApiProvider.mjs';
 import { caseA, caseB } from '../.test-build/test/fixtures/api.mjs';
 
 const item = { id: '00000000-0000-4000-8000-000000000003', case_id: caseA.id, source_label: 'Synthetic source', kind: 'network_log', filename: 'network.csv', media_type: 'text/csv', size_bytes: 5, sha256: 'a'.repeat(64), created_at: '2026-10-31T00:00:00Z' };
@@ -15,7 +16,8 @@ function setup(fetch) {
   client.setToken('synthetic-one');
   return { client, store: createEvidenceStore(client, caseA.id) };
 }
-const render = store => renderToStaticMarkup(createElement(EvidencePanels, { state: store.getSnapshot(), load: store.load, select: store.select, upload: store.upload }));
+const renderClient = createApiClient({baseUrl:'http://127.0.0.1:8000'});
+const render = store => renderToStaticMarkup(createElement(ApiProvider, {client:renderClient}, createElement(EvidencePanels, { state: store.getSnapshot(), load: store.load, select: store.select, upload: store.upload })));
 
 test('selected-case evidence has labeled upload fields, honest empty state, and local validation', async () => {
   let calls = 0;

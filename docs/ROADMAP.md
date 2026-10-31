@@ -103,6 +103,23 @@ checklist: PREIMPLEMENTATION_REVIEW.md, U02B reconciliation section. No new
 browser/hosted CI claim; no commit/push/merge. Next eligible M4 row is U04 after
 this review and its own bounded assignment. Checkpoint 1A remains open.
 
+## U04 current handoff — 2026-10-31
+
+**U04 / 1A / M4 JebasJ / In Progress**, user authorized finish, commit/push and
+merge of the existing feat/u04-evidence-download task only. Common base updated
+to **d2879c6e1e236add391fb6af40480b9940d22555** preserving original draft and
+upstream U02B reconciliation. Real U03/F05 dependencies integrated. Selected
+metadata now provides an explicit original download with source size/SHA-256
+verification, safe failures, duplicate/session/selection protection and URL
+cleanup. No schema/backend/scope/dependency changes.
+48 frontend pass; 70 backend run (69 pass/1 Windows symlink skip); real F05
+and U03 HTTP/SQLite regression and actual browser attachment byte/hash read-back
+pass. Contract/types/build/DESIGN pass with existing license warning. Exact
+results/limits: PREIMPLEMENTATION_REVIEW.md U04 verification. Checklist in
+frontend/README.md. 122 coordination tests pass on the final documentation candidate.
+No hosted CI/production auth/formal screen-reader claim. Checkpoint 1A remains
+open: I00 requires M1 F06/F07/F09 and explicit shared-task assignee. No next row.
+
 ## Module assignment and live task state
 
 | Module | Assigned GitHub handle | Accountable boundary | State |

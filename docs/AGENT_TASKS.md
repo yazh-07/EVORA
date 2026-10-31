@@ -347,3 +347,15 @@ supersedes earlier reconciliation In Progress/no-publication statements;
 Checkpoint 1A remains open. Original dirty checkout and active U04 worktree
 are untouched. Next work is continuing the existing assigned U04 task, not
 starting a second U04 implementation. No U04 changes were merged here.
+
+### U04 assignment — 2026-10-31
+
+| Field | Assignment |
+|---|---|
+| Task/checkpoint/owner | U04 / 1A / M4 JebasJ; original authorized download from selected evidence, correct bytes/hash and no persistent client cache |
+| Base/branch | `d2879c6e1e236add391fb6af40480b9940d22555`, updated verified shared base (original draft d24312f); `feat/u04-evidence-download` in isolated worktree; original uncommitted U02B preserved |
+| Paths | Existing approved frontend case/test/documentation boundary: frontend/src/cases, frontend tests, scripts/build-test.mjs, frontend README; bounded AGENT_TASKS/ROADMAP/PREIMPLEMENTATION_REVIEW records only |
+| Dependencies | Real U03 merge c5c9b5a and F05 merge d24312f, with real F00/F03/F04; unchanged draft 0.3.0 downloadEvidence |
+| Gate | No missing policy; user explicitly requested U04. Synthetic auth only, backend remains access authority |
+| Acceptance/tests | Selected metadata download; original byte/size/hash read-back; failures, duplicates, selection/session cancellation; URL cleanup; real producer integration and previous-checkpoint regressions |
+| Handoff | In Progress; 48 frontend pass, 69 backend pass/1 Windows symlink skip, real API/browser original read-back and contract/types/build/DESIGN pass; exact evidence in PREIMPLEMENTATION_REVIEW U04 section. User now explicitly authorizes finishing, committing, pushing and merging U04 only; preserve full FEATURE_SCOPE |

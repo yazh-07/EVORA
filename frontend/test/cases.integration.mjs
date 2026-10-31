@@ -7,6 +7,7 @@ import { join } from 'node:path';
 import { once } from 'node:events';
 import { fileURLToPath } from 'node:url';
 import { createApiClient } from '../.test-build/src/api/client.mjs';
+import { createOriginalDownload } from '../.test-build/src/cases/downloadController.mjs';
 import { createCaseStore } from '../.test-build/src/cases/store.mjs';
 import { createEvidenceStore } from '../.test-build/src/cases/CaseWorkspace.mjs';
 
@@ -110,12 +111,30 @@ try {
   assert.equal(await evidenceStore.upload(new File([new Uint8Array(50 * 1024 * 1024 + 1)], 'large.bin'), 'document', 'Synthetic oversize'), false);
   assert.equal(evidenceStore.getSnapshot().uploadMessage, 'Upload exceeds configured limit.');
   await evidenceStore.load(); assert.equal(evidenceStore.getSnapshot().page.total, 1);
+  let savedBytes = null;
+  const originalDownload = createOriginalDownload(client, evidence, blob => {
+    savedBytes = blob; return () => {};
+  });
+  await originalDownload.download();
+  assert.equal(originalDownload.getSnapshot().status, 'ready');
+  assert.deepEqual(new Uint8Array(await savedBytes.arrayBuffer()), bytes);
+  assert.equal(createHash('sha256').update(new Uint8Array(await savedBytes.arrayBuffer())).digest('hex'), evidence.sha256);
+  originalDownload.dispose();
+  const emptyBody = new FormData(); emptyBody.set('file', new File([], 'empty.bin')); emptyBody.set('kind', 'document'); emptyBody.set('source_label', 'Synthetic empty original');
+  const emptyEvidence = await client.request('post', '/api/v1/cases/{caseId}/evidence', {path:{caseId:created.id},body:emptyBody});
+  let emptySaved = false;
+  const emptyDownload = createOriginalDownload(client, emptyEvidence, blob => { assert.equal(blob.size,0); emptySaved=true;return ()=>{}; });
+  await emptyDownload.download(); assert.equal(emptySaved,true); emptyDownload.dispose();
+  console.log('PASS U04 real F05: original byte/hash/size read-back through download controller and empty original.');
   evidenceStore.dispose();
   client.setToken('u02-synthetic-one'); await store.load();
   assert.ok(store.getSnapshot().page.items.every(item => item.id !== created.id));
   await assert.rejects(client.request('get', '/api/v1/cases/{caseId}/evidence', { path: { caseId: created.id } }), { status: 404 });
   await assert.rejects(client.request('get', '/api/v1/cases/{caseId}/evidence/{evidenceId}', { path: { caseId: created.id, evidenceId: evidence.id } }), { status: 404 });
   await assert.rejects(client.request('get', '/api/v1/cases/{caseId}/evidence/{evidenceId}', { path: { caseId: first.items[0].id, evidenceId: evidence.id } }), { status: 404 });
+  const forbiddenOriginal = createOriginalDownload(client, evidence, () => { throw Error('Foreign original must not save'); });
+  await forbiddenOriginal.download(); assert.equal(forbiddenOriginal.getSnapshot().status, 'error'); assert.match(forbiddenOriginal.getSnapshot().message, /unavailable/); forbiddenOriginal.dispose();
+  await assert.rejects(client.request('get','/api/v1/cases/{caseId}/evidence/{evidenceId}/content',{path:{caseId:created.id,evidenceId:evidence.id},responseType:'blob'}),{status:404});
   console.log('PASS U03 real HTTP/FastAPI/SQLite: multipart 201, exact SHA-256/size/list/detail/acquired UTC, local validation, server blank-label/invalid-kind 400, oversize 413, case/actor isolation 404.');
   client.setToken('invalid-synthetic-token'); await store.load();
   assert.equal(client.hasToken(), false); await store.load(); assert.equal(store.getSnapshot().status, 'signed-out');
