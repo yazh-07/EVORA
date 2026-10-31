@@ -731,3 +731,24 @@ tests pass**, no skips. Real HTTP/SQLite integration, API freshness/typecheck/
 build, contract lint/bundle/generated strict types, verifier, DESIGN and diff
 checks pass. Existing info-license warning remains. No product code changed
 for this correction and no initial scope was removed or deferred.
+
+### U02 authorized integration — 2026-10-31
+
+The user explicitly requested merging U02 after the task push. Verified clean
+worktree and fetched origin: shared base remained 909009d21198fd751db49863f581b032875fa5e0.
+Committed the bounded planning-reference correction as 3bbbd63, then merged
+U02 without conflicts into `docs/coordination-foundation` at
+**9f2cc8ac64426ef2b0bb9d917fd7afdb777b606f**. No main merge, force push,
+branch deletion or second task is involved.
+
+The corrected combined candidate passes **122 coordination, 47 backend and
+25 frontend tests**, no skips, plus real API integration, freshness/typecheck/
+build, lint/bundle/generated strict types, verifier and DESIGN. Post-merge
+smoke on that exact merge commit again passes real HTTP/SQLite 21+1-case
+pagination/detail/actor isolation/empty/400/401/404 checks and static UI HTTP
+200; coordination verifier and merge whitespace checks pass. The current
+ledger now records U02 Complete after actual dependency integration and user
+acceptance. Checkpoint 1A remains open. U02B is the next M4 row with a fresh
+scoped assignment on the updated verified shared base. New hosted CI remains
+pending and earlier documented production-auth/accessibility/viewport limits
+are unchanged; no new browser test is claimed in this merge-only turn.

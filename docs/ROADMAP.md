@@ -103,14 +103,15 @@ For each assigned task record `task ID | checkpoint | module/person | branch/com
 
 ### U02 live record — 2026-10-31
 
-**U02 / Checkpoint 1A / M4 / JebasJ / In Progress**, locally verified and
-awaiting review/integration. Branch `feat/u02-case-list-ui`, clean published
+**U02 / Checkpoint 1A / M4 / JebasJ / Complete**, user-approved integration
+into `docs/coordination-foundation` at merge **9f2cc8ac64426ef2b0bb9d917fd7afdb777b606f**.
+Post-merge real HTTP/SQLite smoke and coordination verification pass. Branch `feat/u02-case-list-ui`, clean published
 common base **909009d21198fd751db49863f581b032875fa5e0**. Live origin ref matched;
 U01 42d0312 and F02 c8077f5 are merged ancestors with real F00/F01/G01B.
 Their older In Progress session records below are historical; no other task's
 completion status is rewritten by this handoff. User approved the bounded
 [assignment](AGENT_TASKS.md#u02-assignment--2026-10-31) and commit/push of this
-one task, with no merge or subsequent task.
+one task, then explicitly authorized this merge; no subsequent task.
 
 The UI uses unchanged listCases/getCase through the existing typed client,
 20-item pages and authoritative totals, selected case details, honest
@@ -124,8 +125,9 @@ Contract lint/bundle, generated strict types, freshness/typecheck/build,
 verifier and DESIGN pass; existing missing-license warning remains.
 [Verification and limits](PREIMPLEMENTATION_REVIEW.md#u02-verification--2026-10-31)
 and the exact test checklist in `frontend/README.md`.
-Checkpoint 1A remains open. Next M4 row **U02B** needs U02 review/integration
-or an explicit safe handoff; stop for review before another task.
+Checkpoint 1A remains open. Next M4 row **U02B** can use the newly verified
+shared base on a fresh assignment; no second task is started. New hosted CI
+is pending separately; the documented local test limitations remain.
 
 ### F02 live record — 2026-10-25
 

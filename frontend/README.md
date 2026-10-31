@@ -3,8 +3,9 @@
 U02 / Checkpoint 1A / M4 / JebasJ, branch `feat/u02-case-list-ui`.
 Common base: `909009d21198fd751db49863f581b032875fa5e0`.
 Real U01/F00/F01/F02 are merged in this base. Earlier U01 notes below describe
-its original fixture-only handoff. U02 remains **In Progress**, awaiting review
-and integration; no Checkpoint 1A closure is claimed.
+its original fixture-only handoff. U02 is **Complete**, integrated by user-authorized
+merge `9f2cc8ac64426ef2b0bb9d917fd7afdb777b606f` into `docs/coordination-foundation`
+and verified with real HTTP/SQLite smoke. No Checkpoint 1A closure is claimed.
 
 The UI reads `listCases` and `getCase` through the existing generated typed
 client. It shows API totals, 20-item pages, empty/loading/retry states and
@@ -93,8 +94,7 @@ frontend reinstall, new hosted CI and production authentication were not run.
 The demo static mount/no-store middleware is test tooling, not a deployment or
 CORS policy change. No real evidence or external service is used.
 
-Next M4 task is **U02B**, after U02 review/integration or an explicit safe
-handoff. The entire initial scope and approved additions remain unchanged in
+Next M4 task is **U02B**, on the updated verified shared base with its own scoped assignment. The entire initial scope and approved additions remain unchanged in
 `docs/FEATURE_SCOPE.md`.
 
 ---

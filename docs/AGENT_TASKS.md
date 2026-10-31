@@ -227,11 +227,11 @@ Coordination checks: lint/bundle, generated client/TypeScript compilation, `scri
 | Field | Recorded assignment |
 |---|---|
 | Task/checkpoint and exact acceptance | **U02 / 1A**: authorized paginated case list and getCase detail; real API, loading/empty/error states, actor isolation |
-| Module/person and coordination | **M4 / JebasJ**; user approved the proposed bounded scope and subsequent commit/push; no merge or second task |
+| Module/person and coordination | **M4 / JebasJ**; user approved the proposed bounded scope and subsequent commit/push; subsequent explicit merge authorization, no second task |
 | Branch/common commit | `feat/u02-case-list-ui`, verified clean published `docs/coordination-foundation` **909009d21198fd751db49863f581b032875fa5e0**; live remote matched |
 | Paths | `frontend/src/cases/`, `frontend/src/App.tsx`, `frontend/src/styles.css`, frontend tests and `scripts/build-test.mjs`, frontend README; bounded U02 records in AGENT_TASKS, ROADMAP and PREIMPLEMENTATION_REVIEW |
 | Dependencies | Real U01 **42d03125b710ee37b7505361388fb15792ffe306**, F02 **c8077f5**, F00/F01 and G01B are merged ancestors. Historical In Progress records do not negate actual Git integration; real integration will be exercised |
 | Input/output | Unchanged draft 0.3.0 listCases/getCase, CasePage/Case and shared ApiProvider/client; memory-only synthetic-session entry, no issuance route or creation/upload feature |
 | Gate | C-03 recorded policy applies; user approved missing path/base handoff. No C-04/C-05/C-06 decision needed |
 | Commands and proof | 25 frontend / 47 backend / 122 coordination tests pass; real HTTP/SQLite two-actor integration and browser smoke pass; contract/types/build/DESIGN pass. [Actual verification and limits](PREIMPLEMENTATION_REVIEW.md#u02-verification--2026-10-31) |
-| Handoff | **In Progress**; retain full FEATURE_SCOPE including approved transcription addition; pending review, no Complete or merge claim |
+| Handoff | **Complete** after user-authorized integration at merge 9f2cc8ac64426ef2b0bb9d917fd7afdb777b606f and passing post-merge real HTTP/SQLite smoke; retain full FEATURE_SCOPE including approved transcription addition. Checkpoint 1A stays open; new hosted CI pending; no second task |
