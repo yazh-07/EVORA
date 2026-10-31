@@ -4,7 +4,7 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { createApiClient } from '../.test-build/src/api/client.mjs';
 import { createCaseStore } from '../.test-build/src/cases/store.mjs';
-import { CasePanels } from '../.test-build/src/cases/CaseWorkspace.mjs';
+import { CasePanels, CaseCreation } from '../.test-build/src/cases/CaseWorkspace.mjs';
 import { caseA, caseB } from '../.test-build/test/fixtures/api.mjs';
 
 // Synthetic transport doubles test UI state/races; real backend test is separate.
@@ -115,4 +115,88 @@ test('401 ends the shared session; malicious titles/descriptions render as text'
   const html = render(safe.getSnapshot());
   assert.doesNotMatch(html, /<img|<script/);
   assert.match(html, /&lt;script&gt;/); safe.dispose();
+});
+
+const creationHtml = store => renderToStaticMarkup(createElement(CaseCreation, { state: store.getSnapshot(), create: store.create }));
+test('creation form has labeled constrained fields and rejects blank titles without requests', async () => {
+  let calls = 0;
+  const { store } = setup(async () => { calls++; return Response.json(page()); });
+  const html = creationHtml(store);
+  assert.match(html, /<form/); assert.match(html, /maxLength="200"/i); assert.match(html, /maxLength="5000"/i);
+  assert.match(html, /for="case-title"/); assert.match(html, /Create case/);
+  for (const title of ['', '  \t\n', 'x'.repeat(201)]) assert.equal(await store.create(title, ''), false);
+  assert.equal(await store.create('Valid', 'x'.repeat(5001)), false);
+  await store.create('   ', '');
+  assert.match(creationHtml(store), /Title cannot be empty/);
+  assert.match(creationHtml(store), /aria-describedby="create-error"/);
+  assert.equal(calls, 0); store.dispose();
+});
+test('valid creation sends exact body, prevents duplicates and refreshes/selects confirmed case', async () => {
+  const wait = deferred(); const requests = [];
+  const { store } = setup(async (_url, options) => {
+    requests.push(options);
+    return options.method === 'POST' ? wait.promise : Response.json(page([caseB, caseA]));
+  });
+  const pending = store.create('Synthetic case', 'Synthetic description');
+  assert.equal(store.getSnapshot().createStatus, 'submitting');
+  assert.match(creationHtml(store), /disabled=""[^>]*>Creating case/);
+  assert.equal(await store.create('Duplicate', ''), false);
+  await store.load();
+  assert.equal(requests.length, 1);
+  assert.deepEqual(JSON.parse(requests[0].body), { title: 'Synthetic case', description: 'Synthetic description' });
+  wait.resolve(Response.json(caseB, { status: 201 }));
+  assert.equal(await pending, true);
+  assert.equal(store.getSnapshot().detail.id, caseB.id);
+  assert.equal(store.getSnapshot().page.total, 2);
+  assert.ok(store.getSnapshot().page.items.some(item => item.id === caseB.id)); store.dispose();
+});
+test('creation server errors render safely and permit retry; refresh failure retains confirmed details', async () => {
+  let fail = true;
+  const { store } = setup(async (_url, options) => {
+    if (options.method === 'GET') throw Error('private');
+    return fail ? Response.json({ code: 'INVALID_INPUT', message: 'Invalid title <script>' }, { status: 400 }) : Response.json(caseA, { status: 201 });
+  });
+  assert.equal(await store.create('Valid', ''), false);
+  assert.match(creationHtml(store), /Invalid title &lt;script&gt;/);
+  fail = false;
+  assert.equal(await store.create('Valid', ''), true);
+  assert.equal(store.getSnapshot().detail.id, caseA.id);
+  assert.match(render(store.getSnapshot()), /Case created. Could not refresh/); store.dispose();
+});
+test('late creation from a replaced session or disposed workspace is discarded', async () => {
+  for (const action of ['session', 'dispose']) {
+    const wait = deferred();
+    const { client, store } = setup(async () => wait.promise);
+    const pending = store.create('Valid', '');
+    if (action === 'session') client.setToken('replacement'); else store.dispose();
+    wait.resolve(Response.json(caseB, { status: 201 }));
+    assert.equal(await pending, false);
+    assert.equal(store.getSnapshot().detail, null);
+    store.dispose();
+  }
+});
+
+test('a list request started before creation cannot clear its submitting state', async () => {
+  const listing = deferred(); const creation = deferred(); let gets = 0;
+  const { store } = setup(async (_url, options) => options.method === 'POST' ? creation.promise :
+    ++gets === 1 ? listing.promise : Response.json(page([caseB])));
+  const old = store.load();
+  const pending = store.create('Valid', '');
+  listing.resolve(Response.json(page())); await old;
+  assert.equal(store.getSnapshot().createStatus, 'submitting');
+  creation.resolve(Response.json(caseB, { status: 201 }));
+  assert.equal(await pending, true);
+  assert.equal(store.getSnapshot().detail.id, caseB.id); store.dispose();
+});
+
+test('failed creation after aborting an initial list leaves a retryable list state', async () => {
+  const listing = deferred();
+  const { store } = setup(async (_url, options) => options.method === 'POST' ?
+    Response.json({ code: 'INVALID_INPUT', message: 'Invalid title' }, { status: 400 }) : listing.promise);
+  const old = store.load();
+  assert.equal(await store.create('Valid', ''), false);
+  assert.equal(store.getSnapshot().status, 'error');
+  assert.match(render(store.getSnapshot()), /Try again/);
+  listing.resolve(Response.json(page())); await old;
+  assert.equal(store.getSnapshot().status, 'error'); store.dispose();
 });

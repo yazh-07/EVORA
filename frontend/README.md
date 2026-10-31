@@ -306,3 +306,37 @@ exist yet; the server smoke and static render tests cover the skeleton only.
 
 Generated `dist/`, `node_modules/` and `.test-build/` are local build artifacts;
 tests use synthetic content only. No original evidence is needed.
+
+## U02B case creation
+
+After opening an authorized session, the New case form accepts a required title
+(up to 200 characters) and an optional description (up to 5000 characters).
+Empty or whitespace-only titles show `Title cannot be empty` without an API
+request. Inputs and submit are disabled during creation/list refresh, with a
+store guard against duplicate submissions. API error messages render as text;
+failed submissions retain inputs for correction. No automatic write retry occurs.
+
+A successful createCase response clears both fields, refreshes listCases and
+selects the returned case in the inspector, moving focus to Case details. A
+created case outside the first list page remains visible in the inspector.
+If list refresh fails, confirmed case details remain visible with a retry message;
+no case total is invented. Session replacement/logout discards pending results
+and remounts the form without retaining the prior actor's input.
+
+Run from repository root:
+
+```sh
+npm --prefix frontend run test
+npm --prefix frontend run build
+(cd frontend && node test/cases.integration.mjs)
+```
+
+Unit tests use schema-derived Fetch doubles plus server-rendered markup. The
+integration runner starts the existing local server with real FastAPI/SQLite,
+synthetic identities and a temporary database; it verifies creation HTTP 201,
+immediate list read-back, title rejection HTTP 400 and actor isolation as well
+as the existing U02 pagination/detail checks. The runner removes its own database.
+For manual browser testing, use the same-origin demo setup above: submit blank
+and whitespace titles, create a synthetic title/description, inspect the new
+case and cleared inputs, and tab through labels/controls and focused details.
+No new browser, screen reader, Windows or hosted CI verification is claimed.
