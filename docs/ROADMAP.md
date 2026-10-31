@@ -88,6 +88,21 @@ I08 measures speech transcription errors and segment timestamp alignment with la
 
 See [COMMUNICATION.md](COMMUNICATION.md) and [CONTRACTS.md](CONTRACTS.md) for concrete choices; this ledger does not choose them by implication.
 
+## U02B reconciliation state — 2026-10-31
+
+User-requested reconciliation is **In Progress** on `feat/u02b-reconcile` from
+published shared base **d24312f939877e6959c6ff46d3e1d81051e474a6**. F03/F04,
+U02B/U03 and F05 are implemented merged ancestors, despite historical session
+statuses below. Original local U02B edits are preserved in their original
+worktree. The reconciliation reuses the integrated case form and carries over
+Unicode length/error-handling improvements without replacing U03 evidence UI.
+41 frontend tests pass; 70 backend tests run (69 pass, symlink escape skipped
+because this Windows account cannot create symlinks); real U02B/U03 HTTP/SQLite
+integration, build/types/contract/DESIGN pass. Verification and exact synthetic
+checklist: PREIMPLEMENTATION_REVIEW.md, U02B reconciliation section. No new
+browser/hosted CI claim; no commit/push/merge. Next eligible M4 row is U04 after
+this review and its own bounded assignment. Checkpoint 1A remains open.
+
 ## Module assignment and live task state
 
 | Module | Assigned GitHub handle | Accountable boundary | State |
@@ -378,3 +393,31 @@ and size, SQLite metadata and cleanup on failed writes/publication.
 See [verification](PREIMPLEMENTATION_REVIEW.md#f03-verification--2026-10-31).
 No commit/push/merge authorized. Checkpoint 1A remains open; F04 is next after
 review. F05 download, F06 audit and I00 integration are separate rows.
+
+### U02B reconciliation publication authorization — 2026-10-31
+
+The user explicitly authorized committing, pushing and merging this
+reconciliation into the configured shared GitHub repository yazh-07/EVORA.
+Earlier no-publication statements describe the previous handoff and are
+superseded by this request. The checked combined candidate passes 41 frontend
+and 122 coordination tests, plus real case/create/U03 upload integration and
+build/contract/types/DESIGN. Backend results remain 69 pass and 1 Windows
+symlink-permission skip. Preserve the original dirty U02B checkout.
+
+A local worktree inventory found U04 already assigned to JebasJ and In Progress
+on feat/u04-evidence-download in work/evora-u04. Continue that existing task;
+do not duplicate it or overwrite its edits. No U04 work is included here.
+
+### U02B reconciliation integrated — 2026-10-31
+
+**Complete:** user-authorized reconciliation integrated into
+`docs/coordination-foundation` at merge **328da3370e6033465297117be9d31c166f7817ea**,
+containing task commit fe2af26. Post-merge real HTTP/SQLite case-creation and
+U03 multipart/hash/metadata/400/404/413 smoke passes on that merge commit.
+Pre-merge checks: 41 frontend and 122 coordination pass; backend 69 pass,
+1 Windows symlink-permission skip. Contract/types/build/DESIGN pass with the
+existing missing-license warning. New hosted CI is not verified. This record
+supersedes earlier reconciliation In Progress/no-publication statements;
+Checkpoint 1A remains open. Original dirty checkout and active U04 worktree
+are untouched. Next work is continuing the existing assigned U04 task, not
+starting a second U04 implementation. No U04 changes were merged here.

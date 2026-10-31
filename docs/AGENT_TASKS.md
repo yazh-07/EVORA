@@ -306,12 +306,54 @@ Coordination checks: lint/bundle, generated client/TypeScript compilation, `scri
 | Verification | Exact commands, read-back, doubles and limits recorded under U03 verification in `PREIMPLEMENTATION_REVIEW.md`; real integration covers 201/hash/size/list/detail/400/413/404 |
 | Handoff | **In Progress**, locally verified pending review/integration. No staging/commit/push/merge authorized. Checkpoint 1A remains open; next M4 row U04 also requires real F05 and its own assignment |
 
+### U02B reconciliation assignment — 2026-10-31
+
+- Owner: M4 / JebasJ, explicit user reconciliation request, one U02B follow-up.
+- Branch/base: feat/u02b-reconcile / d24312f939877e6959c6ff46d3e1d81051e474a6,
+  freshly fetched shared base; isolated worktree preserves original dirty tree.
+- Allowed scope: existing approved frontend cases/tests/README and bounded
+  AGENT_TASKS/ROADMAP/PREIMPLEMENTATION_REVIEW records only.
+- Real dependencies: merged U02B/F03/F04/U03/F05; preserve the integrated form
+  and evidence UI, apply Unicode validation and safe creation-failure behavior.
+- Verification: 41 frontend pass, 69 backend pass/1 Windows symlink skip;
+  real case/create and U03 upload regressions, contract/types/build/DESIGN pass.
+  Exact commands/limits in PREIMPLEMENTATION_REVIEW's reconciliation section.
+- State: In Progress, uncommitted pending review; no commit/push/merge or U04.
+
+### U02B reconciliation publication authorization — 2026-10-31
+
+The user explicitly authorized committing, pushing and merging this
+reconciliation into the configured shared GitHub repository yazh-07/EVORA.
+Earlier no-publication statements describe the previous handoff and are
+superseded by this request. The checked combined candidate passes 41 frontend
+and 122 coordination tests, plus real case/create/U03 upload integration and
+build/contract/types/DESIGN. Backend results remain 69 pass and 1 Windows
+symlink-permission skip. Preserve the original dirty U02B checkout.
+
+A local worktree inventory found U04 already assigned to JebasJ and In Progress
+on feat/u04-evidence-download in work/evora-u04. Continue that existing task;
+do not duplicate it or overwrite its edits. No U04 work is included here.
+
+### U02B reconciliation integrated — 2026-10-31
+
+**Complete:** user-authorized reconciliation integrated into
+`docs/coordination-foundation` at merge **328da3370e6033465297117be9d31c166f7817ea**,
+containing task commit fe2af26. Post-merge real HTTP/SQLite case-creation and
+U03 multipart/hash/metadata/400/404/413 smoke passes on that merge commit.
+Pre-merge checks: 41 frontend and 122 coordination pass; backend 69 pass,
+1 Windows symlink-permission skip. Contract/types/build/DESIGN pass with the
+existing missing-license warning. New hosted CI is not verified. This record
+supersedes earlier reconciliation In Progress/no-publication statements;
+Checkpoint 1A remains open. Original dirty checkout and active U04 worktree
+are untouched. Next work is continuing the existing assigned U04 task, not
+starting a second U04 implementation. No U04 changes were merged here.
+
 ### U04 assignment — 2026-10-31
 
 | Field | Assignment |
 |---|---|
 | Task/checkpoint/owner | U04 / 1A / M4 JebasJ; original authorized download from selected evidence, correct bytes/hash and no persistent client cache |
-| Base/branch | `d24312f939877e6959c6ff46d3e1d81051e474a6`, fetched shared coordination base; `feat/u04-evidence-download` in isolated worktree; original uncommitted U02B preserved |
+| Base/branch | `d2879c6e1e236add391fb6af40480b9940d22555`, updated verified shared base (original draft d24312f); `feat/u04-evidence-download` in isolated worktree; original uncommitted U02B preserved |
 | Paths | Existing approved frontend case/test/documentation boundary: frontend/src/cases, frontend tests, scripts/build-test.mjs, frontend README; bounded AGENT_TASKS/ROADMAP/PREIMPLEMENTATION_REVIEW records only |
 | Dependencies | Real U03 merge c5c9b5a and F05 merge d24312f, with real F00/F03/F04; unchanged draft 0.3.0 downloadEvidence |
 | Gate | No missing policy; user explicitly requested U04. Synthetic auth only, backend remains access authority |
