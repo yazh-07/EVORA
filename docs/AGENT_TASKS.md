@@ -333,3 +333,17 @@ symlink-permission skip. Preserve the original dirty U02B checkout.
 A local worktree inventory found U04 already assigned to JebasJ and In Progress
 on feat/u04-evidence-download in work/evora-u04. Continue that existing task;
 do not duplicate it or overwrite its edits. No U04 work is included here.
+
+### U02B reconciliation integrated — 2026-10-31
+
+**Complete:** user-authorized reconciliation integrated into
+`docs/coordination-foundation` at merge **328da3370e6033465297117be9d31c166f7817ea**,
+containing task commit fe2af26. Post-merge real HTTP/SQLite case-creation and
+U03 multipart/hash/metadata/400/404/413 smoke passes on that merge commit.
+Pre-merge checks: 41 frontend and 122 coordination pass; backend 69 pass,
+1 Windows symlink-permission skip. Contract/types/build/DESIGN pass with the
+existing missing-license warning. New hosted CI is not verified. This record
+supersedes earlier reconciliation In Progress/no-publication statements;
+Checkpoint 1A remains open. Original dirty checkout and active U04 worktree
+are untouched. Next work is continuing the existing assigned U04 task, not
+starting a second U04 implementation. No U04 changes were merged here.
