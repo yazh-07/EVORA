@@ -1215,3 +1215,70 @@ supersedes earlier reconciliation In Progress/no-publication statements;
 Checkpoint 1A remains open. Original dirty checkout and active U04 worktree
 are untouched. Next work is continuing the existing assigned U04 task, not
 starting a second U04 implementation. No U04 changes were merged here.
+
+## U04 verification — 2026-10-31
+
+U04 / 1A / M4 JebasJ, existing feat/u04-evidence-download worktree. User explicitly
+authorized finish/commit/push/merge of this one row. Preserved its original draft
+as a082eda before updating to shared **d2879c6e1e236add391fb6af40480b9940d22555**
+with merge 10c8560. Resolved AGENT_TASKS append conflict by retaining upstream
+records and the U04 card. Original dirty U02B checkout is untouched. Real U03
+c5c9b5a and F05 d24312f are merged prerequisites; schema/producer/scope unchanged.
+
+### Actual results
+
+Existing Windows Node 22.23.3/npm 12.2.0, Python 3.14.8, jsonschema 4.25.1;
+no new packages/models/provider. Shared workflow CLI versions ran from their
+existing exact-version cached entry points; no TLS bypass or new CI claim.
+
+- `npm.cmd --prefix frontend test`: **48/48 pass**, no skips, including all prior
+  case/upload tests and seven new original-download tests. Initial build failed
+  on Windows case-insensitive OriginalDownload/originalDownload resolution;
+  renamed controller to downloadController, then reran successfully.
+- `npm.cmd --prefix frontend run build`: API freshness/typecheck/esbuild PASS.
+- `EVORA_TEST_PYTHON=<pinned Python> node test/cases.integration.mjs` in frontend:
+  PASS real F05/controller binary original byte/hash/size and empty read-back,
+  foreign original 404/no save; U02/U02B/U03 regressions including 50 MiB rejection
+  and source metadata/hash read-back PASS. Real HTTP/FastAPI/SQLite/filesystem;
+  synthetic identities/data only. Save callback is a disclosed boundary double.
+- `EVORA_CONTRACT_BUNDLE=<bundle> python -W error::ResourceWarning -m unittest
+  discover -s backend/tests`: 70 run, **69 PASS / 1 SKIP**; skipped F05 symlink
+  escape because this Windows account cannot create symlinks.
+- Redocly 2.57.0 lint/bundle PASS, existing info-license warning only;
+  openapi-typescript 7.10.1 and TypeScript 5.9.3 strict temporary declarations PASS;
+  DESIGN 0.4.0 PASS zero errors/warnings; diff whitespace PASS.
+- Browser real same-origin wrapper: select synthetic case/evidence, explicit
+  download action triggers actual browser attachment save. Saved file
+  `u04-synthetic.bin` in Downloads is **25 bytes**, SHA-256
+  fd57bc669c70f7ec86ac82d14b89edf1cb022a38eaba2e754f4c3d84c4d2438f,
+  read back using Get-FileHash/Get-Item and matching source. Desktop/narrow
+  390x844 inspected, document content/client widths both 375. Revoked only this
+  disposable case's synthetic membership, activated download with Enter: real
+  404 shown as unavailable original, no success/save. No real evidence involved.
+
+### Integrity and limits
+
+Explicit command only; authenticated no-store client, size/SHA-256 verified
+before save, no inline execution or persistent app cache. Temporary Blob URL
+revoked idempotently on timeout/retry/unmount/failure. Pending duplicate clicks
+are blocked; abort and session-version checks discard stale selection/session
+responses. UI reports verified/requested, never assumes OS save completion.
+Empty originals supported. Failures never substitute fixture bytes. Fetch/DOM/
+save doubles cover integrity mismatch, unavailable/network/server/protocol,
+401, cancellation and URL lifecycle; actual browser saving is distinct proof.
+
+Formal screen reader, other browser engines, clean installation and production
+identity are untested. Exact setup, synthetic inputs, expected read-back, failure
+case and cleanup are in frontend/README.md, How you can test U04 section (plain
+file reference so planning-only test fixtures remain self-contained).
+
+U04 remains In Progress until user-authorized tested integration/publication.
+All agreed scope and approved additions are preserved; no checkpoint/module
+closure. Next checkpoint gate I00 still needs M1 F06/F07/F09 and an explicit
+shared assignee; no later M4 work is started in this assignment.
+
+U04 final coordination rerun: `EVORA_CONTRACT_BUNDLE=<bundle> python -m unittest
+discover -s scripts -p 'test_*.py'` passes **122/122**, no skips; coordination
+verifier PASS 27 operations/126 tasks/18 checkpoints/39 capabilities/40 proposal
+mappings. All current-task negatives and previous completed Checkpoint 0
+regressions pass with the single explicitly disclosed backend symlink skip.

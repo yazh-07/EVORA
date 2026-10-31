@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useSyncExternalStore } from 'react';
 import { useApiClient } from '../api/ApiProvider';
-import { createOriginalDownload } from './originalDownload';
+import { createOriginalDownload } from './downloadController';
 import type { Evidence } from './evidenceStore';
 export function OriginalDownload({ item }: { item: Evidence }) {
   const client = useApiClient();

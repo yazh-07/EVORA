@@ -6,7 +6,8 @@ export type DownloadState = { status: 'idle' | 'loading' | 'ready' | 'error'; me
 export function saveOriginal(blob: Blob, filename: string): () => void {
   const url = URL.createObjectURL(blob);
   let timer: ReturnType<typeof setTimeout>;
-  const release = () => { clearTimeout(timer); URL.revokeObjectURL(url); };
+  let released = false;
+  const release = () => { if (released) return; released = true; clearTimeout(timer); URL.revokeObjectURL(url); };
   const link = document.createElement('a');
   link.href = url;
   link.download = filename.replace(/[\\/<>:"|?*\u0000-\u001f]/g, '_');

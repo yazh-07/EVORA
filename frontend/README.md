@@ -1,3 +1,105 @@
+# U04 original download — 2026-10-31
+
+U04 / Checkpoint 1A / M4 JebasJ, branch `feat/u04-evidence-download`.
+Original draft d24312f was checkpointed and updated to verified shared base
+**d2879c6e1e236add391fb6af40480b9940d22555**. User explicitly authorized finishing,
+committing, pushing and merging this task. Integration status is in ROADMAP.
+The older session notes below are historical.
+
+Selected evidence metadata now offers **Download original**. An explicit click
+uses the existing authenticated downloadEvidence operation with no-store Fetch.
+The controller checks original byte size and SHA-256 against selected metadata
+before requesting an attachment save via a short-lived Blob URL. It never
+renders evidence HTML, opens an original inline or persists bytes/tokens in
+browser application storage. The browser's user-requested downloaded file is
+intentional output, not an application cache. URL cleanup is idempotent and
+runs on timeout, retry, failure or unmount. Selection/case/session changes abort
+pending reads and discard late responses; pending clicks cannot duplicate reads.
+Success says download requested, not that the browser completed a disk save.
+Empty originals are supported. Size/hash mismatch stops the save. Missing or
+revoked access has a safe error and a manual retry; no invented HTTP interface.
+
+## How you can test U04
+
+PowerShell at repository root; use pinned Python 3.14.8, Node 22.23.3, npm
+12.2.0 and existing requirements/lockfile. Install if needed with
+`python -m pip install -r requirements.txt` and `npm.cmd --prefix frontend ci`.
+This task reused installed dependencies; no clean reinstall claim.
+
+```powershell
+npm.cmd --prefix frontend test
+npm.cmd --prefix frontend run build
+$env:EVORA_TEST_PYTHON = (Get-Command python).Source
+Push-Location frontend
+node test/cases.integration.mjs
+Pop-Location
+```
+
+Expect **48 frontend tests passing** and **PASS U04 real F05** plus U02/U02B/U03
+regression messages. The real integration creates synthetic cases/evidence,
+retrieves original binary bytes through the actual download controller,
+compares size/hash/bytes, handles empty original and denies foreign originals.
+It cleans its own server and temporary database. The save callback is a
+labeled test boundary there; actual browser saving was tested separately.
+Negative Fetch/save/DOM doubles test size/hash mismatches (no save), network/
+500/404/protocol errors and retry, duplicate clicks, session/selection disposal,
+StrictMode-style reconnect and temporary URL cleanup. These are not real
+production identities, backend failures or browser-save measurements.
+
+To test the actual browser, serve the unchanged real backend with the existing
+local same-origin synthetic wrapper:
+
+```powershell
+$env:EVORA_API_BASE_URL = 'http://127.0.0.1:8766'
+npm.cmd --prefix frontend run build
+$u04Demo = Join-Path $env:TEMP ("evora-u04-demo-" + [guid]::NewGuid())
+New-Item -ItemType Directory -Path $u04Demo | Out-Null
+$u04Db = Join-Path $u04Demo 'cases.sqlite3'
+python frontend/test/serve-cases.py --database $u04Db --port 8766
+```
+
+In a second PowerShell terminal make a synthetic original:
+
+```powershell
+$u04Fixture = Join-Path $env:TEMP ("u04-original-" + [guid]::NewGuid() + '.bin')
+[IO.File]::WriteAllBytes($u04Fixture, [byte[]](0,255,10,65))
+Get-FileHash -Algorithm SHA256 -LiteralPath $u04Fixture
+```
+
+1. Open `http://127.0.0.1:8766`, use **u02-synthetic-one**, and create
+   **Synthetic U04 review**. In its evidence form choose the generated fixture,
+   kind **document**, source **Synthetic U04 source**, then **Upload evidence**.
+2. Select the evidence. Expect ID, filename, **4 bytes** and its source SHA-256.
+   Select **Download original**. Expect a verified/requested message and a file
+   in browser downloads. Compare its hash to the source using Get-FileHash.
+3. Use keyboard Tab/Enter to reach/activate the button. Check desktop and narrow
+   widths: metadata wraps, controls remain visible and no horizontal overflow.
+4. Failure case: with the inspector still selected, stop the local server and
+   select Download original. Expect a connection error and no successful save.
+   Restart the same synthetic database and manually retry. This outage branch
+   was covered by doubles, not a browser outage during Codex execution.
+5. End session and enter **u02-synthetic-two**: no access to the first actor's
+   case or download. Reload clears token/case state. Actual revoked membership
+   was also exercised in Codex's disposable browser fixture: real F05 returned
+   404 and the inspector showed an unavailable-original error, with no save.
+
+Stop the wrapper with Ctrl+C. Remove only the exact synthetic paths you created
+including the uniquely created `$u04Demo` directory and `$u04Fixture`, plus the corresponding
+synthetic file from browser downloads. Reset EVORA_API_BASE_URL if desired.
+
+Codex's actual browser fixture was **25 bytes**, SHA-256
+`fd57bc669c70f7ec86ac82d14b89edf1cb022a38eaba2e754f4c3d84c4d2438f`.
+A real saved file was read back from Downloads and matched both values. Desktop
+and 390x844 narrow layout were inspected; narrow content/client width both 375.
+48 frontend tests pass. Backend: 70 run, 69 pass/1 skip (Windows cannot create
+symlink for F05 escape test). Formal screen-reader coverage, full browser matrix,
+production authentication, clean reinstall and new hosted CI are unverified.
+Full FEATURE_SCOPE including approved transcription additions is unchanged.
+Checkpoint 1A still needs F06/F07/F09 and the explicitly assigned shared I00
+integration gate before automatic later-checkpoint work. No next task is taken.
+
+---
+
 
 ## U02B reconciliation — 2026-10-31
 
