@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useSyncExternalStore } from 'react';
+import { OriginalDownload } from './OriginalDownload';
 import { useApiClient } from '../api/ApiProvider';
 import { createEvidenceStore, evidenceKinds } from './evidenceStore';
 import type { Evidence, EvidenceState } from './evidenceStore';
@@ -79,7 +80,7 @@ export function EvidencePanels({ state, load, select, upload }: {
         {state.detailStatus === 'idle' && <p>Select evidence to inspect its metadata.</p>}
         {state.detailStatus === 'loading' && <p role="status">Loading evidence metadata...</p>}
         {state.detailStatus === 'error' && <p role="alert">{state.detailMessage} Select evidence again to retry.</p>}
-        {state.detail && <><h3>{state.detail.source_label}</h3><Metadata item={state.detail} detailed /></>}
+        {state.detail && <><h3>{state.detail.source_label}</h3><Metadata item={state.detail} detailed /><OriginalDownload key={state.detail.id} item={state.detail} /></>}
       </aside>
     </div>
   </div>;

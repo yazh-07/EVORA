@@ -305,3 +305,15 @@ Coordination checks: lint/bundle, generated client/TypeScript compilation, `scri
 | Gate/policy | Existing C-03 session policy and F03 50 MiB opaque-byte intake apply. Optional datetime is explicitly entered as UTC and sent as RFC 3339; no inferred source timezone. Server 400/413/415 alerts use escaped text. Real F03 does not reject arbitrary file content by MIME; a 415 UI transport double does not establish backend type detection |
 | Verification | Exact commands, read-back, doubles and limits recorded under U03 verification in `PREIMPLEMENTATION_REVIEW.md`; real integration covers 201/hash/size/list/detail/400/413/404 |
 | Handoff | **In Progress**, locally verified pending review/integration. No staging/commit/push/merge authorized. Checkpoint 1A remains open; next M4 row U04 also requires real F05 and its own assignment |
+
+### U04 assignment — 2026-10-31
+
+| Field | Assignment |
+|---|---|
+| Task/checkpoint/owner | U04 / 1A / M4 JebasJ; original authorized download from selected evidence, correct bytes/hash and no persistent client cache |
+| Base/branch | `d24312f939877e6959c6ff46d3e1d81051e474a6`, fetched shared coordination base; `feat/u04-evidence-download` in isolated worktree; original uncommitted U02B preserved |
+| Paths | Existing approved frontend case/test/documentation boundary: frontend/src/cases, frontend tests, scripts/build-test.mjs, frontend README; bounded AGENT_TASKS/ROADMAP/PREIMPLEMENTATION_REVIEW records only |
+| Dependencies | Real U03 merge c5c9b5a and F05 merge d24312f, with real F00/F03/F04; unchanged draft 0.3.0 downloadEvidence |
+| Gate | No missing policy; user explicitly requested U04. Synthetic auth only, backend remains access authority |
+| Acceptance/tests | Selected metadata download; original byte/size/hash read-back; failures, duplicates, selection/session cancellation; URL cleanup; real producer integration and previous-checkpoint regressions |
+| Handoff | In Progress; results to follow. User now explicitly authorizes finishing, committing, pushing and merging U04 only; preserve full FEATURE_SCOPE |
