@@ -81,6 +81,11 @@ try {
   const listed = await client.request('get', '/api/v1/cases', { query: { limit: 20, offset: 0 } });
   assert.ok(listed.items.some(item => item.id === created.id));
   await assert.rejects(client.request('post', '/api/v1/cases', { body: { title: '   ' } }), { status: 400 });
+  assert.equal(await store.create(String.fromCodePoint(0x1f9ea).repeat(200), 'd'.repeat(5000)), true);
+  const unicodeCase = store.getSnapshot().detail;
+  assert.equal(Array.from(unicodeCase.title).length, 200);
+  assert.equal(unicodeCase.description.length, 5000);
+  assert.equal(await store.create(unicodeCase.title + 'x', ''), false);
   const evidenceStore = createEvidenceStore(client, created.id);
   await evidenceStore.load(); assert.equal(evidenceStore.getSnapshot().page.total, 0);
   const bytes = new TextEncoder().encode('Synthetic U03 evidence bytes\n');

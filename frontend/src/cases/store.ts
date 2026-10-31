@@ -39,8 +39,8 @@ export function createCaseStore(client: ApiClient) {
     async create(title: string, description: string): Promise<boolean> {
       if (state.createStatus === 'submitting' || !client.hasToken()) return false;
       const message = !title.trim() ? 'Title cannot be empty' :
-        title.length > 200 ? 'Title must be at most 200 characters' :
-        description.length > 5000 ? 'Description must be at most 5000 characters' : '';
+        Array.from(title).length > 200 ? 'Title must be at most 200 characters' :
+        Array.from(description).length > 5000 ? 'Description must be at most 5000 characters' : '';
       if (message) { publish({ ...state, createStatus: 'error', createMessage: message }); return false; }
       pageRequest?.abort(); clearDetail(); generation++;
       const request = creationRequest = new AbortController();
@@ -75,7 +75,7 @@ export function createCaseStore(client: ApiClient) {
           message: state.status === 'loading' ? 'Could not load cases. Try again.' : state.message,
           detailStatus: state.detailStatus === 'loading' ? 'idle' : state.detailStatus,
           createStatus: 'error', createMessage:
-          error instanceof ApiHttpError && error.apiError ? error.apiError.message : 'Could not create case. Check your connection and try again.' });
+          error instanceof ApiHttpError && error.status === 400 ? 'Case not created. Check the title and description and try again.' : 'Could not confirm whether the case was created. Refresh cases before submitting again.' });
         return false;
       }
     },

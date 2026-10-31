@@ -122,7 +122,7 @@ test('creation form has labeled constrained fields and rejects blank titles with
   let calls = 0;
   const { store } = setup(async () => { calls++; return Response.json(page()); });
   const html = creationHtml(store);
-  assert.match(html, /<form/); assert.match(html, /maxLength="200"/i); assert.match(html, /maxLength="5000"/i);
+  assert.match(html, /<form/); assert.match(html, /1 to 200 characters/); assert.doesNotMatch(html, /maxLength=/i);
   assert.match(html, /for="case-title"/); assert.match(html, /Create case/);
   for (const title of ['', '  \t\n', 'x'.repeat(201)]) assert.equal(await store.create(title, ''), false);
   assert.equal(await store.create('Valid', 'x'.repeat(5001)), false);
@@ -157,7 +157,7 @@ test('creation server errors render safely and permit retry; refresh failure ret
     return fail ? Response.json({ code: 'INVALID_INPUT', message: 'Invalid title <script>' }, { status: 400 }) : Response.json(caseA, { status: 201 });
   });
   assert.equal(await store.create('Valid', ''), false);
-  assert.match(creationHtml(store), /Invalid title &lt;script&gt;/);
+  assert.match(creationHtml(store), /Case not created/); assert.doesNotMatch(creationHtml(store), /Invalid title|&lt;script|<script/);
   fail = false;
   assert.equal(await store.create('Valid', ''), true);
   assert.equal(store.getSnapshot().detail.id, caseA.id);
@@ -199,4 +199,38 @@ test('failed creation after aborting an initial list leaves a retryable list sta
   assert.match(render(store.getSnapshot()), /Try again/);
   listing.resolve(Response.json(page())); await old;
   assert.equal(store.getSnapshot().status, 'error'); store.dispose();
+});
+
+
+test('creation counts Unicode codepoints and preserves boundary source values', async () => {
+  const title = String.fromCodePoint(0x1f9ea).repeat(200);
+  const description = String.fromCodePoint(0x1f9ea).repeat(5000);
+  let posts = 0;
+  const created = { ...caseA, title, description };
+  const { store } = setup(async (_url, options) => {
+    if (options.method === 'POST') { posts++; assert.deepEqual(JSON.parse(options.body), { title, description }); return Response.json(created, {status:201}); }
+    return Response.json(page([created]));
+  });
+  assert.equal(await store.create(title, description), true);
+  assert.equal(store.getSnapshot().detail.title, title);
+  assert.equal(await store.create(title + 'x', ''), false);
+  assert.equal(await store.create('valid', description + 'x'), false);
+  assert.equal(posts, 1); store.dispose();
+});
+
+test('uncertain creation failures never claim rejection or automatically retry POSTs', async () => {
+  for (const kind of ['network', '500', 'malformed']) {
+    let calls = 0;
+    const { store } = setup(async () => {
+      calls++;
+      if (kind === 'network') throw Error('private transport content');
+      return kind === '500' ? Response.json({code:'SERVER_ERROR',message:'private server content'}, {status:500}) : Response.json({title:'incomplete'});
+    });
+    assert.equal(await store.create('Synthetic uncertain', ''), false);
+    assert.equal(calls, 1);
+    assert.match(creationHtml(store), /Could not confirm whether the case was created/);
+    assert.match(creationHtml(store), /Refresh cases before submitting again/);
+    assert.doesNotMatch(creationHtml(store), /private|Case not created/);
+    store.dispose();
+  }
 });
