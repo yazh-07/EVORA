@@ -320,6 +320,32 @@ The next active checkpoint is **1A**: **F00 / sharmelas-925** (Evidence Foundati
 
 Full timeline reconstruction/chronological visualization remains future. Basic time normalization, temporal factors, conflict/gap reasoning and event inspection remain initial scope. Completion of Phases 1/2 is an integration slice, not completion of the full proposal. I09/I09B cover every feature task; I06 follows full closure.
 
+### U03 live record — 2026-10-31
+
+**U03 / Checkpoint 1A / M4 / JebasJ / In Progress.** Branch
+`feat/u03-evidence-upload-ui`, exact common contract/base
+**69f2e8269b6e6d639889941926bc604a415e3f05** on local
+`docs/coordination-foundation`; clean starting tree. Real U01/F03/F04 and
+F00/F01/F02/U02/U02B are integrated ancestors; draft 0.3.0 is unchanged.
+The U03 assignment in `AGENT_TASKS.md` records the explicit bounded path handoff.
+
+Selected cases expose one-file multipart intake, paginated evidence listing,
+and authorized metadata inspection with ID/SHA-256/byte size. Required-file and
+blank-label checks precede HTTP; busy controls prevent repeated submission;
+server messages render as accessible plain-text alerts. Confirmed upload
+metadata survives refresh failure. Case/session disposal rejects late data.
+Acquisition input explicitly uses UTC; omitted acquisition time stays absent.
+
+39 frontend, 63 backend and 122 coordination tests pass. Real HTTP/FastAPI/
+SQLite/private-file integration verifies 201 and exact byte hash/size/list/detail,
+blank-label/unsupported-kind 400, actual oversize 413 and actor/case isolation
+404; existing U02/U02B integration also passes. Contract/API types/build/DESIGN
+and diff checks pass; existing OpenAPI license warning remains. Exact commands,
+test doubles and limits are in U03 verification in `PREIMPLEMENTATION_REVIEW.md`.
+No browser/native Windows/hosted CI, commit/push/merge or checkpoint completion
+is claimed. **Checkpoint 1A stays open** pending its remaining rows and I00.
+Next M4 row U04 requires real F05 and a separate assignment.
+
 ### F03 live record — 2026-10-31
 
 **F03 / Checkpoint 1A / M1 / sharmelas-925 / In Progress.**

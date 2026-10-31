@@ -1,6 +1,6 @@
 """U02 local synthetic integration server; not a production entry point.
 
-Real F00/F01/F02 and SQLite; only identity tokens and fixtures are synthetic.
+Real F00/F01/F02/F03/F04 and SQLite; only identity tokens and fixtures are synthetic.
 The static mount serves the built UI on the API origin without changing CORS.
 """
 import argparse
@@ -18,7 +18,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--database', required=True)
 parser.add_argument('--port', type=int, default=0)
 args = parser.parse_args()
-app = create_app(args.database, token_verifier=SyntheticTokenVerifier({
+app = create_app(args.database, storage_dir=Path(args.database).resolve().parent / 'evidence', token_verifier=SyntheticTokenVerifier({
     'u02-synthetic-one': 'investigator-1',
     'u02-synthetic-two': 'investigator-2',
     'u02-synthetic-empty': 'investigator-2',

@@ -277,3 +277,17 @@ Coordination checks: lint/bundle, generated client/TypeScript compilation, `scri
 | Gate | Existing flat INVALID_INPUT 400 and NOT_FOUND 404 mapping confirmed by user; no unresolved choice blocks F04. Future parser/provider policy remains outside this row |
 | Commands and proof | Required bundle, coordination verifier/tests, warning-strict backend tests, frontend tests, OpenAPI lint, generated API/type compilation, DESIGN lint and diff checks; actual results in F04 verification in `PREIMPLEMENTATION_REVIEW.md` |
 | Handoff | **In Progress**, pending review/integration; no staging/commit/push/merge authorized. Checkpoint 1A remains open; next M1 row F05 needs a separate assignment |
+
+### U03 assignment — 2026-10-31
+
+| Field | Recorded assignment |
+|---|---|
+| Task/checkpoint and acceptance | **U03 / 1A**: one-file upload and metadata UI; real bytes, visible size/type failures, Evidence ID/hash/size read-back |
+| Module/person | **M4 / JebasJ**; explicit user handoff includes bounded shared documentation edits; whale2186 remains integration coordinator |
+| Branch/common contract commit | `feat/u03-evidence-upload-ui`; clean starting HEAD and local `docs/coordination-foundation` both **69f2e8269b6e6d639889941926bc604a415e3f05**; unchanged `specs/openapi.yaml` draft 0.3.0; no fresh remote fetch claimed |
+| Allowed paths | `frontend/src/cases/`, `frontend/src/App.tsx`, `frontend/src/styles.css`, `frontend/test/`, `frontend/README.md`, `docs/AGENT_TASKS.md`, `docs/ROADMAP.md`, `docs/PREIMPLEMENTATION_REVIEW.md` |
+| Dependencies | Real U01/F03/F04 and merged F00/F01/F02/U02/U02B are ancestors in the exact base; existing generated client supports FormData; integration uses real FastAPI, SQLite and private filesystem |
+| Producer/consumer contract | M1 F03/F04 → M4 U03 using `uploadEvidence`, `listEvidence`, `getEvidence` and generated Evidence/EvidencePage; no new routes/fields/packages |
+| Gate/policy | Existing C-03 session policy and F03 50 MiB opaque-byte intake apply. Optional datetime is explicitly entered as UTC and sent as RFC 3339; no inferred source timezone. Server 400/413/415 alerts use escaped text. Real F03 does not reject arbitrary file content by MIME; a 415 UI transport double does not establish backend type detection |
+| Verification | Exact commands, read-back, doubles and limits recorded under U03 verification in `PREIMPLEMENTATION_REVIEW.md`; real integration covers 201/hash/size/list/detail/400/413/404 |
+| Handoff | **In Progress**, locally verified pending review/integration. No staging/commit/push/merge authorized. Checkpoint 1A remains open; next M4 row U04 also requires real F05 and its own assignment |

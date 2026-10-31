@@ -340,3 +340,46 @@ For manual browser testing, use the same-origin demo setup above: submit blank
 and whitespace titles, create a synthetic title/description, inspect the new
 case and cleared inputs, and tab through labels/controls and focused details.
 No new browser, screen reader, Windows or hosted CI verification is claimed.
+
+## U03 evidence upload and metadata inspection
+
+After opening an authorized session and selecting a case (or creating one),
+the workspace shows its evidence list and a one-file upload form. Choose the
+original file, one of the nine contract kinds and a source label (maximum 200
+characters). Acquisition date/time is optional and explicitly entered in UTC;
+leave it blank if unknown. Upload sends actual multipart bytes to F03. The
+current backend limit is 50 MiB; it stores opaque originals without validating
+content format. A kind/MIME label does not verify content or source reliability.
+
+Missing files and blank/whitespace labels produce accessible local errors.
+Inputs and submit are disabled while uploading. Server errors, including size
+and unsupported-type responses, appear as escaped alert text. After success,
+the form resets, the first evidence page refreshes and the inspector shows the
+confirmed Evidence ID, case ID, server SHA-256, byte size, kind, filename, media
+type and source/acquisition/upload metadata. A failed list refresh retains
+confirmed upload metadata and offers refresh without repeating the write.
+
+The list supports previous/next pages using actual API totals. Selecting an
+item fetches `getEvidence`; an empty case says “No evidence uploaded yet for
+this case”. Changing case/session discards prior data and pending results.
+No evidence/token browser persistence is introduced. Original download belongs
+to U04/F05, and processing is not implemented by U03.
+
+Run from the repository root:
+
+```sh
+npm --prefix frontend run test
+npm --prefix frontend run build
+EVORA_TEST_PYTHON=/tmp/evora-f03-pinned/bin/python node frontend/test/cases.integration.mjs
+```
+
+Use your own Python environment with `requirements.txt` installed in place of
+that local interpreter path. The integration helper starts a localhost real API,
+uses synthetic identities/bytes, and removes its owned temporary SQLite/private
+storage afterward. It verifies 201/hash/size/list/detail, local missing-file and
+blank-label validation, real 400/413 and case/actor 404 isolation, alongside
+U02/U02B regressions. Unit tests use synthetic Fetch responses and static React
+rendering, including 400/413/415 alerts, escaping and request races; they do not
+establish browser events/focus/reset behavior. Browser and native Windows
+verification remain outstanding. U03 remains In Progress pending review and
+integration; no Checkpoint 1A closure is implied.

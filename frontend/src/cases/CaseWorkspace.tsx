@@ -1,3 +1,6 @@
+import { EvidenceWorkspace } from './EvidenceWorkspace';
+export { EvidencePanels } from './EvidenceWorkspace';
+export { createEvidenceStore } from './evidenceStore';
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { useApiClient } from '../api/ApiProvider';
 import { createCaseStore } from './store';
@@ -30,6 +33,7 @@ export function CaseWorkspace() {
     </section>
     {client.hasToken() && <CaseCreation state={state} create={(title, description) => store.create(title, description)} />}
     <CasePanels state={state} load={offset => { void store.load(offset); }} select={id => { void store.select(id); }} />
+    {state.detailStatus === 'ready' && state.detail && <EvidenceWorkspace key={state.detail.id} caseId={state.detail.id} />}
   </>;
 }
 
