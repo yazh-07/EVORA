@@ -1,3 +1,104 @@
+# U02 case list and detail UI — 2026-10-31
+
+U02 / Checkpoint 1A / M4 / JebasJ, branch `feat/u02-case-list-ui`.
+Common base: `909009d21198fd751db49863f581b032875fa5e0`.
+Real U01/F00/F01/F02 are merged in this base. Earlier U01 notes below describe
+its original fixture-only handoff. U02 remains **In Progress**, awaiting review
+and integration; no Checkpoint 1A closure is claimed.
+
+The UI reads `listCases` and `getCase` through the existing generated typed
+client. It shows API totals, 20-item pages, empty/loading/retry states and
+selected case details. New pages clear prior detail; stale/cancelled responses
+cannot replace newer data. The provider remounts all case state on a token
+change, logout or 401. Tokens are entered in a password field, reset at submit,
+and retained only in the existing memory client. There is no token issuer,
+case creation, evidence upload or persistent token/evidence storage added.
+
+## How you can test it
+
+Use PowerShell at the repository root with **Python 3.14.8**, **Node 22.23.3**
+and **npm 12.2.0** on PATH. In this checkout Codex used the matching runtimes
+under `../work/evora-tools/`; Python's SQLite reports 3.50.4. The following
+commands use your PATH executables. The existing pinned requirements and
+frontend lockfile are unchanged.
+
+```powershell
+python -m pip install -r requirements.txt
+npm.cmd --prefix frontend ci
+npm.cmd --prefix frontend test
+npm.cmd --prefix frontend run build
+$env:EVORA_TEST_PYTHON = (Get-Command python).Source
+Push-Location frontend
+node test/cases.integration.mjs
+Pop-Location
+```
+
+- Expect **25 frontend tests passing**, including synthetic transport failure,
+  malformed-page, old-session/late-response, 404, 401 and escaped-content tests.
+- The explicit integration command starts a loopback server with real
+  FastAPI/F00/F01/F02/SQLite, creates **21 synthetic actor-one cases and one
+  actor-two case via createCase**, and exercises the actual client/store.
+  Expect `PASS U02 real HTTP/SQLite...`: 20+1 distinct records, correct totals,
+  correct detail, empty/out-of-range pages, no cross-actor cases, identical
+  foreign/missing 404s, invalid limit 400 and invalid-token 401.
+- It stops its server and removes only its own temporary synthetic database.
+  Unit tests use disclosed Fetch doubles; the integration command has no
+  case/membership producer double. Authentication is the approved synthetic
+  verifier, not a production identity provider.
+
+For browser verification, build for a same-origin local demo (the existing
+backend does not configure cross-origin browser access). Use a fresh synthetic
+SQLite path and leave this server running in the first terminal:
+
+```powershell
+$env:EVORA_API_BASE_URL = 'http://127.0.0.1:8765'
+npm.cmd --prefix frontend run build
+$u02Database = Join-Path $env:TEMP ("evora-u02-demo-" + [guid]::NewGuid() + '.sqlite3')
+python frontend/test/serve-cases.py --database $u02Database --port 8765
+```
+
+In a second terminal, seed synthetic records through the real API:
+
+```powershell
+$headers = @{Authorization='Bearer u02-synthetic-one'}
+1..21 | ForEach-Object {
+  $body = @{title="Synthetic browser case $_"; description='Permitted synthetic fixture'} | ConvertTo-Json
+  Invoke-RestMethod http://127.0.0.1:8765/api/v1/cases -Method Post -Headers $headers -ContentType application/json -Body $body | Out-Null
+}
+```
+
+- Open `http://127.0.0.1:8765`, enter **u02-synthetic-one**, and select
+  **Open cases**. Expect total 21 and page 1 showing 20 cases. Select a title:
+  the inspector shows its real ID, description and original created timestamp,
+  and receives focus. **Back to cases** returns to the list. **Next** shows the
+  remaining case and disables Next; Previous returns to the first page.
+- **End session**, then enter **u02-synthetic-two**. In this browser demo it has
+  no cases: expect total zero and an honest empty state. No actor-one records
+  remain. Reload returns to token entry, because the token is memory-only.
+- Failure case: enter **invalid-synthetic-token**. The real API returns 401;
+  the client clears the session and the UI returns to token entry without old
+  case data. Network failures instead show a safe error and **Try again**.
+- Use Tab/Enter to operate controls. Inspect at narrow and desktop widths;
+  controls wrap, IDs break safely, and detail selection moves focus to the
+  inspector so it can be reached below the list on narrow layouts.
+- Stop the demo with Ctrl+C. Remove the exact synthetic database named by
+  `$u02Database` using `Remove-Item -LiteralPath $u02Database` after shutdown.
+  Reset the build origin with `Remove-Item Env:EVORA_API_BASE_URL` if desired.
+
+Codex exercised the frontend tests/build, explicit real HTTP integration and
+browser list/detail/pagination, empty-account, invalid-token, reload/logout and
+detail-focus steps on Windows. The observed browser viewport was about 700px;
+full desktop/mobile breakpoint coverage, formal screen-reader testing, clean
+frontend reinstall, new hosted CI and production authentication were not run.
+The demo static mount/no-store middleware is test tooling, not a deployment or
+CORS policy change. No real evidence or external service is used.
+
+Next M4 task is **U02B**, after U02 review/integration or an explicit safe
+handoff. The entire initial scope and approved additions remain unchanged in
+`docs/FEATURE_SCOPE.md`.
+
+---
+
 # EVORA frontend skeleton and shared API client
 
 ## U01 authenticated client — independent work, awaiting F00 integration

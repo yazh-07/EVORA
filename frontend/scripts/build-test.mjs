@@ -1,7 +1,7 @@
 import { build } from 'esbuild';
 
 await build({
-  entryPoints: ['src/App.tsx', 'src/api/client.ts', 'src/api/ApiProvider.tsx', 'test/fixtures/api.ts'],
+  entryPoints: ['src/App.tsx', 'src/api/client.ts', 'src/api/ApiProvider.tsx', 'test/fixtures/api.ts', 'src/cases/store.ts', 'src/cases/CaseWorkspace.tsx'],
   outbase: '.',
   outdir: '.test-build',
   outExtension: { '.js': '.mjs' },

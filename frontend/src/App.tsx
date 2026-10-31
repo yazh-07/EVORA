@@ -1,3 +1,4 @@
+import { CaseWorkspace } from './cases/CaseWorkspace';
 export function App() {
   return (
     <>
@@ -8,29 +9,14 @@ export function App() {
           <span>Investigation workspace</span>
         </header>
         <nav className="navigation" aria-label="Workspace">
-          <a href="#workspace" aria-current="page">Evidence</a>
+          <a href="#workspace" aria-current="page">Cases</a>
         </nav>
         <main id="workspace" tabIndex={-1}>
           <header className="selection-header">
-            <h1>Evidence workspace</h1>
-            <p>No case selected.</p>
+            <h1>Case workspace</h1>
+            <p>Select an authorized case to review its details.</p>
           </header>
-          <div className="workspace-layout">
-            <section className="panel" aria-labelledby="evidence-heading">
-              <h2 id="evidence-heading">Case evidence</h2>
-              <div className="empty-state">
-                <h3>Case access is not available yet</h3>
-                <p>
-                  This workspace is being set up. Sign-in and case access
-                  must be connected before evidence can be loaded.
-                </p>
-              </div>
-            </section>
-            <aside className="panel inspector" aria-labelledby="inspector-heading">
-              <h2 id="inspector-heading">Evidence details</h2>
-              <p>Select evidence from a case to inspect its source details.</p>
-            </aside>
-          </div>
+          <CaseWorkspace />
         </main>
         <footer>
           EVORA supports investigation. Findings require human verification.

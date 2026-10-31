@@ -221,3 +221,17 @@ P16/P16B add local audio/video speech with segment offsets, private model/decode
 - Accurate uncertainty, no guilt/certification/originality claims or fabricated benchmarks?
 
 Coordination checks: lint/bundle, generated client/TypeScript compilation, `scripts/verify_coordination.py <bundled-json-path>`, the `test_*.py` unittest suite with EVORA_CONTRACT_BUNDLE set to that bundle (jsonschema==4.25.1) and DESIGN lint via the shared workflow. Those are artifact checks, not substitutes for selected row's application tests. G01/G01B/G01D pin tested versions; clean full-scope Windows proof is I09B.
+
+### U02 assignment — 2026-10-31
+
+| Field | Recorded assignment |
+|---|---|
+| Task/checkpoint and exact acceptance | **U02 / 1A**: authorized paginated case list and getCase detail; real API, loading/empty/error states, actor isolation |
+| Module/person and coordination | **M4 / JebasJ**; user approved the proposed bounded scope and subsequent commit/push; no merge or second task |
+| Branch/common commit | `feat/u02-case-list-ui`, verified clean published `docs/coordination-foundation` **909009d21198fd751db49863f581b032875fa5e0**; live remote matched |
+| Paths | `frontend/src/cases/`, `frontend/src/App.tsx`, `frontend/src/styles.css`, frontend tests and `scripts/build-test.mjs`, frontend README; bounded U02 records in AGENT_TASKS, ROADMAP and PREIMPLEMENTATION_REVIEW |
+| Dependencies | Real U01 **42d03125b710ee37b7505361388fb15792ffe306**, F02 **c8077f5**, F00/F01 and G01B are merged ancestors. Historical In Progress records do not negate actual Git integration; real integration will be exercised |
+| Input/output | Unchanged draft 0.3.0 listCases/getCase, CasePage/Case and shared ApiProvider/client; memory-only synthetic-session entry, no issuance route or creation/upload feature |
+| Gate | C-03 recorded policy applies; user approved missing path/base handoff. No C-04/C-05/C-06 decision needed |
+| Commands and proof | 25 frontend / 47 backend / 122 coordination tests pass; real HTTP/SQLite two-actor integration and browser smoke pass; contract/types/build/DESIGN pass. [Actual verification and limits](PREIMPLEMENTATION_REVIEW.md#u02-verification--2026-10-31) |
+| Handoff | **In Progress**; retain full FEATURE_SCOPE including approved transcription addition; pending review, no Complete or merge claim |

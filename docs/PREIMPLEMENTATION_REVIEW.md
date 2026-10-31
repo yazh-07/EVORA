@@ -651,3 +651,83 @@ U02 is the next catalog row, blocked on accepted U01 and real F02; F00 remains
 M1/sharmelas-925's prerequisite. The user subsequently authorized committing and
 pushing this scoped task branch on 2026-10-22. No second task or merge is authorized;
 publication does not establish real F00 integration or mark U01 Complete.
+
+## U02 verification — 2026-10-31
+
+Task U02 / 1A / M4 / JebasJ, branch `feat/u02-case-list-ui`, clean common base
+`909009d21198fd751db49863f581b032875fa5e0`, matching live origin. U01
+42d03125b710ee37b7505361388fb15792ffe306 and F02 c8077f5 are verified ancestors;
+F00/F01/G01B are real merged dependencies. User approved scoped implementation
+and commit/push to configured yazh-07/EVORA; no merge or second task.
+
+### Actual results
+
+Windows execution with Node 22.23.3, Python 3.14.8/SQLite 3.50.4 and jsonschema
+4.25.1. Installed all 22 existing Python pins using the scratch Python runtime;
+`python -m pip check` passed. Existing frontend node_modules/lockfile used;
+no clean frontend reinstall or new hosted CI is claimed.
+
+| Check | Actual result |
+|---|---|
+| `npm.cmd --prefix frontend test` | **25/25 pass**, no skips; 7 new state/race/negative tests plus shell/client/provider regressions |
+| `npm.cmd --prefix frontend run build` | API freshness, TypeScript and esbuild pass; no generated/schema changes |
+| `node test/cases.integration.mjs` from frontend, EVORA_TEST_PYTHON selecting installed scratch runtime | PASS real loopback Fetch to FastAPI/SQLite: empty account; create 21 actor-one + 1 actor-two synthetic cases through real API; 20+1 pagination/detail, out-of-range page, isolation, identical foreign/missing 404, invalid limit 400, invalid-token 401, built same-origin UI HTTP 200; server/owned scratch database cleaned |
+| `python scripts/verify_coordination.py <bundle>` | PASS 27 operations, 126 tasks, 18 checkpoints, 39 capabilities, 40 proposal mappings |
+| `EVORA_CONTRACT_BUNDLE=<bundle> python -m unittest discover -s scripts -p 'test_*.py' -v` | **122/122 pass**, no skips |
+| `EVORA_CONTRACT_BUNDLE=<bundle> python -W error::ResourceWarning -m unittest discover -s backend/tests -v` | **47/47 pass**, no skips, real SQLite/FastAPI; existing F00 isolated membership doubles remain labeled in their tests |
+| Redocly 2.57.0 lint/bundle | PASS; one pre-existing info-license warning |
+| openapi-typescript 7.10.1 generate + TypeScript 5.9.3 `tsc --noEmit --strict <generated.d.ts>` | PASS |
+| DESIGN 0.4.0 lint | PASS zero errors/warnings |
+| Browser smoke against same-origin synthetic demo | PASS 21-case list/detail, 20+1 pagination, actor-two empty state, logout/reload clearing session, invalid-token return to entry, selected detail keyboard focus; screenshot visually inspected at about 700px width |
+
+The first typecheck caught a mistaken case path placeholder; corrected to the
+existing `{caseId}` contract before the passing runs. Initial focused tests
+failed on that mistake, then all passed. Browser inspection caught an encoding
+artifact in range punctuation; fixed, rebuilt and rechecked. One helper build
+was invoked from the wrong directory and failed; correct frontend-directory
+build passed. Initial Python probe had no FastAPI; installing unchanged pins
+resolved it. No failed result is being presented as a passing check.
+
+Exact tool versions were run through cached CLI entry points as well as npx;
+registry-backed npx resolution was slow and its TypeScript fetch failed with
+UNABLE_TO_VERIFY_LEAF_SIGNATURE. No TLS bypass was used. The installed exact
+TypeScript 5.9.3 CLI subsequently passed strict generated-type compilation;
+the cached DESIGN 0.4.0 CLI passed independently. Commands mirror the shared workflow.
+Previous completed Checkpoint 0 coordination/backend/frontend regressions are
+included on this combined candidate; real loopback startup/HTTP was exercised.
+No main merge smoke or checkpoint promotion is claimed.
+
+### Doubles, limitations and handoff
+
+Frontend state tests use explicit schema-derived Fetch doubles for failures,
+malformed responses, unsafe text and races; server rendering checks markup.
+The separate integration runner uses real HTTP, auth guard, case membership,
+case persistence/listing and SQLite. Only identities/data are synthetic.
+The browser demo mounts the unchanged backend and built UI on one loopback
+origin; its static/no-store wrapper is test tooling, not new application routes
+or a cross-origin deployment policy. Production authentication, formal screen
+reader/accessibility audit, full desktop/mobile breakpoint matrix and new
+hosted CI remain untested. No evidence/model/provider services were involved.
+
+All full initial capabilities and approved transcription additions remain
+unchanged in FEATURE_SCOPE, proposal, task catalog and OpenAPI. U02 stays
+**In Progress** pending review/integration. The user authorized commit/push,
+not merge. Next M4 row U02B requires accepted U02 or explicit dependency
+handoff. The How you can test it section in `frontend/README.md` contains
+exact setup/commands, synthetic inputs, expected output, 401 failure and cleanup.
+
+### U02 pre-merge revalidation — 2026-10-31
+
+The authorized merge rerun caught seven coordination-fixture failures after
+U02's final documentation edits: CLI mutation tests copy planning artifacts,
+not the frontend README, so new relative Markdown links to that file failed
+inside those isolated fixtures. Replaced only those two new links with plain
+repository file references; no verifier/test scope or product behavior changed.
+The earlier 122-test pass preceded those final links; the merge must use the
+corrected-tree rerun rather than rely on that historical result.
+
+Corrected-tree revalidation: **122 coordination / 47 backend / 25 frontend
+tests pass**, no skips. Real HTTP/SQLite integration, API freshness/typecheck/
+build, contract lint/bundle/generated strict types, verifier, DESIGN and diff
+checks pass. Existing info-license warning remains. No product code changed
+for this correction and no initial scope was removed or deferred.

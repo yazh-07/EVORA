@@ -114,3 +114,19 @@ footer {
   main { padding: var(--space-md); }
   footer { grid-column: 1; padding: var(--space-md); }
 }
+
+button, input { font: inherit; min-height: 44px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); padding: 8px 12px; }
+button { color: var(--color-accent); background: var(--color-surface); cursor: pointer; }
+button:hover { background: var(--color-neutral); }
+button:disabled { color: var(--color-secondary); cursor: default; }
+.session-panel { margin-bottom: var(--space-md); }
+.session-panel form, .pagination { display: flex; flex-wrap: wrap; gap: var(--space-sm); align-items: center; }
+.session-panel input { max-width: 100%; min-width: 0; }
+.case-list { list-style: none; margin: var(--space-md) 0; padding: 0; }
+.case-list li { padding-block: var(--space-md); border-bottom: 1px solid var(--color-border); }
+.case-list button { text-align: left; overflow-wrap: anywhere; }
+.identifier { font-family: "IBM Plex Mono", monospace; font-size: 0.875rem; overflow-wrap: anywhere; }
+.inspector, .case-list { overflow-wrap: anywhere; }
+[role="alert"] { color: var(--color-error); }
+
+@media (min-width: 901px) { .inspector { position: sticky; top: var(--space-md); } }
