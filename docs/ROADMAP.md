@@ -101,6 +101,27 @@ See [COMMUNICATION.md](COMMUNICATION.md) and [CONTRACTS.md](CONTRACTS.md) for co
 
 For each assigned task record `task ID | checkpoint | module/person | branch/common spec commit | state | consumed/produced interface | actual commands/results + test doubles | PR/next task`. Serialize ledger edits. States: **Backlog**, **In Progress**, **Complete** (acceptance and real dependency integration verified), **Blocked** (exact needed decision). Current task state defaults to Backlog; no implementation completion is claimed here.
 
+### F05 live record — 2026-10-31
+
+**F05 / Checkpoint 1A / M1 / sharmelas-925 / In Progress.** User-assigned
+branch `feat/f05-evidence-download`, clean starting HEAD/common contract base
+**c5c9b5a5aefff113db6592996da4af1c780d88df**, matching local
+`docs/coordination-foundation`. Real merged F00/F03 dependencies and F01/F02/F04
+producers are present. Allowed paths are `backend/evidence.py`,
+`backend/tests/test_evidence.py`, `backend/README.md`, `docs/AGENT_TASKS.md`,
+`docs/ROADMAP.md`, `docs/PREIMPLEMENTATION_REVIEW.md`; unchanged draft 0.3.0
+`downloadEvidence` is the sole HTTP contract.
+
+Authorized case-scoped lookup returns original bytes as an octet-stream
+attachment with `Cache-Control: no-store`. Resolved paths must be regular files
+strictly inside the configured storage root's authorized case directory;
+unsafe/missing paths use the standard non-leaking 404. Tests use real upload,
+membership, SQLite and private temporary files with synthetic identities/data.
+Actual verification and limits are recorded in PREIMPLEMENTATION_REVIEW's F05
+entry. No commit/push/merge or Windows/hosted CI result is claimed.
+Checkpoint 1A remains open pending its remaining tasks and I00 exit evidence.
+Next M1 row F06 needs its own scoped assignment; M4 U04 follows accepted F05.
+
 ### F04 live record — 2026-10-31
 
 **F04 / Checkpoint 1A / M1 / sharmelas-925 / In Progress.** Scoped branch

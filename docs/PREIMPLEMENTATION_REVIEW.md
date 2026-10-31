@@ -1,5 +1,85 @@
 # EVORA scope/contract verification and implementation readiness
 
+### F05 verification — 2026-10-31
+
+**F05 / Checkpoint 1A / M1 / sharmelas-925 / In Progress**, branch
+`feat/f05-evidence-download`. Clean starting HEAD and local coordination base
+were both **c5c9b5a5aefff113db6592996da4af1c780d88df**. Real merged F00 and
+F03 (via **e5273a6**, including **6622959**) are dependencies; F01/F02/F04
+provide real case membership/intake/metadata for acceptance. The unchanged
+`specs/openapi.yaml` draft 0.3.0 remains the sole HTTP authority. No fetch,
+staging, commit, push or merge was performed.
+
+Implemented `downloadEvidence` using the existing case-access dependency and a
+case/evidence-scoped SQLite lookup. Successful reads return original bytes as
+an octet-stream attachment with `Cache-Control: no-store`. Resolved paths must
+be regular files strictly inside the configured storage root's authorized case
+directory. Unsafe paths and missing files receive the same flat 404 as missing
+resources; path/UUID validation uses the existing flat 400 handler.
+
+Linux acceptance used the existing isolated environment at
+`/tmp/evora-f03-pinned`: CPython **3.14.8**, SQLite **3.54.0**, FastAPI
+**0.143.1**, Starlette **1.8.0**, Pydantic **2.14.1**, httpx **0.28.1**,
+jsonschema **4.25.1**. Node **22.23.4** and npm **12.2.1** differ from the
+repository's setup pins 22.23.3/12.2.0; no dependencies were changed. An initial
+23-test evidence run also passed in the older local Python 3.12.14 environment;
+the recorded full acceptance below uses the pinned Python 3.14.8 environment.
+
+From the repository root, activate the pinned environment with
+`source /tmp/evora-f03-pinned/bin/activate` (or use an interpreter with
+`requirements.txt` installed). Actual commands/results:
+
+| Command | Result |
+|---|---|
+| `npx @redocly/cli bundle specs/openapi.yaml --output /tmp/evora-openapi.json` | Pass; real contract bundle produced |
+| `python scripts/verify_coordination.py /tmp/evora-openapi.json` | Pass; 27 operations, 126 tasks, 18 checkpoints |
+| `EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -m unittest discover -s scripts -p 'test_*.py'` | 122 tests pass, no skips |
+| `EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -W error::ResourceWarning -m unittest discover -s backend/tests` | 70 tests pass, no skips; 23 evidence tests including seven new F05 tests |
+| `npm --prefix frontend run test` | 39 tests pass, no skips |
+| `npx @google/design.md@0.4.0 lint DESIGN.md` | Zero errors/warnings |
+| `npx @redocly/cli lint specs/openapi.yaml` | Pass; existing missing info.license warning only |
+| `npx --yes openapi-typescript@7.10.1 specs/openapi.yaml -o /tmp/evora-f05-api.d.ts` | Generated declarations from unchanged contract |
+| `npx --yes --package typescript@5.9.3 tsc --noEmit --strict /tmp/evora-f05-api.d.ts` | Pass |
+| `npm --prefix frontend run build` | API declaration freshness, TypeScript and production build pass |
+| `git diff --check` | Pass; only the six allowed files changed, nothing staged |
+
+Read-back uses real ASGI/FastAPI/F00/F01/F03/F04, SQLite and private temporary
+files; identities and fixture bytes are synthetic. There are no download,
+storage or authorization producer doubles. Uploaded `fixtures/synthetic-case/network.csv`
+is downloaded byte-for-byte and its SHA-256 equals the upload's stored hash.
+Empty and multi-chunk binary originals also match exactly. Uploaded text/csv
+and text/html MIME types still download as application/octet-stream with
+no-store and attachment headers; metadata is unchanged after download.
+
+Negative read-back: missing/invalid credentials return schema-valid 401;
+invalid case/evidence UUIDs return exact 400 INVALID_INPUT. Actor B reading
+Actor A's case, evidence under another authorized case, nonexistent case or
+evidence, and foreign evidence under Actor B's own URL all return identical
+404 body/headers. Membership revocation immediately denies subsequent reads.
+Tampered SQLite paths to an external file, traversal, sibling prefix collision,
+another case's file, directory, missing file, NUL path and escaping symlink
+return the standard 404 without server paths or external bytes. Symlink
+creation succeeded on this Linux run; that dedicated test explicitly skips
+where OS/account privileges disallow creation. Temporary databases/files use
+resolved roots and clean up through unittest contexts.
+
+How to test F05 specifically: after bundling, run
+`EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -W error::ResourceWarning -m unittest backend.tests.test_evidence -v`.
+Expect 23 passing tests on a symlink-capable host, including the real CSV/hash
+round trip. For a focused failure case use
+`EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -m unittest backend.tests.test_evidence.EvidenceTests.test_download_tampered_storage_paths -v`;
+expect 404 for every injected unsafe/missing path and unchanged external bytes.
+
+Limits: local Linux application/artifact checks are not native Windows,
+interactive browser or hosted CI proof. The private filesystem is assumed to
+remain under backend control; path checking is not a filesystem sandbox against
+a concurrent privileged writer replacing files during a response. No media
+playback/download UI, processing, audit or scoring implementation is claimed.
+Earlier completed Checkpoint 0's local checks are rerun; its historical Windows
+proof is not replaced. F05 awaits review/integration; Checkpoint 1A and I00's
+assembled intake/audit/download/UI exit remain open. Next M1 task is F06 under
+a separate assignment; U04 can consume F05 after an accepted handoff.
+
 ### F02 verification — 2026-10-25
 
 **F02 / Checkpoint 1A / M1 / sharmelas-925 / In Progress**, branch

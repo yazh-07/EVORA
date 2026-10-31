@@ -2,6 +2,20 @@
 
 Coordination-branch draft 0.3.0, not a running app. Four people each work on one module; confirmed GitHub-handle assignments and integration coordination are in [ROADMAP.md](ROADMAP.md#module-assignment-and-live-task-state). Full initial proposal scope is fixed. Use the canonical phase/checkpoint ledger in [ROADMAP.md](ROADMAP.md). Assign one catalog row, not an entire module, milestone or full dashboard. Codex fills the task card from recorded repository decisions before editing. Missing common-base/allowed-path choices or a shared G/I assignee need a short clarification, not a guessed assignment.
 
+### F05 assignment — 2026-10-31
+
+| Field | Recorded assignment |
+|---|---|
+| Task/checkpoint and acceptance | **F05 / 1A**: authorized original download; byte/hash round trip; traversal, foreign-case and missing-file reads rejected safely |
+| Module/person | **M1 Evidence Foundation / sharmelas-925**, matching ROADMAP's module table; user explicitly authorizes these bounded implementation/shared-record edits |
+| Branch/common contract commit | `feat/f05-evidence-download`; clean starting HEAD and local `docs/coordination-foundation` both **c5c9b5a5aefff113db6592996da4af1c780d88df**, unchanged OpenAPI draft 0.3.0 |
+| Allowed paths | `backend/evidence.py`, `backend/tests/test_evidence.py`, `backend/README.md`, `docs/AGENT_TASKS.md`, `docs/ROADMAP.md`, `docs/PREIMPLEMENTATION_REVIEW.md`; no spec, frontend or dependency edits |
+| Dependencies | Real merged F03 via **e5273a6** (including Windows path correction **6622959**) and F00 **94aa2a8** are ancestors of this base; existing real F01/F02/F04 producers are consumed, no evidence/storage/access doubles |
+| Input/output | Consume F03 SQLite storage metadata/private bytes and F00 case grant; produce existing `downloadEvidence` full-byte API for M2 source access and M4 U04/U14 |
+| Gate | No unresolved choice blocks F05. Existing flat INVALID_INPUT/NOT_FOUND policy is explicitly confirmed; unsafe or absent stored paths return the same 404. Later format/scoring/provider choices stay with their rows |
+| Acceptance/tests | Synthetic network.csv, binary/empty originals, MIME/cache headers, UUID/auth errors, two actors/cases, immediate membership revocation, external/traversal/prefix-collision/other-case/directory/missing/NUL/symlink paths; real FastAPI/SQLite/files with automatic temporary cleanup |
+| Verification/handoff | Exact commands/results in PREIMPLEMENTATION_REVIEW's F05 record; **In Progress**, pending review/integration. No stage/commit/push/merge authorized. Next M1 row F06 requires a separate assignment; U04 can consume F05 after accepted handoff. Checkpoint 1A/I00 exit remains open |
+
 ## Copy this into Codex
 
 Open Codex inside the EVORA repository. Replace only `[GITHUB_HANDLE]`. Codex selects and implements the next eligible task; you do not need to find or enter its ID.

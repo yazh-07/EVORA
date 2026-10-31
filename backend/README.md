@@ -1,5 +1,38 @@
 # EVORA backend
 
+## F05 authorized original download
+
+`GET /api/v1/cases/{caseId}/evidence/{evidenceId}/content`
+(`downloadEvidence`) requires bearer authentication and current case membership.
+It returns 200 with unmodified original bytes, `Content-Type:
+application/octet-stream`, attachment filename and `Cache-Control: no-store`,
+regardless of the uploaded MIME type. It uses a case-scoped SQLite lookup and
+checks that the resolved storage path is a regular file strictly inside the
+configured storage root's authorized case directory, including symlink checks.
+
+Missing/invalid credentials return 401 ApiError. Invalid path UUIDs return
+400 `{"code":"INVALID_INPUT","message":"Invalid request input."}`.
+Foreign/missing cases, mismatched/missing evidence IDs, missing files and unsafe
+stored paths return 404 `{"code":"NOT_FOUND","message":"Resource not found."}`
+without a server path. This is the full-byte download contract; clients must
+avoid persistent evidence caching. UI download/playback remains U04/U14 work.
+
+Run the bundled-schema evidence suite using an interpreter with
+`requirements.txt` installed:
+
+```sh
+npx @redocly/cli bundle specs/openapi.yaml --output /tmp/evora-openapi.json
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -W error::ResourceWarning -m unittest backend.tests.test_evidence -v
+```
+
+The 23 evidence tests include F03/F04 regressions and seven F05 tests using real
+FastAPI/SQLite/private storage with automatically cleaned temporary directories.
+They verify the synthetic network.csv byte/hash round trip, empty/binary files,
+headers, authentication, case/resource isolation, UUID validation, revoked
+membership and tampered paths. Symlink creation is tested where the OS/account
+permits it; otherwise that test explicitly skips. F05 platform limits and full
+verification are recorded in `docs/PREIMPLEMENTATION_REVIEW.md`.
+
 ## F04 evidence metadata and listing
 
 `GET /api/v1/cases/{caseId}/evidence` (`listEvidence`) returns 200
