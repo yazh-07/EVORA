@@ -105,8 +105,9 @@ this review and its own bounded assignment. Checkpoint 1A remains open.
 
 ## U04 current handoff — 2026-10-31
 
-**U04 / 1A / M4 JebasJ / In Progress**, user authorized finish, commit/push and
-merge of the existing feat/u04-evidence-download task only. Common base updated
+**U04 / 1A / M4 JebasJ / Complete**, user authorized finish, commit/push and
+merge of the existing feat/u04-evidence-download task only. Integrated at
+**9444ef703ea88cba52280024c11887492b6053bd** with passing post-merge tests/build/real API smoke. Common base updated
 to **d2879c6e1e236add391fb6af40480b9940d22555** preserving original draft and
 upstream U02B reconciliation. Real U03/F05 dependencies integrated. Selected
 metadata now provides an explicit original download with source size/SHA-256

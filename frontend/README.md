@@ -3,7 +3,9 @@
 U04 / Checkpoint 1A / M4 JebasJ, branch `feat/u04-evidence-download`.
 Original draft d24312f was checkpointed and updated to verified shared base
 **d2879c6e1e236add391fb6af40480b9940d22555**. User explicitly authorized finishing,
-committing, pushing and merging this task. Integration status is in ROADMAP.
+committing, pushing and merging this task. **Complete:** integrated at merge `9444ef703ea88cba52280024c11887492b6053bd`;
+post-merge 48 frontend tests/build and real API smoke pass. Shared GitHub
+publication is explicitly authorized; new hosted CI is not verified.
 The older session notes below are historical.
 
 Selected evidence metadata now offers **Download original**. An explicit click

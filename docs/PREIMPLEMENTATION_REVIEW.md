@@ -1282,3 +1282,17 @@ discover -s scripts -p 'test_*.py'` passes **122/122**, no skips; coordination
 verifier PASS 27 operations/126 tasks/18 checkpoints/39 capabilities/40 proposal
 mappings. All current-task negatives and previous completed Checkpoint 0
 regressions pass with the single explicitly disclosed backend symlink skip.
+
+### U04 integrated completion — 2026-10-31
+
+User-authorized task commit **16a9391252acdc72cdc66c126f284a2629c424ef** was
+pushed to feat/u04-evidence-download, then merged without conflicts into the
+verified shared branch at **9444ef703ea88cba52280024c11887492b6053bd**.
+Post-merge 48 frontend tests, API freshness/typecheck/build and real F05
+original/controller byte/hash/size/empty/access-denial smoke plus U03/U02B
+regressions pass. Pre-merge 122 coordination and 69 backend pass/1 disclosed
+Windows symlink skip; contract/generated strict types/DESIGN pass. Existing
+missing-license warning remains. U04 is Complete after actual integration;
+Checkpoint 1A remains open. This supersedes the earlier pending-integration
+handoff. No new hosted CI, production identity or formal screen-reader claim.
+Original uncommitted U02B checkout remains untouched. No next task started.
