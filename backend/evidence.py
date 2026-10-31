@@ -1,13 +1,14 @@
-"""F03 private original intake; no inline processing or public storage paths."""
+"""F03 private original intake and F04 authorized metadata reads."""
 
 from datetime import datetime, timezone
 import hashlib
 import os
 import re
 from typing import Annotated
-from uuid import uuid4
+from uuid import UUID, uuid4
 
-from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
+from fastapi import APIRouter, Depends, File, Form, Query, Request, UploadFile
+from pydantic import BaseModel, ConfigDict
 
 from backend.auth import CaseAccessGrant, require_case_access
 from backend.database import SQLiteDatabase
@@ -36,6 +37,78 @@ def invalid_input() -> AccessError:
 
 
 router = APIRouter()
+
+
+class Evidence(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    id: UUID
+    case_id: UUID
+    kind: str
+    filename: str
+    media_type: str
+    source_label: str
+    sha256: str
+    size_bytes: int
+    # Keep source timestamp text exactly as stored by intake.
+    acquired_at: str | None = None
+    created_at: str
+
+
+class EvidencePage(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    items: list[Evidence]
+    total: int
+    limit: int
+    offset: int
+
+
+_METADATA_COLUMNS = (
+    "id, case_id, kind, filename, media_type, source_label, sha256, "
+    "size_bytes, acquired_at, created_at"
+)
+
+
+@router.get("/api/v1/cases/{caseId}/evidence", operation_id="listEvidence",
+            response_model=EvidencePage, response_model_exclude_none=True)
+def list_evidence(
+    caseId: UUID,
+    request: Request,
+    grant: Annotated[CaseAccessGrant, Depends(require_case_access)],
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+):
+    parameters = {"case_id": str(grant.case_id), "limit": limit, "offset": offset}
+    with request.app.state.database.connect() as connection:
+        # Count and page use the same SQLite read snapshot.
+        connection.execute("BEGIN")
+        total = connection.execute(
+            "SELECT count(*) FROM evidence WHERE case_id = :case_id", parameters,
+        ).fetchone()[0]
+        rows = connection.execute(
+            f"SELECT {_METADATA_COLUMNS} FROM evidence WHERE case_id = :case_id "
+            "ORDER BY created_at DESC, id ASC LIMIT :limit OFFSET :offset", parameters,
+        ).fetchall()
+    return EvidencePage(items=[Evidence(**dict(row)) for row in rows],
+                        total=total, limit=limit, offset=offset)
+
+
+@router.get("/api/v1/cases/{caseId}/evidence/{evidenceId}", operation_id="getEvidence",
+            response_model=Evidence, response_model_exclude_none=True)
+def get_evidence(
+    caseId: UUID,
+    evidenceId: UUID,
+    request: Request,
+    grant: Annotated[CaseAccessGrant, Depends(require_case_access)],
+):
+    with request.app.state.database.connect() as connection:
+        row = connection.execute(
+            f"SELECT {_METADATA_COLUMNS} FROM evidence "
+            "WHERE case_id = :case_id AND id = :evidence_id",
+            {"case_id": str(grant.case_id), "evidence_id": str(evidenceId)},
+        ).fetchone()
+    if row is None:
+        raise AccessError(404, "NOT_FOUND", "Resource not found.")
+    return Evidence(**dict(row))
 
 
 @router.post("/api/v1/cases/{caseId}/evidence", operation_id="uploadEvidence",

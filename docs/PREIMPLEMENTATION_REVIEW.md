@@ -892,3 +892,74 @@ application immutability, not service-account/WORM tamper protection. Process
 crash recovery between filesystem and SQLite publication is not implemented.
 F05 download, F06 audit, U03 upload UI and I00 real assembled intake/runbook exit
 evidence remain separate tasks; no phase closure is claimed.
+
+### F04 verification — 2026-10-31
+
+**F04 / Checkpoint 1A / M1 / sharmelas-925 / In Progress**, branch
+`feat/f04-evidence-metadata`. Starting status was clean; HEAD and merge-base
+with `docs/coordination-foundation` were exactly
+**e5273a61e444a2fdf46b236e1f4a56700ac52f57**. This common contract/base
+includes real merged F03 and F00/F01/F02/U01/U02/U02B. Only the six assigned
+paths changed. No staging, commit, push or merge was performed.
+
+`listEvidence` counts and pages authorized SQLite evidence in one read snapshot,
+ordered by `created_at DESC, id ASC`. `getEvidence` joins the evidence UUID to
+the granted case UUID. Both reuse current membership authorization and the
+existing flat 400/401/404 errors. Public responses omit private storage paths
+and absent acquisition times; stored acquisition text remains unchanged.
+The sole wire authority remains unchanged `specs/openapi.yaml` draft 0.3.0.
+No unresolved decision blocks this row or changes a producer/consumer contract.
+M4 U03/U04 consume metadata; U13 consumes paginated evidence and accurate totals.
+Future parser, download and audit tasks remain outside this implementation.
+
+All commands below exited 0 on Linux. Python commands used the existing
+isolated pinned environment, activated with
+`source /tmp/evora-f03-pinned/bin/activate`; repository dependencies were not
+changed. Actual runtime: CPython 3.14.8, FastAPI 0.143.1, Starlette 1.8.0,
+Pydantic 2.14.1, httpx 0.28.1, jsonschema 4.25.1 and python-multipart 0.0.32.
+Node 22.23.4/npm 12.2.1 were used; repository pins remain 22.23.3/12.2.0.
+
+| Exact command from repository root | Result |
+|---|---|
+| `npx @redocly/cli bundle specs/openapi.yaml --output /tmp/evora-openapi.json` | Exit 0; bundle produced |
+| `python scripts/verify_coordination.py /tmp/evora-openapi.json` | Exit 0; planning/contract checks |
+| `EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -m unittest discover -s scripts -p 'test_*.py'` | Exit 0; 122 tests pass |
+| `EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -W error::ResourceWarning -m unittest discover -s backend/tests` | Exit 0; 63 tests pass |
+| `EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -W error::ResourceWarning -m unittest backend.tests.test_evidence -v` | Exit 0; 16 tests pass, including seven F04 tests |
+| `npm --prefix frontend run test` | Exit 0; 31 tests pass |
+| `npm --prefix frontend run build` | Exit 0; generated API freshness, TypeScript compilation and build pass |
+| `npx @redocly/cli lint specs/openapi.yaml` | Exit 0; existing missing-license warning |
+| `npx @google/design.md@0.4.0 lint DESIGN.md` | Exit 0; zero errors/warnings |
+| `git diff --check` | Exit 0 |
+
+Read-back uses real in-process HTTP/ASGI/FastAPI, file-backed SQLite and F03
+multipart uploads, with synthetic bearer identities and permitted synthetic
+bytes. No schema-derived upload/database/case-access double is used. The
+seven added tests compare every metadata field to the upload response, with
+and without acquisition text; check absent private fields; exercise default
+20/0 pagination, 23 uploaded items, timestamp ties, limit 1/100, multiple pages,
+empty cases and offsets at/beyond total; and verify case/actor isolation,
+revoked membership, invalid UUIDs, rejected pagination and missing/invalid auth.
+Ordering tests set controlled timestamps on real uploaded test rows to avoid
+platform clock-resolution assumptions. Foreign cases, mismatched evidence and
+missing resources return identical 404 bodies and headers; no constant-time
+certification is claimed. Every response checked by the test helper validates
+against the bundled schema when EVORA_CONTRACT_BUNDLE is set.
+
+Reproduction and negative checks:
+
+- Run the focused evidence command above in the pinned environment; expect
+  16 passing tests with temporary SQLite/private files cleaned up afterward.
+- Run `EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -m unittest backend.tests.test_evidence.EvidenceTests.test_metadata_case_and_resource_isolation -v`;
+  expect one passing test proving cross-actor denial and same-actor/case URL
+  mismatch handling without disclosing evidence in the wrong case.
+
+Limits: no native Windows, hosted CI or browser execution was performed in
+this task. All filesystem Path constructions in the evidence tests use
+`.resolve()` for Windows short-path compatibility; Linux success does not
+establish native Windows execution. Frontend tests retain their existing
+transport doubles; backend F04 acceptance uses real producers. Checkpoint 0
+local regressions pass, but no new Windows setup proof is claimed. I00's full
+assembled intake/download/audit/UI exit evidence remains outstanding;
+Checkpoint 1A stays open. F04 remains In Progress pending review/integration.
+Next M1 row is F05 under its own assignment; no second task was implemented.

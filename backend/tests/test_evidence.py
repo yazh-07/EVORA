@@ -1,4 +1,4 @@
-"""Real multipart/FastAPI/SQLite/private-file F03 acceptance."""
+"""Real multipart/FastAPI/SQLite/private-file F03 and metadata F04 acceptance."""
 
 import hashlib
 import json
@@ -21,7 +21,7 @@ class EvidenceTests(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
         root = Path(self.enterContext(TemporaryDirectory())).resolve()
         self.storage = (root / "private").resolve()
-        self.app = create_app(root / "db.sqlite3", storage_dir=self.storage,
+        self.app = create_app((root / "db.sqlite3").resolve(), storage_dir=self.storage,
                               token_verifier=SyntheticTokenVerifier({
                                   "synthetic-a": "investigator-1", "synthetic-b": "investigator-2"}))
         await self.enterAsyncContext(self.app.router.lifespan_context(self.app))
@@ -31,7 +31,7 @@ class EvidenceTests(unittest.IsolatedAsyncioTestCase):
         self.case = (await self.client.post('/api/v1/cases', json={"title": "Synthetic"})).json()
         self.url = '/api/v1/cases/' + self.case['id'] + '/evidence'
         bundle = os.environ.get('EVORA_CONTRACT_BUNDLE')
-        self.spec = json.loads(Path(bundle).read_text()) if bundle else None
+        self.spec = json.loads(Path(bundle).resolve().read_text()) if bundle else None
 
     async def upload(self, content=b'synthetic\x00\xff\r\n', filename='source.bin', **kwargs):
         data = kwargs.pop('data', {"kind": "network_log", "source_label": " Synthetic source "})
@@ -52,7 +52,7 @@ class EvidenceTests(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(connection.execute('SELECT count(*) FROM evidence').fetchone()[0], 0)
 
     async def test_roundtrip_and_unique_immutable_originals(self):
-        content = Path('fixtures/synthetic-case/network.csv').read_bytes()
+        content = Path('fixtures/synthetic-case/network.csv').resolve().read_bytes()
         first = self.check(await self.upload(content), 201, 'Evidence')
         second = self.check(await self.upload(b'different'), 201, 'Evidence')
         self.assertNotEqual(first['id'], second['id'])
@@ -63,7 +63,7 @@ class EvidenceTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(first['source_label'], ' Synthetic source ')
         with self.app.state.database.connect() as connection:
             row = dict(connection.execute('SELECT * FROM evidence WHERE id = ?', (first['id'],)).fetchone())
-        path = Path(row.pop('storage_path'))
+        path = Path(row.pop('storage_path')).resolve()
         self.assertEqual(path.resolve(), (self.storage / self.case['id'] / (first['id'] + '.bin')).resolve())
         self.assertEqual(path.read_bytes(), content)
         self.assertIsNone(row.pop('acquired_at'))
@@ -136,3 +136,126 @@ class EvidenceTests(unittest.IsolatedAsyncioTestCase):
             with self.assertRaises(OSError):
                 await self.upload()
         self.assert_empty()
+
+    async def test_get_evidence_roundtrip(self):
+        for data in ({"kind": "network_log", "source_label": " Synthetic source "},
+                     {"kind": "document", "source_label": "Synthetic timestamp",
+                      "acquired_at": "2026-10-31T10:11:12.123+05:30"}):
+            with self.subTest(data=data):
+                uploaded = self.check(await self.upload(data=data), 201, 'Evidence')
+                result = self.check(await self.client.get(self.url + '/' + uploaded['id']),
+                                    200, 'Evidence')
+                self.assertEqual(result, uploaded)
+                self.assertNotIn('storage_path', result)
+                if 'acquired_at' not in data:
+                    self.assertNotIn('acquired_at', result)
+                page = self.check(await self.client.get(self.url), 200, 'EvidencePage')
+                self.assertIn(uploaded, page['items'])
+
+    async def test_list_evidence_pagination_and_order(self):
+        uploaded = [self.check(await self.upload(content=f'synthetic-{i}'.encode()),
+                               201, 'Evidence') for i in range(23)]
+        # Controlled timestamps on real uploaded rows exercise ordering and UUID ties
+        # independently of clock resolution on Linux and Windows.
+        with self.app.state.database.connect() as connection:
+            for i, item in enumerate(uploaded):
+                item['created_at'] = f'2026-10-{30 if i % 2 else 31}T00:00:00Z'
+                connection.execute('UPDATE evidence SET created_at = ? WHERE id = ?',
+                                   (item['created_at'], item['id']))
+        older = sorted((item for i, item in enumerate(uploaded) if i % 2),
+                       key=lambda item: item['id'])
+        newer = sorted((item for i, item in enumerate(uploaded) if not i % 2),
+                       key=lambda item: item['id'])
+        expected = newer + older
+        page = self.check(await self.client.get(self.url), 200, 'EvidencePage')
+        self.assertEqual(page, dict(items=expected[:20], total=23, limit=20, offset=0))
+        collected = []
+        for offset in range(0, 24, 5):
+            page = self.check(await self.client.get(self.url, params={'limit': 5, 'offset': offset}),
+                              200, 'EvidencePage')
+            self.assertEqual(page, dict(items=expected[offset:offset + 5], total=23,
+                                        limit=5, offset=offset))
+            collected.extend(page['items'])
+        self.assertEqual(collected, expected)
+        for limit, offset in ((1, 0), (100, 0), (20, 23), (20, 30)):
+            page = self.check(await self.client.get(self.url, params={'limit': limit, 'offset': offset}),
+                              200, 'EvidencePage')
+            self.assertEqual(page, dict(items=expected[offset:offset + limit], total=23,
+                                        limit=limit, offset=offset))
+
+    async def test_list_empty_case_and_same_actor_case_isolation(self):
+        other = self.check(await self.client.post('/api/v1/cases', json={'title': 'Other synthetic'}),
+                           201, 'Case')
+        other_url = '/api/v1/cases/' + other['id'] + '/evidence'
+        self.check(await self.upload(url=other_url), 201, 'Evidence')
+        page = self.check(await self.client.get(self.url), 200, 'EvidencePage')
+        self.assertEqual(page, dict(items=[], total=0, limit=20, offset=0))
+        own = self.check(await self.upload(), 201, 'Evidence')
+        page = self.check(await self.client.get(self.url), 200, 'EvidencePage')
+        self.assertEqual(page, dict(items=[own], total=1, limit=20, offset=0))
+
+    async def test_metadata_case_and_resource_isolation(self):
+        uploaded = self.check(await self.upload(), 201, 'Evidence')
+        headers = {'Authorization': 'Bearer synthetic-b'}
+        other = self.check(await self.client.post('/api/v1/cases', json={'title': 'Actor B'},
+                                                  headers=headers), 201, 'Case')
+        other_url = '/api/v1/cases/' + other['id'] + '/evidence'
+        other_item = self.check(await self.upload(url=other_url, headers=headers), 201, 'Evidence')
+        own_page = self.check(await self.client.get(self.url), 200, 'EvidencePage')
+        self.assertEqual(own_page['items'], [uploaded])
+        other_page = self.check(await self.client.get(other_url, headers=headers), 200, 'EvidencePage')
+        self.assertEqual(other_page, dict(items=[other_item], total=1, limit=20, offset=0))
+        missing_case = '/api/v1/cases/' + str(uuid4()) + '/evidence'
+        missing_evidence = self.url + '/' + str(uuid4())
+        baseline = await self.client.get(missing_evidence)
+        self.assertEqual(self.check(baseline, 404),
+                         {'code': 'NOT_FOUND', 'message': 'Resource not found.'})
+        for url, auth in ((self.url, headers),
+                          (self.url + '/' + uploaded['id'], headers),
+                          (missing_case, {}),
+                          (missing_case + '/' + uploaded['id'], {}),
+                          (other_url, {}),
+                          (other_url + '/' + other_item['id'], {}),
+                          (other_url + '/' + uploaded['id'], headers),
+                          (other_url + '/' + str(uuid4()), headers),
+                          (self.url + '/' + other_item['id'], {})):
+            with self.subTest(url=url, auth=bool(auth)):
+                response = await self.client.get(url, headers=auth)
+                self.check(response, 404)
+                self.assertEqual((response.content, response.headers),
+                                 (baseline.content, baseline.headers))
+
+    async def test_metadata_validation(self):
+        for url in ('/api/v1/cases/invalid/evidence',
+                    '/api/v1/cases/invalid/evidence/' + str(uuid4()),
+                    self.url + '/invalid'):
+            with self.subTest(url=url):
+                self.assertEqual(self.check(await self.client.get(url), 400),
+                                 {'code': 'INVALID_INPUT', 'message': 'Invalid request input.'})
+        for params in ({'limit': 0}, {'limit': 101}, {'offset': -1}, {'limit': 'abc'}):
+            with self.subTest(params=params):
+                self.assertEqual(self.check(await self.client.get(self.url, params=params), 400),
+                                 {'code': 'INVALID_INPUT', 'message': 'Invalid request input.'})
+
+    async def test_metadata_authentication(self):
+        uploaded = self.check(await self.upload(), 201, 'Evidence')
+        for url in (self.url, self.url + '/' + uploaded['id']):
+            for value in ('', 'Basic rejected', 'Bearer rejected'):
+                with self.subTest(url=url, value=value):
+                    response = await self.client.get(url, headers={'Authorization': value})
+                    self.assertEqual(self.check(response, 401),
+                                     {'code': 'UNAUTHORIZED', 'message': 'Authentication required.'})
+                    self.assertEqual(response.headers['WWW-Authenticate'], 'Bearer')
+        self.client.headers.pop('Authorization')
+        for url in (self.url, self.url + '/' + uploaded['id']):
+            self.check(await self.client.get(url), 401)
+
+    async def test_metadata_membership_revocation(self):
+        uploaded = self.check(await self.upload(), 201, 'Evidence')
+        self.check(await self.client.get(self.url), 200, 'EvidencePage')
+        self.check(await self.client.get(self.url + '/' + uploaded['id']), 200, 'Evidence')
+        with self.app.state.database.connect() as connection:
+            connection.execute('DELETE FROM case_members WHERE case_id = ?', (self.case['id'],))
+        for url in (self.url, self.url + '/' + uploaded['id']):
+            self.assertEqual(self.check(await self.client.get(url), 404),
+                             {'code': 'NOT_FOUND', 'message': 'Resource not found.'})

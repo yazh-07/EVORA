@@ -101,6 +101,26 @@ See [COMMUNICATION.md](COMMUNICATION.md) and [CONTRACTS.md](CONTRACTS.md) for co
 
 For each assigned task record `task ID | checkpoint | module/person | branch/common spec commit | state | consumed/produced interface | actual commands/results + test doubles | PR/next task`. Serialize ledger edits. States: **Backlog**, **In Progress**, **Complete** (acceptance and real dependency integration verified), **Blocked** (exact needed decision). Current task state defaults to Backlog; no implementation completion is claimed here.
 
+### F04 live record — 2026-10-31
+
+**F04 / Checkpoint 1A / M1 / sharmelas-925 / In Progress.** Scoped branch
+`feat/f04-evidence-metadata`, clean starting HEAD/common contract base
+**e5273a61e444a2fdf46b236e1f4a56700ac52f57** on `docs/coordination-foundation`.
+Real F03 and F00/F01/F02/U01/U02/U02B are merged ancestors. User-authorized
+paths cover evidence implementation/tests, `backend/README.md` and three
+bounded documentation records; no spec/frontend/dependency changes.
+Produces `listEvidence` and `getEvidence` against unchanged draft 0.3.0,
+with current case membership, case-scoped metadata, deterministic pagination,
+omitted absent acquisition time/private paths and existing 400/401/404 errors.
+[Assignment](AGENT_TASKS.md#f04-assignment--2026-10-31) and
+[verification](PREIMPLEMENTATION_REVIEW.md#f04-verification--2026-10-31)
+record actual read-back and checks: 122 coordination, 63 backend (16 evidence)
+and 31 frontend tests pass, plus bundle/lint/types/build/DESIGN checks.
+Tests use real upload/SQLite/access producers and synthetic authentication;
+native Windows/hosted CI remain unverified. No commit/push/merge authorized.
+Review/integration is pending; Checkpoint 1A remains open. Next M1 row is F05
+under a separate scoped assignment; I00 exit evidence is not claimed.
+
 ### U02B live record — 2026-10-31
 
 **U02B / Checkpoint 1A / M4 / JebasJ / In Progress.** Scoped branch
