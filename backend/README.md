@@ -319,3 +319,44 @@ Every invalid request response is validated against the shared bundle's
 
 Tests clean up their temporary files. A manual server run leaves its ignored
 SQLite file for inspection; remove only your own synthetic test file when finished.
+
+## F03 original evidence upload
+
+`POST /api/v1/cases/{caseId}/evidence` (`uploadEvidence`) accepts multipart
+`file`, `kind`, `source_label` and optional RFC 3339 `acquired_at`. Current
+case membership is required. Returns 201 Evidence with the original filename,
+client-declared media type (not content verification), exact lowercase SHA-256,
+size and source metadata. Acquisition text and source label are preserved;
+missing acquisition time is omitted. Invalid fields/unsafe filenames return the
+flat 400 INVALID_INPUT; access failures retain 401/indistinguishable 404.
+
+Originals are limited to **50 MiB (52,428,800 bytes)**; excess returns 413
+PAYLOAD_TOO_LARGE and removes the partial original. Bytes are copied and hashed
+in 64 KiB chunks from UploadFile's multipart spool, without inline content
+processing. This is a file-byte limit during private storage, not an ingress
+request-body limit: Starlette parses/spools multipart before handler execution.
+Opaque files, including empty files, can be preserved; parser content/CSV limits
+belong to processing tasks. Unsafe filenames containing `..`, separators,
+control characters or Windows path punctuation are rejected.
+
+Configure `create_app(storage_dir=...)` or `EVORA_STORAGE_DIR` (default
+`storage/evidence`). Keep it outside publicly served directories. Paths use
+`{storage_dir}/{case_id}/{evidence_id}.bin`, never the filename. New directories
+use mode 0700 and exclusive new files mode 0600 on POSIX. Originals have no
+application mutation route; exclusive creation prevents overwrites. This is
+application immutability, not OS/WORM protection from the service account.
+SQLite stores the private path but responses omit it. Failed copies or database
+transactions unlink the new file. Crash recovery across filesystem/SQLite and
+storage-operator tampering are not certified by F03.
+
+Install the pinned `requirements.txt` including python-multipart 0.0.32.
+Test with temporary SQLite/storage and synthetic identities:
+
+```sh
+npx @redocly/cli bundle specs/openapi.yaml --output /tmp/evora-openapi.json
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -W error::ResourceWarning -m unittest backend.tests.test_evidence -v
+```
+
+Expect exact fixture hash/size/private-byte read-back, empty/timestamp uploads,
+400 input/traversal, 401 authentication, 404 case isolation, 413 boundary and
+partial-copy/database-failure cleanup tests. F04/F05/F06 and I00 remain separate.
