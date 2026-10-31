@@ -1,3 +1,65 @@
+
+## U02B reconciliation — 2026-10-31
+
+The user's reconciliation request is implemented on `feat/u02b-reconcile` in
+an isolated worktree based on freshly fetched shared commit
+**d24312f939877e6959c6ff46d3e1d81051e474a6**. The original
+`EVORA` worktree/`feat/u02b-case-creation` and every uncommitted local file remain
+untouched. This supersedes the earlier claim that F03/F04 block M4: actual
+merged ancestry now includes U02B 1b7d928, F03 e5273a6, F04 69f2e82, U03
+c5c9b5a and F05 d24312f. Older In Progress session records are historical;
+this reconciliation does not assign or rewrite another contributor's task.
+
+Reused the integrated CaseCreation/createCaseStore implementation rather than
+adding the older parallel form/store. Carried over the remaining local U02B
+improvements: codepoint title/description limits (including supplementary
+Unicode), removal of conflicting UTF-16 HTML maxlength limits, safe 400 field
+failure guidance and uncertain network/server-response guidance to refresh
+before another explicit POST. No automatic write retry or new wire fields.
+U03 EvidenceWorkspace and all newer F03/F04/F05 producers remain present.
+Full FEATURE_SCOPE and approved additions, contract, backend and dependency
+manifests are unchanged. No U04 implementation is included.
+
+Actual checks: **41 frontend tests pass**, no skips; freshness/typecheck/build,
+contract lint/bundle/generated strict types and DESIGN pass. Real HTTP/FastAPI/
+SQLite integration passes U02/U02B creation and new Unicode boundaries plus
+U03 multipart upload/hash/metadata/50MiB-limit/400/404/413 regressions. Backend
+suite runs **70 tests: 69 pass, 1 skipped**. Skip is F05's symlink-escape test:
+this Windows account cannot create symlinks. No success claimed for that case.
+State/failure tests use explicit Fetch doubles; real integration uses real
+producers with synthetic identity/data. No new browser, clean npm install,
+production identity or hosted CI claim. Existing installed node_modules is
+reused via an ignored junction; no dependency change. Initial new assertion
+incorrectly matched the word description with /script/; narrowed the pattern,
+then all frontend tests passed.
+
+**In Progress**, uncommitted reconciliation pending review/integration.
+Original draft is preserved for comparison and must not be blindly reapplied
+on top of the shared implementation. No stage/commit/push/merge was performed.
+Next dependency-ready M4 row is U04, since U03 and F05 are integrated; it still
+needs its own fresh scoped assignment. Do not start it during reconciliation.
+
+How you can test this worktree (PowerShell, pinned Node/Python on PATH):
+
+```powershell
+npm.cmd --prefix frontend test
+npm.cmd --prefix frontend run build
+$env:EVORA_TEST_PYTHON = (Get-Command python).Source
+Push-Location frontend
+node test/cases.integration.mjs
+Pop-Location
+```
+
+Expect 41 frontend tests and PASS messages for case creation and U03 intake.
+Synthetic boundary input is 200 supplementary Unicode title characters and a
+5000-character description: create succeeds, source text survives, case appears
+in the actual list. Add one title character: local validation rejects with no
+extra POST. Network/500 failure tests must show uncertainty/refresh guidance
+and exactly one write attempt. Existing integration cleans its synthetic DB
+and server. The original checkout's local edits remain unchanged.
+
+---
+
 # U02 case list and detail UI — 2026-10-31
 
 U02 / Checkpoint 1A / M4 / JebasJ, branch `feat/u02-case-list-ui`.
@@ -383,3 +445,17 @@ rendering, including 400/413/415 alerts, escaping and request races; they do not
 establish browser events/focus/reset behavior. Browser and native Windows
 verification remain outstanding. U03 remains In Progress pending review and
 integration; no Checkpoint 1A closure is implied.
+
+### U02B reconciliation publication authorization — 2026-10-31
+
+The user explicitly authorized committing, pushing and merging this
+reconciliation into the configured shared GitHub repository yazh-07/EVORA.
+Earlier no-publication statements describe the previous handoff and are
+superseded by this request. The checked combined candidate passes 41 frontend
+and 122 coordination tests, plus real case/create/U03 upload integration and
+build/contract/types/DESIGN. Backend results remain 69 pass and 1 Windows
+symlink-permission skip. Preserve the original dirty U02B checkout.
+
+A local worktree inventory found U04 already assigned to JebasJ and In Progress
+on feat/u04-evidence-download in work/evora-u04. Continue that existing task;
+do not duplicate it or overwrite its edits. No U04 work is included here.

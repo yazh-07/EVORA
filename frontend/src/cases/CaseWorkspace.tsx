@@ -92,11 +92,12 @@ export function CaseCreation({ state, create }: { state: CaseState; create: (tit
       else titleInput.current?.focus();
     }}>
       <label htmlFor="case-title">Title (required)</label>
-      <input ref={titleInput} id="case-title" name="title" required maxLength={200} value={title}
+      <input ref={titleInput} id="case-title" name="title" required value={title}
         disabled={busy} aria-invalid={state.createStatus === 'error'} aria-describedby={state.createMessage ? 'create-error' : undefined}
         onChange={event => setTitle(event.target.value)} />
+      <p>Title: 1 to 200 characters. Description: up to 5000 characters.</p>
       <label htmlFor="case-description">Description (optional)</label>
-      <textarea id="case-description" name="description" maxLength={5000} value={description} disabled={busy}
+      <textarea id="case-description" name="description" value={description} disabled={busy}
         onChange={event => setDescription(event.target.value)} />
       {state.createMessage && <p id="create-error" role="alert">{state.createMessage}</p>}
       <button type="submit" disabled={busy}>{busy ? 'Creating case...' : 'Create case'}</button>

@@ -305,3 +305,31 @@ Coordination checks: lint/bundle, generated client/TypeScript compilation, `scri
 | Gate/policy | Existing C-03 session policy and F03 50 MiB opaque-byte intake apply. Optional datetime is explicitly entered as UTC and sent as RFC 3339; no inferred source timezone. Server 400/413/415 alerts use escaped text. Real F03 does not reject arbitrary file content by MIME; a 415 UI transport double does not establish backend type detection |
 | Verification | Exact commands, read-back, doubles and limits recorded under U03 verification in `PREIMPLEMENTATION_REVIEW.md`; real integration covers 201/hash/size/list/detail/400/413/404 |
 | Handoff | **In Progress**, locally verified pending review/integration. No staging/commit/push/merge authorized. Checkpoint 1A remains open; next M4 row U04 also requires real F05 and its own assignment |
+
+### U02B reconciliation assignment — 2026-10-31
+
+- Owner: M4 / JebasJ, explicit user reconciliation request, one U02B follow-up.
+- Branch/base: feat/u02b-reconcile / d24312f939877e6959c6ff46d3e1d81051e474a6,
+  freshly fetched shared base; isolated worktree preserves original dirty tree.
+- Allowed scope: existing approved frontend cases/tests/README and bounded
+  AGENT_TASKS/ROADMAP/PREIMPLEMENTATION_REVIEW records only.
+- Real dependencies: merged U02B/F03/F04/U03/F05; preserve the integrated form
+  and evidence UI, apply Unicode validation and safe creation-failure behavior.
+- Verification: 41 frontend pass, 69 backend pass/1 Windows symlink skip;
+  real case/create and U03 upload regressions, contract/types/build/DESIGN pass.
+  Exact commands/limits in PREIMPLEMENTATION_REVIEW's reconciliation section.
+- State: In Progress, uncommitted pending review; no commit/push/merge or U04.
+
+### U02B reconciliation publication authorization — 2026-10-31
+
+The user explicitly authorized committing, pushing and merging this
+reconciliation into the configured shared GitHub repository yazh-07/EVORA.
+Earlier no-publication statements describe the previous handoff and are
+superseded by this request. The checked combined candidate passes 41 frontend
+and 122 coordination tests, plus real case/create/U03 upload integration and
+build/contract/types/DESIGN. Backend results remain 69 pass and 1 Windows
+symlink-permission skip. Preserve the original dirty U02B checkout.
+
+A local worktree inventory found U04 already assigned to JebasJ and In Progress
+on feat/u04-evidence-download in work/evora-u04. Continue that existing task;
+do not duplicate it or overwrite its edits. No U04 work is included here.
