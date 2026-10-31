@@ -249,3 +249,17 @@ Coordination checks: lint/bundle, generated client/TypeScript compilation, `scri
 | Gate | Existing C-03 synthetic local-session policy; no unresolved contract choice needed for this row |
 | Commands and proof | Exact commands/results and declared transport doubles in [verification](PREIMPLEMENTATION_REVIEW.md#u02b-verification--2026-10-31); frontend/README.md records test procedure |
 | Handoff | **In Progress**, pending review/integration; no commit/push/merge authorization, no checkpoint promotion. Next M4 row U03; no additional row implemented |
+
+### F03 assignment — 2026-10-31
+
+| Field | Recorded assignment |
+|---|---|
+| Task/checkpoint | F03 / 1A: stream private immutable originals; exact hash/size/bytes; reject invalid, oversize and unsafe filenames |
+| Module/person | M1 / sharmelas-925; user-authorized bounded implementation and shared records |
+| Branch/common contract commit | `feat/f03-evidence-upload` / `1b7d92826a5af23431f3936c1c6152f3ad634065` on `docs/coordination-foundation`; clean starting tree |
+| Paths | `backend/evidence.py`, `backend/app.py`, `backend/tests/test_evidence.py`, `backend/tests/test_skeleton.py` (startup table regression), `backend/README.md`, `requirements.txt`, these three task records; no spec/frontend changes |
+| Dependencies | Real F01/F00 and F02 merged in the exact common base above; real FastAPI, SQLite and private filesystem, synthetic bearer identities only |
+| Input/output | Draft 0.3.0 uploadEvidence multipart → 201 Evidence; existing flat ApiError and require_case_access |
+| Gate | F03 intake policy: 50 MiB original bytes, opaque content without inline parsing, reject traversal/separators/control characters/unsafe portable filename punctuation; RFC 3339 acquisition text preserved. P04/P14B own parser/BOM/row/layout validation; U03 consumes 400/413. Remaining C-04 parser choices stay open |
+| Verification | Required shared commands plus OpenAPI lint, generated type freshness/typecheck/build; actual results in PREIMPLEMENTATION_REVIEW.md |
+| Handoff | In Progress for review; no commit/push/merge; next M1 task F04 after review, F05 and real I00 integration still required |

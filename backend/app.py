@@ -11,6 +11,7 @@ from fastapi.exceptions import RequestValidationError
 from backend.auth import CaseAccess, RejectTokens, TokenVerifier
 from backend.database import SQLiteDatabase
 from backend.cases import SQLiteCaseAccess, initialize_cases, router
+from backend.evidence import initialize_evidence, router as evidence_router
 from backend.errors import AccessError, access_error, invalid_request
 
 
@@ -19,6 +20,7 @@ def create_app(
     *,
     token_verifier: TokenVerifier | None = None,
     case_access: CaseAccess | None = None,
+    storage_dir: str | Path | None = None,
 ) -> FastAPI:
     """Configure an isolated app; opening SQLite is deferred until startup."""
     configured_path = (
@@ -33,6 +35,7 @@ def create_app(
     @asynccontextmanager
     async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
         initialize_cases(database)
+        initialize_evidence(database)
         yield
 
     app = FastAPI(
@@ -44,11 +47,14 @@ def create_app(
         redoc_url=None,
     )
     app.state.database = database
+    app.state.storage_dir = Path(storage_dir if storage_dir is not None else
+                                 os.environ.get("EVORA_STORAGE_DIR", "storage/evidence")).resolve()
     app.state.token_verifier = token_verifier if token_verifier is not None else RejectTokens()
     app.state.case_access = case_access if case_access is not None else SQLiteCaseAccess(database)
     app.add_exception_handler(RequestValidationError, invalid_request)
     app.add_exception_handler(AccessError, access_error)
     app.include_router(router)
+    app.include_router(evidence_router)
     return app
 
 

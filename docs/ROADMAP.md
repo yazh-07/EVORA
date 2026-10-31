@@ -299,3 +299,15 @@ Current exit-gate evidence:
 The next active checkpoint is **1A**: **F00 / sharmelas-925** (Evidence Foundation authentication and case guards) requires C-03 identity policy before protected APIs; **U01 / JebasJ** (Case workspace UI) follows F00. No new shared task is automatically assigned to whale2186. G01D/G02 are Checkpoint 1C and need separate handoffs.
 
 Full timeline reconstruction/chronological visualization remains future. Basic time normalization, temporal factors, conflict/gap reasoning and event inspection remain initial scope. Completion of Phases 1/2 is an integration slice, not completion of the full proposal. I09/I09B cover every feature task; I06 follows full closure.
+
+### F03 live record — 2026-10-31
+
+**F03 / Checkpoint 1A / M1 / sharmelas-925 / In Progress.**
+Branch `feat/f03-evidence-upload`, exact common contract/base `1b7d92826a5af23431f3936c1c6152f3ad634065`
+with real merged F00/F01/F02/U01/U02/U02B. Bounded paths and intake policy are
+recorded in [assignment](AGENT_TASKS.md#f03-assignment--2026-10-31).
+Produces uploadEvidence with private UUID-only original storage, streamed SHA-256
+and size, SQLite metadata and cleanup on failed writes/publication.
+See [verification](PREIMPLEMENTATION_REVIEW.md#f03-verification--2026-10-31).
+No commit/push/merge authorized. Checkpoint 1A remains open; F04 is next after
+review. F05 download, F06 audit and I00 integration are separate rows.

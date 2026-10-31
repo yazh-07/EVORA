@@ -809,3 +809,86 @@ the runner now resolves its server directory relative to its own file. Both
 root and frontend-directory invocations subsequently pass. The initial unit
 run preceded the two added race/retry regressions; final results above include
 both regressions and the final documentation tree.
+
+### F03 verification — 2026-10-31
+
+F03 / 1A / M1 / sharmelas-925 is **In Progress**, implemented locally for
+review on `feat/f03-evidence-upload`. Clean starting HEAD/common contract
+`1b7d92826a5af23431f3936c1c6152f3ad634065` includes real merged F00/F01/F02,
+U01/U02/U02B; no fixture case-access/database producer. Tests use synthetic
+authentication identities and permitted synthetic evidence. No staging, commit,
+push or merge. Checkpoint 1A remains open; next M1 row F04 after review.
+
+F03 intake policy is now bounded: preserve opaque original bytes (including
+empty files); 50 MiB limit; reject unsafe filename traversal/separators/control
+characters and portable path punctuation; reject unknown kinds, blank labels,
+and invalid or empty acquisition timestamps. Keep valid source labels and
+RFC 3339 acquisition values unchanged. M2 P04/P14B still own CSV parsing,
+UTF-8/BOM/row/layout validation and accepted-run failure semantics. Those C-04
+choices remain open and do not block opaque preservation. M4 U03 consumes the
+existing 400/413 ApiError outcomes; neither content verification nor parser
+support is implied by client-supplied kind/media type.
+
+Read-back verifies 201 Evidence against the bundled draft 0.3.0 schema,
+fixture SHA-256/size, exact private file bytes and SQLite values, no public path,
+unique uploads without overwrites, omitted acquisition time and preserved
+explicit acquisition text. Negatives cover missing/invalid auth, identical
+foreign/missing case response bodies and headers, invalid UUID, missing fields,
+kind/label/timestamp failures, traversal, partial-copy failure and SQL insert
+rollback with unlink. Size boundaries exercise the real chunk loop at a patched
+64 KiB limit (exact boundary accepted, one extra byte rejected); this is not a
+50 MiB load benchmark. Startup regression now includes the evidence table.
+
+Executed on Linux, CPython 3.14.8. A clean isolated pinned environment was
+installed with:
+
+```sh
+uv venv --python /usr/bin/python3.14 /tmp/evora-f03-pinned
+uv pip install --python /tmp/evora-f03-pinned/bin/python -r requirements.txt
+source /tmp/evora-f03-pinned/bin/activate
+```
+
+Actual versions: FastAPI 0.143.1, Starlette 1.8.0, Pydantic 2.14.1,
+httpx 0.28.1, jsonschema 4.25.1, python-multipart 0.0.32.
+Node 22.23.4 / npm 12.2.1 were used (repository engine pins are
+22.23.3 / 12.2.0). Initial system-Python checks also passed after correcting
+the startup-table assertion; final Python verification uses the clean pinned
+environment rather than its newer FastAPI/Starlette/jsonschema packages.
+
+All final commands exit 0:
+
+```sh
+npx @redocly/cli bundle specs/openapi.yaml --output /tmp/evora-openapi.json
+python scripts/verify_coordination.py /tmp/evora-openapi.json
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -m unittest discover -s scripts -p 'test_*.py'
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -W error::ResourceWarning -m unittest discover -s backend/tests
+npm --prefix frontend run test
+npm --prefix frontend run build
+npx @redocly/cli lint specs/openapi.yaml
+npx @google/design.md@0.4.0 lint DESIGN.md
+git diff --check
+```
+
+Results: **122 coordination / 56 backend (9 focused F03) / 31 frontend tests**,
+no skips. Build includes generated API freshness and TypeScript compilation.
+OpenAPI has only the existing missing-license warning; DESIGN has no errors
+or warnings. No schema/generated-type/frontend behavior changes.
+
+How you can test it:
+
+- [ ] Install/activate the pinned environment and run the commands above;
+  expect all exit 0 and the counts above.
+- [ ] Run `EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -W error::ResourceWarning -m unittest backend.tests.test_evidence -v`;
+  expect nine passing tests using temporary SQLite and private storage, including
+  synthetic network.csv exact hash/size/bytes and automatic cleanup.
+- [ ] Failure case: `EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -m unittest backend.tests.test_evidence.EvidenceTests.test_database_failure_cleans_file -v`;
+  expect one passing test proving an actual SQLite trigger abort removes the file.
+
+Limits: this verifies real in-process ASGI/FastAPI/SQLite/filesystem integration,
+not a browser upload or native Windows/hosted CI run. UploadFile multipart is
+parsed/spooled before handler execution; 50 MiB is a stored-file limit, not an
+ingress body limit. Exclusive UUID-only files and absent mutation APIs provide
+application immutability, not service-account/WORM tamper protection. Process
+crash recovery between filesystem and SQLite publication is not implemented.
+F05 download, F06 audit, U03 upload UI and I00 real assembled intake/runbook exit
+evidence remain separate tasks; no phase closure is claimed.
