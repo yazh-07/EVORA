@@ -235,3 +235,17 @@ Coordination checks: lint/bundle, generated client/TypeScript compilation, `scri
 | Gate | C-03 recorded policy applies; user approved missing path/base handoff. No C-04/C-05/C-06 decision needed |
 | Commands and proof | 25 frontend / 47 backend / 122 coordination tests pass; real HTTP/SQLite two-actor integration and browser smoke pass; contract/types/build/DESIGN pass. [Actual verification and limits](PREIMPLEMENTATION_REVIEW.md#u02-verification--2026-10-31) |
 | Handoff | **Complete** after user-authorized integration at merge 9f2cc8ac64426ef2b0bb9d917fd7afdb777b606f and passing post-merge real HTTP/SQLite smoke; retain full FEATURE_SCOPE including approved transcription addition. Checkpoint 1A stays open; new hosted CI pending; no second task |
+
+### U02B assignment — 2026-10-31
+
+| Field | Recorded assignment |
+|---|---|
+| Task/checkpoint and exact acceptance | **U02B / 1A**: case-creation UI; valid/invalid title behavior and created case appears in list |
+| Module/person and coordination | **M4 / JebasJ**; explicit user handoff for the bounded implementation and three shared documentation records |
+| Branch/common commit | `feat/u02b-case-creation-ui`; clean HEAD and merge-base with `docs/coordination-foundation` both **16975127177f3c609249bd648455d364e0bfc46c**; no remote fetch claimed |
+| Paths | `frontend/src/cases/`, `frontend/src/App.tsx`, `frontend/src/styles.css`, `frontend/test/`, `frontend/scripts/build-test.mjs`, `frontend/README.md`, `docs/AGENT_TASKS.md`, `docs/ROADMAP.md`, `docs/PREIMPLEMENTATION_REVIEW.md` |
+| Dependencies | Real U02 and F01 are integrated in the exact common base, alongside U01/F00/F02; real HTTP/FastAPI/SQLite integration required, no producer substitutes |
+| Input/output | Unchanged draft 0.3.0 createCase/listCases and generated CreateCase/Case/CasePage types through shared client.request; local validation, safe errors, confirmed details and refreshed list |
+| Gate | Existing C-03 synthetic local-session policy; no unresolved contract choice needed for this row |
+| Commands and proof | Exact commands/results and declared transport doubles in [verification](PREIMPLEMENTATION_REVIEW.md#u02b-verification--2026-10-31); frontend/README.md records test procedure |
+| Handoff | **In Progress**, pending review/integration; no commit/push/merge authorization, no checkpoint promotion. Next M4 row U03; no additional row implemented |

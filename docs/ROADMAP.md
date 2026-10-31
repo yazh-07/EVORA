@@ -101,6 +101,22 @@ See [COMMUNICATION.md](COMMUNICATION.md) and [CONTRACTS.md](CONTRACTS.md) for co
 
 For each assigned task record `task ID | checkpoint | module/person | branch/common spec commit | state | consumed/produced interface | actual commands/results + test doubles | PR/next task`. Serialize ledger edits. States: **Backlog**, **In Progress**, **Complete** (acceptance and real dependency integration verified), **Blocked** (exact needed decision). Current task state defaults to Backlog; no implementation completion is claimed here.
 
+### U02B live record — 2026-10-31
+
+**U02B / Checkpoint 1A / M4 / JebasJ / In Progress.** Scoped branch
+`feat/u02b-case-creation-ui`, clean starting common base
+**16975127177f3c609249bd648455d364e0bfc46c** on `docs/coordination-foundation`.
+The user assigned bounded frontend and three documentation-record paths;
+no commit/push/merge is authorized. Real U02, U01, F00, F01 and F02 are merged
+ancestors. Uses unchanged draft 0.3.0 createCase/listCases through U01's typed
+request interface; produces a validated creation form, confirmed case selection
+and authoritative list refresh. No backend/spec/dependency changes.
+[Assignment](AGENT_TASKS.md#u02b-assignment--2026-10-31) and
+[verification](PREIMPLEMENTATION_REVIEW.md#u02b-verification--2026-10-31)
+record commands, actual results and doubles. Review/integration is pending;
+Checkpoint 1A remains open. Next M4 row is U03 after this scoped review;
+no other task is started.
+
 ### U02 live record — 2026-10-31
 
 **U02 / Checkpoint 1A / M4 / JebasJ / Complete**, user-approved integration

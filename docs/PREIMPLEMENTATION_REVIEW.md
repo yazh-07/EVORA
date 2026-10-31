@@ -752,3 +752,60 @@ acceptance. Checkpoint 1A remains open. U02B is the next M4 row with a fresh
 scoped assignment on the updated verified shared base. New hosted CI remains
 pending and earlier documented production-auth/accessibility/viewport limits
 are unchanged; no new browser test is claimed in this merge-only turn.
+
+### U02B verification — 2026-10-31
+
+Task **U02B / Checkpoint 1A / M4 / JebasJ**, branch
+`feat/u02b-case-creation-ui`, exact reviewed starting common base
+**16975127177f3c609249bd648455d364e0bfc46c**. Starting status was clean;
+HEAD and merge-base with local `docs/coordination-foundation` matched. No
+remote fetch, commit, push or merge was performed. Real U02/F01 and
+U01/F00/F02 are integrated ancestors. Only the explicitly allowed frontend
+paths and three bounded documentation records changed. Backend, OpenAPI,
+package manifests and lockfile remain unchanged.
+
+| Exact command from repository root | Result |
+|---|---|
+| `npx @redocly/cli bundle specs/openapi.yaml --output /tmp/evora-openapi.json` | Exit 0; bundle produced |
+| `npx @redocly/cli lint specs/openapi.yaml` | Exit 0; existing info-license warning |
+| `python scripts/verify_coordination.py /tmp/evora-openapi.json` | Exit 0; planning/contract verification |
+| `EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -m unittest discover -s scripts -p 'test_*.py'` | Exit 0; 122 tests pass |
+| `EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -W error::ResourceWarning -m unittest discover -s backend/tests` | Exit 0; 47 tests pass |
+| `npm --prefix frontend run check:api` | Exit 0; generated API types current |
+| `npm --prefix frontend run typecheck` | Exit 0 |
+| `npm --prefix frontend run test` | Exit 0; 31 tests pass, no skips |
+| `npm --prefix frontend run build` | Exit 0; includes API freshness and TypeScript checks |
+| `(cd frontend && node test/cases.integration.mjs)` | Exit 0; real HTTP/FastAPI/SQLite creation 201, immediate list read-back, invalid whitespace title 400 and actor isolation; prior U02 regression passes |
+| `npx @google/design.md@0.4.0 lint DESIGN.md` | Exit 0; zero errors/warnings |
+| `git diff --check` | Exit 0 |
+
+Frontend unit/state tests use schema-derived Fetch doubles and server-rendered
+React markup. They check labeled/constrained controls, blank/whitespace and
+length validation without requests, exact valid payload, busy/duplicate guard,
+400 message safe rendering, confirmed selection/list refresh, refresh failure,
+replaced/disposed sessions and late-list race protection. Real integration
+uses the existing synthetic local identity verifier with real F00/F01/F02
+HTTP and SQLite, not substituted producer behavior; the temporary database
+is cleaned up. Read-back confirms the returned case ID, title and description,
+and its presence in listCases. No application evidence or credentials used.
+
+The UI clears inputs after success; its existing detail-heading focus effect
+handles confirmed selection, and failed submissions focus Title. New browser
+interaction/focus, screen reader, viewport, Windows and hosted CI runs were not
+performed. Static markup/state tests do not establish those behaviors in a
+browser. No main-merge smoke or checkpoint exit is claimed. Documentation
+uses plain repository file references across directories. U02B stays
+**In Progress** pending review/integration; Checkpoint 1A remains open.
+Next M4 row is U03; no second task was implemented. Full proposal and approved
+transcription scope remain unchanged.
+
+Verification environment: the default Python had jsonschema 4.26.0. Installed
+4.25.1 only into `/tmp/evora-u02b-jsonschema` with
+`python -m pip install --target /tmp/evora-u02b-jsonschema jsonschema==4.25.1`;
+exported `PYTHONPATH=/tmp/evora-u02b-jsonschema` for the final Python checks
+above. The system environment and repository dependencies were not changed.
+The initial root-directory integration invocation failed to locate the server;
+the runner now resolves its server directory relative to its own file. Both
+root and frontend-directory invocations subsequently pass. The initial unit
+run preceded the two added race/retry regressions; final results above include
+both regressions and the final documentation tree.

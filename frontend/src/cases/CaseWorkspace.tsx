@@ -28,6 +28,7 @@ export function CaseWorkspace() {
       <p id="session-help">Use an authorized token from your local administrator. It is kept only for this session.</p>
       {tokenError && <p role="alert">{tokenError}</p>}
     </section>
+    {client.hasToken() && <CaseCreation state={state} create={(title, description) => store.create(title, description)} />}
     <CasePanels state={state} load={offset => { void store.load(offset); }} select={id => { void store.select(id); }} />
   </>;
 }
@@ -72,4 +73,29 @@ export function CasePanels({ state, load, select }: { state: CaseState; load: (o
       {state.detailStatus !== 'idle' && <a href="#cases-heading">Back to cases</a>}
     </aside>
   </div>;
+}
+
+export function CaseCreation({ state, create }: { state: CaseState; create: (title: string, description: string) => Promise<boolean> }) {
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const titleInput = useRef<HTMLInputElement>(null);
+  const busy = state.createStatus === 'submitting';
+  return <section className="panel case-creation" aria-labelledby="create-heading">
+    <h2 id="create-heading">New case</h2>
+    <form noValidate aria-busy={busy} onSubmit={async event => {
+      event.preventDefault();
+      if (await create(title, description)) { setTitle(''); setDescription(''); }
+      else titleInput.current?.focus();
+    }}>
+      <label htmlFor="case-title">Title (required)</label>
+      <input ref={titleInput} id="case-title" name="title" required maxLength={200} value={title}
+        disabled={busy} aria-invalid={state.createStatus === 'error'} aria-describedby={state.createMessage ? 'create-error' : undefined}
+        onChange={event => setTitle(event.target.value)} />
+      <label htmlFor="case-description">Description (optional)</label>
+      <textarea id="case-description" name="description" maxLength={5000} value={description} disabled={busy}
+        onChange={event => setDescription(event.target.value)} />
+      {state.createMessage && <p id="create-error" role="alert">{state.createMessage}</p>}
+      <button type="submit" disabled={busy}>{busy ? 'Creating case...' : 'Create case'}</button>
+    </form>
+  </section>;
 }
