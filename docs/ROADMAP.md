@@ -101,6 +101,32 @@ See [COMMUNICATION.md](COMMUNICATION.md) and [CONTRACTS.md](CONTRACTS.md) for co
 
 For each assigned task record `task ID | checkpoint | module/person | branch/common spec commit | state | consumed/produced interface | actual commands/results + test doubles | PR/next task`. Serialize ledger edits. States: **Backlog**, **In Progress**, **Complete** (acceptance and real dependency integration verified), **Blocked** (exact needed decision). Current task state defaults to Backlog; no implementation completion is claimed here.
 
+### U02 live record — 2026-10-31
+
+**U02 / Checkpoint 1A / M4 / JebasJ / In Progress**, locally verified and
+awaiting review/integration. Branch `feat/u02-case-list-ui`, clean published
+common base **909009d21198fd751db49863f581b032875fa5e0**. Live origin ref matched;
+U01 42d0312 and F02 c8077f5 are merged ancestors with real F00/F01/G01B.
+Their older In Progress session records below are historical; no other task's
+completion status is rewritten by this handoff. User approved the bounded
+[assignment](AGENT_TASKS.md#u02-assignment--2026-10-31) and commit/push of this
+one task, with no merge or subsequent task.
+
+The UI uses unchanged listCases/getCase through the existing typed client,
+20-item pages and authoritative totals, selected case details, honest
+loading/empty/error states, memory-only session entry/logout, stale-response
+rejection and accessible detail focus. No backend/spec/dependency/scope change.
+**25 frontend / 47 backend / 122 coordination tests pass**, no skips. Explicit
+real HTTP/FastAPI/SQLite integration passes two synthetic actors, 21+1 cases,
+pagination/details/isolation/empty/400/401/404 cases. Browser smoke covers
+list/detail/pagination, empty actor, invalid token, reload/logout and focus.
+Contract lint/bundle, generated strict types, freshness/typecheck/build,
+verifier and DESIGN pass; existing missing-license warning remains.
+[Verification and limits](PREIMPLEMENTATION_REVIEW.md#u02-verification--2026-10-31)
+and [exact test checklist](../frontend/README.md#how-you-can-test-it).
+Checkpoint 1A remains open. Next M4 row **U02B** needs U02 review/integration
+or an explicit safe handoff; stop for review before another task.
+
 ### F02 live record — 2026-10-25
 
 **F02 / Checkpoint 1A / M1 / sharmelas-925 / In Progress.** Scoped branch

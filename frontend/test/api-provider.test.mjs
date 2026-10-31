@@ -14,7 +14,7 @@ test('provides one shared client without issuing requests or exposing its token 
     return createElement(App);
   }
   const html = renderToStaticMarkup(createElement(ApiProvider, { client }, createElement(Consumer)));
-  assert.match(html, /Case access is not available yet/);
+  assert.match(html, /End session/);
   assert.doesNotMatch(html, /synthetic-provider-token/);
 });
 
