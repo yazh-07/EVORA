@@ -713,5 +713,21 @@ All full initial capabilities and approved transcription additions remain
 unchanged in FEATURE_SCOPE, proposal, task catalog and OpenAPI. U02 stays
 **In Progress** pending review/integration. The user authorized commit/push,
 not merge. Next M4 row U02B requires accepted U02 or explicit dependency
-handoff. [How you can test it](../frontend/README.md#how-you-can-test-it) contains
+handoff. The How you can test it section in `frontend/README.md` contains
 exact setup/commands, synthetic inputs, expected output, 401 failure and cleanup.
+
+### U02 pre-merge revalidation — 2026-10-31
+
+The authorized merge rerun caught seven coordination-fixture failures after
+U02's final documentation edits: CLI mutation tests copy planning artifacts,
+not the frontend README, so new relative Markdown links to that file failed
+inside those isolated fixtures. Replaced only those two new links with plain
+repository file references; no verifier/test scope or product behavior changed.
+The earlier 122-test pass preceded those final links; the merge must use the
+corrected-tree rerun rather than rely on that historical result.
+
+Corrected-tree revalidation: **122 coordination / 47 backend / 25 frontend
+tests pass**, no skips. Real HTTP/SQLite integration, API freshness/typecheck/
+build, contract lint/bundle/generated strict types, verifier, DESIGN and diff
+checks pass. Existing info-license warning remains. No product code changed
+for this correction and no initial scope was removed or deferred.

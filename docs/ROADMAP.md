@@ -123,7 +123,7 @@ list/detail/pagination, empty actor, invalid token, reload/logout and focus.
 Contract lint/bundle, generated strict types, freshness/typecheck/build,
 verifier and DESIGN pass; existing missing-license warning remains.
 [Verification and limits](PREIMPLEMENTATION_REVIEW.md#u02-verification--2026-10-31)
-and [exact test checklist](../frontend/README.md#how-you-can-test-it).
+and the exact test checklist in `frontend/README.md`.
 Checkpoint 1A remains open. Next M4 row **U02B** needs U02 review/integration
 or an explicit safe handoff; stop for review before another task.
 
