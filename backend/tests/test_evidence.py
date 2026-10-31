@@ -1,4 +1,4 @@
-"""Real multipart/FastAPI/SQLite/private-file F03 and metadata F04 acceptance."""
+"""Real multipart/FastAPI/SQLite/private-file F03, F04 and F05 acceptance."""
 
 import hashlib
 import json
@@ -259,3 +259,124 @@ class EvidenceTests(unittest.IsolatedAsyncioTestCase):
         for url in (self.url, self.url + '/' + uploaded['id']):
             self.assertEqual(self.check(await self.client.get(url), 404),
                              {'code': 'NOT_FOUND', 'message': 'Resource not found.'})
+
+    async def test_download_roundtrip(self):
+        fixture = Path('fixtures/synthetic-case/network.csv').resolve().read_bytes()
+        for content, filename, media_type in ((fixture, 'network.csv', 'text/csv'),
+                                               (b'', 'empty.bin', 'application/octet-stream'),
+                                               (b'\x00\xff\r\n' * 65536, 'binary.bin', 'text/html')):
+            with self.subTest(filename=filename):
+                uploaded = self.check(await self.client.post(
+                    self.url, data={'kind': 'network_log', 'source_label': 'Synthetic'},
+                    files={'file': (filename, content, media_type)}), 201, 'Evidence')
+                response = await self.client.get(self.url + '/' + uploaded['id'] + '/content')
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.headers['Content-Type'], 'application/octet-stream')
+                self.assertEqual(response.headers['Cache-Control'], 'no-store')
+                self.assertIn('attachment;', response.headers['Content-Disposition'])
+                self.assertEqual(int(response.headers['Content-Length']), len(content))
+                self.assertEqual(response.content, content)
+                self.assertEqual(hashlib.sha256(response.content).hexdigest(), uploaded['sha256'])
+                # Download must not mutate metadata or original bytes.
+                self.assertEqual(self.check(await self.client.get(self.url + '/' + uploaded['id']),
+                                            200, 'Evidence'), uploaded)
+
+    async def test_download_authentication(self):
+        uploaded = self.check(await self.upload(), 201, 'Evidence')
+        url = self.url + '/' + uploaded['id'] + '/content'
+        for value in ('', 'Basic rejected', 'Bearer rejected'):
+            response = await self.client.get(url, headers={'Authorization': value})
+            self.assertEqual(self.check(response, 401),
+                             {'code': 'UNAUTHORIZED', 'message': 'Authentication required.'})
+            self.assertEqual(response.headers['WWW-Authenticate'], 'Bearer')
+        self.client.headers.pop('Authorization')
+        self.assertEqual(self.check(await self.client.get(url), 401),
+                         {'code': 'UNAUTHORIZED', 'message': 'Authentication required.'})
+
+    async def test_download_case_isolation(self):
+        uploaded = self.check(await self.upload(), 201, 'Evidence')
+        headers = {'Authorization': 'Bearer synthetic-b'}
+        other = self.check(await self.client.post('/api/v1/cases', json={'title': 'Actor B'},
+                                                  headers=headers), 201, 'Case')
+        other_url = '/api/v1/cases/' + other['id'] + '/evidence'
+        other_item = self.check(await self.upload(url=other_url, headers=headers), 201, 'Evidence')
+        baseline = await self.client.get(self.url + '/' + str(uuid4()) + '/content')
+        self.assertEqual(self.check(baseline, 404),
+                         {'code': 'NOT_FOUND', 'message': 'Resource not found.'})
+        for url, auth in ((self.url + '/' + uploaded['id'] + '/content', headers),
+                          (other_url + '/' + uploaded['id'] + '/content', headers),
+                          (other_url + '/' + str(uuid4()) + '/content', headers),
+                          (self.url + '/' + other_item['id'] + '/content', {}),
+                          ('/api/v1/cases/' + str(uuid4()) + '/evidence/' + uploaded['id'] + '/content', {})):
+            with self.subTest(url=url):
+                response = await self.client.get(url, headers=auth)
+                self.check(response, 404)
+                self.assertEqual((response.content, response.headers),
+                                 (baseline.content, baseline.headers))
+        # Membership of two cases still cannot move an evidence ID between them.
+        same_actor = self.check(await self.client.post('/api/v1/cases', json={'title': 'Other A'}),
+                               201, 'Case')
+        response = await self.client.get('/api/v1/cases/' + same_actor['id'] +
+                                         '/evidence/' + uploaded['id'] + '/content')
+        self.assertEqual(self.check(response, 404), baseline.json())
+
+    async def test_download_invalid_uuids(self):
+        for url in ('/api/v1/cases/invalid/evidence/' + str(uuid4()) + '/content',
+                    self.url + '/invalid/content'):
+            with self.subTest(url=url):
+                self.assertEqual(self.check(await self.client.get(url), 400),
+                                 {'code': 'INVALID_INPUT', 'message': 'Invalid request input.'})
+
+    async def test_download_tampered_storage_paths(self):
+        uploaded = self.check(await self.upload(), 201, 'Evidence')
+        case_directory = (self.storage / self.case['id']).resolve()
+        external = (self.storage.parent / 'external.bin').resolve()
+        external.write_bytes(b'Synthetic private external bytes')
+        sibling = (self.storage / (self.case['id'] + '-suffix') / 'source.bin').resolve()
+        sibling.parent.mkdir()
+        sibling.write_bytes(b'Synthetic prefix collision bytes')
+        other = self.check(await self.client.post('/api/v1/cases', json={'title': 'Other case'}),
+                           201, 'Case')
+        other_path = (self.storage / other['id'] / 'source.bin').resolve()
+        other_path.parent.mkdir()
+        other_path.write_bytes(b'Synthetic other case bytes')
+        # The traversal string is intentionally left unnormalized in SQLite.
+        traversal = str(case_directory) + '/../../external.bin'
+        paths = (str(external), traversal, str(sibling), str(other_path),
+                 str((case_directory / 'missing.bin').resolve()),
+                 str(case_directory), str(self.storage), str(case_directory) + '/bad\x00path')
+        for storage_path in paths:
+            with self.subTest(storage_path=storage_path):
+                with self.app.state.database.connect() as connection:
+                    connection.execute('UPDATE evidence SET storage_path = ? WHERE id = ?',
+                                       (storage_path, uploaded['id']))
+                response = await self.client.get(self.url + '/' + uploaded['id'] + '/content')
+                self.assertEqual(self.check(response, 404),
+                                 {'code': 'NOT_FOUND', 'message': 'Resource not found.'})
+                self.assertNotIn(str(self.storage.parent), response.text)
+        self.assertEqual(external.read_bytes(), b'Synthetic private external bytes')
+
+    async def test_download_symlink_escape(self):
+        uploaded = self.check(await self.upload(), 201, 'Evidence')
+        external = (self.storage.parent / 'external.bin').resolve()
+        external.write_bytes(b'Synthetic external bytes')
+        link = (self.storage / self.case['id'] / 'link.bin').resolve()
+        try:
+            link.symlink_to(external)
+        except (OSError, NotImplementedError):
+            self.skipTest('Creating symlinks is unavailable on this platform/account.')
+        with self.app.state.database.connect() as connection:
+            connection.execute('UPDATE evidence SET storage_path = ? WHERE id = ?',
+                               (str(link), uploaded['id']))
+        response = await self.client.get(self.url + '/' + uploaded['id'] + '/content')
+        self.assertEqual(self.check(response, 404),
+                         {'code': 'NOT_FOUND', 'message': 'Resource not found.'})
+
+    async def test_download_membership_revocation(self):
+        uploaded = self.check(await self.upload(), 201, 'Evidence')
+        url = self.url + '/' + uploaded['id'] + '/content'
+        self.assertEqual((await self.client.get(url)).status_code, 200)
+        with self.app.state.database.connect() as connection:
+            connection.execute('DELETE FROM case_members WHERE case_id = ?', (self.case['id'],))
+        self.assertEqual(self.check(await self.client.get(url), 404),
+                         {'code': 'NOT_FOUND', 'message': 'Resource not found.'})

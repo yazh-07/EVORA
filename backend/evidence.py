@@ -1,13 +1,16 @@
-"""F03 private original intake and F04 authorized metadata reads."""
+"""Private original intake, authorized metadata reads and original downloads."""
 
 from datetime import datetime, timezone
 import hashlib
 import os
+from pathlib import Path
 import re
+import stat
 from typing import Annotated
 from uuid import UUID, uuid4
 
 from fastapi import APIRouter, Depends, File, Form, Query, Request, UploadFile
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, ConfigDict
 
 from backend.auth import CaseAccessGrant, require_case_access
@@ -109,6 +112,40 @@ def get_evidence(
     if row is None:
         raise AccessError(404, "NOT_FOUND", "Resource not found.")
     return Evidence(**dict(row))
+
+
+@router.get("/api/v1/cases/{caseId}/evidence/{evidenceId}/content",
+            operation_id="downloadEvidence", response_class=FileResponse)
+def download_evidence(
+    caseId: UUID,
+    evidenceId: UUID,
+    request: Request,
+    grant: Annotated[CaseAccessGrant, Depends(require_case_access)],
+):
+    with request.app.state.database.connect() as connection:
+        row = connection.execute(
+            "SELECT storage_path, filename, media_type FROM evidence "
+            "WHERE case_id = :case_id AND id = :evidence_id",
+            {"case_id": str(grant.case_id), "evidence_id": str(evidenceId)},
+        ).fetchone()
+    if row is None:
+        raise AccessError(404, "NOT_FOUND", "Resource not found.")
+    try:
+        case_directory = request.app.state.storage_dir.resolve() / str(grant.case_id)
+        path = Path(row["storage_path"]).resolve(strict=True)
+        # Compare path components after resolving symlinks, never string prefixes.
+        # Keep the expected case directory under the configured storage root so
+        # a symlink replacing that directory cannot authorize another case/root.
+        if path == case_directory or not path.is_relative_to(case_directory):
+            raise AccessError(404, "NOT_FOUND", "Resource not found.")
+        file_stat = path.stat()
+        if not stat.S_ISREG(file_stat.st_mode):
+            raise AccessError(404, "NOT_FOUND", "Resource not found.")
+    except (OSError, RuntimeError, ValueError):
+        raise AccessError(404, "NOT_FOUND", "Resource not found.") from None
+    return FileResponse(path, filename=row["filename"], stat_result=file_stat,
+                        media_type="application/octet-stream",
+                        headers={"Cache-Control": "no-store"})
 
 
 @router.post("/api/v1/cases/{caseId}/evidence", operation_id="uploadEvidence",
