@@ -1782,3 +1782,21 @@ coordination tests PASS**, no skips, using EVORA_CONTRACT_BUNDLE and the shared
 unittest discovery command. Diff whitespace passes. All required earlier
 checkpoint regressions pass, with only the documented existing F05 Windows
 symlink skip. New hosted CI is not claimed.
+
+### P01 integrated acceptance — 2026-11-01
+
+User-authorized task commit 894465ad4105c9910f9ecff9d4c2da18e0619ad5 was pushed
+to feat/p01-network-csv and merged without conflicts into the verified shared
+branch at **cab08f1c38745255ca1c0a210636476b84bad43c**. On that exact merge,
+14 focused parser tests, coordination verifier and real I00 loopback HTTP intake/
+audit/original regression smoke PASS. Pre-merge matrix: 129 backend PASS / 1
+Windows symlink skip, 48 frontend PASS, 122 coordination PASS, full contract/
+type/build/DESIGN PASS with existing missing-license warning. No required P01
+acceptance remains; P04 processing/run publication is a separate task.
+
+P01 is Complete after real prerequisite integration and authorized merge;
+Checkpoint 1B remains open. This supersedes the earlier pending integration
+handoff. New hosted CI is not yet claimed. Full initial scope and approved
+additions and the original dirty checkout are unchanged. Next M2 task P02
+requires its own GPS source/validation handoff, then P03 needs both parsers.
+No P02 work is included or started here.

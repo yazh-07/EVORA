@@ -3,7 +3,8 @@
 P01 / 1B / M2 yazh-07, feat/p01-network-csv, verified shared base
 22673d909b0860663b001269cefa2ac6f302a881. User approved the parser scope/policy
 and explicitly authorized finish/test/commit/push/merge for P01 only.
-Integration state is in docs/ROADMAP.md. Older producer notes below are historical.
+P01 is integrated at cab08f1c38745255ca1c0a210636476b84bad43c;
+post-merge focused parser and real intake smoke pass. Integration state is in docs/ROADMAP.md. Older producer notes below are historical.
 
 backend.parsers.network_csv.parse_network_csv consumes immutable original bytes
 and caller-supplied case/evidence/processing-run UUID context. It returns frozen

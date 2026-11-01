@@ -274,7 +274,7 @@ waits for P04/P14; full M1/product scope is not complete.
 
 ## P01 current handoff — 2026-11-01
 
-P01 / 1B / M2 yazh-07 / In Progress, feat/p01-network-csv, verified clean shared
+P01 / 1B / M2 yazh-07 / Complete, feat/p01-network-csv, verified clean shared
 base 22673d909b0860663b001269cefa2ac6f302a881. User approved bounded backend
 parser/test/README/policy/ledger paths and authorized finish/test/push/merge.
 Real G01/F05 prerequisites integrated; completed 0/1A regressions retained.
@@ -287,8 +287,7 @@ Score 0 means unavailable, not measured confidence or source quality.
 Contract/types/build/DESIGN pass; existing license warning. Exact proof/limits:
 PREIMPLEMENTATION_REVIEW P01 verification and backend README synthetic checklist.
 122 coordination tests and the final coordination verifier pass. No schema/dependency/full-scope change,
-new hosted CI/clean install/processing publication claim. P01 awaits authorized
-integration; Checkpoint 1B stays open. Next M2 task P02, then P03 after both
+new hosted CI/clean install/processing publication claim. P01 integrated at cab08f1c38745255ca1c0a210636476b84bad43c with passing post-merge focused tests/verifier/I00 smoke; Checkpoint 1B stays open. Next M2 task P02, then P03 after both
 parsers are ready. No other row is implemented during this assignment.
 
 ## Module assignment and live task state
