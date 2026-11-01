@@ -3,7 +3,9 @@
 P03 / Checkpoint 1B / M2 yazh-07, feat/p03-normalization, verified shared base
 ac432e10a6a1c4ff19ae36b49cded514d0e78846. User approved the normalization
 policy and explicitly authorized implementation, tests, commit, push and merge.
-In Progress pending actual integration; current state is in docs/ROADMAP.md.
+Complete after authorized merge e9f01f586916f38c480a40ffc8aa3eb72fd146ff;
+18 focused tests, coordination verifier and real I00 HTTP smoke pass on that merge.
+Current state is in docs/ROADMAP.md.
 Earlier task notes below are historical.
 
 backend.parsers.normalization.normalize_observations consumes actual P01/P02

@@ -1947,3 +1947,26 @@ plus invalid-coordinate and unresolved-time cases are in backend/README.md
 or original storage mutation. P03 In Progress pending actual merge/read-back;
 Checkpoint 1B remains open. Next M2 row P03B candidate keys/entities, retaining
 D-7 and D-8 as distinct candidates; no subsequent task starts here.
+
+
+### P03 integrated acceptance — 2026-11-01
+
+User-authorized task commit **d186af38f84479794889d309765f60be189cf790** pushed
+to feat/p03-normalization, then merged without conflicts into the recorded
+shared branch docs/coordination-foundation at
+**e9f01f586916f38c480a40ffc8aa3eb72fd146ff**. On that exact merge, 18 focused
+normalization tests, coordination verifier and actual I00 loopback HTTP intake/
+audit/original/actor/failure smoke PASS. The combined candidate had already
+passed full prior checkpoint regressions: 164 backend PASS/1 existing Windows
+symlink SKIP, 48 frontend PASS, 122 coordination PASS; contract/types/build/
+DESIGN PASS with existing missing-license warning. Scope guard confirms no
+FEATURE_SCOPE/spec/frontend/producer/dependency changes. Original dirty checkout
+and other worktrees preserved. No required P03 acceptance remains unintegrated.
+
+P03 Complete; Checkpoint 1B remains open. This supersedes earlier pending-merge
+statements. New hosted CI is not yet claimed at this recording point. No P04
+lifecycle/publication, P14 provenance persistence, clean install or real-evidence
+benchmark claim. Synthetic auth/run context and ASGI versus loopback transport
+limits remain as disclosed above. Next eligible M2 task P03B candidate identifier
+keys/entity records; D-7/D-8 stay distinct, source IDs retained and no inferred
+person identity. No next task started; waiting for user review.

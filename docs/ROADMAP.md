@@ -309,7 +309,7 @@ No other task is implemented or started here.
 
 ### P03 live handoff — 2026-11-01
 
-**P03 / 1B / M2 yazh-07 / In Progress.** Isolated feat/p03-normalization from
+**P03 / 1B / M2 yazh-07 / Complete.** Isolated feat/p03-normalization from
 verified common base **ac432e10a6a1c4ff19ae36b49cded514d0e78846**, with actual
 merged P01/P02 and completed 0/1A. Approved bounded assignment/policy are in
 AGENT_TASKS.md and COMMUNICATION.md. New immutable normalized values preserve
@@ -319,9 +319,11 @@ GPS decimal canonicalization has lossless scientific fallback; no stored output
 mutation, API change, identity/event projection or processing publication.
 18 focused PASS, full backend 164 PASS/1 existing Windows symlink SKIP, frontend
 48 PASS and coordination 122 PASS; contract/types/build/DESIGN and actual I00
-loopback HTTP regressions PASS. Integration acceptance remains pending; no
-Complete claim yet. Exact verification/doubles/limits in PREIMPLEMENTATION_REVIEW.md. Entire initial
-scope/approved additions remain required. Next eligible M2 P03B after P03 merge;
+loopback HTTP regressions PASS. Integrated at **e9f01f586916f38c480a40ffc8aa3eb72fd146ff**;
+18 focused tests/verifier/real I00 post-merge smoke PASS on that exact merge.
+Exact verification/doubles/limits in PREIMPLEMENTATION_REVIEW.md. Checkpoint 1B
+remains open; entire initial scope/approved additions remain required.
+Next eligible M2 task P03B candidate identifier keys/entity records;
 P03C also consumes P03, with no later task started here.
 
 ## Module assignment and live task state
