@@ -272,6 +272,25 @@ Next gate **I00** is shared real API/UI intake verification and requires an
 explicit assignee. It is not M1-only and has not been started. Later M1 F08
 waits for P04/P14; full M1/product scope is not complete.
 
+## P01 current handoff — 2026-11-01
+
+P01 / 1B / M2 yazh-07 / In Progress, feat/p01-network-csv, verified clean shared
+base 22673d909b0860663b001269cefa2ac6f302a881. User approved bounded backend
+parser/test/README/policy/ledger paths and authorized finish/test/push/merge.
+Real G01/F05 prerequisites integrated; completed 0/1A regressions retained.
+UTF-8 optional BOM, exact columns, strict quoted CSV, 50 MiB/100000-row limits,
+atomic rejection; raw cells/timestamps and physical source rows preserved.
+Frozen candidate observations only; no P04 lifecycle/public routes/UTC/identity.
+Score 0 means unavailable, not measured confidence or source quality.
+14 focused pass; full backend 130 run (129 pass/1 Windows symlink skip),
+48 frontend and full real I00 HTTP intake/audit/original smoke pass.
+Contract/types/build/DESIGN pass; existing license warning. Exact proof/limits:
+PREIMPLEMENTATION_REVIEW P01 verification and backend README synthetic checklist.
+122 coordination tests and the final coordination verifier pass. No schema/dependency/full-scope change,
+new hosted CI/clean install/processing publication claim. P01 awaits authorized
+integration; Checkpoint 1B stays open. Next M2 task P02, then P03 after both
+parsers are ready. No other row is implemented during this assignment.
+
 ## Module assignment and live task state
 
 | Module | Assigned GitHub handle | Accountable boundary | State |

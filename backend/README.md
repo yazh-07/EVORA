@@ -1,3 +1,101 @@
+# P01 network CSV parser — 2026-11-01
+
+P01 / 1B / M2 yazh-07, feat/p01-network-csv, verified shared base
+22673d909b0860663b001269cefa2ac6f302a881. User approved the parser scope/policy
+and explicitly authorized finish/test/commit/push/merge for P01 only.
+Integration state is in docs/ROADMAP.md. Older producer notes below are historical.
+
+backend.parsers.network_csv.parse_network_csv consumes immutable original bytes
+and caller-supplied case/evidence/processing-run UUID context. It returns frozen
+candidate observations as a tuple, or raises NetworkCSVError without returning
+partial results. No HTTP route, storage, authorization grant, processing-run
+creation/publication, identity inference, entity/event projection or scoring.
+F03/F05 authorize originals; P04/P14 own runs, idempotency and private provenance.
+Synthetic parser-test run UUIDs are not a working processing producer.
+
+## Approved network-csv/1 policy
+
+UTF-8 with optional leading BOM; exact ordered logical header
+(timestamp,device_id,ip_address,event). Strict quote placement, escaped quotes,
+quoted commas/multiline values and LF/CRLF/CR endings. Reject changed/duplicate/
+reordered headers, missing/extra columns, blank required values/records, NUL,
+bad encoding/quotes, nonliteral/invalid IP (including scopes/hostnames/CIDR).
+At most 50 MiB original bytes and 100000 logical data records, inclusive.
+Header-only input honestly returns no observations. No hidden small field cap:
+the local scanner does not alter global csv.field_size_limit. Excess columns
+reject early. A late invalid row never returns a valid partial prefix.
+
+Each record emits network.device/network.ip/network.event via existing
+Observation fields. raw_value is the exact decoded logical CSV cell after
+unescaping; normalized_value initially equals it, without trimming or IP/time/
+Unicode normalization. Each retains observed_at_raw; no UTC/entity_key is
+invented. Locators name original 1-based physical row/column, including multiline
+spans. Source bytes/hash are never rewritten. extraction_confidence=0 is an
+unavailable-score sentinel, not measured probability or source reliability.
+Parser version network-csv/1 and this meaning are inputs to future P14 private
+provenance. P03 handles timestamps; P03B/P03C derive candidate keys/events.
+Errors expose fixed codes/line numbers, never source cells or filenames. Later
+P04/P14B must map processing failures under their own contract/policy.
+
+## How you can test P01
+
+PowerShell at repository root, pinned Python 3.14.8 and existing requirements.
+No packages were added. Prepare the unchanged schema bundle, then run:
+
+    npx.cmd --yes @redocly/cli@2.57.0 bundle specs/openapi.yaml -o "$env:TEMP/evora-p01-openapi.json"
+    $env:PYTHONUTF8 = '1'
+    $env:EVORA_CONTRACT_BUNDLE = "$env:TEMP/evora-p01-openapi.json"
+    python -W error::ResourceWarning -m unittest backend.tests.test_network_csv -v
+
+Expect 14 passing tests: fixture/schema/source IDs, immutable results/copies,
+BOM/endings, quoting/multiline/Unicode/IPv6 raw preservation, malformed/invalid
+controls and atomic late rejection; actual 50 MiB and 100000-row boundaries and
+overflow; safe context/errors; CSV-writer round trips and real F03/F05 integration.
+Boundary tests allocate hundreds of thousands of observations. No resource
+benchmark/performance claim is made. Fresh registry resolution is not claimed;
+Codex used installed exact-version CLI caches without a TLS workaround.
+
+Quick fixture inspection (context is explicitly synthetic/unpersisted):
+
+    python -c "from pathlib import Path; from uuid import uuid4; from backend.parsers.network_csv import parse_network_csv; out=parse_network_csv(Path('fixtures/synthetic-case/network.csv').read_bytes(),case_id=uuid4(),evidence_id=uuid4(),processing_run_id=uuid4()); print([(x.kind,x.raw_value,x.observed_at_raw,x.source_locator) for x in out])"
+
+Expect six observations: D-7/203.0.113.7/connected at row 2 and
+D-9/203.0.113.9/connected at row 3, each preserving its original timestamp.
+Direct failure command (expected nonzero exit, safe INVALID_IP at line 2):
+
+    python -c "from pathlib import Path; from uuid import uuid4; from backend.parsers.network_csv import parse_network_csv; parse_network_csv(Path('fixtures/synthetic-case/network.csv').read_bytes().replace(b'203.0.113.7',b'999.1.1.1'),case_id=uuid4(),evidence_id=uuid4(),processing_run_id=uuid4())"
+
+Failure case in test_bad_ip_literals likewise replaces the first IP;
+expect NetworkCSVError with code INVALID_IP and line 2, no partial output or
+source text in diagnostics. No UI processing result or stored run is claimed.
+Use only synthetic/permitted fixtures; originals remain byte-identical.
+
+Completed-checkpoint regressions, with EVORA_CONTRACT_BUNDLE still set:
+
+    python -W error::ResourceWarning -m unittest discover -s backend/tests -v
+    python -m unittest discover -s scripts -p 'test_*.py' -v
+    npm.cmd --prefix frontend test
+    npm.cmd --prefix frontend run build
+    $env:EVORA_TEST_PYTHON = (Get-Command python).Source
+    Push-Location frontend
+    node test/cases.integration.mjs
+    Pop-Location
+
+Actual results: 130 backend run, 129 pass/1 Windows symlink skip; 48 frontend
+pass; real full I00 intake/audit/original/actor smoke passes. Focused integration
+uses actual FastAPI/F00/F01/F03/F05/SQLite/private files with HTTPX ASGI transport,
+synthetic identities and synthetic run context only. No case/storage/parser
+double. I00 separately uses actual loopback HTTP. Existing suites retain their
+declared doubles. Contract lint/bundle/types/build/DESIGN pass, with existing
+missing-license warning. Existing pinned dependencies reused through an ignored
+node_modules junction. Clean install, new hosted CI, other OS/runtime coverage,
+model/provider and P04 processing publication are untested. Temporary test DBs/
+files are automatically cleaned. No real evidence or external data transfer.
+Full initial scope and approved additions remain unchanged in FEATURE_SCOPE.
+Next M2 task is P02 GPS parsing; P03 requires both P01/P02. No P02 work here.
+
+---
+
 # EVORA backend
 
 ## F09 M1 access and error regression matrix

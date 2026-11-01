@@ -56,3 +56,29 @@ C-03 is resolved in coordination policy for F00/U01:
 - Zero production secrets committed to Git. F00 implements the backend guard; U01 consumes it.
 
 Draft 0.3.0 preserves the original 25 operationIds and adds listTranscriptRevisions/appendTranscriptRevision for the user-approved transcription workflow. Publication requires explicit authorization and verification of the exact remote commit and CI. Full proposal scope is not awaiting renewed feature approval; unresolved settings block their dependent rows only. Artifact verification status belongs in `PREIMPLEMENTATION_REVIEW.md`, not invented application metrics here.
+
+## P01 approved first network CSV policy — 2026-11-01
+
+User approved P01 scope and policy: UTF-8 with one optional leading BOM, exact
+ordered timestamp,device_id,ip_address,event header, strict comma/quote CSV,
+50 MiB original bytes and 100000 data records maximum. LF, CRLF and CR record
+endings and quoted commas/escaped quotes/multiline logical fields are supported.
+Reject malformed quotes, NUL, blank/missing/extra fields, changed/duplicate
+headers, bad UTF-8, nonliteral/invalid IP, byte/row overflow; no partial result.
+Header-only CSV yields no observations. No extra column or resource cap.
+
+P01 emits frozen candidate network.device/network.ip/network.event values per
+record using existing Observation fields. raw_value is the decoded logical
+cell (CSV escaping removed), normalized_value initially equals it without
+case/IP/time normalization; all three retain observed_at_raw. Locators name
+physical record start/end lines and column. Machine extraction score is
+unavailable, represented by documented 0 sentinel, not measured confidence,
+truth or source quality. No entity key/person identity/event truth inferred.
+P03 normalizes time, P03B/P03C project candidate keys/events, P04/P14 own run
+publication and private provenance (consume parser version network-csv/1).
+Run UUID is caller context only; P01 creates no processing run or public API.
+
+P01 validation has no public error-status route. The parser raises safe
+code/line errors without cell text. Later P04/P14B must map accepted-run failures
+using their own contract/gates. This resolves this adapter's CSV parsing choice,
+not later adapters or processing dispatch/retry policy. No scope reduction.
