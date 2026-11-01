@@ -181,6 +181,20 @@ This card records the user's bounded shared-file handoff before the G00 ledger/r
 | Commands and proof | **19 F00 / 33 combined backend / 122 coordination / 19 frontend tests pass**, no skips; focused foreign/missing failure case passes. OpenAPI lint/bundle, scratch generated strict TypeScript, API freshness/typecheck/build, coordination verifier, DESIGN and whitespace checks pass. Real skeleton localhost smoke returns backend 404/frontend 200 and stops both servers. Exact commands, fixtures and limits are in the F00 verification record |
 | Handoff | **In Progress**, locally verified; F01 membership persistence and real U01/browser integration remain absent. No production identity/expiry mechanism or integrated completion claimed. Next M1 row is F01 after accepted F00 dependency handoff. The user subsequently authorized committing, pushing and merging this scoped branch into `docs/coordination-foundation` on 2026-10-25; no second task is authorized |
 
+### F06 assignment — 2026-11-01
+
+| Field | Recorded assignment |
+|---|---|
+| Task/checkpoint and acceptance | **F06 / 1A**: append-only source/provenance and intake audit; server-authored actor/action/target/time, no evidence contents or secrets in logs |
+| Module/person | **M1 / sharmelas-925**, automatic selection from the user's one-task request; no shared G/I work taken |
+| Branch/common contract commit | `feat/f06-intake-audit` / **3eab939ada44363de5420d542ead711198ccea0f**, verified clean local `docs/coordination-foundation` after `git fetch origin` and fast-forward; HEAD exactly matched origin before task-state selection and branching |
+| Paths | `backend/audit.py`, upload transaction hook in `backend/evidence.py`, audit startup wiring in `backend/app.py`, `backend/tests/test_audit.py`, startup table assertion in `backend/tests/test_skeleton.py`, `backend/README.md`; bounded F06 records in `docs/AGENT_TASKS.md`, `docs/ROADMAP.md`, `docs/PREIMPLEMENTATION_REVIEW.md` |
+| Dependencies | Real merged F03 upload producer and F00/F01/F04/F05 guards/cases/metadata/downloads are present in the verified base. F06 is unclaimed; no local or remote F06 branch existed. Older session In Progress records do not erase merged code |
+| Input/output | Existing `uploadEvidence` transaction, server identity and `Evidence` metadata → one safe `AuditEvent` plus linked private versioned intake-source snapshot; unchanged upload response and contract. Reuse `uploadEvidence` as the action identifier |
+| Gate/boundary | No unresolved auth/parser/scoring/provider choice is needed for intake accounting. Audit and private provenance append atomically with evidence metadata; append failure rolls back metadata and removes this upload's file. No fabricated backfill for originals uploaded before F06. F07 owns audit-list API; processing/model/RAG provenance remains with its later producer tasks |
+| Verification | **17 focused F06 pass**; **87 combined backend run: 86 pass, one known Windows symlink skip**; **122 coordination and 48 frontend pass**. Contract lint/bundle/generated strict types, freshness/typecheck/build/DESIGN/whitespace pass. Real localhost F06 SQL/byte read-back and existing U02/U02B/U03/U04 HTTP/client regressions pass; selected provenance rollback failure passes. Exact evidence/limits in F06 verification in PREIMPLEMENTATION_REVIEW |
+| Handoff | **In Progress**, locally verified. The user subsequently authorized finishing, committing, pushing and merging this F06 branch into `docs/coordination-foundation` on 2026-11-01. Mark integrated acceptance only after merge/read-back. No F07 implementation or checkpoint completion is included. Next M1 row F07 requires accepted F06; F09 waits for F07; I00 still needs an explicit shared-task assignee |
+
 ### Automatic-selection rules
 
 1. Read the live module-owner and task state in ROADMAP, the exact checkpoint ledger, catalog dependencies and relevant communication gates. Read Git status and verify the recorded common-base commit is available and includes the required shared contract. An uncommitted draft is not an implementation base.

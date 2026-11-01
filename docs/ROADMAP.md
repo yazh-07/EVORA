@@ -121,6 +121,39 @@ frontend/README.md. 122 coordination tests pass on the final documentation candi
 No hosted CI/production auth/formal screen-reader claim. Checkpoint 1A remains
 open: I00 requires M1 F06/F07/F09 and explicit shared-task assignee. No next row.
 
+## F06 current handoff — 2026-11-01
+
+**F06 / 1A / M1 / sharmelas-925 / In Progress**, automatically selected after
+fetching all origin branch refs and fast-forwarding the clean local common base
+to **3eab939ada44363de5420d542ead711198ccea0f**, exactly matching origin before
+task-state inspection/branch creation. Branch: `feat/f06-intake-audit`.
+Real F03 intake and F00/F01/F04/F05 are merged code dependencies; F06 is the
+earliest unclaimed M1 row in unfinished Checkpoint 1A. The F06 assignment card
+bounds atomic append-only audit/private intake provenance and tests. No F07 API,
+processing/provider decision, feature-scope reduction or publication is included.
+The upload transaction now appends one safe server-authored audit event and a
+linked private versioned source snapshot. Failed metadata/audit/provenance/
+commit operations publish no records and remove the new upload file. SQL
+guards reject update/delete/replacement of accounting history; startup preserves
+legacy originals without inventing historical actors/events. The upload wire
+response, full feature scope, schemas and dependency manifests are unchanged.
+
+**17 focused F06 pass; 87 backend run (86 pass, one known Windows symlink skip);
+122 coordination and 48 frontend pass.** OpenAPI lint/bundle, generated strict
+types, API freshness/typecheck/build, verifier, DESIGN and whitespace pass.
+Real localhost F06 audit/source/byte read-back and existing case/create/upload/
+download HTTP/client regressions pass; selected provenance rollback failure
+passes. Exact commands, synthetic inputs and limits are recorded in the F06
+verification section of PREIMPLEMENTATION_REVIEW. No new browser, hosted CI,
+power-loss recovery or tamper-resistant database-owner guarantee is claimed.
+**In Progress**, awaiting user review/integration; nothing staged/committed/
+pushed/merged. Next M1 row F07 after F06 acceptance; F09 waits for F07. Shared
+I00 requires an explicit assignee. Checkpoint 1A stays open.
+
+The user subsequently authorized finishing F06 and committing/pushing/merging
+this task into `docs/coordination-foundation` on 2026-11-01. Publication and
+post-merge acceptance are pending; no F07 implementation is authorized here.
+
 ## Module assignment and live task state
 
 | Module | Assigned GitHub handle | Accountable boundary | State |

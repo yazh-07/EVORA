@@ -14,6 +14,7 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel, ConfigDict
 
 from backend.auth import CaseAccessGrant, require_case_access
+from backend.audit import record_intake
 from backend.database import SQLiteDatabase
 from backend.errors import AccessError
 
@@ -210,6 +211,8 @@ async def upload_evidence(
                 (evidence_id, case_id, kind, filename, result["media_type"], source_label,
                  result["sha256"], size, acquired_at, result["created_at"], str(path)),
             )
+            record_intake(connection, actor_id=grant.actor.id, case_id=case_id,
+                          evidence_id=evidence_id)
         return result
     except BaseException:
         if created:
