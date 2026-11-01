@@ -2,7 +2,7 @@
 
 ## F06 verification — 2026-11-01
 
-**F06 / Checkpoint 1A / M1 / sharmelas-925 / In Progress**, branch
+**F06 / Checkpoint 1A / M1 / sharmelas-925 / Complete**, task branch
 `feat/f06-intake-audit`. Before task-state inspection, `git fetch origin` fetched
 all branch refs with the configured `+refs/heads/*:refs/remotes/origin/*`
 refspec. The clean local common base was 27 commits behind and fast-forwarded
@@ -104,17 +104,35 @@ $env:EVORA_TEST_PYTHON = (Resolve-Path '.venv\Scripts\python.exe').Path
 This ran after frontend tests/build; its temporary server/data clean up
 automatically. The local F06 SQL read-back smoke command was
 `& .\.venv\Scripts\python.exe -W error::ResourceWarning .cache/f06/http_smoke.py`.
-No new browser/rendering/accessibility or hosted CI result is claimed. F07 audit
-listing and the I00 end-to-end intake gate are not delivered by these checks.
-**F06 stays In Progress**, pending user review/integration. **F07** is the next
-M1 task after accepted F06 handoff; F09 depends on F07. I00 remains a shared task
-requiring an explicit assignee. No staging, commit, push, merge or second task.
+No new browser/rendering/accessibility result is claimed. F07 audit listing
+and the I00 end-to-end intake gate are not delivered by these checks.
 
-The user subsequently authorized finishing F06 and committing, pushing and
-merging this scoped task into `docs/coordination-foundation` on 2026-11-01.
-The clean remote target still matches the common base; a fresh real localhost
-upload/download/audit/source SQL smoke passed before publication. F07 remains
-a separate next assignment; final merge/CI acceptance will be read back.
+### F06 publication and integrated acceptance — 2026-11-01
+
+The user explicitly authorized finishing, committing, pushing and merging F06.
+The remote target still matched the verified common base. Fresh focused
+**17 F06 tests**, the coordination verifier and real localhost SQL/byte smoke
+passed before publication. Task commit
+**203c4d5809300ac4b08e82b22856ad4614a12b97** was pushed on
+`feat/f06-intake-audit`, then **PR #12** merged into
+`docs/coordination-foundation` at **1b5166d91e0f3b86b85585d714a917a3efc82d44**.
+Both Ubuntu and Windows PR CI jobs passed, Run **41297980571**:
+`https://github.com/yazh-07/EVORA/actions/runs/41297980571`.
+
+The clean local common base fast-forwarded to that exact merge. Its tree matches
+the task commit, verified with `git diff --exit-code`. Post-merge real HTTP/SQL
+upload/audit/source/original-byte/hash read-back passed, as did the existing
+U02/U02B/U03/U04 real-client case/create/pagination/upload/metadata/errors/download
+integration. Output is in `.cache/f06/merged-http-smoke.log` and
+`.cache/f06/merged-client-integration.log`; own servers stopped and temporary
+synthetic databases/files cleaned up. F06 uses real merged F03 intake, access,
+SQLite and filesystem producers; there is no pending producer double for its
+bounded acceptance.
+
+**F06 is Complete. F07 is the next M1 task.** F09 depends on F07; I00 remains a
+shared task requiring an explicit assignee. Checkpoint 1A remains open. No F07
+or other implementation task was started. The documented symlink/browser/
+hard-crash/tamper-resistance limits remain unchanged by publication.
 
 ### F05 verification — 2026-10-31
 

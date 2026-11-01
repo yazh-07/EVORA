@@ -2,7 +2,7 @@
 
 ## F06 append-only intake audit and private provenance
 
-**F06 / Checkpoint 1A / M1 / sharmelas-925 / In Progress**, branch
+**F06 / Checkpoint 1A / M1 / sharmelas-925 / Complete**, task branch
 `feat/f06-intake-audit`, verified common base
 `3eab939ada44363de5420d542ead711198ccea0f`.
 
@@ -63,14 +63,18 @@ python -W error::ResourceWarning -m unittest discover -s backend/tests -v
   `node frontend/test/cases.integration.mjs` after frontend tests/build, with
   `EVORA_TEST_PYTHON` set to the absolute `.venv\Scripts\python.exe` path.
 
+Integrated through PR #12 at **1b5166d91e0f3b86b85585d714a917a3efc82d44**.
+Ubuntu and Windows PR CI passed (Run **41297980571**); post-merge real HTTP/SQL
+and existing case/upload/download client integration passed on that exact tree.
 All of the focused/backend/shared checks and real localhost integration above
 were exercised. F06's local HTTP/SQL smoke is in the ignored
 `.cache/f06/http_smoke.py`; it stops its own server and removes its temporary
-files. No new browser or hosted CI acceptance is claimed. The audit-list API is
+files. No new browser acceptance is claimed. The audit-list API is
 **F07**, not implemented here, and private provenance has no public route.
 Processing/model/RAG provenance remains with its existing later tasks. Full
 initial scope, approved additions, API schemas and dependencies are unchanged.
-F06 remains In Progress for review/integration; F07 is next after acceptance.
+F06's bounded intake acceptance is Complete. F07 is the next M1 task; the
+Checkpoint 1A end-to-end gate remains open.
 
 ## F05 authorized original download
 
