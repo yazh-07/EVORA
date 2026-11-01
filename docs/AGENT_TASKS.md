@@ -497,3 +497,17 @@ starting a second U04 implementation. No U04 changes were merged here.
 | Input/output | Authorized original -> actual P01/P02/P03/P03B/P03C -> immutable private atomic SQL outputs/completed run. Existing ProcessingRun wire only; no listObservations/entities/events endpoints here |
 | Proof | 21 focused PASS; full backend 215 PASS/1 existing Windows symlink SKIP, frontend 48 PASS, coordination 122 PASS; contract/types/build/DESIGN and real processing/I00 HTTP smoke PASS. Fault/scheduler doubles and deployment/test limits in PREIMPLEMENTATION_REVIEW |
 | Handoff | Complete after authorized merge f851dd11fd8f7e11140317cf44d022a9999044dd and passing 21 focused/verifier/real processing/I00 post-merge HTTP smoke; task commit 32d78e588d1fc02078834cd62b57a176608ea16a pushed. P04 only; preserve full FEATURE_SCOPE/additions. Checkpoint 1B open. P04B next; P14/P14B/P14C/P05/P05B remain required later work |
+
+
+### P04B assignment — 2026-11-01
+
+| Field | Recorded assignment |
+|---|---|
+| Task/checkpoint/owner | P04B / 1B / M2 yazh-07: listObservations over real latest completed or explicitly pinned historical processing outputs; filters/pagination/history, no pending/failed/foreign output |
+| Branch/base | feat/p04b-observation-list / **bb3928440ebf39d016e14fb328f045d98fd68bb9**, clean fetched shared docs/coordination-foundation; isolated worktree, no active P04B claim |
+| Allowed paths | Approved backend/observations.py, backend/tests/test_observations.py, backend/app.py router wiring, backend/README.md and bounded AGENT_TASKS/COMMUNICATION/ROADMAP/PREIMPLEMENTATION_REVIEW records. No DB/schema/producer/spec/frontend/dependency edits |
+| Dependencies | Actual P04 merge f851dd1/publication bb39284, real F00/F03/F05/P01/P02/P03/P03B/P03C chain; completed 0/1A regression |
+| Approved policy | Existing contract selectors/limits; exact UTC finished_at then UUID latest per evidence; evidence UUID then Observation UUID page order; one consistent read snapshot per response; invalid/foreign/incomplete/mismatched selectors 404; no completed output empty; selected missing/corrupt output fails closed, no silent fallback/partial data |
+| Input/output | Real immutable P04 SQL -> existing ObservationPage only; raw/normalized/time/source/run/Entity keys preserved, no new public field or listEntities/listEvents API |
+| Proof | 16 focused PASS; full backend 231 PASS/1 Windows symlink SKIP, frontend 48 PASS, coordination 122 PASS; contract/types/build/DESIGN and real Observation/processing/I00 HTTP regressions PASS. Selection/scheduler/corruption/transcript-schema fixtures and limits disclosed in PREIMPLEMENTATION_REVIEW |
+| Handoff | In Progress; user explicitly authorizes implementation/test/commit/push/merge P04B only. Preserve entire FEATURE_SCOPE/additions. Next M2 P05; no next task started |

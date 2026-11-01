@@ -1,3 +1,90 @@
+# P04B source-backed Observation listing — 2026-11-01
+
+P04B / Checkpoint 1B / M2 yazh-07, feat/p04b-observation-list from verified
+shared base bb3928440ebf39d016e14fb328f045d98fd68bb9. User approved the bounded
+scope/read policy and authorized implementation/test/commit/push/merge.
+In Progress pending integration; current state in docs/ROADMAP.md. Older notes
+below are historical. Entire agreed initial scope/additions remain unchanged.
+
+GET /api/v1/cases/{caseId}/observations now reads actual immutable P04 output.
+No schema, producer, DB migration, dependency or frontend change.
+
+- Default selects latest completed run per evidence by exact finished_at UTC,
+  then UUID descending. Compare every fractional digit without floating-point
+  SQLite date rounding; equivalent offset spellings use the UUID tie-break.
+  Queued/running/failed runs and partial outputs never replace completed history.
+- Optional evidence_id filters same-case source; processing_run_id pins one
+  completed historical output. Missing/foreign/pending/failed/mismatched selectors
+  share the same safe 404. An accessible case or evidence with no completed output
+  is an empty page. A selected empty completed run stays empty, never older data.
+- Existing limit=20/default, 1–100 bound; offset=0/default, nonnegative with no
+  invented upper cap. Huge beyond-end offsets return empty items with true total.
+  Page order is evidence UUID then Observation UUID ascending. Total counts the
+  full filtered selection, not one page. Unknown/duplicate query parameters or
+  invalid UUID/limit/offset yield safe 400. Existing F00 guards enforce 401/404.
+- One read transaction keeps selection/total/page coherent during publication.
+  Separate default requests may choose newer completed outputs; pin an existing
+  processing_run_id for stable pages across requests. No new snapshot selector.
+- Return original Observation wire values, IDs, locators, raw/normalized text,
+  candidate keys and timestamp fractions unchanged. Runtime shape/context checks
+  reject selected missing/corrupt output as a whole with 404, without private
+  fields, partial results or silent older-run fallback. Every response is no-store.
+  No read mutates SQL/originals/audit or schedules processing work.
+- Existing transcript optional fields/conditional wire rules remain compatible;
+  their schema fixture does not implement an ASR/correction producer. P05/P05B
+  Entity/Event listing and later provenance/dispatch/recovery/UI rows remain
+  separate required tasks. No confidence boost, identity or new public field.
+
+## How you can test P04B
+
+PowerShell at repository root, Python 3.14.8 and installed requirements:
+
+    npx.cmd --yes @redocly/cli@2.57.0 bundle specs/openapi.yaml -o "$env:TEMP/evora-p04b-openapi.json"
+    $env:PYTHONUTF8 = '1'
+    $env:EVORA_CONTRACT_BUNDLE = "$env:TEMP/evora-p04b-openapi.json"
+    python -W error::ResourceWarning -m unittest backend.tests.test_observations -v
+
+Expect 16 passing tests. Real network.csv produces six observations; gps.csv
+produces three. Default returns total 9 with exactly the stored source values;
+evidence_id restricts to 6 or 3, and processing_run_id preserves the chosen
+historical run after a newer completion. Pagination over 27 synthetic network
+observations yields no duplicate/skipped IDs and full total on every page.
+The GPS precision variant retains raw +12.9716000 and UTC nanosecond fraction,
+with normalized latitude 12.9716. Storage and servers clean up automatically.
+
+Run actual localhost HTTP smoke independently:
+
+    python -W error::ResourceWarning -m unittest backend.tests.test_observations.ObservationLoopbackTests -v
+
+Expect PASS: actual Uvicorn/FastAPI/SQLite upload -> process -> default/filtered/
+pinned Observation pages, limit=2/offset=2 gives two items and total=6 for the
+network evidence, and a failed malformed CSV run selector gives 404. Synthetic
+auth is explicit; actual P04 run/output IDs are produced, not fabricated fixtures.
+
+Relevant failure/history controls:
+
+    python -m unittest backend.tests.test_observations.ObservationTests.test_pending_running_failed_outputs_hidden_and_prior_completed_remains -v
+    python -m unittest backend.tests.test_observations.ObservationTests.test_missing_latest_output_no_silent_fallback_but_old_pin_stays_valid -v
+
+Expect PASS: queued/running/failed selectors return 404 and expose no partial
+observations. A corrupt/missing selected latest output fails closed (404), while
+an intact older explicitly pinned output remains readable; no fallback hides it.
+These failure states are labeled SQL/scheduler/corruption fixtures in temporary
+storage, not claims of a real production corruption incident.
+
+Core tests use actual F00/F01/F03/F05/P04 and existing parsers/normalizer/Entity/
+Event producers, SQLite/private files with HTTPX in-process ASGI. The separate
+smoke uses real localhost HTTP with no producer double. Selection-only SQL
+fixtures cover future-dated/equal/sub-microsecond finished_at, UUID ties and empty
+latest outputs; a schema-derived transcript fixture proves wire compatibility
+only. Scheduling gates/failure injection expose pending/failed states, corruption
+fixtures bypass triggers only in temp DBs, and a real writer thread attempts
+publication during one held read snapshot. No OS power-loss, distributed worker,
+production auth, full Observation UI or real-evidence benchmark claim. Earlier
+unrelated suites retain documented doubles. Full prior-checkpoint results are
+in docs/PREIMPLEMENTATION_REVIEW.md. Optional cleanup: remove TEMP schema bundle.
+Next M2 P05 exposes source-backed candidate Entity listing; no next task started.
+
 # P04 processing-run lifecycle — 2026-11-01
 
 P04 / Checkpoint 1B / M2 yazh-07, feat/p04-processing-lifecycle from verified

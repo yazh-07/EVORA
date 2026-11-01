@@ -263,3 +263,34 @@ Frozen configuration includes the existing parser byte/row parameters; a mismatc
 with executing versions/limits fails rather than silently using new configuration.
 The necessary skeleton table-inventory assertion includes processing-owned tables;
 all original table assertions remain. No M1 table/schema or source producer changed.
+
+
+## P04B approved observation-read policy — 2026-11-01
+
+User approved bounded P04B files/read policy. Existing listObservations defaults
+to latest completed run per evidence by exact finished_at UTC then UUID, or pins
+one completed same-case processing_run_id. evidence_id filters the same case;
+foreign/missing/pending/failed or mismatched filters use the same 404. No completed
+output is a real empty page, including valid unprocessed evidence. Existing
+limit default 20/max 100/min 1 and offset default 0/min 0 remain unchanged.
+
+Page order is evidence UUID then Observation UUID, ascending canonical UUID text.
+One explicit read transaction freezes selection, total and page per response;
+a default unpinned read may select newer outputs on the next request. Historical
+stable pagination requires the existing run selector; no case-wide snapshot
+field/selector is invented. Compare completion instants without SQLite floating
+point date rounding, including fractions/offset equivalents and UUID tie-breaks.
+
+Use real immutable P04 SQL JSON output, read-only. Return original Observation
+wire values unchanged with no private configuration/uncertainty envelope fields.
+Validate selected output structure/schema and same-case/evidence/run context,
+including unique observation IDs; a selected missing/corrupt output returns
+safe 404 for the whole read, never partial data or silent older-run fallback.
+Unknown/duplicate query parameters are invalid 400, avoiding ambiguous selectors.
+Each request uses existing F00 access checks; all responses are no-store.
+
+No DB/schema/producer/spec/dependency/frontend change, new public fields or
+Entity/Event APIs. Full agreed initial scope including approved transcription
+remains required; existing optional transcript wire fields/conditionals are
+preserved, not converted into an implemented transcript producer. P05/P05B and
+later UI/provenance/dispatch/recovery rows remain separate tasks.

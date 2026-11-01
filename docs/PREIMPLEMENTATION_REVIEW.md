@@ -2267,3 +2267,89 @@ Next eligible M2 P04B exposes case-scoped latest completed and processing_run_id
 pinned historical observations with pagination/source values and no partial/
 foreign outputs. Its actual P04 prerequisite is integrated. No next task started;
 waiting for user review. Entire agreed initial scope/additions preserved.
+
+
+## P04B verification — 2026-11-01
+
+P04B / 1B / M2 yazh-07, feat/p04b-observation-list from exact verified shared
+base **bb3928440ebf39d016e14fb328f045d98fd68bb9**, matched freshly fetched origin.
+Actual P04 prerequisite integrated, with underlying real F00/F03/F05/P01/P02/
+P03/P03B/P03C; 0/1A Complete. User approved bounded paths/read policy and explicitly
+authorized implementation/test/commit/push/merge. New observations module/tests,
+app router wiring, backend README and bounded four records only. Full agreed
+FEATURE_SCOPE/additions, DB/schema, producers/spec/dependencies/frontend unchanged.
+
+### Actual execution
+
+Existing Windows Python 3.14.8/jsonschema 4.25.1, Node 22.23.3/npm 12.2.0;
+exact cached CLI tools and ignored frontend dependency junction reused. No new
+package/model/provider or clean local reinstall claimed.
+
+| Command/check | Actual result |
+|---|---|
+| EVORA_CONTRACT_BUNDLE=TEMP/evora-p04b-openapi.json; python -W error::ResourceWarning -m unittest backend.tests.test_observations -v | 16 PASS, no skips; final focused run includes selected-empty-latest versus older pin regression |
+| Same bundle; python -W error::ResourceWarning -m unittest discover -s backend/tests -v | 232 run: 231 PASS / 1 existing Windows symlink-permission SKIP |
+| python -m pip check | PASS, no broken requirements |
+| npm --prefix frontend test | 48 PASS, no skips |
+| npm --prefix frontend run build | PASS API freshness, TypeScript and esbuild |
+| EVORA_TEST_PYTHON=pinned interpreter; node test/cases.integration.mjs from frontend | PASS actual I00 loopback intake/audit/hash/original/actor/error and U02/U02B/U03/U04 regressions |
+| Redocly 2.57.0 lint specs/openapi.yaml and bundle to TEMP/evora-p04b-openapi.json | PASS, existing missing-license warning |
+| openapi-typescript 7.10.1 specs/openapi.yaml to TEMP/evora-p04b-api.d.ts; TypeScript 5.9.3 --noEmit --strict on that file | PASS |
+| python scripts/verify_coordination.py TEMP/evora-p04b-openapi.json | PASS |
+| Same bundle; python -m unittest discover -s scripts -p test_*.py -v | 122 PASS, no skips |
+| DESIGN 0.4.0 lint DESIGN.md | PASS zero errors/warnings |
+| git diff --check; protected-path diff guard | PASS |
+
+Real P04 network/GPS processing publishes six/three observations; default returns
+nine exact stored wire values, same-case/evidence/run IDs, row locators, raw/
+normalized values/keys and nanosecond UTC fractions unchanged. evidence_id and
+processing_run_id filters, latest per evidence and historical replay work with
+actual producer IDs. Tests cover 27-observation all-page totals/no duplicate or
+skipped IDs, limit 1–100/default 20, offset boundaries/huge beyond-end integers,
+selected empty outputs and valid unprocessed/empty cases. A selected empty latest
+run never falls back to older nonempty output; the older explicit pin stays valid.
+
+Negative controls cover bad/duplicate/unknown query parameters and invalid UUID/
+limit/offset safe 400, missing/invalid/duplicate auth 401, foreign/missing/mismatched
+resources and revoked membership identical 404. Pending/running/failed selectors
+404 and expose no partial output; newer failed retry leaves completed selection
+intact. Unknown private fields, bad record types/context/UUID/score/time, duplicate
+Observation IDs, malformed/missing JSON or foreign output metadata fail the whole
+read with safe 404, not private content or a silent older-run fallback. Reads do
+not mutate runs/outputs/evidence/audit/private originals or schedule processing.
+
+Exact UTC completion ranking preserves sub-microsecond fractions; offset-equivalent
+instants tie by UUID and zero fractional spelling does not sort after later
+fractions. Page order is canonical evidence UUID then Observation UUID. One real
+read transaction keeps selection/total/items coherent during a real writer-thread
+publication attempt; subsequent default read selects its newer completed output.
+Across separate requests clients pin a historical run for stable pagination;
+no case-wide snapshot field or misleading default cross-request freeze claimed.
+
+The first focused run exposed strict datetime validation rejecting valid stored
+ISO timestamp strings. Corrected that validation while retaining explicit wire
+string/date-time checks; serialization returns the original JSON, preserving all
+fractional digits rather than the parsed datetime. All final focused/full checks
+above pass. ObservationPage examples validate actual bundled OpenAPI schema.
+
+Doubles/fault fixtures: synthetic auth tokens only; actual P04 runs/outputs for
+core ASGI and localhost tests. Scheduler gates expose queued/running records;
+a publication fault exercises a real failed retry. Selection-only SQL fixtures
+supply controlled 2099/equal/fractional completion instants, UUID ties and empty
+latest output. Temp-only corruption fixtures bypass immutable triggers to test
+fail-closed reads. A schema-derived transcript segment proves existing optional
+wire/conditional compatibility, not an implemented ASR/correction producer.
+Core tests use real FastAPI/SQLite/private files and actual extraction/normalization/
+Entity/Event producers. HTTPX ASGI is in process; ObservationLoopbackTests launches
+actual Uvicorn/HTTP and proves upload/process/default/filter/pin/pagination and
+failed-selector behavior without producer doubles. Prior unrelated suites retain
+documented doubles. No OS power-loss/distributed worker/production auth, full
+Observation UI, maximum-size performance benchmark or real-evidence claim.
+
+backend/README.md How you can test P04B supplies exact setup/commands, synthetic
+network/GPS counts, independent real HTTP smoke and pending/failed/corrupt history
+failure controls. No DB/schema or producer change. Hosted CI/other-OS fresh install
+not yet claimed at this recording point. P04B In Progress pending actual merge/
+read-back; Checkpoint 1B/M2 remain open. Next M2 P05 candidate Entity listing (actual
+P03B and P04B dependencies after integration); no next task started. Entire scope/
+additions and existing original dirty checkout/other worktrees preserved.
