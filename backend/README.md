@@ -2,7 +2,7 @@
 
 ## F09 M1 access and error regression matrix
 
-**F09 / Checkpoint 1A / M1 / sharmelas-925 / In Progress**, branch
+**F09 / Checkpoint 1A / M1 / sharmelas-925 / Complete**, task branch
 `feat/f09-m1-access-regressions`, common base
 `53bac04ed4b94f10334dc92a5ecead2c11dfecad`.
 
@@ -60,9 +60,12 @@ matrix, offset boundaries and unchanged SQL/file read-back passed, as did the
 existing case/create/upload/download real-client regression. The ignored local
 smoke is `.cache/f09/http_smoke.py`; its own server/data clean up automatically.
 
-F09 remains In Progress until authorized merge/read-back. Next is **I00**, a
-shared real API/UI intake gate requiring an explicit assignee, not a M1-only
-task. M1's later F08 needs real P04/P14 processing dependencies. No new browser,
+F09 integrated through PR #14 at **868d697f297748614befdcc6af8a66370b48240b**,
+containing task commit **4a69cafae6fb02c770f552c13b14430ac57e5e99**. Ubuntu and
+Windows PR CI passed (Run **41301012667**); exact merged-tree real API matrix
+and existing client regressions passed. F09's bounded acceptance is **Complete**.
+Next is **I00**, a shared real API/UI intake gate requiring an explicit assignee.
+M1's later F08 needs real P04/P14 processing dependencies. No new browser,
 production expiry or Checkpoint 1A completion is claimed here. Full initial
 scope, approved additions, spec, frontend and dependency manifests are unchanged.
 

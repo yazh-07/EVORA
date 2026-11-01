@@ -195,7 +195,7 @@ assignee. Checkpoint 1A stays open.
 
 ## F09 current handoff — 2026-11-01
 
-**F09 / 1A / M1 / sharmelas-925 / In Progress**, user-assigned with commit/push/
+**F09 / 1A / M1 / sharmelas-925 / Complete**, user-assigned with commit/push/
 merge authorization after verification. Fresh `git fetch origin` and clean
 status preceded task-state inspection; common local/origin HEAD matched
 **53bac04ed4b94f10334dc92a5ecead2c11dfecad**. Branch:
@@ -216,9 +216,19 @@ proper beyond-end empty pages without adding a contract limit.
 types, freshness/typecheck/build, verifier, DESIGN and whitespace pass. Real
 localhost all-eight missing-auth/scoped isolation/no-side-effect SQL/file checks
 and prior case/upload/download client integration pass. Exact commands/limits
-are in F09 verification in PREIMPLEMENTATION_REVIEW. **In Progress**, pending
-authorized publication and merged-tree read-back. Checkpoint 1A stays open.
-Next gate I00 is shared and requires an explicit assignee; F08 waits for P04/P14.
+are in F09 verification in PREIMPLEMENTATION_REVIEW.
+
+User-authorized PR #14 merged into `docs/coordination-foundation` at
+**868d697f297748614befdcc6af8a66370b48240b**, containing task commit
+**4a69cafae6fb02c770f552c13b14430ac57e5e99**. Both Ubuntu and Windows PR CI
+passed, Run **41301012667**. The clean local common branch fast-forwarded to
+the exact merge; its tree matches the tested task head. Merged-tree real HTTP
+eight-operation auth/scoped isolation/no-side-effect/offset checks and prior
+case/upload/download client regressions pass, with own servers stopped and
+temporary data removed. **F09 is Complete. Checkpoint 1A stays open.**
+Next gate **I00** is shared real API/UI intake verification and requires an
+explicit assignee. It is not M1-only and has not been started. Later M1 F08
+waits for P04/P14; full M1/product scope is not complete.
 
 ## Module assignment and live task state
 

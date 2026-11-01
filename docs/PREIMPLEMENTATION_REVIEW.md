@@ -2,7 +2,7 @@
 
 ## F09 verification — 2026-11-01
 
-**F09 / Checkpoint 1A / M1 / sharmelas-925 / In Progress**, branch
+**F09 / Checkpoint 1A / M1 / sharmelas-925 / Complete**, task branch
 `feat/f09-m1-access-regressions`. User explicitly authorized implementation,
 commit, push and merge of this one task. Before reading task states, `git fetch
 origin` and clean status confirmed common local/origin HEAD
@@ -100,11 +100,28 @@ interpreter. Both passed; logs are under `.cache/f09/`. No new browser/hosted CI
 claim at this pre-publication stage. Spec, generated client, frontend, manifests,
 proposal and complete FEATURE_SCOPE including approved additions are unchanged.
 
-**F09 remains In Progress** until the authorized merge/read-back. Next process
-is **I00**, the shared real API/UI authorized-intake integration gate, requiring
-an explicit assignee. It is not solely M1 and was not started. Later M1 F08
-also needs real M2 P04/P14 processing. Checkpoint 1A remains open; completing
-F09 does not complete the entire M1 module or the agreed product scope.
+### F09 publication and integrated acceptance — 2026-11-01
+
+User-authorized task commit **4a69cafae6fb02c770f552c13b14430ac57e5e99** was
+pushed on `feat/f09-m1-access-regressions`. Both Ubuntu and Windows PR CI
+passed, Run **41301012667**
+(`https://github.com/yazh-07/EVORA/actions/runs/41301012667`). PR #14 merged
+into `docs/coordination-foundation` at
+**868d697f297748614befdcc6af8a66370b48240b**. The clean local base fast-forwarded
+to that exact merge; `git diff --exit-code` confirms equality with the tested
+task tree. Post-merge real HTTP checks reject missing identity on all eight
+operations and foreign/missing cases on six scoped operations, preserve
+records/originals on denial and return correct huge-offset pages. Existing real
+case/create/upload/metadata/error/download client checks pass. Logs are
+`.cache/f09/merged-http-smoke.log` and `.cache/f09/merged-client-integration.log`;
+own servers stopped and temporary synthetic data was removed.
+
+**F09 is Complete. Next process is I00**, the shared real API/UI authorized-
+intake integration gate, requiring an explicit assignee. It is not solely M1
+and was not started. Later M1 F08 also needs real M2 P04/P14 processing.
+Checkpoint 1A remains open; F09 completion does not complete the entire M1
+module or the agreed product scope. The existing platform/production-expiry/
+browser limitations remain as disclosed above.
 
 ## F07 verification — 2026-11-01
 
