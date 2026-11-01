@@ -3,7 +3,9 @@
 P04 / Checkpoint 1B / M2 yazh-07, feat/p04-processing-lifecycle from verified
 shared base 9bec1653525694c01ef82c6a3cd12f2beea8493c. User approved the bounded
 scope/lifecycle policy and explicitly authorized implementation/test/push/merge.
-In Progress pending verification/integration; current state in docs/ROADMAP.md.
+Complete after merge f851dd11fd8f7e11140317cf44d022a9999044dd; 21 focused tests,
+verifier and actual processing/I00 post-merge HTTP smoke PASS.
+Current state in docs/ROADMAP.md.
 Older task notes below are historical. Full agreed initial scope is preserved.
 
 The actual startProcessing/getProcessingRun/listProcessingRuns APIs now use

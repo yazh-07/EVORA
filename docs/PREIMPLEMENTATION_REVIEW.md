@@ -2238,3 +2238,32 @@ recording point. Full agreed initial scope including additions preserved.
 P04 In Progress pending actual authorized merge/read-back; Checkpoint 1B remains
 open. Next M2 P04B source-backed latest/historical Observation listing; no next
 task started. Existing original dirty checkout and other worktrees preserved.
+
+
+### P04 integrated acceptance — 2026-11-01
+
+User-authorized task commit **32d78e588d1fc02078834cd62b57a176608ea16a** pushed
+to feat/p04-processing-lifecycle and merged without conflicts into the recorded
+shared branch docs/coordination-foundation at
+**f851dd11fd8f7e11140317cf44d022a9999044dd**. On that exact merge, all 21 P04
+focused tests (including actual Uvicorn/localhost network/GPS/malformed start/
+poll/list), coordination verifier and actual I00 loopback intake/audit/original/
+actor/error regressions PASS. Final pre-merge docs candidate: 122 coordination
+PASS; full 215 backend PASS/1 Windows symlink SKIP, frontend 48 PASS; contract/
+types/build/DESIGN PASS as recorded above. Scope guard confirms full FEATURE_SCOPE/
+spec/frontend/M1 tables and producer modules/existing parsers/dependencies unchanged;
+only approved app wiring, new processing-owned schema and required inventory test
+changed. Original dirty checkout and other worktrees preserved.
+
+P04 Complete after actual prerequisite integration and authorized merge/smoke;
+no required P04 acceptance remains unintegrated. Checkpoint 1B/M2 remain open.
+This supersedes pending-integration handoffs. New hosted CI not yet claimed at
+this recording point. Single-process worker, synthetic auth, bounded scheduling/
+fault/restart fixtures, ASGI versus real loopback transport and Windows symlink
+skip remain disclosed above. No OS power-loss/distributed-worker/production-auth
+or full processing UI claim. P04B/P05/P05B listing, F08 audit, P14/P14B/P14C richer
+provenance/dispatch/full recovery gates remain required separate tasks.
+Next eligible M2 P04B exposes case-scoped latest completed and processing_run_id-
+pinned historical observations with pagination/source values and no partial/
+foreign outputs. Its actual P04 prerequisite is integrated. No next task started;
+waiting for user review. Entire agreed initial scope/additions preserved.
