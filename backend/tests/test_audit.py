@@ -273,9 +273,9 @@ class IntakeAuditTests(unittest.IsolatedAsyncioTestCase):
                     record_intake(connection, actor_id="investigator-1", case_id=case, evidence_id=target)
         self.assertEqual((self.rows("audit_events"), self.rows("intake_provenance")), before)
 
-    async def test_f07_audit_route_and_private_provenance_are_not_exposed(self):
+    async def test_private_provenance_is_not_exposed(self):
         self.assertEqual((await self.upload()).status_code, 201)
-        for path in (f"/api/v1/cases/{self.case_a}/audit-events", "/intake_provenance", "/audit_events"):
+        for path in ("/intake_provenance", "/audit_events"):
             self.assertEqual((await self.client.get(path)).status_code, 404)
 
 

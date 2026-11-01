@@ -158,6 +158,32 @@ F06's bounded intake acceptance is **Complete**. Next M1 row is **F07**;
 F09 waits for F07 and shared I00 requires an explicit assignee. Checkpoint 1A
 stays open. No F07 implementation is authorized or started here.
 
+## F07 current handoff — 2026-11-01
+
+**F07 / 1A / M1 / sharmelas-925 / In Progress**, explicitly assigned by the
+user with commit/push/merge authorization after verification. Fresh `git fetch
+origin` and clean Git status preceded task-state inspection; local common base
+and origin matched **441d37de6db68f1f459aa11eb1bf6bd5864f5b77**. Separate branch:
+`feat/f07-case-audit-list`. Real F06 intake audit and F00/F01/F03 dependencies
+are integrated; no producer double is needed. The F07 assignment card bounds
+the existing audit-list route, focused tests and documentation. No private
+provenance API, wire/schema/full-scope change or F09 implementation is included.
+`listAuditEvents` now uses current case access, a safe-column projection,
+oldest-first creation/ID ordering and a single SQLite read snapshot for total
+and page. Existing limit/offset validation, shared 400/401/non-leaking 404,
+no-store responses and optional reason omission are exercised. Private source
+provenance is not queried. No frozen-history selector or new wire field is added.
+
+**15 F07 pass; 102 backend run (101 pass, one known Windows symlink skip);
+122 coordination and 48 frontend pass.** Contract lint/bundle/generated strict
+types, freshness/typecheck/build, verifier, DESIGN and whitespace pass. Real
+localhost audit API/SQL read-back and prior case/upload/download client
+integration pass; selected foreign/missing denial test passes. Exact commands
+and synthetic fixture/concurrency disclosures are in F07 verification in
+PREIMPLEMENTATION_REVIEW. **In Progress**, pending authorized publication and
+merged-tree read-back. Next M1 task is F09 after F07 acceptance; I00 still needs
+an explicit shared-task assignee. Checkpoint 1A stays open.
+
 ## Module assignment and live task state
 
 | Module | Assigned GitHub handle | Accountable boundary | State |

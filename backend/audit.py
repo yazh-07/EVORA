@@ -1,12 +1,28 @@
 """F06 append-only intake accounting; private source details are not public audit."""
 
 import sqlite3
-from uuid import uuid4
+from datetime import datetime
+from typing import Annotated
+from uuid import UUID, uuid4
 
+from fastapi import APIRouter, Depends, Query, Request, Response
+from pydantic import BaseModel, ConfigDict
+
+from backend.auth import CaseAccessGrant, require_case_access
 from backend.database import SQLiteDatabase
 
 
 INTAKE_RECORD_VERSION = "intake-source.v1"
+
+# Intake producers store UTC with a Z suffix. Canonical fractional comparison
+# keeps whole-second and fractional timestamps in chronological order, retaining
+# microseconds (SQLite date functions would round them to milliseconds).
+_AUDIT_ORDER = (
+    "substr(created_at, 1, 19) ASC, "
+    "CASE WHEN substr(created_at, 20, 1) = '.' "
+    "THEN substr(substr(created_at, 21, length(created_at) - 21) || '000000', 1, 6) "
+    "ELSE '000000' END ASC, id ASC"
+)
 
 
 def initialize_audit(database: SQLiteDatabase) -> None:
@@ -17,6 +33,10 @@ def initialize_audit(database: SQLiteDatabase) -> None:
             "id TEXT PRIMARY KEY, case_id TEXT NOT NULL REFERENCES cases(id), "
             "actor_id TEXT NOT NULL, action TEXT NOT NULL, target_id TEXT NOT NULL, "
             "created_at TEXT NOT NULL, reason TEXT) WITHOUT ROWID"
+        )
+        connection.execute(
+            "CREATE INDEX IF NOT EXISTS audit_events_case_order "
+            f"ON audit_events (case_id, {_AUDIT_ORDER})"
         )
         connection.execute(
             "CREATE TABLE IF NOT EXISTS intake_provenance ("
@@ -80,3 +100,54 @@ def record_intake(
          row["source_label"], row["media_type"], row["acquired_at"], row["sha256"],
          row["size_bytes"], row["created_at"]),
     )
+
+
+class AuditEvent(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    id: UUID
+    case_id: UUID
+    actor_id: str
+    action: str
+    target_id: str
+    created_at: datetime
+    reason: str | None = None
+
+
+class AuditPage(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    items: list[AuditEvent]
+    total: int
+    limit: int
+    offset: int
+
+
+router = APIRouter()
+
+
+@router.get("/api/v1/cases/{caseId}/audit-events", operation_id="listAuditEvents",
+            response_model=AuditPage, response_model_exclude_none=True)
+def list_audit_events(
+    request: Request,
+    response: Response,
+    grant: Annotated[CaseAccessGrant, Depends(require_case_access)],
+    limit: Annotated[int, Query(ge=1, le=100)] = 20,
+    offset: Annotated[int, Query(ge=0)] = 0,
+):
+    with request.app.state.database.connect() as connection:
+        connection.execute("BEGIN")
+        parameters = {"case_id": str(grant.case_id), "limit": limit, "offset": offset}
+        total = connection.execute(
+            "SELECT count(*) FROM audit_events WHERE case_id = :case_id", parameters,
+        ).fetchone()[0]
+        # Explicit safe-column projection: private intake provenance is never
+        # joined or serialized. Producers store server timestamps as UTC.
+        # Offset has no contract upper bound. A beyond-end offset returns an
+        # empty page, including integers too large for a SQLite bound integer.
+        rows = connection.execute(
+            "SELECT id, case_id, actor_id, action, target_id, created_at, reason "
+            "FROM audit_events WHERE case_id = :case_id "
+            f"ORDER BY {_AUDIT_ORDER} LIMIT :limit OFFSET :offset", parameters,
+        ).fetchall() if offset < total else []
+    response.headers["Cache-Control"] = "no-store"
+    return AuditPage(items=[AuditEvent(**dict(row)) for row in rows],
+                     total=total, limit=limit, offset=offset)

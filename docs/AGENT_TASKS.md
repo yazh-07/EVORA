@@ -195,6 +195,21 @@ This card records the user's bounded shared-file handoff before the G00 ledger/r
 | Verification | **17 focused F06 pass**; **87 combined backend run: 86 pass, one known Windows symlink skip**; **122 coordination and 48 frontend pass**. Contract lint/bundle/generated strict types, freshness/typecheck/build/DESIGN/whitespace pass. Real localhost F06 SQL/byte read-back and existing U02/U02B/U03/U04 HTTP/client regressions pass; selected provenance rollback failure passes. Exact evidence/limits in F06 verification in PREIMPLEMENTATION_REVIEW |
 | Handoff | **Complete**, user-authorized integration through PR #12 into `docs/coordination-foundation` at **1b5166d91e0f3b86b85585d714a917a3efc82d44**, containing task commit **203c4d5809300ac4b08e82b22856ad4614a12b97**. Ubuntu and Windows PR CI pass (Run **41297980571**); exact merged-tree real HTTP/SQL intake and case/upload/download client regressions pass. Next M1 row is F07; F09 waits for F07; I00 still needs an explicit shared-task assignee. No F07 implementation or checkpoint completion included |
 
+### F07 assignment — 2026-11-01
+
+| Field | Recorded assignment |
+|---|---|
+| Task/checkpoint and acceptance | **F07 / 1A**: expose case audit-event list; logged actions visible, correct pagination and case isolation |
+| Module/person | **M1 / sharmelas-925**, user explicitly assigned this one task and authorized its commit, push and merge after verification |
+| Branch/common commit | `feat/f07-case-audit-list` / **441d37de6db68f1f459aa11eb1bf6bd5864f5b77**, clean local `docs/coordination-foundation` matched freshly fetched origin before selection/branching; no existing local/remote F07 branch |
+| Allowed paths | `backend/audit.py`, router wiring in `backend/app.py`, `backend/tests/test_audit_list.py`, update only the obsolete F07-absent assertion in `backend/tests/test_audit.py`, `backend/README.md`; bounded F07 records in `docs/AGENT_TASKS.md`, `docs/ROADMAP.md`, `docs/PREIMPLEMENTATION_REVIEW.md` |
+| Dependencies | Real F06 **203c4d5**, merge **1b5166d** and accepted receipt **441d37d**, with real F03 intake, F00/F01 case authorization, authoritative SQLite and private files |
+| Input/output | Unchanged `listAuditEvents` → `AuditPage`/`AuditEvent`; only existing limit (default 20, 1–100) and offset (default 0, nonnegative); safe selected columns, optional null reason omitted |
+| Implementation policy | Existing current membership guard, 400/401/non-leaking 404. Deterministic oldest-first UTC creation time ascending, then ID ascending (fractional precision normalized); total/page share one read snapshot. No private-source join, payload logging, new filter/selector or frontend feature |
+| Required proof | Real F03 upload → authorized list/schema read-back, empty/beyond-end/default/boundary/tied pagination, two actors/cases/current membership, malformed input/auth, foreign/missing equivalence, no private values/storage fields, read-only listing and storage failure; shared contract/coordination/backend/frontend regressions |
+| Verification | **15 focused F07 pass**, selected foreign/missing failure passes; **102 backend run: 101 pass, one existing Windows symlink skip**; **122 coordination and 48 frontend pass**. Contract lint/bundle/generated strict types, API freshness/typecheck/build, DESIGN and whitespace pass. Real localhost upload/audit API/SQL/original read-back and prior case/upload/download real-client integration pass |
+| Handoff | **In Progress**, locally verified pending the user-authorized commit/push/merge and exact merged-tree acceptance. Full agreed initial scope unchanged. F09 is next after F07 acceptance; shared I00 still requires an explicit assignee. No F09 implementation authorized |
+
 ### Automatic-selection rules
 
 1. Read the live module-owner and task state in ROADMAP, the exact checkpoint ledger, catalog dependencies and relevant communication gates. Read Git status and verify the recorded common-base commit is available and includes the required shared contract. An uncommitted draft is not an implementation base.

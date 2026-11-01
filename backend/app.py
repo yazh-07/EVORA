@@ -9,7 +9,7 @@ from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 
 from backend.auth import CaseAccess, RejectTokens, TokenVerifier
-from backend.audit import initialize_audit
+from backend.audit import initialize_audit, router as audit_router
 from backend.database import SQLiteDatabase
 from backend.cases import SQLiteCaseAccess, initialize_cases, router
 from backend.evidence import initialize_evidence, router as evidence_router
@@ -57,6 +57,7 @@ def create_app(
     app.add_exception_handler(AccessError, access_error)
     app.include_router(router)
     app.include_router(evidence_router)
+    app.include_router(audit_router)
     return app
 
 

@@ -1,5 +1,68 @@
 # EVORA backend
 
+## F07 authorized case audit-event list
+
+**F07 / Checkpoint 1A / M1 / sharmelas-925 / In Progress**, branch
+`feat/f07-case-audit-list`, common base
+`441d37de6db68f1f459aa11eb1bf6bd5864f5b77`.
+
+`GET /api/v1/cases/{caseId}/audit-events` (`listAuditEvents`) returns the existing
+`AuditPage` contract after current bearer authentication and case-membership
+checks. `limit` defaults to 20 (1–100); `offset` defaults to 0 (nonnegative).
+Results are oldest first by server UTC creation time, with ID ascending as the
+tie-break. Count and page share one SQLite read snapshot; a beyond-end offset
+returns an empty items array while retaining the authorized total, including
+offsets larger than SQLite's integer range. Separate requests read current
+history; offset pagination does not freeze a case across concurrent changes.
+
+The explicit column projection returns `AuditEvent` fields only, omits a null
+optional reason and never joins private intake provenance. Responses carry
+`Cache-Control: no-store`. Invalid UUIDs/pagination use the shared 400 ApiError;
+missing/invalid authentication returns 401. Foreign and nonexistent cases have
+identical 404 bodies/headers. Revoked membership takes effect on the next
+request. Storage failures remain server errors rather than successful empty
+history. Listing adds no event or mutation. Only this existing GET operation is
+added; there are no new selectors, frontend views or audit-write APIs.
+
+### How you can test F07
+
+From the repository root, open `.\.cache\setup\evora-shell.cmd` on this prepared
+machine to select the pinned local Python/Node/npm environment. In its CMD shell:
+
+```bat
+npx.cmd --yes @redocly/cli@2.57.0 bundle specs/openapi.yaml --output .cache\setup\evora-openapi.json
+set "EVORA_CONTRACT_BUNDLE=%CD%\.cache\setup\evora-openapi.json"
+python -W error::ResourceWarning -m unittest backend.tests.test_audit_list -v
+python -W error::ResourceWarning -m unittest backend.tests.test_audit_list.AuditListTests.test_two_cases_are_filtered_and_foreign_missing_denials_are_indistinguishable -v
+python -W error::ResourceWarning -m unittest discover -s backend/tests -v
+```
+
+Expect 15 focused F07 tests to pass, and one passing selected failure-case test.
+Fixtures use the synthetic network CSV, two actors/cases and real upload/audit
+producers with SQLite/private files. The selected failure proves an actor
+cannot list another case's audit, and gets the same 404 as a nonexistent case.
+Other checks cover 21-item pagination, equal-time ID ties, safe fields, optional
+reason, empty/huge offsets, invalid input, current memberships, read-only listing
+and failed storage. A WAL test schedules a real second-connection append between
+the count and page queries and verifies one consistent response. Temporary
+databases/files clean up automatically. Full shared checks can be rerun from
+PowerShell with `& .\.cache\setup\verify.ps1`.
+
+Local combined regression results: **102 backend run (101 pass, one known
+Windows symlink-permission skip), 122 coordination and 48 frontend pass**.
+All 15 F07 tests execute without skips. Contract lint/bundle/generated strict
+types, frontend freshness/typecheck/build, DESIGN and whitespace pass. Real
+localhost audit API/SQL/original read-back and existing case/upload/download
+client integration passed. These checks use synthetic identities/data with real
+FastAPI, SQLite, files and HTTP. Ordering/optional reason/concurrent-append tests
+use explicit synthetic SQL events; connection tracing schedules the real WAL
+append without mocking either SELECT or result. Tests remove temporary data.
+No new browser/accessibility or production identity claim is made.
+
+F07 integration/CI acceptance will be recorded after the authorized merge.
+F09 is the next M1 task after acceptance; the I00 shared intake gate still
+needs an explicit assignee. The full agreed initial scope remains unchanged.
+
 ## F06 append-only intake audit and private provenance
 
 **F06 / Checkpoint 1A / M1 / sharmelas-925 / Complete**, task branch
@@ -69,8 +132,8 @@ and existing case/upload/download client integration passed on that exact tree.
 All of the focused/backend/shared checks and real localhost integration above
 were exercised. F06's local HTTP/SQL smoke is in the ignored
 `.cache/f06/http_smoke.py`; it stops its own server and removes its temporary
-files. No new browser acceptance is claimed. The audit-list API is
-**F07**, not implemented here, and private provenance has no public route.
+files. No new browser acceptance is claimed. The audit-list API is delivered by
+the separate **F07** task above; private provenance has no public route.
 Processing/model/RAG provenance remains with its existing later tasks. Full
 initial scope, approved additions, API schemas and dependencies are unchanged.
 F06's bounded intake acceptance is Complete. F07 is the next M1 task; the
