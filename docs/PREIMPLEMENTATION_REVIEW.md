@@ -1970,3 +1970,71 @@ benchmark claim. Synthetic auth/run context and ASGI versus loopback transport
 limits remain as disclosed above. Next eligible M2 task P03B candidate identifier
 keys/entity records; D-7/D-8 stay distinct, source IDs retained and no inferred
 person identity. No next task started; waiting for user review.
+
+
+## P03B verification — 2026-11-01
+
+P03B / 1B / M2 yazh-07; feat/p03b-candidate-entities from exact freshly fetched
+shared base **59de4686f4a59bff25528d386ce458d259d96e6c**. Real P01/P02/P03
+producers integrated; Checkpoints 0/1A Complete. No active P03B claim existed.
+User approved the recorded bounded scope/key policy and explicitly authorized
+implementation/test/commit/push/merge. Only new candidate module/tests, backend
+README and bounded four coordination records changed. FEATURE_SCOPE.md and all
+approved additions are preserved; no producer/spec/API/DB/dependency/UI edits.
+
+### Actual execution
+
+Pinned Windows Python 3.14.8/jsonschema 4.25.1, Node 22.23.3/npm 12.2.0. Existing
+installed dependencies reused through ignored junction; exact cached CLI tools.
+No new package/model/provider or clean installation claimed.
+
+| Command/check | Actual result |
+|---|---|
+| EVORA_CONTRACT_BUNDLE=TEMP/evora-p03b-openapi.json; python -W error::ResourceWarning -m unittest backend.tests.test_candidate_entities -v | 15 PASS, no skips |
+| npm --prefix frontend test | 48 PASS, no skips |
+| npm --prefix frontend run build | PASS API freshness, TypeScript and esbuild |
+| EVORA_TEST_PYTHON=pinned interpreter; node test/cases.integration.mjs from frontend | PASS actual I00 loopback HTTP intake/audit/hash/original/actor/input/error and U02/U02B/U03/U04 regressions |
+| Redocly 2.57.0 lint specs/openapi.yaml and bundle to TEMP/evora-p03b-openapi.json | PASS, existing missing-license warning |
+| openapi-typescript 7.10.1 specs/openapi.yaml to TEMP/evora-p03b-api.d.ts; TypeScript 5.9.3 --noEmit --strict on that file | PASS |
+| python scripts/verify_coordination.py TEMP/evora-p03b-openapi.json | PASS |
+| EVORA_CONTRACT_BUNDLE=same bundle; python -m unittest discover -s scripts -p test_*.py -v | 122 PASS, no skips |
+| DESIGN 0.4.0 lint DESIGN.md | PASS zero errors/warnings |
+| git diff --check and protected-path diff guard | PASS |
+
+Focused behavior proves exact D-7/D-8/D-9 separation; identical-key grouping
+within a case and across supplied evidence, unique sorted source UUIDs and
+namespace/case/whitespace/Unicode/IP spelling controls. Nonidentifier GPS/event
+cells infer no entity; source fields, time uncertainty and extraction score stay
+unchanged. Entity confidence remains unavailable 0 with no repeated-mention boost.
+Frozen records and fresh wire copies validate against actual Observation/Entity
+schemas; reordered inputs keep content/order with fresh unpublished record IDs.
+Pure projection is not lifecycle replay or verified identity. Reject mixed cases,
+duplicate observation IDs, evidence/run conflicts, invalid context/kind/source/
+IP, blank/changed identifier and preassigned key conflicts atomically with safe
+fixed diagnostics. Documented synthetic network example prints four exact keys,
+confidence 0/one source each. Duplicate example exits nonzero with
+DUPLICATE_OBSERVATION, as documented in backend/README.md.
+
+Actual integration uses F00/F01/F03/F05, FastAPI, SQLite/private files, real P01/
+P02 parsing and P03 normalization. Synthetic auth tokens and unpersisted caller
+run UUIDs are explicit test context; HTTPX ASGI transport is in process. No parser,
+case/storage or normalization double. Original bytes/hashes, SQL evidence rows,
+immutable input observations and same-case source references are checked before/
+after projection; foreign download 404 and invalid auth 401 pass. I00 separately
+uses real loopback HTTP/client/stores; earlier suites retain their labeled doubles.
+P04 processing publication, P05 Entity listing, P14 private persistence and P03C
+events remain separate required tasks. No real-evidence benchmark, new browser
+check or production auth claim. How you can test P03B exact commands, synthetic
+inputs/results and failure case are in backend/README.md (plain file reference
+for planning-only fixture compatibility).
+
+P03B In Progress pending complete regression and actual merge/read-back; no
+unintegrated Complete claim. Hosted CI pending. Next M2 P03C source-backed event
+projection; no next task started. Entire initial scope/approved additions retained.
+
+
+P03B final combined-candidate regression: warning-strict backend discovery with
+EVORA_CONTRACT_BUNDLE passed **180 run: 179 PASS / 1 existing Windows symlink-
+permission SKIP**; python -m pip check PASS, no broken requirements. All completed
+0/1A regressions pass, with that disclosed skip; no unsupported symlink result
+claimed. Other-OS/clean-install results await hosted CI. Integration still pending.

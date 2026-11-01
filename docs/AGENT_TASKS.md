@@ -455,3 +455,17 @@ starting a second U04 implementation. No U04 changes were merged here.
 | Inputs/outputs | P01/P02 frozen observations -> frozen normalized observation plus internal time/coordinate status envelope; existing Observation wire only; unchanged score/kind/UUID context; no entity keys/processing API/public status fields |
 | Proof | 18 focused PASS; full backend 164 PASS/1 Windows symlink SKIP; frontend 48 PASS, coordination 122 PASS, real I00 HTTP smoke and contract/types/build/DESIGN PASS. Goldens/unknown/precision/immutability/schema and actual original/P01/P02 integration; synthetic run UUIDs, in-process ASGI focused transport and remaining limits in PREIMPLEMENTATION_REVIEW |
 | Handoff | Complete after authorized merge e9f01f586916f38c480a40ffc8aa3eb72fd146ff and passing 18 focused/verifier/real I00 post-merge smoke; task commit d186af38f84479794889d309765f60be189cf790 pushed. Explicit user authorization covers P03 only. Preserve full FEATURE_SCOPE; Checkpoint 1B open. Next M2 P03B, no following task started |
+
+
+### P03B assignment — 2026-11-01
+
+| Field | Recorded assignment |
+|---|---|
+| Task/checkpoint/owner | P03B / 1B / M2 yazh-07: candidate identifier keys and source-backed Entity records; D-7/D-8 distinct, no inferred person identity |
+| Branch/base | feat/p03b-candidate-entities / **59de4686f4a59bff25528d386ce458d259d96e6c**, clean fetched shared docs/coordination-foundation; isolated worktree preserves existing work |
+| Allowed paths | User approved backend/parsers/candidate_entities.py, backend/tests/test_candidate_entities.py, backend/README.md; bounded AGENT_TASKS/COMMUNICATION/ROADMAP/PREIMPLEMENTATION_REVIEW records. No producer/API/database/dependency/frontend edits |
+| Dependencies | Actual merged P01 cab08f1, P02 389652c and P03 e9f01f5 with publication 59de468; completed 0/1A and real F03/F05 originals |
+| Policy | Approved exact case-sensitive device:<value> and ip:<P01 normalized_value>, one explicit case, identical-key grouping only; immutable copies retain source IDs and uncertainty; confidence 0 unavailable; mixed-case/conflicting inputs reject atomically |
+| Input/output | Real P03 NormalizationResult tuple -> new immutable source-preserving observations with existing entity_key plus existing-schema Entity tuples; no stored output mutation or processing/list API claim |
+| Proof | 15 focused PASS; full backend 179 PASS/1 existing Windows symlink SKIP, frontend 48 PASS, coordination 122 PASS; contract/types/build/DESIGN and real I00 HTTP regressions PASS. Actual original/P01/P02/P03 chain and negative/source/schema/immutability controls; synthetic auth/run context and ASGI transport disclosed in PREIMPLEMENTATION_REVIEW |
+| Handoff | In Progress; user explicitly authorizes implementation/test/commit/push/merge P03B only. Preserve full FEATURE_SCOPE including additions. Next M2 P03C; no later task started |
