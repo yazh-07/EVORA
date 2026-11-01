@@ -2,7 +2,7 @@
 
 ## F07 verification — 2026-11-01
 
-**F07 / Checkpoint 1A / M1 / sharmelas-925 / In Progress**, branch
+**F07 / Checkpoint 1A / M1 / sharmelas-925 / Complete**, task branch
 `feat/f07-case-audit-list`. The user explicitly assigned F07 and authorized its
 commit, push and merge after verification. `git fetch origin` preceded task
 state inspection; clean local HEAD and origin common base both matched
@@ -87,9 +87,33 @@ Existing client integration ran with `EVORA_TEST_PYTHON` set to the absolute
 `frontend/test/cases.integration.mjs` after frontend tests/build. Own servers
 stop and temporary synthetic data is removed. Contract/schema, generated
 declarations, dependencies, proposal and full FEATURE_SCOPE including approved
-additions remain unchanged. **F07 stays In Progress** until the authorized
-merge/read-back. Next M1 task is **F09**, not started; shared I00 requires an
-explicit assignee and Checkpoint 1A remains open.
+additions remain unchanged.
+
+### F07 publication and integrated acceptance — 2026-11-01
+
+The user authorized implementation, commit, push and merge of this one task.
+Initial task commit **48ab5e9** was followed by boundary correction
+**e7cd61402e87d2afbed1eafa8ab930e2597dea2b**, covering whole-second and fractional
+UTC timestamps with microsecond ordering retained. Final focused 15 tests and
+all 102 backend tests ran successfully (the one known local symlink skip
+remains). The final documentation verifier passed. Open PR #13's description
+was updated to the final implementation/results before merge.
+
+Both Ubuntu and Windows checks passed on that final task head, Run
+**41299455397** (`https://github.com/yazh-07/EVORA/actions/runs/41299455397`).
+PR #13 merged into `docs/coordination-foundation` at
+**6687d7cbd820fc4db820d85e4dcd518dd941c99d**. The clean local common branch
+fast-forwarded to this exact commit; `git diff --exit-code` confirms the merged
+tree equals the CI-tested task head. Post-merge real HTTP F07 audit read-back,
+pagination/safe-fields/400/401/404 checks, F06 SQL/source accounting and original
+download passed. The prior U02/U02B/U03/U04 real-client regressions also passed.
+Own servers stopped and temporary synthetic data cleaned up. Logs:
+`.cache/f07/merged-http-smoke.log`, `.cache/f07/merged-client-integration.log`.
+
+**F07 is Complete. Next M1 task is F09**, not started. Shared I00 still requires
+an explicit assignee and Checkpoint 1A remains open. No new browser/production
+authentication or database-owner tamper-resistance claim is made; original
+full feature scope and approved additions remain intact.
 
 ## F06 verification — 2026-11-01
 

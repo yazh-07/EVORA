@@ -160,7 +160,7 @@ stays open. No F07 implementation is authorized or started here.
 
 ## F07 current handoff — 2026-11-01
 
-**F07 / 1A / M1 / sharmelas-925 / In Progress**, explicitly assigned by the
+**F07 / 1A / M1 / sharmelas-925 / Complete**, explicitly assigned by the
 user with commit/push/merge authorization after verification. Fresh `git fetch
 origin` and clean Git status preceded task-state inspection; local common base
 and origin matched **441d37de6db68f1f459aa11eb1bf6bd5864f5b77**. Separate branch:
@@ -180,9 +180,18 @@ types, freshness/typecheck/build, verifier, DESIGN and whitespace pass. Real
 localhost audit API/SQL read-back and prior case/upload/download client
 integration pass; selected foreign/missing denial test passes. Exact commands
 and synthetic fixture/concurrency disclosures are in F07 verification in
-PREIMPLEMENTATION_REVIEW. **In Progress**, pending authorized publication and
-merged-tree read-back. Next M1 task is F09 after F07 acceptance; I00 still needs
-an explicit shared-task assignee. Checkpoint 1A stays open.
+PREIMPLEMENTATION_REVIEW.
+
+User-authorized commit/push/merge completed through **PR #13** at
+**6687d7cbd820fc4db820d85e4dcd518dd941c99d**, containing final task commit
+**e7cd61402e87d2afbed1eafa8ab930e2597dea2b** (including the fractional timestamp
+ordering regression). Both Ubuntu and Windows PR CI passed, Run
+**41299455397**. The clean local common branch fast-forwarded to that merge;
+its tree matches the CI-tested task head. Exact merged-tree real audit API/SQL/
+original-byte smoke and prior case/create/upload/download client checks pass,
+with own test servers stopped and temporary data removed. F07 is **Complete**.
+Next M1 task is **F09**, not started; I00 still needs an explicit shared-task
+assignee. Checkpoint 1A stays open.
 
 ## Module assignment and live task state
 

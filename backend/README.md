@@ -2,7 +2,7 @@
 
 ## F07 authorized case audit-event list
 
-**F07 / Checkpoint 1A / M1 / sharmelas-925 / In Progress**, branch
+**F07 / Checkpoint 1A / M1 / sharmelas-925 / Complete**, task branch
 `feat/f07-case-audit-list`, common base
 `441d37de6db68f1f459aa11eb1bf6bd5864f5b77`.
 
@@ -59,9 +59,12 @@ use explicit synthetic SQL events; connection tracing schedules the real WAL
 append without mocking either SELECT or result. Tests remove temporary data.
 No new browser/accessibility or production identity claim is made.
 
-F07 integration/CI acceptance will be recorded after the authorized merge.
-F09 is the next M1 task after acceptance; the I00 shared intake gate still
-needs an explicit assignee. The full agreed initial scope remains unchanged.
+F07 integrated through PR #13 at **6687d7cbd820fc4db820d85e4dcd518dd941c99d**,
+containing final task commit **e7cd61402e87d2afbed1eafa8ab930e2597dea2b**.
+Ubuntu and Windows PR CI passed (Run **41299455397**); exact merged-tree real
+audit API/SQL and existing case/upload/download client checks passed. F07's
+bounded acceptance is **Complete**. F09 is the next M1 task; the I00 shared
+intake gate still needs an explicit assignee. Full agreed scope is unchanged.
 
 ## F06 append-only intake audit and private provenance
 
