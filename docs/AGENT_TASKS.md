@@ -210,6 +210,21 @@ This card records the user's bounded shared-file handoff before the G00 ledger/r
 | Verification | **15 focused F07 pass**, selected foreign/missing failure passes; **102 backend run: 101 pass, one existing Windows symlink skip**; **122 coordination and 48 frontend pass**. Contract lint/bundle/generated strict types, API freshness/typecheck/build, DESIGN and whitespace pass. Real localhost upload/audit API/SQL/original read-back and prior case/upload/download real-client integration pass |
 | Handoff | **Complete**, user-authorized PR #13 merged into `docs/coordination-foundation` at **6687d7cbd820fc4db820d85e4dcd518dd941c99d**, containing final task commit **e7cd61402e87d2afbed1eafa8ab930e2597dea2b**. Ubuntu/Windows CI pass (Run **41299455397**); exact merged-tree audit API/SQL and prior case/upload/download client checks pass. Full initial scope unchanged. Next M1 task F09; shared I00 still requires an explicit assignee. No F09 implementation included |
 
+### F09 assignment — 2026-11-01
+
+| Field | Recorded assignment |
+|---|---|
+| Task/checkpoint and acceptance | **F09 / 1A**: cross-case access and error regression across every implemented M1 read/write operation; foreign-case, missing identity and nonexistent-ID checks where the operation has case/resource identifiers |
+| Module/person | **M1 / sharmelas-925**, explicitly assigned by the user with commit/push/merge authorization after verification |
+| Branch/common commit | `feat/f09-m1-access-regressions` / **53bac04ed4b94f10334dc92a5ecead2c11dfecad**, clean local base matched freshly fetched origin before task inspection/branching; no existing F09 branch/worktree |
+| Allowed paths | `backend/tests/test_m1_access.py`, `backend/README.md`, bounded records in `docs/AGENT_TASKS.md`, `docs/ROADMAP.md`, `docs/PREIMPLEMENTATION_REVIEW.md`. Bounded corrections in existing `backend/cases.py`/`backend/evidence.py` if the suite demonstrates a declared-contract error regression; no unrelated routes or new feature/schema |
+| Dependencies | Accepted merged F00/F05/F07, real F01/F02/F03/F04/F06, current case membership, SQLite/private originals and shared ApiError from unchanged draft 0.3.0 |
+| Coverage boundary | createCase/listCases/getCase/uploadEvidence/listEvidence/getEvidence/downloadEvidence/listAuditEvents. Create/list have no case-ID parameter: test authenticated actor ownership/filtering and rejected forged body IDs, not invented foreign-ID semantics. Route inventory must match the suite |
+| Required proof | Valid same-case read/write baselines; missing/invalid/duplicate/replaced identity; both actors against foreign/missing cases, mismatched/absent resources, revoked membership; declared input errors and pagination boundaries; safe bodies/schema; no denied-write metadata/audit/private-file changes; required shared regressions and real HTTP/client smoke |
+| Gate | C-03's synthetic development policy applies; no automatic token expiry/provider is invented. Actual production expiry remains outside this task. No decision blocks these existing M1 route regressions |
+| Verification | **14 F09 tests pass**; full **116 backend run: 115 pass, one known Windows symlink skip**; **122 coordination and 48 frontend pass**. Shared lint/bundle/types/freshness/typecheck/build/DESIGN/whitespace pass. Real eight-operation localhost auth matrix, scoped isolation/no-side-effect checks and existing client integration pass. The matrix caught case/evidence list SQLite overflow on valid huge offsets; two bounded beyond-end corrections now return proper empty pages |
+| Handoff | **In Progress**, locally verified pending authorized commit/push/merge and exact merged-tree read-back. No F08, M2/M4 task or shared I00 implementation included. After F09, I00 is a shared API/UI intake gate requiring an explicit assignee; M1 F08 also waits for real P04/P14 processing prerequisites |
+
 ### Automatic-selection rules
 
 1. Read the live module-owner and task state in ROADMAP, the exact checkpoint ledger, catalog dependencies and relevant communication gates. Read Git status and verify the recorded common-base commit is available and includes the required shared contract. An uncommitted draft is not an implementation base.

@@ -88,7 +88,7 @@ def list_cases(request: Request,
             "JOIN case_members AS m ON m.case_id = c.id WHERE m.actor_id = ? "
             "ORDER BY c.created_at DESC, c.id ASC LIMIT ? OFFSET ?",
             (actor.id, limit, offset),
-        ).fetchall()
+        ).fetchall() if offset < total else []
     return CasePage(items=[Case(**dict(row)) for row in rows],
                     total=total, limit=limit, offset=offset)
 

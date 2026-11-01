@@ -1,5 +1,71 @@
 # EVORA backend
 
+## F09 M1 access and error regression matrix
+
+**F09 / Checkpoint 1A / M1 / sharmelas-925 / In Progress**, branch
+`feat/f09-m1-access-regressions`, common base
+`53bac04ed4b94f10334dc92a5ecead2c11dfecad`.
+
+`backend/tests/test_m1_access.py` checks all eight current M1 operations against
+the real routers and shared contract: create/list/get cases; upload/list/get
+evidence; original download; case audit listing. A route-inventory assertion
+requires an explicit matrix entry when a M1 router gains another operation.
+Every operation rejects missing/invalid/malformed/duplicate or replaced tokens.
+Every case-scoped operation denies foreign/nonexistent/revoked cases; evidence
+reads also reject mismatched resources when the actor belongs to both cases.
+
+Create/list cases have no case-ID path parameter. Their applicable regressions
+verify server-authored membership, actor-filtered listing and rejected forged
+ownership body fields; they do not invent a foreign-ID response. Positive
+baselines exercise both synthetic actors and distinct originals. Denied
+requests leave cases/memberships/evidence/audit/private provenance and original
+file bytes unchanged. Error bodies validate as the declared flat `ApiError` and
+do not echo submitted credentials, private source markers or resource IDs.
+
+The new matrix exposed SQLite integer overflow in case/evidence list offsets
+larger than the signed SQLite range. The existing contract allows nonnegative
+offsets without an upper bound; those routes now return a correct empty page
+when the offset is beyond the total, consistent with F07. No status, wire field,
+route, identity provider or dependency was added. Automatic production token
+expiry remains unimplemented; replacing the synthetic verifier is tested as
+credential invalidation, not a claim of expiry behavior.
+
+### How you can test F09
+
+Use the prepared isolated environment by opening
+`.\.cache\setup\evora-shell.cmd` from the repository root. In its CMD shell:
+
+```bat
+npx.cmd --yes @redocly/cli@2.57.0 bundle specs/openapi.yaml --output .cache\setup\evora-openapi.json
+set "EVORA_CONTRACT_BUNDLE=%CD%\.cache\setup\evora-openapi.json"
+python -W error::ResourceWarning -m unittest backend.tests.test_m1_access -v
+python -W error::ResourceWarning -m unittest backend.tests.test_m1_access.M1AccessTests.test_all_case_routes_have_identical_foreign_and_missing_denials_for_both_actors -v
+python -W error::ResourceWarning -m unittest discover -s backend/tests -v
+```
+
+Expect **14 focused matrix tests passed**, **one selected failure-case test
+passed**, and **116 combined backend tests run: 115 passed, one known Windows
+symlink-permission skip**. Inputs are three synthetic cases (two owned by one
+actor), two synthetic identities, the synthetic network CSV and distinct binary
+originals. Every producer/guard/SQLite/filesystem operation is real; no endpoint
+or database result is mocked. The selected failure case proves identical
+foreign/missing 404 application bodies/headers across all six scoped operations
+for both actors, with no denied-write changes. Temporary data cleans up.
+
+Shared checks run via `& .\.cache\setup\verify.ps1` from PowerShell. Local
+results: 122 coordination and 48 frontend tests pass; contract lint/bundle,
+generated strict types, freshness/typecheck/build, DESIGN and whitespace pass.
+Real localhost eight-operation missing-auth and six-operation foreign/missing
+matrix, offset boundaries and unchanged SQL/file read-back passed, as did the
+existing case/create/upload/download real-client regression. The ignored local
+smoke is `.cache/f09/http_smoke.py`; its own server/data clean up automatically.
+
+F09 remains In Progress until authorized merge/read-back. Next is **I00**, a
+shared real API/UI intake gate requiring an explicit assignee, not a M1-only
+task. M1's later F08 needs real P04/P14 processing dependencies. No new browser,
+production expiry or Checkpoint 1A completion is claimed here. Full initial
+scope, approved additions, spec, frontend and dependency manifests are unchanged.
+
 ## F07 authorized case audit-event list
 
 **F07 / Checkpoint 1A / M1 / sharmelas-925 / Complete**, task branch

@@ -1,5 +1,111 @@
 # EVORA scope/contract verification and implementation readiness
 
+## F09 verification — 2026-11-01
+
+**F09 / Checkpoint 1A / M1 / sharmelas-925 / In Progress**, branch
+`feat/f09-m1-access-regressions`. User explicitly authorized implementation,
+commit, push and merge of this one task. Before reading task states, `git fetch
+origin` and clean status confirmed common local/origin HEAD
+**53bac04ed4b94f10334dc92a5ecead2c11dfecad**. Accepted F00/F05/F07 and real
+F01/F02/F03/F04/F06 are present. No F09 branch/worktree existed. Required
+proposal/scope/contract/runbook sources were read earlier in this chat and their
+diff against the previously inspected base is empty. Assignment bounds existing
+M1 tests plus demonstrated route-error corrections; no other task is started.
+
+### Coverage and demonstrated correction
+
+The operation-level matrix in `backend/tests/test_m1_access.py` compares all
+three M1 routers with eight shared-contract operations: createCase, listCases,
+getCase, uploadEvidence, listEvidence, getEvidence, downloadEvidence,
+listAuditEvents. It checks successful actor-owned reads/writes, declared schemas
+and original byte/hash/audit read-back, then every operation's missing/invalid/
+malformed/duplicate/replaced identity. All six scoped operations reject foreign,
+missing and revoked cases; the two evidence-resource reads also reject a target
+from another case even when the actor belongs to both cases. Create/list have
+no case-ID parameter: their applicable checks prove owned membership, filtered
+listing and rejected forged body IDs instead of inventing nonexistent-ID errors.
+
+Denied requests compare exact snapshots of cases, case_members, evidence,
+audit_events, intake_provenance and every private original byte. Two real
+synthetic actors, three real cases and distinct originals prevent a constant
+denial or wrong-original response from passing as correct isolation. Error
+responses are declared flat ApiError and omit private input/resource details.
+No timing-equality claim is made. Runtime route-inventory coverage fails if an
+M1 operation is added without a matrix entry.
+
+The first run's only failures were listCases/listEvidence at a valid offset of
+10**30: Python-to-SQLite integer binding overflow, not a contract-invalid input.
+Each route now skips the page SELECT when offset is beyond total, preserving
+the actual total/limit/offset in an empty success page. This mirrors accepted
+F07 behavior; no new upper bound, status, route or schema is introduced. All
+authorization/isolation checks passed before that correction and the full
+corrected suite passed afterward.
+
+### Actual checks and environment
+
+Windows / Python **3.14.8** / SQLite **3.50.4** / Node **22.23.3** / npm
+**12.2.0** / jsonschema **4.25.1**, existing isolated environment/locked frontend
+dependencies. No dependency, model, system configuration or API-contract change.
+
+| Check | Actual result |
+|---|---|
+| F09 focused matrix | **14 pass**, no skips; every current M1 operation inventoried, both actors and exact state/byte assertions |
+| Selected foreign/missing failure case | **One pass**, all six scoped operations for both actors; equal application 404 bodies/headers, no effects |
+| Full backend regression | **116 run: 115 pass, one skip**, prior F05 Windows symlink permission limitation |
+| Coordination verifier/tests | **Pass / 122 pass**, no skips |
+| Frontend tests | **48 pass**, no skips |
+| Contract/generated strict TypeScript | **Pass**, pinned Redocly 2.57.0/openapi-typescript 7.10.1/TypeScript 5.9.3; existing license warning |
+| Frontend freshness/typecheck/build | **Pass**, generated types unchanged |
+| DESIGN/whitespace | **Pass**, DESIGN 0.4.0 zero errors/warnings |
+| Real localhost M1 matrix | **Pass**, all eight reject missing header, six scoped operations have equal foreign/missing 404, no denied-create/upload effects; original/hash/audit and valid huge offsets read back |
+| Existing real-client regression | **Pass**, U02/U02B create/list/pagination/isolation; U03 upload/metadata/400/413/404; U04 original byte/hash/empty-file download |
+
+All case/access/upload/audit/database/filesystem producers are real. Only
+identities and data are synthetic; no endpoint or database result is mocked.
+Revocation removes actual temporary membership or replaces the existing
+synthetic verifier. This proves rejected/replaced credentials, not automatic
+production token expiry. No issuer/expiry policy is invented. Each test removes
+temporary data; real HTTP/client smoke stops its own server. Browser/persistent
+storage acceptance and I00's full API/UI exit evidence remain separate.
+
+### How you can test it
+
+Open `.\.cache\setup\evora-shell.cmd` from the repository root, then in that
+prepared CMD shell:
+
+```bat
+npx.cmd --yes @redocly/cli@2.57.0 bundle specs/openapi.yaml --output .cache\setup\evora-openapi.json
+set "EVORA_CONTRACT_BUNDLE=%CD%\.cache\setup\evora-openapi.json"
+python -W error::ResourceWarning -m unittest backend.tests.test_m1_access -v
+python -W error::ResourceWarning -m unittest backend.tests.test_m1_access.M1AccessTests.test_all_case_routes_have_identical_foreign_and_missing_denials_for_both_actors -v
+python -W error::ResourceWarning -m unittest discover -s backend/tests -v
+```
+
+Expected: 14 focused pass, one selected failure case pass, 116 backend tests
+run with the known platform skip above. Inputs are network.csv, distinct
+synthetic binary originals, two actors and three cases (two owned by one actor).
+The selected failure proves foreign and missing IDs are indistinguishable for
+every scoped M1 operation and denied writes leave all records/originals intact.
+Full shared checks ran via `.cache/setup/verify.ps1`; output is
+`.cache/f09/shared-regressions.log` plus per-step logs in `.cache/setup/`.
+Initial red matrix and corrected outputs: `.cache/f09/initial-m1-tests.log`,
+`.cache/f09/m1-access-tests.log`; final corrected positives also ran in the full
+backend suite. Selected failure: `.cache/f09/failure-case.log`.
+
+Real localhost smoke command:
+`& .\.venv\Scripts\python.exe -W error::ResourceWarning .cache/f09/http_smoke.py`.
+Client regression uses pinned Node on `frontend/test/cases.integration.mjs`
+after tests/build, with EVORA_TEST_PYTHON pointing to the absolute local venv
+interpreter. Both passed; logs are under `.cache/f09/`. No new browser/hosted CI
+claim at this pre-publication stage. Spec, generated client, frontend, manifests,
+proposal and complete FEATURE_SCOPE including approved additions are unchanged.
+
+**F09 remains In Progress** until the authorized merge/read-back. Next process
+is **I00**, the shared real API/UI authorized-intake integration gate, requiring
+an explicit assignee. It is not solely M1 and was not started. Later M1 F08
+also needs real M2 P04/P14 processing. Checkpoint 1A remains open; completing
+F09 does not complete the entire M1 module or the agreed product scope.
+
 ## F07 verification — 2026-11-01
 
 **F07 / Checkpoint 1A / M1 / sharmelas-925 / Complete**, task branch
