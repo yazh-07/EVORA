@@ -1,3 +1,77 @@
+# P03C source-backed row events — 2026-11-01
+
+P03C / Checkpoint 1B / M2 yazh-07, feat/p03c-source-events from verified shared
+base e68969df9f19f8f78320a708bc3cb80a3c05b85d. User approved the scope/event
+policy and authorized implementation/test/commit/push/merge. In Progress pending
+integration. Current task state is in docs/ROADMAP.md; older notes are historical.
+
+backend.parsers.source_events.project_source_events consumes the actual P03B
+CandidateProjection (over P01/P02/P03) and an explicit case_id UUID. It returns a
+tuple of frozen SourceEventResult values, version source-events/1. Each contains
+an existing-schema Event and the preserved internal P03 TimeNormalization.
+This component has no I/O, persistence, route, authorization grant or run replay.
+
+- One candidate per complete logical network/GPS row; match exact source locator
+  columns and physical line spans under one case/evidence/run/adapter. Cite all
+  three row Observation IDs and the original Evidence ID. Identical text/time in
+  distinct source rows remains distinct; row fragments/duplicates/overlaps reject.
+- network.activity summary says Network log reports: followed by the raw event
+  cell. gps.location says GPS record reports device ... with source identifier
+  and exact P03 normalized coordinates. Reports remain unverified source content,
+  never a verified occurrence/ownership claim or inferred event classification.
+  Text is untrusted data; consumers must render safely, never execute markup.
+- Network participant IDs are the actual supplied P03B device and IP Entity UUIDs;
+  GPS participant is the actual device Entity UUID. Verify exact same-case key/
+  Evidence/Observation membership. No participant regenerated or identity inferred.
+  Distinct D-7/D-8 keys remain distinct. Confidence 0 means unavailable, no boost.
+- Preserve original time/UTC/fractional precision and uncertainty exactly. Missing,
+  ambiguous, invalid and -00:00 times retain raw/no UTC; never use processing time.
+  Reject conflicting/forged time or coordinate values, mixed cases/run context,
+  unsupported projection versions and missing/duplicate/foreign participants.
+  Rejection is atomic with safe fixed SourceEventError codes and no raw echo.
+- Fresh Event UUIDs identify unpublished records. Existing source/Entity values,
+  IDs, locators, original bytes/hash and completed history remain unchanged.
+  P04/P05B/P14 retain publication/listing/private provenance; no full app claim.
+
+## How you can test P03C
+
+PowerShell at repository root with Python 3.14.8 and installed requirements:
+
+    npx.cmd --yes @redocly/cli@2.57.0 bundle specs/openapi.yaml -o "$env:TEMP/evora-p03c-openapi.json"
+    $env:PYTHONUTF8 = '1'
+    $env:EVORA_CONTRACT_BUNDLE = "$env:TEMP/evora-p03c-openapi.json"
+    python -W error::ResourceWarning -m unittest backend.tests.test_source_events -v
+
+Expect 15 passing tests: complete/multiline/repeated source rows, real source and
+participant joins, schema/immutability/time precision and uncertainty, incomplete/
+duplicate/mixed-case/run/time/coordinate/participant failures. Actual F03/F05 ->
+P01/P02/P03/P03B -> P03C integration uses synthetic identities/unpersisted run
+UUIDs, real FastAPI/SQLite/private files/parsers and HTTPX in-process ASGI.
+No parser/storage/normalizer/Entity double; separate I00 smoke uses loopback HTTP.
+Earlier unrelated suites retain documented doubles. No new UI producer claimed.
+
+    python -c "from pathlib import Path; from uuid import uuid4; from backend.parsers.network_csv import parse_network_csv; from backend.parsers.normalization import normalize_observations; from backend.parsers.candidate_entities import project_candidate_entities; from backend.parsers.source_events import project_source_events; c=uuid4(); n=normalize_observations(parse_network_csv(Path('fixtures/synthetic-case/network.csv').read_bytes(),case_id=c,evidence_id=uuid4(),processing_run_id=uuid4())); p=project_candidate_entities(n,case_id=c); print([(x.event.kind,x.event.summary,len(x.event.observation_ids),len(x.event.entity_ids),x.event.observed_at_utc) for x in project_source_events(p,case_id=c)])"
+
+Expect two network.activity reports, each summary Network log reports: connected,
+three source Observation IDs/two actual participant IDs, UTC 2026-01-12T10:01:00Z
+and 2026-01-12T10:02:00Z. GPS fixture adds one gps.location report for D-8 with
+12.9716/77.5946, three Observation IDs and one actual device Entity ID. Record
+UUIDs vary; existing source/participant IDs do not change. No output persisted.
+
+Failure/uncertainty controls with synthetic inputs:
+
+    python -m unittest backend.tests.test_source_events.SourceEventTests.test_incomplete_and_duplicate_row_fields_reject_atomically -v
+    python -m unittest backend.tests.test_source_events.SourceEventTests.test_raw_precision_utc_and_timezone_uncertainty_preserved -v
+
+Expect PASS: missing network event column raises INCOMPLETE_ROW; duplicate device
+field raises DUPLICATE_ROW_FIELD, without partial output. Invalid source time
+2026-02-30T10:02:00Z keeps raw/no UTC and invalid_timestamp; -00:00 remains unknown.
+These exact commands/examples were exercised. Optional cleanup: remove the TEMP
+bundle after checks. Full regression results in docs/PREIMPLEMENTATION_REVIEW.md.
+No new dependency/model/provider, clean local reinstall or real-evidence benchmark.
+Entire agreed initial scope/additions preserved. Next M2 P04 processing lifecycle;
+no next task started in this assignment.
+
 # P03B candidate identifiers/entities — 2026-11-01
 
 P03B / Checkpoint 1B / M2 yazh-07, feat/p03b-candidate-entities, verified shared

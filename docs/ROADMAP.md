@@ -344,6 +344,23 @@ HTTP post-merge smoke PASS on that exact commit. Checkpoint 1B remains open. Ent
 scope/approved additions preserved. Next M2 P03C source-backed event projection;
 no next task started. P04/P05/P14 publication/listing/provenance remain separate.
 
+### P03C live handoff — 2026-11-01
+
+**P03C / 1B / M2 yazh-07 / In Progress.** Isolated feat/p03c-source-events from
+verified shared base **e68969df9f19f8f78320a708bc3cb80a3c05b85d**. Real P01/P02/
+P03 prerequisites and actual P03B participant records integrated; 0/1A Complete.
+Approved bounded scope/policy in AGENT_TASKS.md/COMMUNICATION.md. One candidate
+source report per complete network/GPS row, all source IDs and actual participant
+Entity IDs, preserved raw/P03 UTC/time uncertainty, confidence 0 unavailable.
+No verified identity/occurrence or publication/listing claim. 15 focused tests
+PASS, including real originals/parsers/normalization/entities source chain.
+Full backend 194 PASS/1 Windows symlink SKIP, frontend 48 PASS, coordination
+122 PASS; contract/types/build/DESIGN and real I00 HTTP regressions PASS.
+Exact commands/doubles/limits in PREIMPLEMENTATION_REVIEW.md. Integration
+acceptance pending; no Complete claim. Entire
+initial scope/additions retained. Next M2 P04 processing lifecycle; P05B listing
+and P14 persistence remain required later rows. No next task started.
+
 ## Module assignment and live task state
 
 | Module | Assigned GitHub handle | Accountable boundary | State |

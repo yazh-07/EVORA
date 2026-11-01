@@ -179,3 +179,40 @@ caller chooses authorized outputs, rather than mixing historical runs. Source
 validation retains the existing six network/GPS kinds and schema value bounds.
 No access grant is implied by an internal UUID; real source access remains F00/F05.
 Entire agreed initial scope including approved transcription remains unchanged.
+
+
+## P03C approved source-event policy — 2026-11-01
+
+User approved the bounded P03C scope and row-to-event policy. Version
+source-events/1 creates one candidate event per complete P01/P02 logical CSV row,
+including rows spanning physical lines. Group by explicit case/evidence/run,
+physical row span and adapter family, never by coincident time/device/text.
+Network rows require device/ip/event columns; GPS rows device/latitude/longitude.
+Every Event cites all three source observation IDs and that original Evidence ID.
+Exact canonical parser locators identify columns; reject duplicate/incomplete,
+wrong-column, overlapping row spans or mixed adapter rows within one evidence.
+Equal-content rows with distinct locators remain separate source reports.
+
+Use network.activity and gps.location kinds, summaries explicitly framed as
+source reports. Preserve the network event cell verbatim in its report summary;
+GPS report summarizes source device and P03 normalized coordinates. These are
+untrusted source text for safe rendering, not confirmed activity/location or
+identity/ownership. No event classification inferred from a string such as
+connected; no person participant, link between distinct device keys or score boost.
+
+Consume actual P03B CandidateProjection participant records already integrated
+in this base. Verify exact same-case key/source memberships and use their actual
+record UUIDs: network device plus IP; GPS device. No invented or regenerated
+participant IDs. P01/P02/P03 remain catalog prerequisites; this implementation
+uses the existing P03B handoff rather than inventing an independent identity map.
+Reject missing/duplicate/foreign/altered Entity references or unsupported versions.
+
+Preserve row raw timestamp and P03 TimeNormalization envelope exactly. Row cells
+must agree on raw/UTC/time uncertainty and match P03 interpretation; malformed,
+missing, ambiguous and -00:00 timestamps keep raw/no UTC, never processing time.
+GPS coordinates must match actual P03 exact canonical values. Fresh event UUIDs
+are unpublished record IDs; pure projection is not run replay/idempotency.
+confidence=0 is unavailable, not measured event truth/extraction/corroboration.
+No DB writes, new wire fields, API route, processing publication or list producer.
+P04/P05B/P14 retain lifecycle/listing/private persistence tasks. Full initial
+scope including approved transcription remains unchanged.
