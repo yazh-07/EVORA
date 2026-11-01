@@ -145,3 +145,37 @@ only existing Observation fields (optional observed_at_utc) serialize to HTTP
 shape. P14 will persist appropriate private provenance. No public status field,
 endpoint, entity key or source-confidence increase. P04 owns actual runs and
 publication. P03B/P03C consume normalized values afterward. Full scope retained.
+
+
+## P03B approved candidate policy — 2026-11-01
+
+User explicitly approved the P03B bounded file scope and exact-key policy.
+Version candidate-identifiers/1 consumes P03 normalized observations for one
+explicitly supplied case. Device values remain exact/case-sensitive with no
+trim, case fold, Unicode rewrite or inferred ownership: device:D-7 and device:D-8
+are distinct. Network IP keys use the existing P01 normalized_value verbatim
+with ip: namespace; P01 currently retains validated source spelling. This does
+not merge alternate IPv6 spellings, mapped address forms or device/IP namespaces.
+Future key-policy changes need versioning, never rewriting completed outputs.
+
+Group identical keys only within the supplied source set/case. Entity kind is
+device or ip, canonical_label is the unchanged key value, and source Evidence/
+Observation UUID references are unique lexically ordered tuples. Output entities
+are ordered by candidate key. Each gets a fresh record UUID before publication;
+repeating this pure projection is not P04 replay or a global identity registry.
+confidence=0 is unavailable, not probability/reliability/corroboration. Existing
+source extraction scores remain unchanged; repeated mentions do not boost them.
+
+New frozen observation copies add only existing optional entity_key on identifier
+kinds; other observations and P03 time/coordinate uncertainty envelopes survive.
+No key/entity is inferred from network.event or GPS coordinates. No source/raw/
+normalized/time/locator/UUID changes, person identity, event projection, HTTP,
+DB write, run lifecycle or list API. P04/P05/P14 retain their required tasks.
+
+Reject mixed-case input, duplicate observation UUIDs, inconsistent evidence/run
+context or preassigned conflicting keys atomically with fixed safe codes. One
+run belongs to one evidence item, and one supplied evidence item uses one run;
+caller chooses authorized outputs, rather than mixing historical runs. Source
+validation retains the existing six network/GPS kinds and schema value bounds.
+No access grant is implied by an internal UUID; real source access remains F00/F05.
+Entire agreed initial scope including approved transcription remains unchanged.

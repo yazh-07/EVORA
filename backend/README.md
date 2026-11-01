@@ -1,3 +1,69 @@
+# P03B candidate identifiers/entities — 2026-11-01
+
+P03B / Checkpoint 1B / M2 yazh-07, feat/p03b-candidate-entities, verified shared
+base 59de4686f4a59bff25528d386ce458d259d96e6c. User approved the bounded scope
+and key policy and authorized implementation/test/commit/push/merge. In Progress
+pending actual integration. Current task state is in docs/ROADMAP.md; older notes
+below are historical.
+
+backend.parsers.candidate_entities.project_candidate_entities consumes actual P03
+NormalizationResult values plus an explicit case_id UUID. It returns a frozen
+CandidateProjection containing new frozen observations and source-backed Entity
+records, version candidate-identifiers/1. It has no I/O or authorization grant.
+
+- network.device/gps.device -> exact case-sensitive device:<normalized_value>;
+  network.ip -> ip:<P01 normalized_value>. No trim/case fold/Unicode rewrite.
+  P01 retains validated IP source spelling, so alternate IPv6 spellings remain
+  separate. Namespaces prevent device/address collisions. D-7/D-8 stay distinct.
+- Group only identical keys within this case/source set. Entity kind device/ip;
+  label is unchanged identifier text, references are unique lexically sorted
+  source UUIDs, entities sorted by key. Each entity gets a new unpublished UUID;
+  pure repeated projection is not run replay or a persistent identity registry.
+- Confidence 0 means unavailable, never corroboration/identity probability.
+  Existing extraction scores, IDs, raw/normalized values, time/uncertainty and
+  locators are preserved. Nonidentifier kinds emit no key/entity. Inputs and
+  completed history remain immutable. Fresh wire copies use existing schema only.
+- Mixed cases, duplicate observation UUIDs, conflicting evidence/run contexts,
+  malformed identifiers and conflicting preassigned keys reject the entire batch
+  with safe CandidateEntityError codes. No partial result or raw error echo.
+- No inferred person identity/ownership, event producer, public route, DB write,
+  lifecycle or list API. P03C/P04/P05/P14 retain those separate tasks. Source
+  authorization belongs to F00/F05; unpersisted test run UUIDs are synthetic.
+
+## How you can test P03B
+
+PowerShell at repository root with Python 3.14.8 and installed requirements:
+
+    npx.cmd --yes @redocly/cli@2.57.0 bundle specs/openapi.yaml -o "$env:TEMP/evora-p03b-openapi.json"
+    $env:PYTHONUTF8 = '1'
+    $env:EVORA_CONTRACT_BUNDLE = "$env:TEMP/evora-p03b-openapi.json"
+    python -W error::ResourceWarning -m unittest backend.tests.test_candidate_entities -v
+
+Expect 15 passing tests. Synthetic identifier controls cover exact matching,
+case/whitespace/Unicode distinctions, namespace/IP spelling, identical-key source
+grouping, schema/immutability/uncertainty, safe invalid/mixed-case/conflicting
+inputs and actual F03/F05 -> P01/P02/P03 -> P03B source/hash/SQL read-back.
+Focused HTTP transport is in-process HTTPX ASGI; actual FastAPI/SQLite/private
+files/parsers are used. No parser/storage double. I00 separately checks loopback
+HTTP; unrelated suites retain their documented doubles. No UI producer claimed.
+
+    python -c "from pathlib import Path; from uuid import uuid4; from backend.parsers.network_csv import parse_network_csv; from backend.parsers.normalization import normalize_observations; from backend.parsers.candidate_entities import project_candidate_entities; c=uuid4(); n=normalize_observations(parse_network_csv(Path('fixtures/synthetic-case/network.csv').read_bytes(),case_id=c,evidence_id=uuid4(),processing_run_id=uuid4())); p=project_candidate_entities(n,case_id=c); print([(e.candidate_key,e.confidence,len(e.observation_ids)) for e in p.entities])"
+
+Expect device:D-7, device:D-9, ip:203.0.113.7 and ip:203.0.113.9, each confidence
+0 and one source Observation ID. The GPS fixture adds device:D-8, not a D-7 link.
+Fresh entity UUIDs vary; source observation/evidence/run UUIDs remain unchanged.
+
+Failure case (synthetic duplicate observation, no outputs published):
+
+    python -c "from pathlib import Path; from uuid import uuid4; from backend.parsers.network_csv import parse_network_csv; from backend.parsers.normalization import normalize_observations; from backend.parsers.candidate_entities import project_candidate_entities; c=uuid4(); n=normalize_observations(parse_network_csv(Path('fixtures/synthetic-case/network.csv').read_bytes(),case_id=c,evidence_id=uuid4(),processing_run_id=uuid4())); project_candidate_entities((n[0],n[0]),case_id=c)"
+
+Expect nonzero exit with CandidateEntityError code DUPLICATE_OBSERVATION and no
+source cells in the diagnostic. Passing another case UUID yields CASE_MISMATCH.
+Full completed-checkpoint commands/results are in docs/PREIMPLEMENTATION_REVIEW.md.
+No new dependencies/models/provider, clean reinstall or real-evidence benchmark
+claimed. Full agreed initial scope including approved additions stays unchanged.
+Next M2 P03C projects source-backed events; no next task starts here.
+
 # P03 source normalization — 2026-11-01
 
 P03 / Checkpoint 1B / M2 yazh-07, feat/p03-normalization, verified shared base
