@@ -1,5 +1,121 @@
 # EVORA scope/contract verification and implementation readiness
 
+## F06 verification — 2026-11-01
+
+**F06 / Checkpoint 1A / M1 / sharmelas-925 / In Progress**, branch
+`feat/f06-intake-audit`. Before task-state inspection, `git fetch origin` fetched
+all branch refs with the configured `+refs/heads/*:refs/remotes/origin/*`
+refspec. The clean local common base was 27 commits behind and fast-forwarded
+from `86f14ee` to **3eab939ada44363de5420d542ead711198ccea0f**. Local HEAD and
+`origin/docs/coordination-foundation` matched before selecting/branching F06.
+The actual base contains merged F01–F05 and U02/U02B/U03/U04, despite older
+historical In Progress records. F06 was unclaimed with no local/remote task
+branch. It is the earliest dependency-ready M1 row in unfinished Checkpoint 1A.
+The F06 assignment card records paths and contract/producer boundaries.
+
+### Implementation and integrity boundary
+
+- `backend/audit.py` initializes `audit_events` and linked private
+  `intake_provenance`. It records the authenticated actor, case, Evidence ID,
+  server UTC intake timestamp and the existing `uploadEvidence` operation name.
+  Source metadata/hash/size/acquisition text are read from the actual inserted
+  evidence row, scoped to the authorized case, into an immutable private
+  `intake-source.v1` snapshot. No raw bytes, token or model output is stored by
+  this hook; public audit contains only safe references, with no source text.
+- The F03 upload hook uses the same SQLite transaction as evidence insertion;
+  audit/provenance/commit failure rolls all metadata/accounting back and removes
+  the newly created original file through the existing F03 cleanup path. No
+  success event is recorded for rejected/failed uploads. Read/download operations
+  do not fabricate a second intake event. Each successful separate upload still
+  creates its own Evidence ID; no new idempotency/deduplication behavior.
+- Startup wiring adds empty tables without replacing existing originals or
+  inventing pre-F06 upload actors/history. SQLite append-only triggers cover
+  UPDATE, DELETE, UPSERT and INSERT OR REPLACE; WITHOUT ROWID also avoids hidden
+  rowid replacement. Database owners who alter/drop schema are outside this
+  write-protection claim. Hard-crash/power-loss recovery between filesystem and
+  SQLite remains untested; request-time exceptions/rollback were exercised.
+- F07's `listAuditEvents` route is deliberately absent. No private provenance
+  API or model/parser/RAG producer is added. Existing intake response/schema,
+  frontend, requirements, proposal and complete FEATURE_SCOPE (including approved
+  transcription/correction additions) have an empty diff against the common base.
+
+### Environment and actual results
+
+Native Windows, PowerShell 7.6.5, Git 2.53.0.windows.3, CPython **3.14.8**,
+SQLite **3.50.4**, Node **22.23.3**, npm **12.2.0**, jsonschema **4.25.1**.
+The existing isolated `.venv` lacked the newly fetched manifest's
+`python-multipart==0.0.32`; `python -m pip install -r requirements.txt` installed
+that documented pin. No manifest, system-wide tool or model change. The frontend
+lockfile/package pins were unchanged; the prepared local dependencies were used.
+
+| Check | Actual result |
+|---|---|
+| F06 focused suite | **17 pass**, no skips; real multipart/FastAPI/SQLite/private filesystem and bundled schema assertions |
+| Selected provenance insert failure | **One test pass**; real SQLite trigger aborts after audit insertion, leaving zero evidence/audit/provenance rows and no file |
+| All backend tests | **87 run: 86 pass, one skip**; the prior F05 symlink-escape test cannot create symlinks on this Windows account; all F06 tests execute |
+| Shared coordination | Verifier passes; **122 tests pass**, no skips |
+| Frontend tests | **48 pass**, no skips |
+| OpenAPI / generated TypeScript | Redocly 2.57.0 lint/bundle and fresh openapi-typescript 7.10.1 / strict TypeScript 5.9.3 compilation pass; existing missing-license warning |
+| Frontend API freshness/typecheck/build | **Pass**, generated declarations unchanged |
+| DESIGN / whitespace | **Pass**, DESIGN 0.4.0 has zero errors/warnings; `git diff --check` passes |
+| Real F06 localhost smoke | **Pass**, real case/upload 201, original/hash/size download 200, foreign upload 404 and SQL read-back of one matching event/source pair |
+| Existing U02/U02B/U03/U04 real-client integration | **Pass**, case creation/listing/pagination/isolation, multipart/metadata/400/413/404, download-controller byte/hash read-back and empty original |
+
+Doubles: synthetic bearer identities/fixture bytes only; negative tests patch the
+upload byte limit to 64 KiB and use genuine SQLite triggers/deferred constraints
+to force failures. No mocked upload, database, filesystem, audit or provenance
+producer is used. New tests cover mutation/replacement rejection, each insertion
+and commit rollback, failed-attempt retry, two-case joins, ignored forged actor/
+time/action form fields, safe logs, startup idempotence and existing-evidence
+upgrade. F06's localhost check spawns the repository's synthetic identity test
+server and reads actual SQLite after API responses; it stops its own process.
+The first ignored smoke-harness attempt left its read-back connection open;
+explicit closure fixed it, and the rerun passed with clean temporary cleanup.
+The first attempt's leftover synthetic file/directory was removed.
+
+### Reproduce / How you can test it
+
+From the repository root, launch `.\.cache\setup\evora-shell.cmd` to select the
+prepared isolated Python/Node/npm tools in a CMD shell, then:
+
+```bat
+npx.cmd --yes @redocly/cli@2.57.0 bundle specs/openapi.yaml --output .cache\setup\evora-openapi.json
+set "EVORA_CONTRACT_BUNDLE=%CD%\.cache\setup\evora-openapi.json"
+python -W error::ResourceWarning -m unittest backend.tests.test_audit -v
+python -W error::ResourceWarning -m unittest backend.tests.test_audit.IntakeAuditTests.test_provenance_insert_failure_rolls_back_event_evidence_and_original -v
+python -W error::ResourceWarning -m unittest discover -s backend/tests -v
+```
+
+Expected: 17 focused pass, one selected failure test pass, 87 backend tests run
+with the one platform skip described above. Inputs are the synthetic network CSV,
+two synthetic actors/cases and binary/private-marker fixtures; no real evidence
+or credentials. Tests automatically remove their temporary databases/files.
+Exact shared commands were run via `.cache/setup/verify.ps1` (PowerShell), with
+combined output in `.cache/f06/shared-regressions.log` and individual logs in
+`.cache/setup/`. F06/failure/HTTP logs are in `.cache/f06/`.
+
+The existing real-client integration command was:
+
+```powershell
+$env:EVORA_TEST_PYTHON = (Resolve-Path '.venv\Scripts\python.exe').Path
+& .\.cache\setup\node_modules\node-v22.23.3-win-x64\node.exe frontend/test/cases.integration.mjs
+```
+
+This ran after frontend tests/build; its temporary server/data clean up
+automatically. The local F06 SQL read-back smoke command was
+`& .\.venv\Scripts\python.exe -W error::ResourceWarning .cache/f06/http_smoke.py`.
+No new browser/rendering/accessibility or hosted CI result is claimed. F07 audit
+listing and the I00 end-to-end intake gate are not delivered by these checks.
+**F06 stays In Progress**, pending user review/integration. **F07** is the next
+M1 task after accepted F06 handoff; F09 depends on F07. I00 remains a shared task
+requiring an explicit assignee. No staging, commit, push, merge or second task.
+
+The user subsequently authorized finishing F06 and committing, pushing and
+merging this scoped task into `docs/coordination-foundation` on 2026-11-01.
+The clean remote target still matches the common base; a fresh real localhost
+upload/download/audit/source SQL smoke passed before publication. F07 remains
+a separate next assignment; final merge/CI acceptance will be read back.
+
 ### F05 verification — 2026-10-31
 
 **F05 / Checkpoint 1A / M1 / sharmelas-925 / In Progress**, branch

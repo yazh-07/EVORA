@@ -9,6 +9,7 @@ from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 
 from backend.auth import CaseAccess, RejectTokens, TokenVerifier
+from backend.audit import initialize_audit
 from backend.database import SQLiteDatabase
 from backend.cases import SQLiteCaseAccess, initialize_cases, router
 from backend.evidence import initialize_evidence, router as evidence_router
@@ -36,6 +37,7 @@ def create_app(
     async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
         initialize_cases(database)
         initialize_evidence(database)
+        initialize_audit(database)
         yield
 
     app = FastAPI(

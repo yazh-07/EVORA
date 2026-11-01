@@ -1,5 +1,77 @@
 # EVORA backend
 
+## F06 append-only intake audit and private provenance
+
+**F06 / Checkpoint 1A / M1 / sharmelas-925 / In Progress**, branch
+`feat/f06-intake-audit`, verified common base
+`3eab939ada44363de5420d542ead711198ccea0f`.
+
+Each successful `uploadEvidence` now appends a server-authored `AuditEvent`
+using the authenticated actor, authorized case, Evidence ID and UTC intake time.
+Its action is the existing operation identifier `uploadEvidence`. Public audit
+contains safe references only; uploaded filenames, source labels, acquisition
+text, bytes, bearer credentials and private storage paths are not added to it.
+The upload's existing 201 `Evidence` response is unchanged.
+
+The linked private `intake_provenance` snapshot (`intake-source.v1`) preserves
+the original filename/source label/media type/acquisition text, byte hash/size
+and intake time from the actual inserted evidence metadata. It stores no raw
+file bytes, bearer token or model output. Evidence metadata, audit and private
+provenance commit in the same SQLite transaction. A metadata/accounting/commit
+failure rolls all records back and uses the existing upload cleanup to remove
+that upload's file. Invalid, unauthorized and oversized uploads create no
+successful-intake event. A repeated successful upload creates a new Evidence
+ID/event; the upload contract has no idempotency key or implicit deduplication.
+
+Startup adds empty accounting tables to existing databases and preserves prior
+originals/metadata. It does not invent actors or backfill history for evidence
+uploaded before F06. SQL triggers reject ordinary UPDATE, DELETE, replacement
+and UPSERT mutations of both accounting tables. This is application/database
+write protection, with no claim of tamper resistance against a database owner
+who changes the schema. Crash/power-loss recovery across filesystem and SQLite
+has not been verified by this task.
+
+### How you can test F06
+
+Use the pinned Python/Node environment and `requirements.txt`. On this prepared
+machine, launch `.\.cache\setup\evora-shell.cmd` from the repository root; the
+new CMD shell selects the existing isolated toolchain. Run:
+
+```bat
+npx.cmd --yes @redocly/cli@2.57.0 bundle specs/openapi.yaml --output .cache\setup\evora-openapi.json
+set "EVORA_CONTRACT_BUNDLE=%CD%\.cache\setup\evora-openapi.json"
+python -W error::ResourceWarning -m unittest backend.tests.test_audit -v
+python -W error::ResourceWarning -m unittest backend.tests.test_audit.IntakeAuditTests.test_provenance_insert_failure_rolls_back_event_evidence_and_original -v
+python -W error::ResourceWarning -m unittest discover -s backend/tests -v
+```
+
+- Expect **17 focused tests passed** and **one selected failure-case test
+  passed**. Synthetic inputs include `fixtures/synthetic-case/network.csv`,
+  binary originals, two test identities/cases and private-data markers.
+  Read-back validates the shared `AuditEvent` schema and exact source/hash/size,
+  preserved timestamp text, original download and no cross-case association.
+- The failure case uses a real SQLite trigger to reject provenance insertion
+  after the audit insert. Expected result: evidence/audit/provenance counts are
+  zero and the temporary original file is removed. Other tests exercise audit
+  insert and deferred commit failure, retry, SQL replacement rejection, denied
+  uploads, private logging and legacy database startup.
+- Expect **87 combined backend tests run: 86 passed, one Windows symlink test
+  skipped** on this account. All 17 F06 tests execute without skips. The tests
+  create and automatically clean temporary synthetic databases/files.
+- Shared regressions can be run from PowerShell with
+  `& .\.cache\setup\verify.ps1`. The existing real API/client regression is
+  `node frontend/test/cases.integration.mjs` after frontend tests/build, with
+  `EVORA_TEST_PYTHON` set to the absolute `.venv\Scripts\python.exe` path.
+
+All of the focused/backend/shared checks and real localhost integration above
+were exercised. F06's local HTTP/SQL smoke is in the ignored
+`.cache/f06/http_smoke.py`; it stops its own server and removes its temporary
+files. No new browser or hosted CI acceptance is claimed. The audit-list API is
+**F07**, not implemented here, and private provenance has no public route.
+Processing/model/RAG provenance remains with its existing later tasks. Full
+initial scope, approved additions, API schemas and dependencies are unchanged.
+F06 remains In Progress for review/integration; F07 is next after acceptance.
+
 ## F05 authorized original download
 
 `GET /api/v1/cases/{caseId}/evidence/{evidenceId}/content`
