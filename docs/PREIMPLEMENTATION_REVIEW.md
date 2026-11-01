@@ -2038,3 +2038,25 @@ EVORA_CONTRACT_BUNDLE passed **180 run: 179 PASS / 1 existing Windows symlink-
 permission SKIP**; python -m pip check PASS, no broken requirements. All completed
 0/1A regressions pass, with that disclosed skip; no unsupported symlink result
 claimed. Other-OS/clean-install results await hosted CI. Integration still pending.
+
+
+### P03B integrated acceptance — 2026-11-01
+
+User-authorized task commit **afed7256991aa7cd7c3037aa5d4e318f82019fbe** pushed
+to feat/p03b-candidate-entities, then merged without conflicts into the recorded
+shared branch docs/coordination-foundation at
+**c58e7f24e4f7c21fc5120dc7288d02f960b58006**. On that exact merge, 15 focused
+candidate tests, coordination verifier and actual I00 loopback HTTP intake/audit/
+original/actor/failure smoke PASS. Final pre-merge docs candidate: 122 coordination
+PASS; full prior 0/1A backend/frontend regressions and contract/types/build/DESIGN
+pass as recorded above. Scope guard confirms full FEATURE_SCOPE/spec/frontend/
+existing parsers/dependencies unchanged. Original dirty checkout and other work
+preserved. No required P03B acceptance remains unintegrated.
+
+P03B Complete; Checkpoint 1B/M2 remain open. This supersedes the earlier pending-
+merge handoffs. Hosted CI not yet claimed at this recording point. Synthetic auth/
+unpersisted run UUIDs and focused ASGI transport remain disclosed; real processing
+publication/list APIs/provenance persistence stay with P04/P05/P14. No full-system
+completion or real-evidence benchmark claimed. Next eligible M2 P03C source-backed
+event projection, with actual P01/P02/P03 prerequisites integrated. No next task
+started; waiting for user review. Full agreed initial scope/additions preserved.

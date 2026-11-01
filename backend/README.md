@@ -2,8 +2,10 @@
 
 P03B / Checkpoint 1B / M2 yazh-07, feat/p03b-candidate-entities, verified shared
 base 59de4686f4a59bff25528d386ce458d259d96e6c. User approved the bounded scope
-and key policy and authorized implementation/test/commit/push/merge. In Progress
-pending actual integration. Current task state is in docs/ROADMAP.md; older notes
+and key policy and authorized implementation/test/commit/push/merge. Complete
+after merge c58e7f24e4f7c21fc5120dc7288d02f960b58006; 15 focused tests,
+coordination verifier and real I00 post-merge HTTP smoke PASS.
+Current task state is in docs/ROADMAP.md; older notes
 below are historical.
 
 backend.parsers.candidate_entities.project_candidate_entities consumes actual P03

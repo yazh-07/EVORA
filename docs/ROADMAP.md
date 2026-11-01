@@ -328,7 +328,7 @@ P03C also consumes P03, with no later task started here.
 
 ### P03B live handoff — 2026-11-01
 
-**P03B / 1B / M2 yazh-07 / In Progress.** Isolated feat/p03b-candidate-entities
+**P03B / 1B / M2 yazh-07 / Complete.** Isolated feat/p03b-candidate-entities
 from verified common base **59de4686f4a59bff25528d386ce458d259d96e6c**, with
 real merged P01/P02/P03 and completed 0/1A. User approved exact case-sensitive
 device/IP candidate keys, same-case grouping and bounded file scope; assignment
@@ -338,8 +338,9 @@ D-7/D-8 stay distinct, confidence 0 unavailable, no inferred person identity.
 15 focused PASS, full backend 179 PASS/1 Windows symlink SKIP, frontend 48 PASS
 and coordination 122 PASS; contract/types/build/DESIGN and real I00 HTTP
 regressions PASS. Actual original/P01/P02/P03 source chain tested, synthetic run
-context disclosed in PREIMPLEMENTATION_REVIEW.md. Integration pending; no
-Complete claim. Entire initial
+context disclosed in PREIMPLEMENTATION_REVIEW.md. Integrated at
+**c58e7f24e4f7c21fc5120dc7288d02f960b58006**; 15 focused tests/verifier/real I00
+HTTP post-merge smoke PASS on that exact commit. Checkpoint 1B remains open. Entire initial
 scope/approved additions preserved. Next M2 P03C source-backed event projection;
 no next task started. P04/P05/P14 publication/listing/provenance remain separate.
 
