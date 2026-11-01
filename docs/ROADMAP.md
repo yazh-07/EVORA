@@ -346,7 +346,7 @@ no next task started. P04/P05/P14 publication/listing/provenance remain separate
 
 ### P03C live handoff — 2026-11-01
 
-**P03C / 1B / M2 yazh-07 / In Progress.** Isolated feat/p03c-source-events from
+**P03C / 1B / M2 yazh-07 / Complete.** Isolated feat/p03c-source-events from
 verified shared base **e68969df9f19f8f78320a708bc3cb80a3c05b85d**. Real P01/P02/
 P03 prerequisites and actual P03B participant records integrated; 0/1A Complete.
 Approved bounded scope/policy in AGENT_TASKS.md/COMMUNICATION.md. One candidate
@@ -356,8 +356,9 @@ No verified identity/occurrence or publication/listing claim. 15 focused tests
 PASS, including real originals/parsers/normalization/entities source chain.
 Full backend 194 PASS/1 Windows symlink SKIP, frontend 48 PASS, coordination
 122 PASS; contract/types/build/DESIGN and real I00 HTTP regressions PASS.
-Exact commands/doubles/limits in PREIMPLEMENTATION_REVIEW.md. Integration
-acceptance pending; no Complete claim. Entire
+Exact commands/doubles/limits in PREIMPLEMENTATION_REVIEW.md. Integrated at
+**bb2d18f1222c8e7fd4ab45dbdf7e1e17b252baca**; 15 focused tests/verifier and real I00
+HTTP post-merge smoke PASS on that exact commit. Checkpoint 1B remains open. Entire
 initial scope/additions retained. Next M2 P04 processing lifecycle; P05B listing
 and P14 persistence remain required later rows. No next task started.
 

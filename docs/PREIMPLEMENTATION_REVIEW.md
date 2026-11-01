@@ -2127,3 +2127,27 @@ Plain backend README reference preserves planning-only fixture compatibility.
 P03C In Progress pending actual authorized merge/read-back; Checkpoint 1B remains
 open. Next M2 row P04 processing lifecycle requires its own bounded policy review;
 no next task started. Entire agreed initial scope including additions preserved.
+
+
+### P03C integrated acceptance — 2026-11-01
+
+User-authorized task commit **f75ffa32a154987db82bdcdd8b28047ee05bf054** pushed
+to feat/p03c-source-events and merged without conflicts into the recorded shared
+branch docs/coordination-foundation at
+**bb2d18f1222c8e7fd4ab45dbdf7e1e17b252baca**. On that exact merge, 15 focused
+source-event tests, coordination verifier and real I00 loopback HTTP intake/audit/
+original/actor/failure smoke PASS. Final pre-merge docs candidate: 122 coordination
+PASS; full prior completed 0/1A backend/frontend regressions and contract/types/
+build/DESIGN pass as recorded above. Protected-path guard confirms full FEATURE_SCOPE/
+spec/frontend/existing producers/dependencies unchanged. Original dirty checkout
+and other work preserved. No required P03C acceptance remains unintegrated.
+
+P03C Complete; Checkpoint 1B and M2 remain open. This supersedes pending-merge
+handoffs. New hosted CI not yet claimed at this recording point. Synthetic auth/
+unpersisted run UUIDs, ASGI focused transport versus separate real HTTP smoke,
+Windows symlink skip and remaining P04/P05B/P14 publication/listing/persistence
+boundaries stay disclosed. No verified occurrence/identity or full-system claim.
+Next M2 P04 processing lifecycle, subject to its own bounded scope and needed
+C-04 lifecycle/error policy review. Its real F00/F05/P01/P02 dependencies are
+integrated. No next task started; waiting for user review. Entire initial scope
+including all approved additions remains preserved.

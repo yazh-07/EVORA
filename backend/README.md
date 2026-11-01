@@ -2,8 +2,10 @@
 
 P03C / Checkpoint 1B / M2 yazh-07, feat/p03c-source-events from verified shared
 base e68969df9f19f8f78320a708bc3cb80a3c05b85d. User approved the scope/event
-policy and authorized implementation/test/commit/push/merge. In Progress pending
-integration. Current task state is in docs/ROADMAP.md; older notes are historical.
+policy and authorized implementation/test/commit/push/merge. Complete after
+merge bb2d18f1222c8e7fd4ab45dbdf7e1e17b252baca; 15 focused tests, verifier and
+real I00 post-merge HTTP smoke PASS. Current state is in docs/ROADMAP.md;
+older notes are historical.
 
 backend.parsers.source_events.project_source_events consumes the actual P03B
 CandidateProjection (over P01/P02/P03) and an explicit case_id UUID. It returns a
