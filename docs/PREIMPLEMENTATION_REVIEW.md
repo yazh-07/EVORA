@@ -1,5 +1,96 @@
 # EVORA scope/contract verification and implementation readiness
 
+## F07 verification — 2026-11-01
+
+**F07 / Checkpoint 1A / M1 / sharmelas-925 / In Progress**, branch
+`feat/f07-case-audit-list`. The user explicitly assigned F07 and authorized its
+commit, push and merge after verification. `git fetch origin` preceded task
+state inspection; clean local HEAD and origin common base both matched
+**441d37de6db68f1f459aa11eb1bf6bd5864f5b77**. Real accepted F06
+**203c4d5 / merge 1b5166d** and F00/F01/F03 producers are included. No local or
+remote F07 branch existed. The bounded assignment card records paths and gates.
+All required proposal/feature/architecture/contract/runbook sources were read
+earlier in this chat; their diff against the previously inspected base is empty.
+
+### Implemented boundary
+
+- `backend/audit.py` adds the existing GET `listAuditEvents`, exact `AuditPage`
+  and `AuditEvent` response models, safe explicit column selection and an index
+  supporting authorized case/creation/ID reads. Current `require_case_access`
+  protects the route; app wiring exposes no additional operation.
+- Existing contract defaults/bounds apply: limit 20 (1–100), offset 0
+  (nonnegative). Results use `created_at ASC, id ASC`; count and page share one
+  read transaction. Empty/beyond-end/very large valid offsets return correct
+  totals and empty items. This does not freeze history across separate requests.
+- Optional null reason is omitted. Response headers are no-store. Private
+  provenance is not joined or serialized. Shared safe 400/401/404 behavior is
+  retained; unavailable storage fails instead of returning a fictional empty
+  audit. Listing performs no write. Only F06's obsolete assertion that the
+  future F07 route was absent was removed; private-route absence is still tested.
+
+### Actual validation and disclosures
+
+Windows / Python **3.14.8** / SQLite **3.50.4** / Node **22.23.3** / npm
+**12.2.0** / jsonschema **4.25.1**, using the prepared isolated environment and
+locked frontend dependencies; no installation or manifest/model change.
+
+| Check | Actual result |
+|---|---|
+| F07 focused acceptance | **14 pass**, no skips; real F03 upload/F06 audit -> authorized list, bundled schema validation, actor/target/time read-back |
+| Selected cross-case failure | **One pass**; foreign/missing cases have identical 404 status/body/headers |
+| Full backend regression | **101 run: 100 pass, one skip**; existing F05 Windows symlink permission limitation, all F07 tests execute |
+| Coordination verifier/tests | **Pass / 122 pass**, no skips |
+| Frontend tests | **48 pass**, no skips |
+| OpenAPI/generated strict TypeScript | **Pass**; pinned Redocly 2.57.0, openapi-typescript 7.10.1, TypeScript 5.9.3; existing missing-license warning |
+| Frontend freshness/typecheck/build | **Pass**, generated declarations unchanged |
+| DESIGN/whitespace | **Pass**, DESIGN 0.4.0 has zero errors/warnings |
+| Real F07 HTTP/SQL smoke | **Pass**, real upload event visible via API, safe fields, paginated/empty pages, 400/401/foreign-missing 404 and original byte/hash download |
+| Existing real-client integration | **Pass**, U02/U02B case/create/pagination/isolation, U03 multipart/metadata/400/413/404, U04 original controller byte/hash and empty download |
+
+The tests exercise real FastAPI, HTTPX, SQLite and private files. Synthetic
+identities and CSV/binary data are used. Chronological tie/optional reason
+fixtures are explicit synthetic audit rows. A WAL concurrency test uses
+connection tracing only to schedule a real second-connection append after the
+count/before the page query: the first response stays coherent and the next
+request sees the new event. Neither query nor result is mocked. Private-field
+exclusion is also verified after dropping the private provenance fixture table;
+storage failure is induced by dropping the temporary audit table. Temporary
+data clean up automatically. No production identity, new browser/accessibility
+or hosted CI result is claimed at this pre-publication stage.
+
+### How you can test it
+
+Open `.\.cache\setup\evora-shell.cmd` from the repository root to select the
+prepared local toolchain, then in its CMD shell:
+
+```bat
+npx.cmd --yes @redocly/cli@2.57.0 bundle specs/openapi.yaml --output .cache\setup\evora-openapi.json
+set "EVORA_CONTRACT_BUNDLE=%CD%\.cache\setup\evora-openapi.json"
+python -W error::ResourceWarning -m unittest backend.tests.test_audit_list -v
+python -W error::ResourceWarning -m unittest backend.tests.test_audit_list.AuditListTests.test_two_cases_are_filtered_and_foreign_missing_denials_are_indistinguishable -v
+python -W error::ResourceWarning -m unittest discover -s backend/tests -v
+```
+
+Expect 14 focused passes, one selected failure pass and 101 combined backend
+tests run with the one known platform skip. Synthetic inputs are network.csv,
+21 small upload originals, two actors/cases and explicit ordering/reason event
+fixtures. The failure test confirms a foreign actor receives exactly the same
+404 as a missing case; no private source fields are exposed. Full shared checks
+ran via `.cache/setup/verify.ps1`, output `.cache/f07/shared-regressions.log`.
+Individual current outputs are in `.cache/setup/`; focused/failure/smoke/client
+logs are in `.cache/f07/`.
+
+The exact local HTTP/SQL smoke command was
+`& .\.venv\Scripts\python.exe -W error::ResourceWarning .cache/f07/http_smoke.py`.
+Existing client integration ran with `EVORA_TEST_PYTHON` set to the absolute
+`.venv\Scripts\python.exe` path and pinned Node executing
+`frontend/test/cases.integration.mjs` after frontend tests/build. Own servers
+stop and temporary synthetic data is removed. Contract/schema, generated
+declarations, dependencies, proposal and full FEATURE_SCOPE including approved
+additions remain unchanged. **F07 stays In Progress** until the authorized
+merge/read-back. Next M1 task is **F09**, not started; shared I00 requires an
+explicit assignee and Checkpoint 1A remains open.
+
 ## F06 verification — 2026-11-01
 
 **F06 / Checkpoint 1A / M1 / sharmelas-925 / Complete**, task branch
