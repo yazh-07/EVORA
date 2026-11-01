@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { spawn } from 'node:child_process';
+import { execFileSync, spawn } from 'node:child_process';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -18,6 +18,28 @@ const child = spawn(python, ['test/serve-cases.py', '--database', join(temporary
 let errors = '';
 child.stderr.on('data', data => { errors += data; });
 const exited = once(child, 'exit');
+// Harness-only read-back: application UI/client still accesses data through HTTP.
+const intakeSnapshot = () => execFileSync(python, ['-c', `
+import hashlib, json, pathlib, sqlite3, sys
+root = pathlib.Path(sys.argv[1])
+connection = sqlite3.connect((root / 'cases.sqlite3').as_uri() + '?mode=ro', uri=True)
+try:
+    sql = list(connection.iterdump())
+finally:
+    connection.close()
+files = {str(p.relative_to(root)): hashlib.sha256(p.read_bytes()).hexdigest()
+         for p in sorted((root / 'evidence').rglob('*')) if p.is_file()}
+print(json.dumps([sql, files], sort_keys=True))
+`, temporary], { encoding: 'utf8' });
+const auditFailures = [];
+const expectAuditEvent = (page, action, targetId, caseId) => {
+  // Collect producer mismatches so the rest of the real intake smoke still runs.
+  try {
+    assert.ok(page.items.some(event => event.action === action && event.target_id === targetId &&
+      event.actor_id === 'investigator-2' && event.case_id === caseId),
+    `Expected ${action} audit event for its target and investigator-2; received actions: ${page.items.map(event => event.action).join(', ') || '(none)'}`);
+  } catch (error) { auditFailures.push(error); }
+};
 try {
   const origin = await new Promise((resolveUrl, reject) => {
     const timer = setTimeout(() => reject(Error('Integration server startup timeout: ' + errors)), 15000);
@@ -44,6 +66,7 @@ try {
     return response;
   } });
   client.setToken('u02-synthetic-two');
+  const listAuditEvents = caseId => client.request('get', '/api/v1/cases/{caseId}/audit-events', { path: { caseId } });
   const store = createCaseStore(client);
   await store.load(); assert.equal(store.getSnapshot().page.total, 0);
   const foreign = await client.request('post', '/api/v1/cases', { body: { title: 'Synthetic actor-two private case' } });
@@ -79,6 +102,11 @@ try {
   assert.equal(created.title, 'Synthetic U02B created case');
   assert.equal(created.description, 'Synthetic description');
   assert.ok(statuses.some(item => item.method === 'POST' && item.status === 201));
+  const beforeCreationAudit = intakeSnapshot();
+  const creationAudit = await listAuditEvents(created.id);
+  assert.deepEqual(await listAuditEvents(created.id), creationAudit);
+  assert.equal(intakeSnapshot(), beforeCreationAudit, 'case audit listing changes no SQL records or original bytes');
+  assert.equal(creationAudit.total, 0, 'case creation performs no intake and emits no intake audit events');
   const listed = await client.request('get', '/api/v1/cases', { query: { limit: 20, offset: 0 } });
   assert.ok(listed.items.some(item => item.id === created.id));
   await assert.rejects(client.request('post', '/api/v1/cases', { body: { title: '   ' } }), { status: 400 });
@@ -100,6 +128,13 @@ try {
   assert.equal(evidence.sha256, createHash('sha256').update(bytes).digest('hex'));
   assert.equal(evidence.size_bytes, bytes.length);
   assert.equal(evidence.acquired_at, '2026-10-31T12:34:00Z');
+  const beforeUploadAudit = intakeSnapshot();
+  const uploadAudit = await listAuditEvents(created.id);
+  assert.deepEqual(await listAuditEvents(created.id), uploadAudit);
+  assert.equal(intakeSnapshot(), beforeUploadAudit, 'upload audit listing is strictly read-only');
+  expectAuditEvent(uploadAudit, 'uploadEvidence', evidence.id, created.id);
+  assert.ok(uploadAudit.items.length > 0, 'real intake produces audit records');
+  assert.deepEqual(uploadAudit.items.filter(event => creationAudit.items.some(old => old.id === event.id)), creationAudit.items);
   assert.deepEqual(evidenceStore.getSnapshot().page.items[0], evidence);
   await evidenceStore.select(evidence.id);
   assert.deepEqual(evidenceStore.getSnapshot().detail, evidence);
@@ -125,9 +160,41 @@ try {
   let emptySaved = false;
   const emptyDownload = createOriginalDownload(client, emptyEvidence, blob => { assert.equal(blob.size,0); emptySaved=true;return ()=>{}; });
   await emptyDownload.download(); assert.equal(emptySaved,true); emptyDownload.dispose();
+  const beforeCompleteAudit = intakeSnapshot();
+  const completeAudit = await listAuditEvents(created.id);
+  assert.equal(completeAudit.total, creationAudit.total + 2, 'only the two successful uploads append intake events');
+  assert.equal(completeAudit.items.length, completeAudit.total);
+  assert.deepEqual(await listAuditEvents(created.id), completeAudit);
+  assert.equal(intakeSnapshot(), beforeCompleteAudit, 'repeated audit listing changes no SQL records or original bytes');
+  let previousTimestamp = '';
+  for (const event of completeAudit.items) {
+    assert.equal(event.case_id, created.id);
+    assert.equal(event.actor_id, 'investigator-2');
+    assert.deepEqual(Object.keys(event).sort(), ['action', 'actor_id', 'case_id', 'created_at', 'id', 'target_id']);
+    assert.match(event.created_at, /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,9})?Z$/);
+    assert.ok(Number.isFinite(Date.parse(event.created_at)), 'valid UTC RFC3339 timestamp');
+    // Normalize fractions without losing the microsecond precision to Date.parse.
+    const [seconds, fraction = ''] = event.created_at.slice(0, -1).split('.');
+    const timestamp = seconds + '.' + fraction.padEnd(9, '0');
+    assert.ok(timestamp >= previousTimestamp, 'audit timestamps are monotonically nondecreasing');
+    previousTimestamp = timestamp;
+  }
   console.log('PASS U04 real F05: original byte/hash/size read-back through download controller and empty original.');
   evidenceStore.dispose();
+  const beforeDeniedAudit = intakeSnapshot();
   client.setToken('u02-synthetic-one'); await store.load();
+  const deniedAudit = async caseId => {
+    await assert.rejects(listAuditEvents(caseId), error => {
+      assert.equal(error.status, 404);
+      assert.deepEqual(error.apiError, { code: 'NOT_FOUND', message: 'Resource not found.' });
+      return true;
+    });
+  };
+  await deniedAudit(created.id);
+  await deniedAudit(foreign.id);
+  await deniedAudit('00000000-0000-4000-8000-000000000000');
+  assert.equal(intakeSnapshot(), beforeDeniedAudit, 'foreign/missing audit reads change no SQL records or original bytes');
+  console.log('PASS I00 audit transport: safe fields, UTC ordering, repeated read-only listing, actor isolation and identical foreign/missing 404 ApiError.');
   assert.ok(store.getSnapshot().page.items.every(item => item.id !== created.id));
   await assert.rejects(client.request('get', '/api/v1/cases/{caseId}/evidence', { path: { caseId: created.id } }), { status: 404 });
   await assert.rejects(client.request('get', '/api/v1/cases/{caseId}/evidence/{evidenceId}', { path: { caseId: created.id, evidenceId: evidence.id } }), { status: 404 });
@@ -140,6 +207,8 @@ try {
   assert.equal(client.hasToken(), false); await store.load(); assert.equal(store.getSnapshot().status, 'signed-out');
   store.dispose();
   console.log('PASS U02/U02B creation 201, immediate listing, whitespace 400, actor isolation; real HTTP/SQLite: empty, 21-case pagination/detail, two-actor isolation, foreign/missing 404, invalid limit 400, invalid token 401, same-origin UI HTTP 200.');
+  if (auditFailures.length) throw new AggregateError(auditFailures, 'I00 audit producer acceptance failed; Checkpoint 1A cannot be sealed.');
+  console.log('PASS I00 authorized intake gate, including uploadEvidence audit target/actor read-back.');
 } finally {
   child.kill(); await exited;
   // mkdtemp created this exact directory; only the owned synthetic database is removed.

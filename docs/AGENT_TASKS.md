@@ -2,6 +2,19 @@
 
 Coordination-branch draft 0.3.0, not a running app. Four people each work on one module; confirmed GitHub-handle assignments and integration coordination are in [ROADMAP.md](ROADMAP.md#module-assignment-and-live-task-state). Full initial proposal scope is fixed. Use the canonical phase/checkpoint ledger in [ROADMAP.md](ROADMAP.md). Assign one catalog row, not an entire module, milestone or full dashboard. Codex fills the task card from recorded repository decisions before editing. Missing common-base/allowed-path choices or a shared G/I assignee need a short clarification, not a guessed assignment.
 
+### I00 assignment — 2026-11-01
+
+| Field | Recorded assignment |
+|---|---|
+| Task/checkpoint | **I00 / 1A final exit gate**: real authorized create/list/upload/hash/metadata/download/audit across M1 and M4 |
+| Owner | **whale2186 / joint integration coordination**, explicitly assigned by the user alongside the existing M3 responsibility; M1 owner sharmelas-925 and M4 owner JebasJ retain their interfaces |
+| Branch/common contract commit | `feat/i00-authorized-intake-gate`, clean starting HEAD **c0561bbb3978e37395218bf1a771ecd562d3c2dd**; unchanged `specs/openapi.yaml` draft 0.3.0 and `docs/INTEGRATION.md` |
+| Allowed paths | `frontend/test/cases.integration.mjs`, `frontend/README.md`, `docs/AGENT_TASKS.md`, `docs/ROADMAP.md`, `docs/PREIMPLEMENTATION_REVIEW.md`; no backend, spec or dependency edits |
+| Dependencies | F00, F01, F02, F03, F04, F05, F06, F07, F09, U01, U02, U02B, U03, U04 integrated on c0561bb. Direct catalog prerequisites F09/F07/U02B/U04 are real merged producers; no producer doubles |
+| Acceptance | Preserve existing real HTTP/SQLite intake regression; verify `uploadEvidence` action with same-case target and actor, UTC monotonic timestamps, safe fields, repeated reads, exact unchanged SQL/original-file snapshots and standard foreign/missing 404 ApiError. Run the full verification matrix before sealing 1A |
+| Completion | **Complete**. All requested test assertions pass; real integration exits 0. 116 backend, 122 coordination, 48 frontend tests pass; full smoke passes. Checkpoint 1A is sealed and Complete |
+| Next handoff | Checkpoint 1B is unblocked and active. Next tasks: M2 P01/P02 parsers |
+
 ### F05 assignment — 2026-10-31
 
 | Field | Recorded assignment |

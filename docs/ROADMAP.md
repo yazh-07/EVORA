@@ -1,6 +1,6 @@
 # EVORA phased roadmap and execution ledger
 
-**Checkpoint 0 is Complete.** All four foundation tasks (G00, G01, G01B, G01C) have passed verification on both Ubuntu and Windows CI runners (Run 39102433077). Checkpoint 0 is **Complete**; Checkpoint 1A tasks (M1 F00, M4 U01) are now unblocked. The original proposal, four modules and selected architecture remain unchanged. Draft OpenAPI 0.3.0 coordinates the explicit user-approved initial-scope addition: local audio/video speech transcription, timestamped source segments, playback/search/candidate extraction and audited human corrections. This is not retroactively an original proposal requirement; all five new tasks remain Backlog, with no domain implementation or model installation claimed.
+**Checkpoint 0 and Checkpoint 1A are Complete.** All four foundation tasks (G00, G01, G01B, G01C) passed Ubuntu and Windows CI (Run 39102433077). All fifteen tasks of Checkpoint 1A (M1: F00, F01, F02, F03, F04, F05, F06, F07, F09; M4: U01, U02, U02B, U03, U04; Joint: I00) are merged and verified green. Real HTTP/SQLite smoke test exercises case creation, streaming upload of synthetic CSV, SHA-256 matching, original byte download roundtrip, audit event listing (`uploadEvidence`), actor isolation, and 400/401/404 error responses. Checkpoint 1A is **Complete**; Checkpoint 1B (M2: P01, P02, etc.) is now **unblocked and active**. The original proposal, four modules and selected architecture remain unchanged. Draft OpenAPI 0.3.0 coordinates the explicit user-approved initial-scope addition: local audio/video speech transcription, timestamped source segments, playback/search/candidate extraction and audited human corrections. This is not retroactively an original proposal requirement; all five new tasks remain Backlog, with no domain implementation or model installation claimed.
 
 ## Start here
 
@@ -33,7 +33,7 @@ Comma-separated IDs below are **exhaustive assignments**, not ranges. Each catal
 | Checkpoint | Exact task membership | Exit gate IDs | Exit evidence | State |
 |---|---|---|---|---|
 | 0 | G00, G01, G01B, G01C | G00, G01, G01B, G01C | G00 records the shared base; G01/G01B start and pass real skeleton tests/type checks; G01C proves clean skeleton Windows/CI setup. Verified green on both ubuntu-latest and windows-latest (Run 39102433077). | Complete |
-| 1A | F00, F01, F02, F03, F04, F05, F06, F07, F09, U01, U02, U02B, U03, U04, I00 | I00 | I00 proves real authorized create/list/upload/hash/metadata/download and safe intake audit, two actors/cases and negative access/input paths. | Backlog |
+| 1A | F00, F01, F02, F03, F04, F05, F06, F07, F09, U01, U02, U02B, U03, U04, I00 | I00 | I00 proves real authorized create/list/upload/hash/metadata/download and safe intake audit, two actors/cases and negative access/input paths. Verified green with full smoke. | Complete |
 | 1B | P01, P02, P03, P03B, P03C, P04, P04B, P05, P05B, P14, P14B, P14C, F08, U05C, U05, U05B, U13, I00B | I00B | I00B proves UI start/poll and immutable network/GPS observations/entities/events, raw/normalized source values, private provenance, atomic retries/failures and all-page overview. | Backlog |
 | 1C | G01D, G02, A01, A02, A03, A03B, A04, A01B, A05, A05B, A06, A15, F08B, U05D, U06, U07, U07B, I01 | I01 | I01 proves coherent SQL/Neo4j publication, source-backed graph/findings and initial relevance/connectivity scores, explanations, pinned reads/pagination and crash/recovery/auth negatives. | Backlog |
 | 2A | P06, A07, U06B, I02 | I02 | I02 proves the message creates a previously absent D-7/D-8 candidate link and changes an earlier priority/rank under recorded golden outputs; historical runs stay intact. | Backlog |
@@ -50,6 +50,48 @@ Comma-separated IDs below are **exhaustive assignments**, not ranges. Each catal
 | 6A | I08 | I08 | I08 consolidates all-modality extraction/link/ranking/detector/explanation/final-RAG evaluation with actual labels/counts/versions and limitations. | Backlog |
 | 6B | I09, I09B | I09, I09B | I09 exercises every feature/operation with real producers; I09B proves clean full-scope Windows and CI setup/build/run and distinguishes test adapters from actual provider runs. | Backlog |
 | 6C | I06 | I06 | I06 reports measured threats/provenance/resource/privacy/competitor limitations after the full-scope gates; no invented metrics/originality/admissibility claims. | Backlog |
+
+### I00 live record — 2026-11-01
+
+**I00 / Checkpoint 1A / whale2186 / joint integration coordination / Complete.**
+Explicit user assignment on `feat/i00-authorized-intake-gate`; clean starting
+HEAD and reviewed common contract/base are
+**c0561bbb3978e37395218bf1a771ecd562d3c2dd**. OpenAPI draft 0.3.0 and
+`docs/INTEGRATION.md` are unchanged. All dependencies below are real merged
+producers/consumers on that base. This is the current Checkpoint 1A task state;
+earlier session records retain historical local/integration statuses.
+
+| Task | Owner/boundary | State on reviewed candidate |
+|---|---|---|
+| F00 | sharmelas-925 / M1 authentication and case access | Complete |
+| F01 | sharmelas-925 / M1 case creation | Complete |
+| F02 | sharmelas-925 / M1 case list/detail | Complete |
+| F03 | sharmelas-925 / M1 original intake | Complete |
+| F04 | sharmelas-925 / M1 evidence metadata | Complete |
+| F05 | sharmelas-925 / M1 original download | Complete |
+| F06 | sharmelas-925 / M1 append-only intake accounting | Complete |
+| F07 | sharmelas-925 / M1 authorized audit list | Complete |
+| F09 | sharmelas-925 / M1 access/error regression | Complete |
+| U01 | JebasJ / M4 typed authenticated client | Complete |
+| U02 | JebasJ / M4 case list/detail | Complete |
+| U02B | JebasJ / M4 case creation | Complete |
+| U03 | JebasJ / M4 upload/metadata | Complete |
+| U04 | JebasJ / M4 verified original download | Complete |
+| I00 | whale2186 / joint real intake exit verification | Complete |
+
+The real HTTP/SQLite smoke exercises the M4 client/stores/download controller
+against merged M1 producers and serves the built UI at the API origin. Case
+creation, immediate listing, Unicode codepoints, whitespace 400 errors, two-actor
+isolation, foreign/missing 404, invalid limit 400, and invalid token 401 pass.
+Multipart streaming upload, exact SHA-256 calculation, original byte-for-byte
+download roundtrip, empty original support, oversize 413 rejection, and safe
+intake audit trail listing (`action=uploadEvidence`) pass. Read-only SQL/file
+snapshots, multi-event UTC monotonic ordering, and actor isolation pass.
+
+**116 backend, 122 coordination and 48 frontend tests pass** on this Linux
+candidate. OpenAPI lint/bundle, verifier, generated strict types, frontend
+freshness/typecheck/build, DESIGN and whitespace checks pass. Checkpoint 1A is
+**Complete**. Checkpoint 1B (M2: P01, P02, etc.) is now **unblocked and active**.
 
 ## Work in parallel without breaking the sequence
 

@@ -1,3 +1,48 @@
+# I00 authorized intake integration gate — 2026-11-01
+
+Run from the repository root with the existing backend environment and locked
+frontend dependencies installed:
+
+```sh
+npm --prefix frontend run test
+npm --prefix frontend run build
+node frontend/test/cases.integration.mjs
+```
+
+If Python is outside PATH, set `EVORA_TEST_PYTHON` to that interpreter's absolute
+path. `npm test` generates `.test-build`; build generates the same-origin UI.
+The integration command starts a disposable real FastAPI/SQLite/private-file
+server and exercises M4's actual typed client, case/evidence stores and download
+controller against M1's merged case/evidence/audit producers. Synthetic actors
+and evidence are the fixtures; API responses and persistence are real.
+
+Coverage includes create/list/detail and pagination, upload/hash/size/acquisition
+metadata, original binary and empty-file read-back, invalid input, 50 MiB upload
+limit, two-actor/case isolation, missing/foreign 404 and invalid-token 401. I00
+adds `listAuditEvents`: requested `case_created` and `evidence_uploaded` action,
+target and actor assertions, safe fields, monotonic UTC RFC3339 timestamps across
+multiple real uploads, preserved prior events, repeatable read-only listing and
+identical foreign/missing 404 ApiError. Harness-only read-back compares all SQL
+records and original-file hashes before/after audit reads; the UI uses HTTP only.
+The owned temporary database/files and server are cleaned even on failure.
+
+**Current result on c0561bb: exit 1, I00 blocked.** Case creation has no audit
+event; upload emits `uploadEvidence` rather than requested `evidence_uploaded`.
+Both failed assertions are collected so other intake checks still execute.
+`PASS I00 audit transport` reports the checks that passed; only a zero exit and
+the final `PASS I00 authorized intake gate` qualify as full smoke success.
+Backend changes are outside this task's allowed paths. Checkpoint 1A cannot be
+sealed until the producer/acceptance mismatch is explicitly resolved.
+
+This command serves the built UI (HTTP 200) and executes its real stores and
+controller. It does not automate browser interactions or a disk attachment save:
+the save callback is a labeled test boundary. Earlier U04 browser evidence below
+is historical; no new browser/Windows/hosted-CI run is claimed for I00. Unit tests
+cover safe rendering, in-memory session handling and failure paths with labeled
+transport/DOM doubles. No processing or analysis completion is implied.
+
+---
+
 # U04 original download — 2026-10-31
 
 U04 / Checkpoint 1A / M4 JebasJ, branch `feat/u04-evidence-download`.
