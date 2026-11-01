@@ -1887,3 +1887,63 @@ New hosted CI is not yet claimed. Full initial scope/approved additions and
 all original dirty work are preserved. Next M2 row P03 consumes both actual
 P01/P02 for raw-preserving time/coordinate normalization and zone uncertainty.
 No P03 implementation or subsequent task is started during this assignment.
+
+
+## P03 verification — 2026-11-01
+
+P03 / 1B / M2 yazh-07, feat/p03-normalization, exact verified common base
+**ac432e10a6a1c4ff19ae36b49cded514d0e78846**. Actual P01/P02/F03/F05/G01
+producers integrated, Checkpoints 0/1A Complete; no prerequisite skipped.
+User approved the recorded normalization policy and explicitly authorized
+implementation/test/commit/push/merge. Allowed paths and internal envelope are
+in AGENT_TASKS.md and COMMUNICATION.md; no spec/producer/dependency/UI changes.
+FEATURE_SCOPE.md retains the entire agreed initial scope and approved additions.
+
+### Actual execution on Windows
+
+Pinned Python 3.14.8/jsonschema 4.25.1, Node 22.23.3/npm 12.2.0; existing
+installed dependencies reused via ignored junction. No new package/model/provider.
+Exact cached CLI versions used, no registry-resolution/clean-reinstall claim.
+
+| Command/check | Actual result |
+|---|---|
+| python -W error::ResourceWarning -m unittest backend.tests.test_normalization -v (with EVORA_CONTRACT_BUNDLE) | 18 PASS, no skips |
+| python -W error::ResourceWarning -m unittest discover -s backend/tests -v (same bundle) | 165 run: 164 PASS / 1 existing Windows symlink-permission SKIP |
+| python -m pip check | PASS, no broken requirements |
+| npm --prefix frontend test | 48 PASS, no skips |
+| npm --prefix frontend run build | PASS API declaration freshness, TypeScript and esbuild |
+| EVORA_TEST_PYTHON=pinned interpreter; node test/cases.integration.mjs from frontend | PASS actual I00 loopback HTTP intake/audit/hash/original, actor/input/error paths, U02/U02B/U03/U04 regressions |
+| Redocly 2.57.0 lint specs/openapi.yaml and bundle to TEMP/evora-p03-openapi.json | PASS, existing missing-license warning |
+| openapi-typescript 7.10.1 specs/openapi.yaml to TEMP/evora-p03-api.d.ts; TypeScript 5.9.3 --noEmit --strict on that file | PASS |
+| python scripts/verify_coordination.py TEMP/evora-p03-openapi.json | PASS all planning artifact checks |
+| EVORA_CONTRACT_BUNDLE=same bundle; python -m unittest discover -s scripts -p test_*.py -v | 122 PASS, no skips |
+| DESIGN 0.4.0 lint DESIGN.md | PASS zero errors/warnings |
+| git diff --check | PASS |
+
+Goldens exercise explicit UTC offsets, date/year/leap-day rollover, fractional
+seconds beyond microseconds, known versus unknown zero offset, missing/named/
+ambiguous/invalid zones, invalid calendar/24:00/leap-second clocks and UTC range
+overflow. Raw values always survive; unresolved time omits optional UTC on wire.
+Coordinates exercise exact bounds/precision under low Decimal context precision,
+signed zero, canonical insignificant zeros, scientific/plain boundary and extreme
+exponents without huge expansion. Invalid inputs reject atomically with safe fixed
+codes; source UUID contexts, locators, kind and score stay unchanged. Frozen
+results/fresh schema-valid wire copies and pure-value idempotence are checked;
+this does not claim processing-run replay, case authorization or public status.
+
+Integration uses actual FastAPI/F00/F01/F03/F05/SQLite/private files, real P01/P02
+parsers, synthetic tokens and explicitly unpersisted caller run UUIDs. HTTPX ASGI
+is an in-process transport. Upload/read-back original bytes and hashes, immutable
+SQL evidence snapshots, post-normalization download, foreign 404 and invalid
+auth 401 all pass. No parser/storage/case double. Separate I00 test uses actual
+loopback HTTP and real frontend client/stores. Earlier unrelated suites retain
+their labeled doubles. No P04 processing lifecycle/publication, P14 provenance
+store, identity keys, events, graph/scoring, new browser check or clean install
+is claimed. Existing Windows symlink skip remains disclosed; hosted CI pending.
+
+How you can test P03, exact setup/commands, synthetic inputs and expected results
+plus invalid-coordinate and unresolved-time cases are in backend/README.md
+(plain reference for planning-only fixture compatibility). No historical output
+or original storage mutation. P03 In Progress pending actual merge/read-back;
+Checkpoint 1B remains open. Next M2 row P03B candidate keys/entities, retaining
+D-7 and D-8 as distinct candidates; no subsequent task starts here.

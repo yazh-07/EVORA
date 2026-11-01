@@ -307,6 +307,23 @@ no new hosted CI/clean install/processing-publication claim. P02 integrated at 3
 coordinates using both parsers while preserving raw/unknown-zone information.
 No other task is implemented or started here.
 
+### P03 live handoff — 2026-11-01
+
+**P03 / 1B / M2 yazh-07 / In Progress.** Isolated feat/p03-normalization from
+verified common base **ac432e10a6a1c4ff19ae36b49cded514d0e78846**, with actual
+merged P01/P02 and completed 0/1A. Approved bounded assignment/policy are in
+AGENT_TASKS.md and COMMUNICATION.md. New immutable normalized values preserve
+raw cells/timestamps/IDs/locators; exact UTC only for known explicit offsets,
+unknown/ambiguous/invalid zones remain unresolved with internal reason. Exact
+GPS decimal canonicalization has lossless scientific fallback; no stored output
+mutation, API change, identity/event projection or processing publication.
+18 focused PASS, full backend 164 PASS/1 existing Windows symlink SKIP, frontend
+48 PASS and coordination 122 PASS; contract/types/build/DESIGN and actual I00
+loopback HTTP regressions PASS. Integration acceptance remains pending; no
+Complete claim yet. Exact verification/doubles/limits in PREIMPLEMENTATION_REVIEW.md. Entire initial
+scope/approved additions remain required. Next eligible M2 P03B after P03 merge;
+P03C also consumes P03, with no later task started here.
+
 ## Module assignment and live task state
 
 | Module | Assigned GitHub handle | Accountable boundary | State |

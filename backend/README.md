@@ -1,3 +1,68 @@
+# P03 source normalization — 2026-11-01
+
+P03 / Checkpoint 1B / M2 yazh-07, feat/p03-normalization, verified shared base
+ac432e10a6a1c4ff19ae36b49cded514d0e78846. User approved the normalization
+policy and explicitly authorized implementation, tests, commit, push and merge.
+In Progress pending actual integration; current state is in docs/ROADMAP.md.
+Earlier task notes below are historical.
+
+backend.parsers.normalization.normalize_observations consumes actual P01/P02
+frozen observations and returns a tuple of new frozen NormalizationResult values.
+Each contains an existing-schema NormalizedObservation plus an internal time/
+coordinate uncertainty envelope and version source-normalization/1. Raw cells,
+source timestamps, IDs, locators, kind and extraction confidence stay unchanged.
+Completed stored outputs are never modified. This is a pre-publication component;
+P04/P14 own real processing lifecycle, persistence and private provenance.
+Caller run UUIDs in tests are synthetic context, not published ProcessingRuns.
+
+## Approved source-normalization/1 behavior
+
+- Valid explicit Z/z or numeric +/-HH:MM timestamps convert to UTC, including
+  date/year rollover, with every source fractional digit preserved unchanged.
+  Supported calendar/clock spelling matches P02; no rounding or host timezone.
+- Missing, named/ambiguous, invalid and -00:00 zones yield no observed_at_utc.
+  Raw time remains intact; internal time.status records the reason. Out-of-range
+  UTC also remains unresolved. No guessed zone/DST or extra public API fields.
+- GPS latitude/longitude use exact Decimal values, never float rounding. Trim
+  non-significant zeros, canonicalize signed zero to 0; use plain decimals up to
+  64 output characters and exact scientific notation otherwise. This expansion
+  threshold is not a precision/rejection cap. Range/finite/syntax failures raise
+  safe NormalizationError('INVALID_COORDINATE') and reject the whole batch.
+- Non-coordinate normalized values remain unchanged. No candidate identity keys,
+  source-backed events, joins, scoring boost, HTTP route or DB update is added.
+  Pure repeated transformation is not processing-run replay/idempotency.
+
+## How you can test P03
+
+PowerShell at repository root with Python 3.14.8 and installed requirements:
+
+    npx.cmd --yes @redocly/cli@2.57.0 bundle specs/openapi.yaml -o "$env:TEMP/evora-p03-openapi.json"
+    $env:PYTHONUTF8 = '1'
+    $env:EVORA_CONTRACT_BUNDLE = "$env:TEMP/evora-p03-openapi.json"
+    python -W error::ResourceWarning -m unittest backend.tests.test_normalization -v
+
+Expect 18 passing focused tests, including actual F03/F05/SQLite/private-original
+round trips with synthetic identities, both real parser producers, exact values,
+source immutability/schema, context checks and unknown/invalid time failures.
+No parser/storage doubles; HTTPX ASGI transport is in process. I00 separately
+checks real loopback HTTP. Existing unrelated suites retain their labeled doubles.
+
+    python -c "from backend.parsers.normalization import normalize_timestamp, normalize_coordinate; print(normalize_timestamp('2026-01-12T15:32:00.123456789+05:30')); print(normalize_coordinate('+12.9716000',90)); print(normalize_coordinate('7.75946e1',180))"
+
+Expect UTC 2026-01-12T10:02:00.123456789Z, resolved status, source_offset +05:30;
+coordinates 12.9716 and 77.5946. The raw timestamp is retained in the result.
+
+    python -c "from backend.parsers.normalization import normalize_timestamp; print(normalize_timestamp('2026-01-12T10:02:00-00:00')); print(normalize_timestamp('2026-01-12T10:02:00'))"
+
+Expect utc_value=None and unknown_offset / missing_timezone respectively.
+Failure case: normalize_coordinate('90.0000000000000000001',90) raises safe
+INVALID_COORDINATE; normalize_timestamp('2026-02-30T10:02:00Z') records
+invalid_timestamp and no fabricated UTC. No evidence or timestamp is rewritten.
+Full previous-checkpoint regressions/results are in docs/PREIMPLEMENTATION_REVIEW.md.
+No new model, package, provider, browser check or clean reinstall is claimed.
+Next M2 row P03B owns candidate identifier keys/entities, keeping D-7/D-8 distinct;
+no next task starts in this assignment. Entire agreed initial scope is preserved.
+
 # P02 GPS CSV parser — 2026-11-01
 
 P02 / 1B / M2 yazh-07, feat/p02-gps-csv, verified shared base

@@ -114,3 +114,34 @@ means unavailable score, not a measurement/source quality, consistent with P01.
 Parser version gps-csv/1 and this policy feed future P14 private provenance.
 Caller must authorize same-case original/run context; P04 owns actual runs and
 publication. This resolves P02 only, not P03/P04 or later modality choices.
+
+## P03 approved normalization policy — 2026-11-01
+
+User approved raw-preserving exact UTC/GPS normalization and internal unresolved
+reasons, immutable output copies and no historical DB changes. Version
+source-normalization/1 supports P01/P02 calendar timestamps YYYY-MM-DD[T/t/space]
+HH:MM:SS with optional decimal fraction and Z/z or +/-HH:MM. Validate clock
+00–23/00–59/00–59/calendar and offset <=23:59 explicitly. Other/invalid formats
+remain raw/unresolved. Named-zone suffixes are ambiguous, never resolved from
+machine timezone, evidence GPS/location, DST guesses or timezone abbreviations.
+Missing zone and -00:00 are unresolved; +00:00/Z are explicit known offsets.
+UTC conversion shifts integer minutes across calendar boundaries and reattaches
+all fractional digits unchanged, without datetime microsecond truncation.
+Out-of-range UTC retains source and has internal utc_out_of_range status.
+
+GPS finite decimal ranges stay latitude [-90,90], longitude [-180,180]. Exact
+Decimal tuples (no float/context rounding) canonicalize sign/leading/trailing
+zeros; negative zero becomes 0. Plain form is used when at most 64 characters;
+otherwise lossless scientific form avoids expansion of tiny exponents. This is
+a formatting threshold, not a precision cap, rejection rule or rounding limit.
+All significant digits remain. Invalid defensive GPS inputs reject the whole
+batch rather than fabricate coordinates. Other cell normalized values unchanged.
+
+Frozen copies retain all case/evidence/run/observation UUIDs, kinds, raw values,
+raw times, locators and extraction scores. This operates on pre-publication
+parser values; completed stored outputs are never mutated. Internal versioned
+TimeNormalization/coordinate statuses carry reasons and original offset text;
+only existing Observation fields (optional observed_at_utc) serialize to HTTP
+shape. P14 will persist appropriate private provenance. No public status field,
+endpoint, entity key or source-confidence increase. P04 owns actual runs and
+publication. P03B/P03C consume normalized values afterward. Full scope retained.

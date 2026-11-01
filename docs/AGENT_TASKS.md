@@ -442,3 +442,16 @@ starting a second U04 implementation. No U04 changes were merged here.
 | Output | Existing Observation fields only: frozen gps.device/gps.latitude/gps.longitude per record, decoded logical raw cells/time, normalized_value initially raw, no observed_at_utc/entity_key, 0 unavailable-score sentinel; caller case/evidence/run UUID context only |
 | Proof | 17 focused PASS; full backend 146 PASS/1 Windows symlink SKIP, 48 frontend PASS; real original/I00 regressions and contract/types/build/DESIGN PASS. Exact commands/doubles/limits in PREIMPLEMENTATION_REVIEW P02 section; run UUID context explicitly synthetic |
 | Handoff | Complete after merge 389652c358fab4b3b20565d592db520549028b8f and passing post-merge smoke; explicit user authorization to implement/test/commit/push/merge P02 only; preserve FEATURE_SCOPE. Next M2 row P03 after real P01/P02 integration; no P03 implementation here |
+
+### P03 assignment — 2026-11-01
+
+| Field | Recorded assignment |
+|---|---|
+| Task/checkpoint/owner | P03 / 1B / M2 yazh-07: exact source time/GPS normalization preserving originals, timezone uncertainty explicit |
+| Branch/base | feat/p03-normalization / **ac432e10a6a1c4ff19ae36b49cded514d0e78846**, clean fetched common base, isolated worktree; no P03 claim active |
+| Allowed paths | backend/parsers/normalization.py, backend/tests/test_normalization.py, backend/README.md and bounded AGENT_TASKS/COMMUNICATION/ROADMAP/PREIMPLEMENTATION_REVIEW records; no parser producer/spec/frontend/dependency edits |
+| Dependencies | Actual integrated P01 cab08f1 and P02 389652c (publications 4bc8f30/ac432e1), real originals from F03/F05/G01, completed 0/1A regression |
+| Approved policy | Explicit numeric-offset/Z timestamps to UTC without fractional rounding; missing/ambiguous/invalid/-00:00 unresolved, raw retained/no UTC, reason internal; exact GPS normalization with scientific fallback to avoid excessive expansion; new immutable values preserve IDs/locators/raw, no historical DB mutation |
+| Inputs/outputs | P01/P02 frozen observations -> frozen normalized observation plus internal time/coordinate status envelope; existing Observation wire only; unchanged score/kind/UUID context; no entity keys/processing API/public status fields |
+| Proof | 18 focused PASS; full backend 164 PASS/1 Windows symlink SKIP; frontend 48 PASS, coordination 122 PASS, real I00 HTTP smoke and contract/types/build/DESIGN PASS. Goldens/unknown/precision/immutability/schema and actual original/P01/P02 integration; synthetic run UUIDs, in-process ASGI focused transport and remaining limits in PREIMPLEMENTATION_REVIEW |
+| Handoff | In Progress; explicit user authorization to implement/test/push/merge P03 only. Preserve full FEATURE_SCOPE. Next M2 P03B, no following task started |
