@@ -216,3 +216,50 @@ confidence=0 is unavailable, not measured event truth/extraction/corroboration.
 No DB writes, new wire fields, API route, processing publication or list producer.
 P04/P05B/P14 retain lifecycle/listing/private persistence tasks. Full initial
 scope including approved transcription remains unchanged.
+
+
+## P04 approved lifecycle policy — 2026-11-01
+
+User approved the bounded scope and C-04 lifecycle choices. Version
+processing-lifecycle/1 supports existing network_log and gps CSV layouts/limits
+using actual P01/P02/P03/P03B/P03C; no MIME/filename-only success. Unsupported
+Evidence kind returns 415 before creating a run/key. Supported-kind malformed
+CSV is accepted as queued then failed with a fixed safe code, never partial output.
+Bodyless start rejects submitted body/undeclared query; Idempotency-Key is exactly
+one header of 1–128 characters per spec (no secret/raw key persisted or logged).
+Scope key digest to actor/case/startProcessing, fingerprint request target before
+selecting current input/config; repeat returns original run including failure,
+changed target 409, new key permits retry. Reauthorize case on every read/replay.
+
+Freeze original hash/size/kind and processor/parser/normalizer/projector versions
+at acceptance in private SQL. Authorized F05 original lookup is reused; worker
+rechecks membership, bounded bytes and frozen size/hash before actual parsing.
+No original rewrite. Store immutable source observations/entities/events and time
+uncertainty only in an atomic output transaction with completed status. New runs
+retain old outputs. Public run error contains only fixed diagnostic codes, no
+raw cells, paths, credentials or private configuration. F08 public processing
+audit/P14 richer private provenance/P14B dispatch registration/P14C full retry/
+crash publication gate remain separate required tasks; this is real P04 lifecycle
+and basic atomicity, not completion of those later rows.
+
+Single local application process, one background job scheduled per newly accepted
+run; queued->running claim is atomic and replay never reexecutes it. Jobs do not
+run on GET/poll. On startup, mark interrupted queued/running jobs failed with
+PROCESSING_INTERRUPTED and finished_at; never fabricate completion or silently
+rerun them. Same key returns that failed run, new key may retry. No external queue,
+new package, automatic production auth, multi-process worker deployment or model.
+Safe SQL failure leaves no completed publication; an inaccessible database can
+leave a nonterminal run until restart recovery, never fictional success.
+
+Processing-owned tables/triggers retain frozen configuration, terminal run records
+and published output JSON immutably without changing M1 tables. listProcessingRuns
+returns oldest by created_at then UUID; reads are no-store, case/evidence/run joins
+are exact and foreign/missing use the same 404. P04B/P05/P05B retain output listing.
+Full initial scope including approved additions remains unchanged.
+
+P04 implementation detail: one asynchronous per-application worker lock serializes
+parsing so pending jobs wait without taking thread-pool slots or blocking polls.
+Frozen configuration includes the existing parser byte/row parameters; a mismatch
+with executing versions/limits fails rather than silently using new configuration.
+The necessary skeleton table-inventory assertion includes processing-owned tables;
+all original table assertions remain. No M1 table/schema or source producer changed.

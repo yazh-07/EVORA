@@ -1,3 +1,100 @@
+# P04 processing-run lifecycle — 2026-11-01
+
+P04 / Checkpoint 1B / M2 yazh-07, feat/p04-processing-lifecycle from verified
+shared base 9bec1653525694c01ef82c6a3cd12f2beea8493c. User approved the bounded
+scope/lifecycle policy and explicitly authorized implementation/test/push/merge.
+In Progress pending verification/integration; current state in docs/ROADMAP.md.
+Older task notes below are historical. Full agreed initial scope is preserved.
+
+The actual startProcessing/getProcessingRun/listProcessingRuns APIs now use
+processing-owned SQLite tables and the real network/GPS -> normalization ->
+candidate Entities -> source Events pipeline. M1 tables/producers are unchanged.
+
+- POST /api/v1/cases/{caseId}/evidence/{evidenceId}/processing-runs is bodyless,
+  requires exactly one 1–128 character Idempotency-Key and returns 202 queued.
+  Existing F00 auth/case grants apply to all three routes. Unsupported kind returns
+  415 without a run/key; supported malformed CSV is accepted then failed safely.
+- Scope a key digest to actor/case/startProcessing; fingerprint the request, never
+  mutable server data. Replay returns the same original run before resnapshot,
+  including failure; a different evidence target conflicts 409. New keys can retry.
+  Only digests are stored; raw keys/credentials/private source data are not logged.
+- Freeze kind/hash/size, processor/parser/normalizer/projector versions and existing
+  50 MiB/100000-row parameters privately at acceptance. A changed configuration
+  cannot execute under an older frozen version. Worker rechecks actual membership,
+  authorized F05 path, bounded original bytes/hash and membership before publication.
+- A local background job claims queued -> running atomically. One asynchronous
+  worker lock serializes parsing; waiting jobs do not occupy worker threads or
+  block polling. This supports one local application process, not a distributed
+  queue or multi-process worker deployment. GET never schedules/progresses jobs.
+- On success, immutable observations/entities/events/uncertainty JSON and completed
+  status commit together. A failure rolls back partial publication and exposes a
+  safe fixed error plus finished_at. SQL triggers protect frozen config, terminal
+  runs and completed outputs. Reprocessing retains every earlier output/run.
+- Startup marks interrupted queued/running jobs failed with PROCESSING_INTERRUPTED;
+  same-key replay stays failed, new key may retry. No pretend completion/reexecution.
+  If SQLite itself is unavailable, a job can remain nonterminal until recovery;
+  it is never reported as completed without output. No external queue/package.
+- Poll GET .../processing-runs/{runId}; list GET .../processing-runs returns oldest
+  first by created_at then UUID. Every read is no-store and case/evidence/run scoped;
+  missing/foreign targets share 404. Public run wire has no private configuration,
+  raw content, provenance JSON or idempotency digest. Terminal fields follow schema.
+- These are real immutable outputs but no public listObservations/Entity/Event
+  endpoints yet. P04B/P05/P05B add them. P14 richer private provenance, P14B dispatch
+  registry and P14C full retry/crash publication gate remain required tasks; basic
+  P04 atomicity/first network/GPS path does not mark those rows Complete. F08 owns
+  safe public processing audit. No scoring/graph/UI implementation is claimed.
+
+## How you can test P04
+
+PowerShell at repository root with Python 3.14.8 and installed requirements:
+
+    npx.cmd --yes @redocly/cli@2.57.0 bundle specs/openapi.yaml -o "$env:TEMP/evora-p04-openapi.json"
+    $env:PYTHONUTF8 = '1'
+    $env:EVORA_CONTRACT_BUNDLE = "$env:TEMP/evora-p04-openapi.json"
+    python -W error::ResourceWarning -m unittest backend.tests.test_processing -v
+
+Expect 21 passing tests. The real synthetic network.csv fixture publishes six
+observations, four Entity records and two source Events; gps.csv publishes three
+observations, one device Entity and one source Event. Source IDs/locators/raw/time/
+confidence remain intact; raw originals and SHA-256 stay unchanged. Start returns
+202 queued; polling reaches completed with finished_at; list returns that run.
+Same-key replay returns the same UUID and no new work, different target 409;
+new key produces a new run without changing earlier outputs. Storage is temporary
+and cleaned automatically; no real evidence/token/provider needed.
+
+Run the real localhost smoke independently (server starts/stops automatically):
+
+    python -W error::ResourceWarning -m unittest backend.tests.test_processing.ProcessingLoopbackTests -v
+
+Expect PASS for actual HTTP start/poll/list using both real CSV producers and a
+malformed supported CSV that becomes failed. No scheduler/parser/storage double
+in this smoke. Synthetic HTTP auth is opt-in only; normal app still rejects tokens
+until configured. No real processing-run UUID double: run IDs are produced by P04.
+
+Relevant failure/replay check:
+
+    python -m unittest backend.tests.test_processing.ProcessingTests.test_malformed_supported_file_failed_replay_and_new_key_retry -v
+
+Synthetic input has exact header timestamp,device_id,ip_address,event and row
+2026-01-12T10:01:00Z,D-7,SECRET,connected (SECRET is deliberately invalid IP text).
+Expect PASS: 202 then failed/CSV_INVALID_IP with finished_at, zero output rows,
+no cell text in public error; same key replays the failed UUID, new key creates
+another run. Unsupported document Evidence separately returns 415 before a run.
+The tests also cover missing/duplicate/oversize keys, nonempty body/query 400,
+foreign/missing resources 404, auth 401, revoked access, concurrency, queued/running
+polling, atomic rollback/retry and interrupted-run startup failure.
+
+Scheduler gates/failure injections are labeled in tests: a held job makes queued/
+running observable; a post-insert exception proves rollback; persisted interrupted
+states exercise actual startup recovery. These do not claim an OS power-loss or
+multi-process crash test. Focused API tests use actual FastAPI/SQLite/private files
+with HTTPX in-process ASGI; the separate smoke uses a real Uvicorn subprocess and
+loopback HTTP. Earlier unrelated suites retain their documented doubles. Full
+regressions/results are in docs/PREIMPLEMENTATION_REVIEW.md. No real-evidence
+benchmark, new browser workflow, clean local reinstall or production auth claim.
+Next M2 P04B exposes source-backed historical/latest observations; no next task
+starts here. Optional cleanup: remove the TEMP schema bundle after all checks.
+
 # P03C source-backed row events — 2026-11-01
 
 P03C / Checkpoint 1B / M2 yazh-07, feat/p03c-source-events from verified shared

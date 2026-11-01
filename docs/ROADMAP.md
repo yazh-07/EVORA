@@ -362,6 +362,21 @@ HTTP post-merge smoke PASS on that exact commit. Checkpoint 1B remains open. Ent
 initial scope/additions retained. Next M2 P04 processing lifecycle; P05B listing
 and P14 persistence remain required later rows. No next task started.
 
+### P04 live handoff — 2026-11-01
+
+**P04 / 1B / M2 yazh-07 / In Progress.** Isolated feat/p04-processing-lifecycle
+from verified shared base **9bec1653525694c01ef82c6a3cd12f2beea8493c**. Real
+F00/F05/P01/P02 prerequisites and P03/P03B/P03C producers integrated; 0/1A Complete.
+Approved bounded scope/lifecycle policy in AGENT_TASKS.md/COMMUNICATION.md. Actual
+bodyless keyed start, poll/list, frozen input/config, background states and atomic
+immutable SQL output publication; safe malformed failure/unsupported 415, replay/
+conflict/retry and interrupted-run startup failure. 21 focused PASS; full backend
+215 PASS/1 Windows symlink SKIP, frontend 48 PASS, coordination 122 PASS;
+contract/types/build/DESIGN and actual processing/I00 HTTP smoke PASS. Exact
+commands/doubles/limits in PREIMPLEMENTATION_REVIEW.md. Integration pending;
+no Complete claim. Full initial scope/additions unchanged. Next M2 P04B observation
+list; P14/P14B/P14C/P05/P05B remain required later rows. No next task started.
+
 ## Module assignment and live task state
 
 | Module | Assigned GitHub handle | Accountable boundary | State |

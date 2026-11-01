@@ -2151,3 +2151,90 @@ Next M2 P04 processing lifecycle, subject to its own bounded scope and needed
 C-04 lifecycle/error policy review. Its real F00/F05/P01/P02 dependencies are
 integrated. No next task started; waiting for user review. Entire initial scope
 including all approved additions remains preserved.
+
+
+## P04 verification — 2026-11-01
+
+P04 / 1B / M2 yazh-07, feat/p04-processing-lifecycle from exact verified shared
+base **9bec1653525694c01ef82c6a3cd12f2beea8493c**, matched freshly fetched origin.
+Actual F00/F05/P01/P02 prerequisites integrated, plus P03/P03B/P03C real outputs;
+completed 0/1A regressions retained. User approved the bounded paths/lifecycle
+policy and explicitly authorized implement/test/commit/push/merge. New processing
+module/focused tests, app router/startup, necessary skeleton processing-table
+inventory, backend README and bounded four records only. M1 tables/producers,
+existing parser modules, FEATURE_SCOPE/additions, spec/frontend/dependencies
+unchanged. No task after P04 is included or marked Complete.
+
+### Actual execution
+
+Existing Windows Python 3.14.8/jsonschema 4.25.1, Node 22.23.3/npm 12.2.0;
+exact cached CLI versions and ignored frontend dependency junction reused.
+No new dependency/model/provider or clean local reinstall claimed.
+
+| Command/check | Actual result |
+|---|---|
+| EVORA_CONTRACT_BUNDLE=TEMP/evora-p04-openapi.json; python -W error::ResourceWarning -m unittest backend.tests.test_processing -v | 21 PASS, no skips; actual ASGI and separate localhost HTTP processing |
+| Same bundle; python -W error::ResourceWarning -m unittest discover -s backend/tests -v | 216 run: 215 PASS / 1 existing Windows symlink-permission SKIP |
+| python -m pip check | PASS, no broken requirements |
+| npm --prefix frontend test | 48 PASS, no skips |
+| npm --prefix frontend run build | PASS API freshness, TypeScript and esbuild |
+| EVORA_TEST_PYTHON=pinned interpreter; node test/cases.integration.mjs from frontend | PASS actual I00 loopback intake/audit/hash/original/actor/error and U02/U02B/U03/U04 regressions, including rerun on final serialized-worker candidate |
+| Redocly 2.57.0 lint specs/openapi.yaml and bundle to TEMP/evora-p04-openapi.json | PASS, existing missing-license warning |
+| openapi-typescript 7.10.1 specs/openapi.yaml to TEMP/evora-p04-api.d.ts; TypeScript 5.9.3 --noEmit --strict on that file | PASS |
+| python scripts/verify_coordination.py TEMP/evora-p04-openapi.json | PASS |
+| Same bundle; python -m unittest discover -s scripts -p test_*.py -v | 122 PASS, no skips |
+| DESIGN 0.4.0 lint DESIGN.md | PASS zero errors/warnings |
+| git diff --check; protected-path diff guard | PASS |
+
+Actual producers publish network fixture six observations/four entities/two
+events and GPS three observations/one entity/one event. Every output validates
+actual wire schema and joins same-case Evidence/real P04 run/source Observation/
+actual Entity IDs; raw/time/locators/confidence and original bytes/hash remain.
+Header-only CSV completes with real empty output. start returns 202 queued,
+GET polls real state, history lists oldest first. Tests execute queued/running/
+completed/failed, frozen private configuration/limits, no private wire fields,
+same-key replay before changed metadata/config, different-target 409, new-key
+retry and immutable completed history. Scope keys by actor/case/operation; six
+concurrent same-key requests schedule one job/run. Local jobs serialize while
+API reads remain responsive; GET/replay never schedules work.
+
+Negatives cover unsupported 415 without run/key, supported malformed CSV safe
+failed/CSV_INVALID_IP, missing/duplicate/empty/overlong keys, nonempty body/query
+and invalid UUID 400, all new-route auth 401/foreign/missing 404, mismatched run/
+evidence/case joins and membership revocation before/during parsing/publication.
+Changed frozen execution version cannot complete. Synthetic original tamper,
+missing/unsafe private file, invalid participant/source paths and post-publication
+exception leave no completed partial output; new-key retry works and prior
+terminal resource remains stable. SQL triggers reject frozen configuration/
+terminal run/output mutation/deletion and completion without output.
+
+Test doubles are explicitly bounded: held scheduling callbacks expose queued
+state; a parser gate invokes the actual parser then allows running-state polling;
+a worker gate proves serialization/responsiveness. A post-insert/pointer-update
+exception proves actual SQLite transaction rollback; version and membership
+changes are controlled fault injections. Persisted queued/running interruption
+fixtures exercise actual startup recovery on a second real app/database, preserving
+completed history and replaying failed originals. This is not an OS power-loss,
+multi-process/distributed queue or full P14C crash matrix. The local deployment
+policy is one app process. If SQLite itself is inaccessible, nonterminal state
+may remain until startup recovery; no fictional completed status is produced.
+
+Focused API tests use actual FastAPI/F00/F01/F03/F05/SQLite/private originals and
+real P01/P02/P03/P03B/P03C. Auth identities/tokens are synthetic; run UUIDs are
+actually produced and persisted by P04, not unpersisted parser context doubles.
+Separate ProcessingLoopbackTests launches actual Uvicorn and tests real localhost
+HTTP start/poll/list for network/GPS completion and malformed CSV failure; server
+and temp storage clean up automatically. I00 separately exercises earlier real
+client/stores/intake/audit. Prior unrelated suites retain documented doubles.
+
+backend/README.md How you can test P04 gives exact setup/test commands, synthetic
+fixtures/expected counts, real HTTP smoke and malformed-IP failure/replay command.
+P04B/P05/P05B public output listing, F08 public processing audit, P14 richer private
+provenance, P14B dispatch registration and P14C full recovery/atomic-publication
+gates remain separate required rows; P04 basic actual pipeline/atomicity does not
+complete them. No full UI processing workflow, production auth, new model, local
+clean reinstall or real-evidence benchmark claimed. Hosted CI pending at this
+recording point. Full agreed initial scope including additions preserved.
+P04 In Progress pending actual authorized merge/read-back; Checkpoint 1B remains
+open. Next M2 P04B source-backed latest/historical Observation listing; no next
+task started. Existing original dirty checkout and other worktrees preserved.
