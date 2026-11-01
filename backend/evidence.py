@@ -91,7 +91,7 @@ def list_evidence(
         rows = connection.execute(
             f"SELECT {_METADATA_COLUMNS} FROM evidence WHERE case_id = :case_id "
             "ORDER BY created_at DESC, id ASC LIMIT :limit OFFSET :offset", parameters,
-        ).fetchall()
+        ).fetchall() if offset < total else []
     return EvidencePage(items=[Evidence(**dict(row)) for row in rows],
                         total=total, limit=limit, offset=offset)
 

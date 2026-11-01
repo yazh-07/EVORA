@@ -193,6 +193,33 @@ with own test servers stopped and temporary data removed. F07 is **Complete**.
 Next M1 task is **F09**, not started; I00 still needs an explicit shared-task
 assignee. Checkpoint 1A stays open.
 
+## F09 current handoff — 2026-11-01
+
+**F09 / 1A / M1 / sharmelas-925 / In Progress**, user-assigned with commit/push/
+merge authorization after verification. Fresh `git fetch origin` and clean
+status preceded task-state inspection; common local/origin HEAD matched
+**53bac04ed4b94f10334dc92a5ecead2c11dfecad**. Branch:
+`feat/f09-m1-access-regressions`. Real accepted F00/F05/F07 and other M1 intake
+producers are integrated. The assignment card bounds all eight current M1
+operations, case/resource isolation, error behavior and no denied-write effects.
+No product scope, contract, identity provider, other module or shared gate is
+changed. The route inventory covers all eight M1 operations, including both
+actors' positives, missing/invalid/duplicate/replaced identity, foreign/missing/
+revoked cases, mismatched resources, safe error schemas and unchanged records/
+originals on denial. Collection create/list correctly use ownership/filtering
+checks rather than invented case-ID semantics. The matrix exposed SQLite
+overflow on contract-valid huge offsets in case/evidence lists; both now return
+proper beyond-end empty pages without adding a contract limit.
+
+**14 F09 pass; 116 backend run (115 pass, one known Windows symlink skip);
+122 coordination and 48 frontend pass.** Contract lint/bundle/generated strict
+types, freshness/typecheck/build, verifier, DESIGN and whitespace pass. Real
+localhost all-eight missing-auth/scoped isolation/no-side-effect SQL/file checks
+and prior case/upload/download client integration pass. Exact commands/limits
+are in F09 verification in PREIMPLEMENTATION_REVIEW. **In Progress**, pending
+authorized publication and merged-tree read-back. Checkpoint 1A stays open.
+Next gate I00 is shared and requires an explicit assignee; F08 waits for P04/P14.
+
 ## Module assignment and live task state
 
 | Module | Assigned GitHub handle | Accountable boundary | State |
