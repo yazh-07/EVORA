@@ -3,7 +3,9 @@
 P04B / Checkpoint 1B / M2 yazh-07, feat/p04b-observation-list from verified
 shared base bb3928440ebf39d016e14fb328f045d98fd68bb9. User approved the bounded
 scope/read policy and authorized implementation/test/commit/push/merge.
-In Progress pending integration; current state in docs/ROADMAP.md. Older notes
+Complete after merge c29e517f218c0851a9959cfa389b093242a255ab; 16 focused tests,
+verifier and real Observation/I00 post-merge HTTP smoke PASS.
+Current state in docs/ROADMAP.md. Older notes
 below are historical. Entire agreed initial scope/additions remain unchanged.
 
 GET /api/v1/cases/{caseId}/observations now reads actual immutable P04 output.

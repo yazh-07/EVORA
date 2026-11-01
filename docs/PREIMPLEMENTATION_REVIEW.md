@@ -2353,3 +2353,34 @@ not yet claimed at this recording point. P04B In Progress pending actual merge/
 read-back; Checkpoint 1B/M2 remain open. Next M2 P05 candidate Entity listing (actual
 P03B and P04B dependencies after integration); no next task started. Entire scope/
 additions and existing original dirty checkout/other worktrees preserved.
+
+
+### P04B integrated acceptance — 2026-11-01
+
+User-authorized task commit **5baa2f631f788466f6787d331734adda0f26dfca** pushed
+to feat/p04b-observation-list and merged without conflicts into the recorded
+shared branch docs/coordination-foundation at
+**c29e517f218c0851a9959cfa389b093242a255ab**. On that exact merge, all 16 P04B
+focused tests including real Uvicorn/localhost process-to-Observation reads,
+coordination verifier and actual I00 loopback intake/audit/original/actor/error
+regressions PASS. The final focused suite includes empty latest versus older
+nonempty pin and invalid stored UUID regressions. Final pre-merge docs candidate:
+122 coordination PASS; full 231 backend PASS/1 Windows symlink SKIP, frontend
+48 PASS; contract/types/build/DESIGN PASS as recorded above. Protected-path guard
+confirms full FEATURE_SCOPE/spec/frontend/DB schema/producers/dependencies remain
+unchanged. Only approved app router wiring is shared runtime work. Original dirty
+checkout and other worktrees preserved.
+
+P04B Complete after actual P04 prerequisite integration and authorized merge/smoke;
+no required P04B acceptance remains unintegrated. Checkpoint 1B/M2 remain open.
+This supersedes pending-integration handoffs. New hosted CI not yet claimed at
+this recording point. Synthetic auth/scheduler/publication/corruption/selection
+fixtures and transcript schema-only compatibility, ASGI versus real HTTP smoke,
+Windows skip, no maximum-size benchmark/production-auth/full Observation UI claim
+remain disclosed above. Whole-read validation protects shape/context/public wire,
+not a claim that arbitrary database tampering establishes source authenticity.
+
+Next eligible M2 P05 candidate Entity listing: real P03B/P04B prerequisites are
+integrated. P05B Event listing follows by the catalog/dependency order; later
+provenance/dispatch/recovery/UI/full-scope gates remain required. No next task
+started; waiting for user review. Entire agreed scope/additions preserved.
