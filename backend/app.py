@@ -2,6 +2,7 @@
 
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+import asyncio
 import os
 from pathlib import Path
 
@@ -13,6 +14,7 @@ from backend.audit import initialize_audit, router as audit_router
 from backend.database import SQLiteDatabase
 from backend.cases import SQLiteCaseAccess, initialize_cases, router
 from backend.evidence import initialize_evidence, router as evidence_router
+from backend.processing import initialize_processing, router as processing_router
 from backend.errors import AccessError, access_error, invalid_request
 
 
@@ -38,6 +40,7 @@ def create_app(
         initialize_cases(database)
         initialize_evidence(database)
         initialize_audit(database)
+        initialize_processing(database)
         yield
 
     app = FastAPI(
@@ -49,6 +52,7 @@ def create_app(
         redoc_url=None,
     )
     app.state.database = database
+    app.state.processing_lock = asyncio.Lock()
     app.state.storage_dir = Path(storage_dir if storage_dir is not None else
                                  os.environ.get("EVORA_STORAGE_DIR", "storage/evidence")).resolve()
     app.state.token_verifier = token_verifier if token_verifier is not None else RejectTokens()
@@ -58,6 +62,7 @@ def create_app(
     app.include_router(router)
     app.include_router(evidence_router)
     app.include_router(audit_router)
+    app.include_router(processing_router)
     return app
 
 

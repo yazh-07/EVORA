@@ -483,3 +483,17 @@ starting a second U04 implementation. No U04 changes were merged here.
 | Input/output | Real P03B CandidateProjection over P01/P02/P03 -> frozen source-event envelopes carrying existing Event wire only; no synthetic identity, stored-output mutation or processing/list API |
 | Proof | 15 focused PASS; full backend 194 PASS/1 existing Windows symlink SKIP, frontend 48 PASS, coordination 122 PASS; contract/types/build/DESIGN and real I00 HTTP regressions PASS. Actual source chain/schema/source/participant/immutability and negative controls; synthetic run/auth and ASGI transport disclosed in PREIMPLEMENTATION_REVIEW |
 | Handoff | Complete after authorized merge bb2d18f1222c8e7fd4ab45dbdf7e1e17b252baca and passing 15 focused/verifier/real I00 post-merge smoke; task commit f75ffa32a154987db82bdcdd8b28047ee05bf054 pushed. P03C only; preserve entire FEATURE_SCOPE/additions. Checkpoint 1B open. Next M2 P04, no next task started |
+
+
+### P04 assignment — 2026-11-01
+
+| Field | Recorded assignment |
+|---|---|
+| Task/checkpoint/owner | P04 / 1B / M2 yazh-07: one actual processing lifecycle via startProcessing/getProcessingRun/listProcessingRuns; stable replay/conflict, immutable outputs, no partial success |
+| Branch/base | feat/p04-processing-lifecycle / **9bec1653525694c01ef82c6a3cd12f2beea8493c**, clean fetched shared docs/coordination-foundation, isolated worktree |
+| Allowed paths | Approved backend/processing.py, focused backend/tests/test_processing.py and necessary processing table inventory in backend/tests/test_skeleton.py, backend/app.py router/startup, processing-owned SQLite tables, backend/README.md; bounded AGENT_TASKS/COMMUNICATION/ROADMAP/PREIMPLEMENTATION_REVIEW records. M1 tables/producers/spec/frontend/dependencies unchanged |
+| Dependencies | Real F00 94aa2a8/F05 d24312f/P01 cab08f1/P02 389652c plus integrated P03/P03B/P03C actual output chain; completed 0/1A regressions |
+| Approved policy | Bodyless/keyed start, frozen input hash/config, local background queued/running/completed or failed; network/GPS actual adapters; unsupported kind 415 before acceptance, supported malformed CSV accepted failed with safe code; actor/case/operation replay/conflict/new-key retry; interrupted queued/running jobs fail on restart |
+| Input/output | Authorized original -> actual P01/P02/P03/P03B/P03C -> immutable private atomic SQL outputs/completed run. Existing ProcessingRun wire only; no listObservations/entities/events endpoints here |
+| Proof | 21 focused PASS; full backend 215 PASS/1 existing Windows symlink SKIP, frontend 48 PASS, coordination 122 PASS; contract/types/build/DESIGN and real processing/I00 HTTP smoke PASS. Fault/scheduler doubles and deployment/test limits in PREIMPLEMENTATION_REVIEW |
+| Handoff | In Progress; explicit user implement/test/commit/push/merge authorization covers P04 only. Preserve full FEATURE_SCOPE/additions. P04B next; P14/P14B/P14C/P05/P05B remain required later work |
