@@ -416,3 +416,16 @@ starting a second U04 implementation. No U04 changes were merged here.
 | Gate | No missing policy; user explicitly requested U04. Synthetic auth only, backend remains access authority |
 | Acceptance/tests | Selected metadata download; original byte/size/hash read-back; failures, duplicates, selection/session cancellation; URL cleanup; real producer integration and previous-checkpoint regressions |
 | Handoff | Complete after user-authorized merge 9444ef703ea88cba52280024c11887492b6053bd and post-merge real API smoke; 48 frontend pass, 69 backend pass/1 Windows symlink skip, real API/browser original read-back and contract/types/build/DESIGN pass; exact evidence in PREIMPLEMENTATION_REVIEW U04 section. User now explicitly authorizes finishing, committing, pushing and merging U04 only; preserve full FEATURE_SCOPE |
+
+### P01 assignment — 2026-11-01
+
+| Field | Recorded assignment |
+|---|---|
+| Task/checkpoint/owner | P01 / 1B / M2 yazh-07; parse synthetic network CSV into source-located candidate observations, known device/IP/raw time/row read-back and invalid header/row rejection |
+| Branch/common base | feat/p01-network-csv / **22673d909b0860663b001269cefa2ac6f302a881**, freshly fetched shared docs/coordination-foundation; isolated worktree preserves original dirty checkout |
+| Paths | User approved backend/parsers/network_csv.py, backend/tests/test_network_csv.py, backend/README.md and bounded assignment/policy/verification records in docs/AGENT_TASKS.md, docs/COMMUNICATION.md, docs/ROADMAP.md, docs/PREIMPLEMENTATION_REVIEW.md; no other producers/spec/dependencies/frontend |
+| Dependencies | Real G01 e0257a6 and F05 d24312f merged in verified base, with completed 0/1A; actual F00/F01/F03/F05 used for authorized upload/download integration |
+| Policy/gate | User approved UTF-8 optional BOM, exact ordered timestamp/device_id/ip_address/event columns, strict CSV atomic rejection, nonblank required values, valid IP, 50 MiB bytes and 100000 data rows; raw timestamps/values retained, P03 normalization separate |
+| Input/output | Existing Observation schema only; immutable network.device/network.ip/network.event observations per row, observed_at_raw retained, normalized_value initially identical to logical CSV cell; source locator row/column including physical line span; 0 unavailable extraction-score sentinel, never a measured probability or source reliability. Caller supplies case/evidence/run UUID context; P04 owns real run persistence/idempotency |
+| Verification | 14 focused pass; full backend 129 pass/1 Windows symlink skip, 48 frontend pass; real original/I00 intake regression and contract/types/build/DESIGN pass; exact proof/limits in PREIMPLEMENTATION_REVIEW P01 section. No fake processing API/run producer |
+| Handoff | In Progress; user explicitly authorized finish/test/push/merge for P01 only. Preserve entire FEATURE_SCOPE and approved additions. P02 is next M2 row subject to fresh handoff |

@@ -1721,3 +1721,64 @@ missing-license warning remains. U04 is Complete after actual integration;
 Checkpoint 1A remains open. This supersedes the earlier pending-integration
 handoff. No new hosted CI, production identity or formal screen-reader claim.
 Original uncommitted U02B checkout remains untouched. No next task started.
+
+## P01 verification — 2026-11-01
+
+P01 / 1B / M2 yazh-07, feat/p01-network-csv, clean fetched shared base
+22673d909b0860663b001269cefa2ac6f302a881. User approved bounded parser/test/
+README/assignment/policy/verification paths and authorized commit/push/merge of
+this one row. Real G01 e0257a6/F05 d24312f are integrated prerequisites; original
+dirty checkout untouched. No spec/dependency/frontend/full-scope changes.
+
+COMMUNICATION records approved UTF-8/BOM/exact-header/strict-CSV/50 MiB/100000-row
+atomic policy. Immutable network.device/network.ip/network.event observations
+retain raw logical cells/timestamps and original physical row/column spans.
+normalized_value initially equals raw; extraction score 0 means unavailable,
+not measured confidence/reliability. No UTC/entity_key/processing API is invented.
+P04/P14 own lifecycle/output publication/private provenance. Existing Observation
+schema validates parser outputs; no competing wire fields or routes.
+
+### Actual checks
+
+Windows Python 3.14.8/jsonschema 4.25.1, Node 22.23.3/npm 12.2.0. Existing pins
+reused; pip check PASS. No package/model/provider added. CLIs use existing
+exact-version cached entry points; no fresh registry install/TLS workaround.
+
+| Check | Actual result |
+|---|---|
+| Pinned Python warning-strict unittest backend.tests.test_network_csv -v, bundle set | 14 PASS, no skips; real 50 MiB/100000-row bounds, fixture/schema/IDs/locators/raw cells, quote/BOM/encoding/IP/malformed/later-row atomicity, immutability and authorized original integration |
+| Pinned Python warning-strict full backend discovery with bundle | 130 run: 129 PASS / 1 Windows symlink SKIP |
+| npm frontend test | 48 PASS, no skips |
+| npm frontend build | PASS generated API freshness, TypeScript and esbuild |
+| EVORA_TEST_PYTHON=<pinned interpreter> node test/cases.integration.mjs in frontend | PASS actual loopback HTTP I00 intake/audit/hash/original/actor/400/401/404/413 and U04/U03/U02B read-back |
+| Redocly 2.57.0 lint/bundle | PASS; existing missing-license warning |
+| openapi-typescript 7.10.1 + TypeScript 5.9.3 strict temporary declarations | PASS |
+| DESIGN 0.4.0 lint | PASS zero errors/warnings |
+
+P01 original integration uses real FastAPI/F00/F01/F03/F05/SQLite/private storage
+with HTTPX ASGI transport; only identities and run UUID context are synthetic.
+Downloads reproduce source bytes/SHA-256 before and after parsing; foreign actor
+404 and invalid identity 401 block access. No parser/case/storage producer double
+or real completed ProcessingRun is claimed. Existing unrelated suites retain
+their labeled doubles. I00 loopback smoke regresses completed Checkpoints 0/1A.
+No new browser test is needed/claimed for this pure parser row.
+
+The bounded local CSV scanner avoids process-global field-limit changes and
+implicit small field caps; excess columns reject early. Errors never echo cells.
+Source bytes stay immutable; frozen tuple/dataclasses expose fresh wire copies.
+Observation UUIDs are not lifecycle idempotency; P04 will publish real runs.
+No timing/performance benchmark data is invented. Exact commands, six fixture
+observations, INVALID_IP row-2 failure and cleanup are in backend/README.md,
+How you can test P01 (plain reference for planning-fixture compatibility).
+
+P01 remains In Progress pending actual authorized merge/read-back. All initial
+scope and approved additions remain unchanged. Checkpoint 1B is open. Next M2
+row is P02 GPS parsing with its own bounded source/validation policy; P03 can
+normalize after both parsers exist. No P02 implementation here. Clean install,
+new hosted CI, other OS/runtime and P04 publication remain untested.
+
+Final P01 documentation candidate: coordination verifier PASS and **122/122
+coordination tests PASS**, no skips, using EVORA_CONTRACT_BUNDLE and the shared
+unittest discovery command. Diff whitespace passes. All required earlier
+checkpoint regressions pass, with only the documented existing F05 Windows
+symlink skip. New hosted CI is not claimed.
