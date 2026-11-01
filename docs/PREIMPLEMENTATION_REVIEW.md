@@ -1,5 +1,58 @@
 # EVORA scope/contract verification and implementation readiness
 
+### I00 verification — 2026-11-01
+
+**I00 / Checkpoint 1A final exit gate / whale2186 / joint integration
+coordination / Complete.** User-assigned branch
+`feat/i00-authorized-intake-gate` started clean at
+**c0561bbb3978e37395218bf1a771ecd562d3c2dd**, confirmed by Git status, HEAD and
+merge-base read-back. Required proposal/architecture/scope/contracts/runbook,
+checkpoint ledger and matching task row were inspected. All fourteen named
+dependencies are merged on this base, including F06/F07/F09 and U04. The
+unchanged draft 0.3.0 is the sole HTTP authority. Only the five assigned paths
+are edited; no backend/spec/dependency, stage/commit/push/merge or later task.
+
+#### Real producer/consumer read-back and gate closure
+
+`frontend/test/cases.integration.mjs` uses M4's actual generated typed client,
+case/evidence stores and original-download controller over localhost HTTP to
+the existing `frontend/test/serve-cases.py` wrapper, real FastAPI, SQLite and
+private original files. It serves the built UI at the API origin (HTTP 200).
+Two synthetic bearer identities map to investigator-1/investigator-2; all case
+and evidence data are synthetic. No case/evidence/audit producer is mocked.
+
+Assertions call the existing `listAuditEvents` HTTP operation after case
+creation and evidence upload, asserting the authoritative `action=uploadEvidence`
+emitted by F06 intake accounting. Safe public fields, preserved earlier events,
+two real successful uploads in chronological UTC RFC3339 order (fractional
+precision preserved), repeated identical listing and actor-1 denial of actor-2
+cases pass. Foreign and missing cases both return exact 404 ApiError:
+`{"code":"NOT_FOUND","message":"Resource not found."}`.
+Harness-only read-only SQLite dumps and original-file SHA-256 snapshots before
+and after successful/repeated/denied audit listing are identical. No event is
+inserted by the harness. Invalid and oversized uploads add no intake events.
+The original/hash/size/metadata/empty-original, pagination and 400/401/404/413
+regressions also pass. Owned server and temporary data are cleaned on exit.
+
+**The integration command exits 0**, with complete passing smoke.
+
+#### Commands and actual results
+
+| Executed command | Actual result |
+|---|---|
+| `npx @redocly/cli bundle specs/openapi.yaml --output /tmp/evora-openapi.json` | Exit 0, bundle created |
+| `npx --yes @redocly/cli@2.57.0 lint specs/openapi.yaml` | Exit 0, existing info-license warning |
+| `python scripts/verify_coordination.py /tmp/evora-openapi.json` | Exit 0, 27 operations, 126 tasks, 15 in 1A, 39 features, 40 proposal/traceability sections |
+| `EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -m unittest discover -s scripts -p 'test_*.py'` | Exit 0, **122 tests, OK**, no skips, jsonschema 4.25.1 |
+| `EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -W error::ResourceWarning -m unittest discover -s backend/tests -v` | Exit 0, **116 tests, OK**, no skips |
+| `npm --prefix frontend run test` | Exit 0, **48 tests pass**, no skips; emits `.test-build` used by integration |
+| `npm --prefix frontend run build` | Exit 0, declaration freshness, typecheck and production assets |
+| `node frontend/test/cases.integration.mjs` | **Exit 0**, full smoke passes including audit target/actor read-back |
+| `npx @google/design.md@0.4.0 lint DESIGN.md` | Exit 0, zero errors/warnings, one info |
+| `git diff --check` | Exit 0 |
+
+Checkpoint 1A is **Complete**. Checkpoint 1B is **Active**.
+
 ## F09 verification — 2026-11-01
 
 **F09 / Checkpoint 1A / M1 / sharmelas-925 / Complete**, task branch
