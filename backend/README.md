@@ -1,3 +1,108 @@
+# P02 GPS CSV parser — 2026-11-01
+
+P02 / 1B / M2 yazh-07, feat/p02-gps-csv, verified shared base
+4bc8f307a039d7c91bcc687bb64267fbe80fb6b8. User approved GPS scope/policy and
+explicitly authorized implement/test/commit/push/merge for this one task.
+Current integration state is in docs/ROADMAP.md. Older notes below are historical.
+
+backend.parsers.gps_csv.parse_gps_csv consumes immutable original bytes and
+caller-supplied case/evidence/processing-run UUID context. It returns a tuple
+of frozen candidate observations or a safe GPSCSVError, never partial output.
+No HTTP endpoint, DB write, processing-run producer, UTC normalization, entity
+projection or scoring. Source authorization belongs to actual F00/F03/F05;
+P04/P14 own real run publication/idempotency/private provenance. Test run UUIDs
+are explicitly synthetic context, not an implemented processing lifecycle.
+
+## Approved gps-csv/1 policy
+
+- Same strict CSV reader and 50 MiB original-byte / 100000 logical data-row caps
+  as P01, reused unchanged. UTF-8 with optional BOM, exact ordered header
+  timestamp,device_id,latitude,longitude. Quoted commas/quotes/multiline text and
+  LF/CRLF/CR endings supported. Reject bad quotes/encoding/NUL, missing/extra/
+  duplicate/reordered headers/cells and blank required values. Header-only is
+  empty. Any invalid later row rejects the entire result.
+- Latitude [-90,90], longitude [-180,180], inclusive. Finite ASCII decimal
+  literals with optional sign/fraction/exponent; exact Decimal range comparison
+  prevents float-rounding acceptance beyond a bound. No silent whitespace trim,
+  axis swap, DMS, NaN/Infinity or numeric source normalization. Precision,
+  exponents and signed zero are preserved verbatim after CSV unescaping.
+- Timestamp is a valid calendar date/time YYYY-MM-DD[T/t/space]HH:MM:SS with
+  optional fraction and optional Z/z or +/-HH:MM. Clock hour <=23, minute/second
+  <=59, explicit offset hour <=23/minute <=59. Invalid dates/offsets/zone suffixes
+  reject explicitly; leap-second/unrepresentable clock values are unsupported.
+  Missing zone stays unknown; no location-to-zone inference. Raw offset spelling,
+  long fractional precision and -00:00 are preserved, never converted to UTC.
+  P03 owns normalization and interpretation of source time uncertainty.
+- Three existing-schema observations per row: gps.device/gps.latitude/gps.longitude.
+  raw_value is the decoded logical source cell; normalized_value initially equals
+  it. observed_at_raw is the unchanged timestamp; no observed_at_utc/entity_key
+  emitted. Locator names original 1-based physical record line span and column.
+  extraction_confidence=0 is an unavailable-score sentinel, not a measured model
+  score, source reliability, coordinate accuracy or verified real-world location.
+- Parser version gps-csv/1 and these meanings feed future P14 provenance. A pure
+  parser cannot verify DB case/run joins; callers must pass authorized source
+  context. Diagnostics expose fixed codes/record-start lines, no source cells.
+  P04/P14B later own contract-specific accepted-run error handling.
+
+## How you can test P02
+
+PowerShell at repository root, pinned Python 3.14.8 and existing requirements.
+No new dependency added. Prepare the unchanged schema bundle, then run:
+
+    npx.cmd --yes @redocly/cli@2.57.0 bundle specs/openapi.yaml -o "$env:TEMP/evora-p02-openapi.json"
+    $env:PYTHONUTF8 = '1'
+    $env:EVORA_CONTRACT_BUNDLE = "$env:TEMP/evora-p02-openapi.json"
+    python -W error::ResourceWarning -m unittest backend.tests.test_gps_csv -v
+
+Expect 17 passing tests: fixture/schema/source/immutability, BOM/endings/quotes,
+exact coordinate bounds/precision/signed zero, valid/missing/raw timezones,
+invalid dates/offsets, header/row/encoding errors, atomic late rejection, actual
+50 MiB/100000-row boundaries/overflow, safe context and real original integration.
+Boundary tests allocate hundreds of thousands of observations; no performance
+benchmark claim. Codex used existing exact-version CLI caches; fresh registry
+resolution/clean reinstall was not tested during this task.
+
+Inspect the supplied synthetic fixture (context is synthetic/unpersisted):
+
+    python -c "from pathlib import Path; from uuid import uuid4; from backend.parsers.gps_csv import parse_gps_csv; out=parse_gps_csv(Path('fixtures/synthetic-case/gps.csv').read_bytes(),case_id=uuid4(),evidence_id=uuid4(),processing_run_id=uuid4()); print([(x.kind,x.raw_value,x.observed_at_raw,x.source_locator) for x in out])"
+
+Expect three observations for D-8, latitude 12.9716 and longitude 77.5946,
+timestamp 2026-01-12T10:02:00Z and row 2 column locators. No normalized UTC or
+verified location claim. Header-only yields an empty tuple.
+
+Direct failure command (expected nonzero exit, INVALID_COORDINATE at line 2):
+
+    python -c "from pathlib import Path; from uuid import uuid4; from backend.parsers.gps_csv import parse_gps_csv; parse_gps_csv(Path('fixtures/synthetic-case/gps.csv').read_bytes().replace(b'12.9716',b'91'),case_id=uuid4(),evidence_id=uuid4(),processing_run_id=uuid4())"
+
+No partial observations or source-cell echo. Invalid explicit timezone examples
++01:99 and +24:00 reject with INVALID_TIMEZONE; a missing timezone is accepted
+raw with no observed_at_utc. Full previous-checkpoint regressions:
+
+    python -W error::ResourceWarning -m unittest discover -s backend/tests -v
+    python -m unittest discover -s scripts -p 'test_*.py' -v
+    npm.cmd --prefix frontend test
+    npm.cmd --prefix frontend run build
+    $env:EVORA_TEST_PYTHON = (Get-Command python).Source
+    Push-Location frontend
+    node test/cases.integration.mjs
+    Pop-Location
+
+Actual results: 147 backend run (146 pass/1 existing Windows symlink skip),
+48 frontend pass, real I00 audit/intake/original/actor smoke PASS. Source test
+uses actual FastAPI/F00/F01/F03/F05/SQLite/private files through HTTPX ASGI,
+synthetic identities and synthetic run context, without parser/storage/case
+doubles. The separate I00 smoke uses actual loopback HTTP. Prior suites retain
+their disclosed doubles. Contract/types/build/DESIGN PASS; existing license
+warning remains. No new UI/browser test, clean install, other OS/runtime,
+hosted CI or P04 processing-publication claim. Temp DB/files are automatically
+cleaned; no real evidence or external data transfer. FEATURE_SCOPE is unchanged.
+
+Next M2 task is P03: normalize timestamps and GPS coordinates from integrated
+P01/P02, preserve raw values and missing/ambiguous timezone uncertainty. No P03
+work is included in this one-task assignment.
+
+---
+
 # P01 network CSV parser — 2026-11-01
 
 P01 / 1B / M2 yazh-07, feat/p01-network-csv, verified shared base
