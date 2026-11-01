@@ -2060,3 +2060,70 @@ publication/list APIs/provenance persistence stay with P04/P05/P14. No full-syst
 completion or real-evidence benchmark claimed. Next eligible M2 P03C source-backed
 event projection, with actual P01/P02/P03 prerequisites integrated. No next task
 started; waiting for user review. Full agreed initial scope/additions preserved.
+
+
+## P03C verification — 2026-11-01
+
+P03C / 1B / M2 yazh-07, feat/p03c-source-events from verified shared base
+**e68969df9f19f8f78320a708bc3cb80a3c05b85d**, matched freshly fetched origin.
+Actual P01/P02/P03 prerequisites merged, plus actual P03B participant records;
+completed Checkpoints 0/1A regressed. User approved the exact bounded file scope
+and source-event policy, then explicitly authorized implementation/test/push/merge.
+New source-event module/test, backend README and bounded four records only.
+Full FEATURE_SCOPE/additions, existing producers/spec/DB/dependencies/UI unchanged.
+
+### Actual execution
+
+Existing Windows Python 3.14.8/jsonschema 4.25.1, Node 22.23.3/npm 12.2.0;
+exact cached CLI versions and ignored frontend dependency junction reused.
+No new package/model/provider, clean local reinstall or TLS bypass.
+
+| Command/check | Actual result |
+|---|---|
+| EVORA_CONTRACT_BUNDLE=bundle; python -W error::ResourceWarning -m unittest backend.tests.test_source_events -v | 15 PASS, no skips |
+| EVORA_CONTRACT_BUNDLE=TEMP/evora-p03c-openapi.json; python -W error::ResourceWarning -m unittest discover -s backend/tests -v | 195 run: 194 PASS / 1 existing Windows symlink-permission SKIP |
+| python -m pip check | PASS, no broken requirements |
+| npm --prefix frontend test | 48 PASS, no skips |
+| npm --prefix frontend run build | PASS API freshness, TypeScript and esbuild |
+| EVORA_TEST_PYTHON=pinned interpreter; node test/cases.integration.mjs from frontend | PASS actual I00 loopback HTTP intake/audit/hash/original/actor/error and U02/U02B/U03/U04 regressions |
+| Redocly 2.57.0 lint specs/openapi.yaml and bundle to TEMP/evora-p03c-openapi.json | PASS, existing missing-license warning |
+| openapi-typescript 7.10.1 specs/openapi.yaml to TEMP/evora-p03c-api.d.ts; TypeScript 5.9.3 --noEmit --strict on that file | PASS |
+| python scripts/verify_coordination.py TEMP/evora-p03c-openapi.json | PASS |
+| EVORA_CONTRACT_BUNDLE=same bundle; python -m unittest discover -s scripts -p test_*.py -v | 122 PASS, no skips |
+| DESIGN 0.4.0 lint DESIGN.md | PASS zero errors/warnings |
+| git diff --check; protected-path diff guard | PASS |
+
+Focused cases exercise three real fixture row reports, all source/actual Entity
+references, distinct D-7/D-8 participants, exact source-report summaries, multiline
+locators/untrusted text and identical-content distinct rows. Preserve nanosecond
+fractions/offset UTC and raw/uncertain missing/named/-00:00/invalid time without
+fabrication. Entity/event confidence stays unavailable 0. Reordered inputs keep
+source content/order with fresh unpublished Event record IDs, not lifecycle replay.
+Frozen Event/envelope and fresh wire arrays validate actual Event schema, with no
+extra internal fields. Incomplete/duplicate row fields, malformed/wrong-column/
+header/overlapping/huge locators, inconsistent raw/UTC/uncertainty/coordinates,
+mixed cases/adapters/run contexts, duplicate observations, missing/foreign/altered/
+duplicate Entity records or unsupported projection versions reject atomically with
+fixed safe codes. Existing producer/key validation is reused, not copied/changed.
+Temporary validation Entity IDs are discarded; only actual supplied IDs are linked.
+
+Real integration uses F00/F01/F03/F05/FastAPI/SQLite/private originals and actual
+P01/P02/P03/P03B producers. Synthetic tokens and explicitly unpersisted caller run
+UUIDs supply context; focused HTTPX ASGI transport is in process. No parser/storage/
+normalizer/Entity producer double. Tests read back original bytes/hash, unchanged
+SQL evidence rows and frozen source observations before/after projection; Event
+references join to same-case source/actual Entity IDs, foreign 404 and invalid
+auth 401 pass. Separate I00 uses real loopback HTTP and frontend client/stores.
+Earlier unrelated suites retain their labeled doubles. No P04 run publication,
+P05B list API, P14 private persistence, real-evidence benchmark or new browser
+check claimed. All prior completed checkpoint checks pass with disclosed skip.
+Hosted CI/other-OS fresh install not yet claimed at this recording point.
+
+backend/README.md How you can test P03C provides exact setup/commands, synthetic
+network fixture -> two network.activity reports with 3 observation/2 participant
+IDs and UTC times; example executed as written. Both listed failure/time-control
+commands PASS: INCOMPLETE_ROW/DUPLICATE_ROW_FIELD and invalid time raw/no UTC.
+Plain backend README reference preserves planning-only fixture compatibility.
+P03C In Progress pending actual authorized merge/read-back; Checkpoint 1B remains
+open. Next M2 row P04 processing lifecycle requires its own bounded policy review;
+no next task started. Entire agreed initial scope including additions preserved.

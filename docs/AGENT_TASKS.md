@@ -469,3 +469,17 @@ starting a second U04 implementation. No U04 changes were merged here.
 | Input/output | Real P03 NormalizationResult tuple -> new immutable source-preserving observations with existing entity_key plus existing-schema Entity tuples; no stored output mutation or processing/list API claim |
 | Proof | 15 focused PASS; full backend 179 PASS/1 existing Windows symlink SKIP, frontend 48 PASS, coordination 122 PASS; contract/types/build/DESIGN and real I00 HTTP regressions PASS. Actual original/P01/P02/P03 chain and negative/source/schema/immutability controls; synthetic auth/run context and ASGI transport disclosed in PREIMPLEMENTATION_REVIEW |
 | Handoff | Complete after authorized merge c58e7f24e4f7c21fc5120dc7288d02f960b58006 and passing 15 focused/verifier/real I00 post-merge smoke; task commit afed7256991aa7cd7c3037aa5d4e318f82019fbe pushed. P03B only; preserve FEATURE_SCOPE including additions. Checkpoint 1B open. Next M2 P03C; no later task started |
+
+
+### P03C assignment — 2026-11-01
+
+| Field | Recorded assignment |
+|---|---|
+| Task/checkpoint/owner | P03C / 1B / M2 yazh-07: source-backed row events/time/participants with original Observation/Evidence references; invalid time never fabricated |
+| Branch/base | feat/p03c-source-events / **e68969df9f19f8f78320a708bc3cb80a3c05b85d**, clean fetched shared docs/coordination-foundation, isolated worktree; no active P03C claim |
+| Allowed paths | User approved backend/parsers/source_events.py, backend/tests/test_source_events.py, backend/README.md and bounded AGENT_TASKS/COMMUNICATION/ROADMAP/PREIMPLEMENTATION_REVIEW records; no API/DB/dependency/existing-producer/frontend edits |
+| Dependencies | Actual integrated P01 cab08f1, P02 389652c, P03 e9f01f5; additionally consume actual P03B c58e7f2 Entity IDs for participant joins. Completed 0/1A; real F03/F05 source chain |
+| Approved policy | One candidate per complete network/GPS row, source-report summaries, network.activity/gps.location; all row observation/evidence IDs; actual same-case Entity participants; raw/P03 UTC/uncertainty preserved, confidence 0 unavailable; atomic rejection of invalid row/context/time/participants |
+| Input/output | Real P03B CandidateProjection over P01/P02/P03 -> frozen source-event envelopes carrying existing Event wire only; no synthetic identity, stored-output mutation or processing/list API |
+| Proof | 15 focused PASS; full backend 194 PASS/1 existing Windows symlink SKIP, frontend 48 PASS, coordination 122 PASS; contract/types/build/DESIGN and real I00 HTTP regressions PASS. Actual source chain/schema/source/participant/immutability and negative controls; synthetic run/auth and ASGI transport disclosed in PREIMPLEMENTATION_REVIEW |
+| Handoff | In Progress; user explicitly authorizes implementation/test/commit/push/merge P03C only. Preserve entire agreed FEATURE_SCOPE and additions. Next M2 P04, no next task started |
