@@ -106,6 +106,16 @@ class AuditListTests(unittest.IsolatedAsyncioTestCase):
             ids.append(page["items"][0]["id"])
         self.assertEqual(ids, [earlier, *sorted(identifiers)])
 
+    async def test_fractional_and_whole_second_timestamps_sort_by_time_then_id(self):
+        stamps = {4: "2026-11-01T12:00:00Z", 3: "2026-11-01T12:00:00.000000Z",
+                  2: "2026-11-01T12:00:00.000001Z", 1: "2026-11-01T12:00:00.1Z",
+                  5: "2026-11-01T12:00:00.100001Z"}
+        identifiers = {number: f"00000000-0000-4000-8000-{number:012d}" for number in stamps}
+        for number, stamp in stamps.items():
+            self.insert_fixture_event(identifiers[number], stamp)
+        items = self.page(await self.client.get(self.url))["items"]
+        self.assertEqual([item["id"] for item in items], [identifiers[n] for n in (3, 4, 2, 1, 5)])
+
     async def test_optional_reason_reference_is_preserved_and_null_is_omitted(self):
         self.insert_fixture_event(str(uuid4()), "2026-11-01T12:00:00Z", "synthetic-review-reference")
         [event] = self.page(await self.client.get(self.url))["items"]

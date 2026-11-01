@@ -37,7 +37,7 @@ python -W error::ResourceWarning -m unittest backend.tests.test_audit_list.Audit
 python -W error::ResourceWarning -m unittest discover -s backend/tests -v
 ```
 
-Expect 14 focused F07 tests to pass, and one passing selected failure-case test.
+Expect 15 focused F07 tests to pass, and one passing selected failure-case test.
 Fixtures use the synthetic network CSV, two actors/cases and real upload/audit
 producers with SQLite/private files. The selected failure proves an actor
 cannot list another case's audit, and gets the same 404 as a nonexistent case.
@@ -48,9 +48,9 @@ the count and page queries and verifies one consistent response. Temporary
 databases/files clean up automatically. Full shared checks can be rerun from
 PowerShell with `& .\.cache\setup\verify.ps1`.
 
-Local combined regression results: **101 backend run (100 pass, one known
+Local combined regression results: **102 backend run (101 pass, one known
 Windows symlink-permission skip), 122 coordination and 48 frontend pass**.
-All 14 F07 tests execute without skips. Contract lint/bundle/generated strict
+All 15 F07 tests execute without skips. Contract lint/bundle/generated strict
 types, frontend freshness/typecheck/build, DESIGN and whitespace pass. Real
 localhost audit API/SQL/original read-back and existing case/upload/download
 client integration passed. These checks use synthetic identities/data with real

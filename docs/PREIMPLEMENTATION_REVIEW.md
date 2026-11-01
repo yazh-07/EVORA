@@ -19,7 +19,7 @@ earlier in this chat; their diff against the previously inspected base is empty.
   supporting authorized case/creation/ID reads. Current `require_case_access`
   protects the route; app wiring exposes no additional operation.
 - Existing contract defaults/bounds apply: limit 20 (1–100), offset 0
-  (nonnegative). Results use `created_at ASC, id ASC`; count and page share one
+  (nonnegative). Results use UTC creation time ascending, then ID ascending (fractional precision normalized); count and page share one
   read transaction. Empty/beyond-end/very large valid offsets return correct
   totals and empty items. This does not freeze history across separate requests.
 - Optional null reason is omitted. Response headers are no-store. Private
@@ -36,9 +36,9 @@ locked frontend dependencies; no installation or manifest/model change.
 
 | Check | Actual result |
 |---|---|
-| F07 focused acceptance | **14 pass**, no skips; real F03 upload/F06 audit -> authorized list, bundled schema validation, actor/target/time read-back |
+| F07 focused acceptance | **15 pass**, no skips; real F03 upload/F06 audit -> authorized list, bundled schema validation, actor/target/time read-back |
 | Selected cross-case failure | **One pass**; foreign/missing cases have identical 404 status/body/headers |
-| Full backend regression | **101 run: 100 pass, one skip**; existing F05 Windows symlink permission limitation, all F07 tests execute |
+| Full backend regression | **102 run: 101 pass, one skip**; existing F05 Windows symlink permission limitation, all F07 tests execute |
 | Coordination verifier/tests | **Pass / 122 pass**, no skips |
 | Frontend tests | **48 pass**, no skips |
 | OpenAPI/generated strict TypeScript | **Pass**; pinned Redocly 2.57.0, openapi-typescript 7.10.1, TypeScript 5.9.3; existing missing-license warning |
@@ -71,7 +71,7 @@ python -W error::ResourceWarning -m unittest backend.tests.test_audit_list.Audit
 python -W error::ResourceWarning -m unittest discover -s backend/tests -v
 ```
 
-Expect 14 focused passes, one selected failure pass and 101 combined backend
+Expect 15 focused passes, one selected failure pass and 102 combined backend
 tests run with the one known platform skip. Synthetic inputs are network.csv,
 21 small upload originals, two actors/cases and explicit ordering/reason event
 fixtures. The failure test confirms a foreign actor receives exactly the same

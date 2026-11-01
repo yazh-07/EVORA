@@ -174,7 +174,7 @@ and page. Existing limit/offset validation, shared 400/401/non-leaking 404,
 no-store responses and optional reason omission are exercised. Private source
 provenance is not queried. No frozen-history selector or new wire field is added.
 
-**14 F07 pass; 101 backend run (100 pass, one known Windows symlink skip);
+**15 F07 pass; 102 backend run (101 pass, one known Windows symlink skip);
 122 coordination and 48 frontend pass.** Contract lint/bundle/generated strict
 types, freshness/typecheck/build, verifier, DESIGN and whitespace pass. Real
 localhost audit API/SQL read-back and prior case/upload/download client

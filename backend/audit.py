@@ -14,6 +14,16 @@ from backend.database import SQLiteDatabase
 
 INTAKE_RECORD_VERSION = "intake-source.v1"
 
+# Intake producers store UTC with a Z suffix. Canonical fractional comparison
+# keeps whole-second and fractional timestamps in chronological order, retaining
+# microseconds (SQLite date functions would round them to milliseconds).
+_AUDIT_ORDER = (
+    "substr(created_at, 1, 19) ASC, "
+    "CASE WHEN substr(created_at, 20, 1) = '.' "
+    "THEN substr(substr(created_at, 21, length(created_at) - 21) || '000000', 1, 6) "
+    "ELSE '000000' END ASC, id ASC"
+)
+
 
 def initialize_audit(database: SQLiteDatabase) -> None:
     """Add empty accounting tables without fabricating historical intake actors."""
@@ -26,7 +36,7 @@ def initialize_audit(database: SQLiteDatabase) -> None:
         )
         connection.execute(
             "CREATE INDEX IF NOT EXISTS audit_events_case_order "
-            "ON audit_events (case_id, created_at, id)"
+            f"ON audit_events (case_id, {_AUDIT_ORDER})"
         )
         connection.execute(
             "CREATE TABLE IF NOT EXISTS intake_provenance ("
@@ -136,7 +146,7 @@ def list_audit_events(
         rows = connection.execute(
             "SELECT id, case_id, actor_id, action, target_id, created_at, reason "
             "FROM audit_events WHERE case_id = :case_id "
-            "ORDER BY created_at ASC, id ASC LIMIT :limit OFFSET :offset", parameters,
+            f"ORDER BY {_AUDIT_ORDER} LIMIT :limit OFFSET :offset", parameters,
         ).fetchall() if offset < total else []
     response.headers["Cache-Control"] = "no-store"
     return AuditPage(items=[AuditEvent(**dict(row)) for row in rows],
