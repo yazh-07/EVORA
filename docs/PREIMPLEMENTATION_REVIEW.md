@@ -1800,3 +1800,72 @@ handoff. New hosted CI is not yet claimed. Full initial scope and approved
 additions and the original dirty checkout are unchanged. Next M2 task P02
 requires its own GPS source/validation handoff, then P03 needs both parsers.
 No P02 work is included or started here.
+
+## P02 verification — 2026-11-01
+
+P02 / 1B / M2 yazh-07, feat/p02-gps-csv, clean fetched common base
+4bc8f307a039d7c91bcc687bb64267fbe80fb6b8. User approved GPS source/coordinate/
+zone policy and bounded backend parser/test/README/policy/ledger scope, and
+explicitly authorized implement/test/commit/push/merge of P02 only. Real G01
+and F05 prerequisites merged. P01's four-column scanner is reused unchanged;
+no P01 producer, frontend, schema, dependency or FEATURE_SCOPE edits. Original
+dirty checkout and other worktrees untouched.
+
+Policy is recorded in COMMUNICATION: strict UTF-8 optional BOM/exact GPS header,
+50 MiB/100000-row limits and atomic rejection, finite exact Decimal bounds,
+valid calendar time/explicit offsets, missing zone remains unknown. Raw numeric
+precision/exponents/signed zero and timestamps retained; no UTC/entity_key.
+Frozen gps.device/gps.latitude/gps.longitude use existing Observation fields;
+score 0 means unavailable, not model measurement or accuracy/source reliability.
+No endpoint/run/storage/event/scoring producer is fabricated. P04/P14 own them.
+
+### Actual execution
+
+Existing Windows Python 3.14.8/jsonschema 4.25.1, Node 22.23.3/npm 12.2.0;
+pip check PASS; ignored junction reuses installed frontend dependencies.
+No new package/model/provider, clean reinstall or TLS workaround.
+
+| Check | Actual result |
+|---|---|
+| Pinned warning-strict Python unittest backend.tests.test_gps_csv -v with bundle | 17 PASS, no skips; actual resource bounds, decimal bounds/raw precision, unknown/raw valid zones, malformed time/offset/CSV, immutable/schema/source results and real original integration |
+| Full warning-strict backend discovery with bundle | 147 run: 146 PASS / 1 existing Windows symlink SKIP |
+| npm frontend test | 48 PASS, no skips |
+| npm frontend build | PASS API declaration freshness, TypeScript and esbuild |
+| EVORA_TEST_PYTHON=<pinned interpreter> node test/cases.integration.mjs from frontend | PASS I00 actual loopback HTTP audit/intake/hash/original/actor/error regressions, U04/U03/U02B read-back |
+| Redocly 2.57.0 lint/bundle | PASS, existing missing-license warning |
+| openapi-typescript 7.10.1 + TypeScript 5.9.3 strict temporary declarations | PASS |
+| DESIGN 0.4.0 lint | PASS zero errors/warnings |
+
+The first focused run caught the pinned runtime accepting 24:00:00. Added explicit
+00–23/00–59/00–59 clock checks rather than relying on implicit runtime handling;
+all 17 focused and subsequent full-backend tests pass. Explicit timezone minute
+checks also prevent normalization of offsets such as +01:99 into another value.
+Validation never outputs the datetime/Decimal conversions; source text is kept.
+
+Focused integration uses actual FastAPI/F00/F01/F03/F05/SQLite/private files via
+HTTPX ASGI, synthetic identities and an explicitly synthetic caller run UUID.
+Real upload/download content/hash stay unchanged before/after parsing; foreign
+404 and invalid auth 401 deny source reads. No parser/case/storage double or
+completed ProcessingRun/public Observation API is claimed. Prior unrelated
+suites retain their labeled doubles. I00 separately uses actual loopback HTTP;
+all completed Checkpoint 0/1A regressions retained. No new browser check needed
+or claimed for this pure backend component.
+
+Strict parsing translates P01 CSV diagnostic codes without source cells; excess
+columns/bad quotes reject atomically. Frozen tuples/dataclasses provide fresh
+wire copies; no global CSV/decimal context changes or hidden field-size cap.
+Repeated parsing is not lifecycle idempotency. Bounds were tested at actual
+approved constants, not reduced test doubles. No benchmark result invented.
+
+P02 In Progress pending actual authorized merge/read-back. Exact commands,
+three GPS fixture observations, invalid latitude line-2 failure, no-zone policy
+and cleanup are in backend/README.md How you can test P02 (plain file reference
+for planning-only fixture compatibility). New hosted CI/clean installation/
+other OS/runtime and P04 publication remain untested. Entire initial scope and
+approved additions unchanged. Next M2 row P03 consumes real P01/P02 for time/
+coordinate normalization and raw/uncertainty preservation; no P03 work started.
+
+Final P02 documentation candidate: 122 coordination tests PASS, no skips, with
+EVORA_CONTRACT_BUNDLE and the shared discovery command. Final coordination
+verifier and whitespace PASS. All required prior 0/1A regressions pass, with
+the existing disclosed Windows symlink skip only. No new hosted CI claimed.

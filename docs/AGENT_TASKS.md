@@ -429,3 +429,16 @@ starting a second U04 implementation. No U04 changes were merged here.
 | Input/output | Existing Observation schema only; immutable network.device/network.ip/network.event observations per row, observed_at_raw retained, normalized_value initially identical to logical CSV cell; source locator row/column including physical line span; 0 unavailable extraction-score sentinel, never a measured probability or source reliability. Caller supplies case/evidence/run UUID context; P04 owns real run persistence/idempotency |
 | Verification | 14 focused pass; full backend 129 pass/1 Windows symlink skip, 48 frontend pass; real original/I00 intake regression and contract/types/build/DESIGN pass; exact proof/limits in PREIMPLEMENTATION_REVIEW P01 section. No fake processing API/run producer |
 | Handoff | Complete after merge cab08f1c38745255ca1c0a210636476b84bad43c and passing post-merge focused/real I00 smoke; user explicitly authorized finish/test/push/merge for P01 only. Preserve entire FEATURE_SCOPE and approved additions. P02 is next M2 row subject to fresh handoff |
+
+### P02 assignment — 2026-11-01
+
+| Field | Recorded assignment |
+|---|---|
+| Task/checkpoint/owner | P02 / 1B / M2 yazh-07: parse synthetic GPS into source-located observations; device/raw time/coordinates match; invalid coordinates/zone explicit |
+| Branch/base | feat/p02-gps-csv / **4bc8f307a039d7c91bcc687bb64267fbe80fb6b8**, clean fetched shared base; isolated worktree leaves all existing work untouched |
+| Allowed paths | backend/parsers/gps_csv.py, backend/tests/test_gps_csv.py, backend/README.md and bounded records in AGENT_TASKS/COMMUNICATION/ROADMAP/PREIMPLEMENTATION_REVIEW; no P01 producer/spec/frontend/dependency edits |
+| Dependencies | Real G01 e0257a6/F05 d24312f integrated; P01 cab08f1 source CSV reader available unchanged as internal helper, not a new catalog gate; 0/1A regressions required |
+| Approved policy | User approved P01-equivalent strict UTF-8/BOM CSV and 50 MiB/100000-row caps; exact timestamp/device_id/latitude/longitude columns, nonblank fields; finite decimal latitude [-90,90]/longitude [-180,180]; reject malformed timestamps/bad explicit offsets, missing timezone stays unknown; no UTC normalization |
+| Output | Existing Observation fields only: frozen gps.device/gps.latitude/gps.longitude per record, decoded logical raw cells/time, normalized_value initially raw, no observed_at_utc/entity_key, 0 unavailable-score sentinel; caller case/evidence/run UUID context only |
+| Proof | 17 focused PASS; full backend 146 PASS/1 Windows symlink SKIP, 48 frontend PASS; real original/I00 regressions and contract/types/build/DESIGN PASS. Exact commands/doubles/limits in PREIMPLEMENTATION_REVIEW P02 section; run UUID context explicitly synthetic |
+| Handoff | In Progress; explicit user authorization to implement/test/commit/push/merge P02 only; preserve FEATURE_SCOPE. Next M2 row P03 after real P01/P02 integration; no P03 implementation here |

@@ -82,3 +82,35 @@ P01 validation has no public error-status route. The parser raises safe
 code/line errors without cell text. Later P04/P14B must map accepted-run failures
 using their own contract/gates. This resolves this adapter's CSV parsing choice,
 not later adapters or processing dispatch/retry policy. No scope reduction.
+
+## P02 approved GPS CSV policy — 2026-11-01
+
+User approved strict P01-equivalent CSV rules/caps for GPS: UTF-8 optional BOM,
+exact ordered timestamp,device_id,latitude,longitude columns; reject malformed
+quotes/encoding/NUL, nonblank required fields and exact row widths; no partial
+result; 50 MiB original bytes/100000 logical data records inclusive. Quoted
+commas/escaped quotes/multiline logical values and LF/CRLF/CR supported.
+Header-only is empty. P01's bounded four-column scanner is reused unchanged.
+
+Coordinates are finite ASCII decimal literals (optional sign/fraction/exponent),
+latitude [-90,90], longitude [-180,180], exact Decimal comparison without float
+rounding. Do not silently trim coordinate strings, accept DMS/NaN/Infinity or
+swap axes. Raw signed zeros, precision, exponents and device text are retained.
+
+GPS timestamps require a valid calendar date and time YYYY-MM-DD[T/t/space]
+HH:MM:SS, optional decimal fraction, optional Z/z or numeric +/-HH:MM offset.
+Hours 00–23, minutes/seconds 00–59, explicit offset hour <=23/minute <=59;
+invalid calendar values/offsets/named-zone suffixes reject. A missing offset is
+accepted as unknown, not inferred UTC. All accepted timestamp strings, including
+-00:00 or long fractions, remain raw and unconverted. P03 owns normalization
+and uncertainty, including any source-clock/offset interpretation; no source
+clock is verified by parsing. Unrepresentable/leap-second timestamps reject
+explicitly as unsupported/invalid input, never fabricated UTC.
+
+Existing Observation wire only: gps.device/gps.latitude/gps.longitude cells
+retain observed_at_raw, normalized_value initially identical to raw and physical
+row/column spans. No UTC/entity_key or new endpoint/status field. Confidence 0
+means unavailable score, not a measurement/source quality, consistent with P01.
+Parser version gps-csv/1 and this policy feed future P14 private provenance.
+Caller must authorize same-case original/run context; P04 owns actual runs and
+publication. This resolves P02 only, not P03/P04 or later modality choices.
