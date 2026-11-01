@@ -1869,3 +1869,21 @@ Final P02 documentation candidate: 122 coordination tests PASS, no skips, with
 EVORA_CONTRACT_BUNDLE and the shared discovery command. Final coordination
 verifier and whitespace PASS. All required prior 0/1A regressions pass, with
 the existing disclosed Windows symlink skip only. No new hosted CI claimed.
+
+### P02 integrated acceptance — 2026-11-01
+
+User-authorized task commit **5684056eb34f2d9e42acb1ade8379bda60ab4b78** was
+pushed to feat/p02-gps-csv and merged without conflicts into the shared branch
+at **389652c358fab4b3b20565d592db520549028b8f**. On that exact merge, 17 focused
+GPS tests, coordination verifier and real I00 loopback intake/audit/original
+regression smoke PASS. Pre-merge matrix: 146 backend PASS / 1 Windows symlink
+skip, 48 frontend PASS, 122 coordination PASS; contract/types/build/DESIGN PASS
+with existing missing-license warning. No required P02 acceptance remains;
+P03 normalization and P04 publication are separate task rows.
+
+P02 Complete after actual prerequisite integration and authorized merge;
+Checkpoint 1B remains open. This supersedes the pending-integration handoff.
+New hosted CI is not yet claimed. Full initial scope/approved additions and
+all original dirty work are preserved. Next M2 row P03 consumes both actual
+P01/P02 for raw-preserving time/coordinate normalization and zone uncertainty.
+No P03 implementation or subsequent task is started during this assignment.

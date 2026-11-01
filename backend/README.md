@@ -3,7 +3,8 @@
 P02 / 1B / M2 yazh-07, feat/p02-gps-csv, verified shared base
 4bc8f307a039d7c91bcc687bb64267fbe80fb6b8. User approved GPS scope/policy and
 explicitly authorized implement/test/commit/push/merge for this one task.
-Current integration state is in docs/ROADMAP.md. Older notes below are historical.
+P02 integrated at 389652c358fab4b3b20565d592db520549028b8f;
+post-merge focused/verifier/real I00 smoke PASS. Current state is in docs/ROADMAP.md. Older notes below are historical.
 
 backend.parsers.gps_csv.parse_gps_csv consumes immutable original bytes and
 caller-supplied case/evidence/processing-run UUID context. It returns a tuple

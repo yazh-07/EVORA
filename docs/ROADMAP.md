@@ -292,7 +292,7 @@ parsers are ready. No other row is implemented during this assignment.
 
 ## P02 current handoff — 2026-11-01
 
-P02 / 1B / M2 yazh-07 / In Progress, feat/p02-gps-csv, verified shared base
+P02 / 1B / M2 yazh-07 / Complete, feat/p02-gps-csv, verified shared base
 4bc8f307a039d7c91bcc687bb64267fbe80fb6b8. User approved scope/GPS policy and
 explicit finish/test/push/merge. Actual G01/F05 prerequisites integrated; P01
 CSV helper reused unchanged. Frozen source-located GPS device/latitude/longitude
@@ -303,8 +303,7 @@ bad-zone/time errors; missing zone unknown, no UTC or measured-confidence claim.
 Contract/types/build/DESIGN PASS, existing license warning. Exact proof/limits
 in PREIMPLEMENTATION_REVIEW P02 section; synthetic checklist in backend README.
 122 coordination tests and final verifier PASS. No schema/dependency/full-scope or P01 changes,
-no new hosted CI/clean install/processing-publication claim. P02 awaits actual
-authorized integration; Checkpoint 1B remains open. Next M2 P03 normalizes time/
+no new hosted CI/clean install/processing-publication claim. P02 integrated at 389652c358fab4b3b20565d592db520549028b8f with passing focused/verifier/I00 post-merge smoke; Checkpoint 1B remains open. Next M2 P03 normalizes time/
 coordinates using both parsers while preserving raw/unknown-zone information.
 No other task is implemented or started here.
 
