@@ -3,7 +3,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from types import MappingProxyType
 
-from backend.parsers import gps_csv, network_csv
+from backend.parsers import gps_csv, network_csv, messages_csv
 
 
 @dataclass(frozen=True, slots=True)
@@ -13,6 +13,7 @@ class Adapter:
     parse: Callable[..., tuple]
     max_source_bytes: int
     max_data_rows: int
+    max_device_mentions: int | None = None
 
 
 # Import actual producer metadata rather than a parallel format/version definition.
@@ -22,6 +23,8 @@ ADAPTERS = MappingProxyType({
                            network_csv.MAX_SOURCE_BYTES, network_csv.MAX_DATA_ROWS),
     'gps': Adapter('gps', gps_csv.PARSER_VERSION, gps_csv.parse_gps_csv,
                    gps_csv.MAX_SOURCE_BYTES, gps_csv.MAX_DATA_ROWS),
+    'message': Adapter('message', messages_csv.PARSER_VERSION, messages_csv.parse_messages_csv,
+                       messages_csv.MAX_SOURCE_BYTES, messages_csv.MAX_DATA_ROWS, messages_csv.MAX_DEVICE_MENTIONS),
 })
 
 

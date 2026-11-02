@@ -24,7 +24,7 @@ from backend.errors import AccessError
 from backend.processing_provenance import read_processing_provenance
 from backend.processing import process_run
 from backend.processing_dispatch import ADAPTERS, adapter_for
-from backend.parsers import gps_csv, network_csv
+from backend.parsers import gps_csv, network_csv, messages_csv
 
 ROOT = Path(__file__).resolve().parents[2]
 PYTHON = sys.executable
@@ -127,7 +127,7 @@ class DispatchTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(self.rows('processing_provenance'), [])
 
     async def test_every_other_declared_kind_415_before_run_key_or_output_creation(self):
-        for kind in ('document', 'image', 'video', 'audio', 'message', 'mobile_log', 'transaction'):
+        for kind in ('document', 'image', 'video', 'audio', 'mobile_log', 'transaction'):
             evidence = await self.upload(kind, filename='network.csv')
             response = await self.start('reusable-key', self.base(self.case, evidence['id']))
             self.assertEqual(response.status_code, 415)
@@ -265,10 +265,11 @@ class DispatchTests(unittest.IsolatedAsyncioTestCase):
 
 class AdapterRegistryTests(unittest.TestCase):
     def test_registry_and_descriptors_are_immutable_and_use_real_parser_metadata(self):
-        self.assertEqual(set(ADAPTERS), {'network_log', 'gps'})
-        for kind, module in [('network_log', network_csv), ('gps', gps_csv)]:
+        self.assertEqual(set(ADAPTERS), {'network_log', 'gps', 'message'})
+        for kind, module in [('network_log', network_csv), ('gps', gps_csv), ('message', messages_csv)]:
             adapter = adapter_for(kind)
-            self.assertIs(adapter.parse, module.parse_network_csv if kind == 'network_log' else module.parse_gps_csv)
+            parser_name = {'network_log': 'parse_network_csv', 'gps': 'parse_gps_csv', 'message': 'parse_messages_csv'}[kind]
+            self.assertIs(adapter.parse, getattr(module, parser_name))
             self.assertEqual((adapter.kind, adapter.parser_version, adapter.max_source_bytes, adapter.max_data_rows),
                              (kind, module.PARSER_VERSION, module.MAX_SOURCE_BYTES, module.MAX_DATA_ROWS))
             with self.assertRaises(FrozenInstanceError): adapter.parser_version = 'changed'

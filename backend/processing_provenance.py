@@ -12,6 +12,7 @@ from backend.observations import _utc_order, _valid_record
 
 RECORD_VERSION = 'processing-provenance/1'
 PROCESSOR_VERSION = 'processing-lifecycle/2'
+MESSAGE_PROCESSOR_VERSION = 'processing-lifecycle/3'
 _OUTPUT_FIELDS = ('observations_json', 'entities_json', 'events_json', 'uncertainty_json')
 _VERSIONS = ('parser_version', 'normalizer_version', 'entity_version', 'event_version', 'processor_version')
 _PARAMETERS = ('max_source_bytes', 'max_data_rows')
@@ -24,14 +25,16 @@ def _json(value):
 def initialize_provenance(connection):
     """Add empty private storage; never invent historical execution records."""
     connection.executescript("""
+      BEGIN IMMEDIATE;
       CREATE TABLE IF NOT EXISTS processing_provenance (
         run_id TEXT PRIMARY KEY REFERENCES processing_runs(id),
         case_id TEXT NOT NULL REFERENCES cases(id), evidence_id TEXT NOT NULL REFERENCES evidence(id),
         record_version TEXT NOT NULL, finished_at TEXT NOT NULL, payload_json TEXT NOT NULL
       ) WITHOUT ROWID;
-      CREATE TRIGGER IF NOT EXISTS processing_provenance_context BEFORE INSERT ON processing_provenance
+      DROP TRIGGER IF EXISTS processing_provenance_context;
+      CREATE TRIGGER processing_provenance_context BEFORE INSERT ON processing_provenance
         WHEN NOT EXISTS(SELECT 1 FROM processing_runs r JOIN processing_outputs o ON o.run_id=r.id
-          WHERE r.id=NEW.run_id AND r.status='running' AND r.processor_version='processing-lifecycle/2'
+          WHERE r.id=NEW.run_id AND r.status='running' AND r.processor_version IN ('processing-lifecycle/2','processing-lifecycle/3')
           AND r.case_id=NEW.case_id AND r.evidence_id=NEW.evidence_id
           AND o.case_id=r.case_id AND o.evidence_id=r.evidence_id)
         BEGIN SELECT RAISE(ABORT,'Invalid processing provenance context'); END;
@@ -42,12 +45,14 @@ def initialize_provenance(connection):
       CREATE TRIGGER IF NOT EXISTS processing_provenance_no_replace BEFORE INSERT ON processing_provenance
         WHEN EXISTS(SELECT 1 FROM processing_provenance WHERE run_id=NEW.run_id)
         BEGIN SELECT RAISE(ABORT,'Immutable processing provenance'); END;
-      CREATE TRIGGER IF NOT EXISTS processing_completion_provenance BEFORE UPDATE OF status ON processing_runs
-        WHEN NEW.status='completed' AND NEW.processor_version='processing-lifecycle/2' AND NOT EXISTS(
+      DROP TRIGGER IF EXISTS processing_completion_provenance;
+      CREATE TRIGGER processing_completion_provenance BEFORE UPDATE OF status ON processing_runs
+        WHEN NEW.status='completed' AND NEW.processor_version IN ('processing-lifecycle/2','processing-lifecycle/3') AND NOT EXISTS(
           SELECT 1 FROM processing_provenance p WHERE p.run_id=NEW.id AND p.case_id=NEW.case_id
           AND p.evidence_id=NEW.evidence_id AND p.record_version='processing-provenance/1'
           AND p.finished_at=NEW.finished_at)
         BEGIN SELECT RAISE(ABORT,'Missing processing provenance'); END;
+      COMMIT;
     """)
 
 
@@ -64,16 +69,19 @@ def _payload(run, output, finished_at):
     the record; output contents remain in their existing private output store.
     """
     config = json.loads(run['config_json'])
-    if (not isinstance(config, dict) or set(config) != set(_VERSIONS + _PARAMETERS) |
+    if not isinstance(config, dict): raise ValueError('Invalid frozen provenance configuration')
+    parameters = _PARAMETERS + (('max_device_mentions',) if config.get('kind') == 'message' else ())
+    processor = MESSAGE_PROCESSOR_VERSION if config.get('kind') == 'message' else PROCESSOR_VERSION
+    if (set(config) != set(_VERSIONS + parameters) |
             {'kind', 'sha256', 'size_bytes', 'provenance_version'}):
         raise ValueError('Invalid frozen provenance configuration')
-    if (config['provenance_version'] != RECORD_VERSION or run['processor_version'] != PROCESSOR_VERSION
+    if (config['provenance_version'] != RECORD_VERSION or run['processor_version'] != processor
             or config['processor_version'] != run['processor_version']
-            or config['kind'] not in {'network_log', 'gps'}
+            or config['kind'] not in {'network_log', 'gps', 'message'}
             or any(not isinstance(config[key], str) or not config[key] for key in _VERSIONS)
             or not isinstance(config['sha256'], str) or not re.fullmatch('[0-9a-f]{64}', config['sha256'])
             or type(config['size_bytes']) is not int or config['size_bytes'] < 0
-            or any(type(config[key]) is not int or config[key] < 1 for key in _PARAMETERS)
+            or any(type(config[key]) is not int or config[key] < 1 for key in parameters)
             or _utc_order(finished_at) is None or _utc_order(run['created_at']) is None):
         raise ValueError('Invalid frozen provenance values')
     case_id, evidence_id, run_id = run['case_id'], run['evidence_id'], run['id']
@@ -85,6 +93,8 @@ def _payload(run, output, finished_at):
     observations, entities, events, uncertainty = [json.loads(value) for value in output]
     if any(not isinstance(values, list) for values in (observations, entities, events, uncertainty)):
         raise ValueError('Invalid provenance output arrays')
+    if config['kind'] == 'message' and events:
+        raise ValueError('Message candidate processing does not extract Events')
     manifests = {}
     for name, records, validator in (
             ('observation_ids', observations, lambda raw: _valid_record(raw, case_id, evidence_id, run_id)),
@@ -115,7 +125,7 @@ def _payload(run, output, finished_at):
     return dict(record_version=RECORD_VERSION, case_id=case_id, evidence_id=evidence_id,
         processing_run_id=run_id, input={key: config[key] for key in ('kind', 'sha256', 'size_bytes')},
         execution=dict(versions={key: config[key] for key in _VERSIONS},
-                       parameters={key: config[key] for key in _PARAMETERS}, method='deterministic', model=None),
+                       parameters={key: config[key] for key in parameters}, method='deterministic', model=None),
         outputs=manifests, output_sha256=digest, accepted_at=run['created_at'], finished_at=finished_at)
 
 

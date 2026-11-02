@@ -433,3 +433,38 @@ rollback/committed durability; this is not a hardware/OS power-loss certificatio
 No new endpoint/status/error contract/provenance format/parser/dependency/frontend
 or model. Entire FEATURE_SCOPE/additions remain required. P14C does not seal1B:
 F08/U05C/U05/U05B/U13/I00B integration remains required before the1B exit; automatic M2 P06 selection in2A also waits for1C/I01 exit. No later task started.
+
+
+## P06 approved independent message-processing policy — 2026-11-02
+
+User explicitly assigned independent P06(2A) implementation/push/merge while1B/
+1C gates stay open, then approved the bounded files and format/extraction policy.
+The real P04 prerequisite is integrated; no checkpoint is skipped or sealed.
+messages-csv/1 accepts UTF-8 with optional BOM, exact ordered
+message_id,timestamp,sender,body columns, strict P01-equivalent CSV quoting/row
+spans, all required cells nonblank. Header-only is genuine empty success;
+duplicate rows/message IDs remain separate source rows. Limits50MiB original,
+100000 data rows and100000 mention occurrences/file; overflow fails atomically.
+
+Preserve message ID/sender/full logical body and original raw timestamp. Extract
+only standalone case-sensitive ASCII D-[0-9]+ tokens bounded by Unicode word/
+hyphen exclusion, no partial identifier matches. Preserve leading zeros/exact
+source text; body spans use zero-based half-open Unicode code-point offsets.
+message-candidates/1 groups identical keys within one supplied run/case only;
+each Entity cites that original Evidence plus full-body and mention Observation
+IDs. Confidence0 is unavailable, not verified truth. Sender is retained as source
+text, not identified; co-mention is not ownership/identity/corroboration. Existing
+P03 time normalization preserves invalid/uncertain raw time with no fabricated UTC.
+No Event extraction in P06; required P13B remains separate.
+
+Register message with actual parser/projector/mention limit and versioned private
+parameters; preserve immutable older network/GPS records/replay/read-back. Message
+runs use processing-lifecycle/3, existing records/new network/GPS runs retain2.
+P14 private record envelope remains processing-provenance/1; its parameter map
+includes max_device_mentions only for message, with explicit message-candidates/1
+and event_version=not-used. Existing network/GPS provenance stays byte-for-byte
+unchanged; no false Event/model execution claim. Processing-owned guards support
+both versions; no new table/column or public route/field/dependency/frontend/M1
+change. Malformed/over-limit message input is accepted then fails safely, never
+partial publication. Earlier checkpoint exits, A07/U06B/I02 and all later scope
+remain required; this independent row cannot certify those integrations.

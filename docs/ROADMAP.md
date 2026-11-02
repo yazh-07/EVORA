@@ -465,6 +465,16 @@ in1B; no later M2 task automatically eligible now. P06(2A) is next catalog work
 after earlier1B/I00B and1C/I01 exits (or its own explicit allowed independent-work
 handoff); no next task started, Checkpoint1B/M2 remain open.
 
+### P06 independent handoff — 2026-11-02
+
+**P06 / 2A / M2 yazh-07 / In Progress.** Explicit user-assigned independent work
+from verified **9454430a56502dfa8dad791e3d3f420c05424509**, isolated
+feat/p06-message-mentions. Real P04 prerequisite and source/provenance/atomic
+publication chain integrated. User approved bounded message policy/files and
+push/merge after tests; acceptance/integration pending. Earlier1B/I00B and1C/I01
+exits remain required and open; no phase/checkpoint closure implied. Entire
+FEATURE_SCOPE/additions retained; no later task started.
+
 ## Module assignment and live task state
 
 | Module | Assigned GitHub handle | Accountable boundary | State |

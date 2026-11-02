@@ -581,3 +581,18 @@ starting a second U04 implementation. No U04 changes were merged here.
 | Input/output | Actual immutable originals/frozen dispatch -> verified SQL outputs/private provenance/completed run; no partial result, public schema unchanged |
 | Proof | 13 P14C/21 existing processing PASS including seven real hard-exit boundaries and Uvicorn HTTP/private SQL; full backend313 PASS/1 existing Windows symlink SKIP, frontend48/coordination122 PASS; contract/types/build/DESIGN/real I00 loopback PASS. SQL readback/rollback/visibility/replay/retry/concurrency/replacement/history/source/auth controls; doubles/limits in PREIMPLEMENTATION_REVIEW |
 | Handoff | Complete after authorized merge 920331d95fdd359f1e20cfbcfba48fc6e2afb292 and passing13 focused/verifier/real I00 post-merge smoke; task commit 5b80124e488661c0f7efe320f386a2871dcfd9e4 pushed. Full scope/additions preserved. No further M2 row in1B; P06(2A) awaits earlier1B/I00B and1C/I01 exits for automatic selection, or its own explicit allowed independent-work handoff. No next task started |
+
+
+### P06 explicitly assigned independent work — 2026-11-02
+
+| Field | Recorded assignment |
+|---|---|
+| Task/checkpoint/owner | P06 / 2A / M2 yazh-07, explicitly user-assigned independent work while earlier checkpoint gates stay open; candidate device mentions, real message dispatch/publication |
+| Branch/base | feat/p06-message-mentions / **9454430a56502dfa8dad791e3d3f420c05424509**, clean fetched shared docs/coordination-foundation, isolated worktree; no competing P06 claim |
+| Allowed paths | Approved backend/parsers/messages_csv.py, backend/parsers/message_entities.py, focused backend/tests/test_messages.py; backend/processing.py, backend/processing_dispatch.py, backend/processing_provenance.py including processing-owned version guards; bounded backend/tests/test_processing_dispatch.py expectations; backend/README.md and AGENT_TASKS/COMMUNICATION/ROADMAP/PREIMPLEMENTATION_REVIEW records. No public route/field/table/column/M1/dependency/frontend change |
+| Dependencies | Real P04 f851dd1 plus actual P14/P14B/P14C source/provenance/atomic publication/read/access chain; earlier0/1A regressions. Earlier1B/I00B and1C/I01 exits remain required, not claimed by this independent row |
+| Approved format/limits | UTF-8 optional BOM, exact message_id,timestamp,sender,body columns; all cells nonblank, header-only empty success, duplicate rows retained;50MiB/100000 rows/100000 device mention occurrences per file, atomic failure on overflow |
+| Approved extraction | Standalone case-sensitive ASCII D-<digits> with Unicode word/hyphen boundaries, exact IDs/leading zeros, code-point half-open body spans; metadata/full body retained. Same-run identical-key grouping only; Entities cite same-case body/mention Observation/Evidence IDs, confidence0 unavailable, no sender identification/ownership/identity inference |
+| Input/output | Real uploaded message CSV -> source-preserving Observations/Entities through actual startProcessing/dispatch/private provenance/SQL verification. Existing P03 raw/uncertain time preserved without invented UTC. No Events here; P13B remains required |
+| Proof | Focused P06/dispatch37 PASS plus added old-trigger upgrade1 PASS; full backend337 run:336 PASS/1 existing Windows symlink SKIP. Frontend48/coordination122 PASS; contract/types/build/DESIGN/verifier/real I00 smoke PASS. Real API/SQL/source/private read-back, limits/history/replay/case/failure controls; doubles/limits in PREIMPLEMENTATION_REVIEW |
+| Handoff | In Progress; user authorizes implement/test/commit/push/merge P06 as independent work into docs/coordination-foundation. Full scope/additions and checkpoint gates preserved; no later task started |
