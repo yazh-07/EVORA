@@ -1,3 +1,104 @@
+# P14 private versioned processing provenance — 2026-11-02
+
+P14 / Checkpoint 1B / M2 yazh-07, feat/p14-processing-provenance from verified
+shared base 98a28260f2fb2d91dd803c2f1835de264c5d0973. User approved bounded
+paths/private-record policy and authorized implementation/test/commit/push/merge
+into shared docs/coordination-foundation. In Progress pending final verification
+and integration; current state in docs/ROADMAP.md. Older notes are historical.
+Entire initial FEATURE_SCOPE including approved additions remains unchanged.
+
+New processing-lifecycle/2 runs freeze processing-provenance/1 plus existing
+original hash/size/kind, parser/normalizer/Entity/Event versions and row/byte limits.
+Successful publication writes one private processing_provenance row in the same
+SQLite transaction as immutable outputs/completed pointer, using identical
+finished_at. Failure at any publication stage rolls everything back; the existing
+safe failed run/config remains. Same key replays original history, new key creates
+a new immutable run/record. Empty successful output has genuine empty manifests.
+
+The private payload records case/Evidence/processing_run_id, original input
+snapshot, execution versions/parameters, accepted_at/finished_at and exact output
+UUID manifests. Current network/GPS adapters are deterministic and model=null
+means no model used; no model installation/version/execution is invented. Existing
+output observations retain locators/source values/uncertainty and processing_run_id
+for source joins; no raw text, locators, filenames, storage paths, credentials or
+idempotency keys are copied into this provenance manifest or logged publicly.
+
+output_sha256 hashes UTF-8 compact sorted-key JSON mapping observations_json,
+entities_json, events_json and uncertainty_json to their exact persisted JSON
+strings (ensure_ascii=False, allow_nan=False). Output UUID manifests are unique
+and sorted by canonical UUID. This links the record to exact private output
+serialization, not a signature, independent corroboration or certified source
+truth. Publication validates record shape/context and source/participant joins;
+P14C's full dispatch/recovery/publication gate remains a separate required row.
+
+One processing-owned WITHOUT ROWID table rejects UPDATE/DELETE/REPLACE/UPSERT
+collisions. A completion trigger requires matching new-version provenance and
+completion timestamp; old-version historical rows stay unchanged. Startup adds
+an empty table without fabricating provenance for older completed runs; old
+Observation/Entity/Event APIs still read those immutable outputs. P04 interrupted
+queued/running startup behavior remains failed, not false success/backfill.
+
+read_processing_provenance(app, grant, evidence_id, run_id) is an internal Python
+helper, not a new HTTP endpoint. It rechecks real current case membership and
+exact case/Evidence/run/output joins in a read snapshot, reconstructs the expected
+private manifest/digest from frozen source records, and returns safe404 for
+unavailable/legacy/pending/failed/foreign/missing/corrupt records without fallback.
+Public ProcessingRun/AuditEvent fields remain unchanged; new runs expose only
+the existing processor_version value bump. F08 safe processing audit linkage
+through run references remains required M1 work. No M1 table, parser, frontend,
+spec or dependency edits; no full modality/model/provenance-UI claim.
+
+## How you can test P14
+
+PowerShell at repository root, Python3.14.8/Node22.23.3 and installed requirements:
+
+    npx.cmd --yes @redocly/cli@2.57.0 bundle specs/openapi.yaml -o "$env:TEMP/evora-p14-openapi.json"
+    $env:PYTHONUTF8 = '1'
+    $env:EVORA_CONTRACT_BUNDLE = "$env:TEMP/evora-p14-openapi.json"
+    python -W error::ResourceWarning -m unittest backend.tests.test_processing_provenance -v
+
+Expect18 passing tests using synthetic actors and fixtures/synthetic-case CSVs.
+Network.csv produces6 Observations/4 Entities/2 Events; GPS produces3/1/1.
+Private manifests match these exact stored UUIDs, original SHA-256/size, frozen
+versions/limits and actual run completion timestamp/digest. Empty header-only CSV
+completes with three empty UUID manifests. Replay creates no additional record;
+a new key preserves older records while publishing new output UUIDs.
+
+Run independent real HTTP-to-private-SQL smoke (starts/stops Uvicorn/temp storage):
+
+    python -W error::ResourceWarning -m unittest backend.tests.test_processing_provenance.ProvenanceLoopbackTests -v
+
+Expect PASS: actual network/GPS start/poll completes with matching private SQL
+records; malformed CSV fails with no success provenance. No private provenance
+HTTP route is exposed. The internal-reader authorization checks run separately
+against actual SQLite case membership, including immediate revocation.
+
+Relevant atomic-failure control:
+
+    python -m unittest backend.tests.test_processing_provenance.ProcessingProvenanceTests.test_provenance_failure_before_insert_publishes_no_outputs_or_completion -v
+
+Expect PASS: explicit injected provenance-write exception produces failed run
+with PROCESSING_FAILED, zero output/provenance rows, Event total0, same-key replay
+of the original failure and successful new-key retry. Other tests inject faults
+after private insert/completed update to prove rollback at those boundaries.
+
+Tests also exercise immutable SQL mutation/REPLACE/UPSERT/rowid controls,
+missing/foreign/revoked/context/digest corruption safe404, output reference
+validation, same-time publication, historical reads and upgrade without backfill.
+Core tests use real FastAPI/SQLite/private original files and actual source
+parsers/normalizer/Entity/Event producers via HTTPX ASGI; a separate Uvicorn
+subprocess exercises real HTTP. Synthetic auth, scheduler/publication faults,
+pre-P14 schema/version fixture built from actual outputs, and temp-only corruption
+bypassing immutable triggers are explicit doubles, not production incidents or
+an actual historic deployment migration. Privacy tests capture application logs
+and public run/audit responses using synthetic content/key/token sentinels.
+No production identity provider, real evidence/model, OS power-loss/distributed
+worker, full provenance UI or maximum-size performance claim. No sensitive-data
+transfer. Existing unrelated test doubles remain disclosed in earlier records.
+Results in docs/PREIMPLEMENTATION_REVIEW.md. Tests clean temporary files/server;
+optional cleanup removes the TEMP bundle. Next M2 P14B network/GPS dispatch;
+no next task started here. Checkpoint1B/M2 remain open.
+
 # P05B source-backed Event listing — 2026-11-02
 
 P05B / Checkpoint 1B / M2 yazh-07. Isolated feat/p05b-event-list from verified

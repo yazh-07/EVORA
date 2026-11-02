@@ -425,6 +425,18 @@ Integrated at c0e25d401651b468d05a60ff5f5e3525e87e6f5f;
 entire agreed scope/additions. Next M2 P14 private versioned provenance; no next
 task started. Checkpoint 1B/M2 remain open.
 
+### P14 live handoff — 2026-11-02
+
+**P14 / 1B / M2 yazh-07 / In Progress.** Isolated feat/p14-processing-provenance
+from verified shared base **98a28260f2fb2d91dd803c2f1835de264c5d0973** with
+real P04 and source-chain prerequisites integrated. User approved bounded file/
+private-provenance policy in AGENT_TASKS.md/COMMUNICATION.md and authorized push/
+merge after verification. 18 focused PASS; full backend286 PASS/1 Windows symlink
+SKIP, frontend48/coordination122 PASS; contract/types/build/DESIGN/real I00
+loopback PASS. Integration pending; no Complete claim. Full
+scope/additions retained; Checkpoint1B/M2 remain open. Next M2 P14B network/GPS
+dispatch, no next task started.
+
 ## Module assignment and live task state
 
 | Module | Assigned GitHub handle | Accountable boundary | State |

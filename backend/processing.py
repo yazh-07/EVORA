@@ -18,8 +18,10 @@ from backend.parsers.gps_csv import GPSCSVError, parse_gps_csv
 from backend.parsers.normalization import NORMALIZER_VERSION, normalize_observations
 from backend.parsers.candidate_entities import PROJECTOR_VERSION as ENTITY_VERSION, project_candidate_entities
 from backend.parsers.source_events import PROJECTOR_VERSION as EVENT_VERSION, project_source_events
+from backend.processing_provenance import (
+    PROCESSOR_VERSION, RECORD_VERSION, initialize_provenance, record_processing_provenance,
+)
 
-PROCESSOR_VERSION = 'processing-lifecycle/1'
 _PARSERS = {'network_log': (parse_network_csv, 'network-csv/1'), 'gps': (parse_gps_csv, 'gps-csv/1')}
 _WIRE = ('id', 'case_id', 'evidence_id', 'status', 'processor_version', 'created_at', 'finished_at', 'error')
 router = APIRouter()
@@ -44,7 +46,7 @@ def _not_found():
 def _versions(kind):
     return dict(parser_version=_PARSERS[kind][1], normalizer_version=NORMALIZER_VERSION,
                 entity_version=ENTITY_VERSION, event_version=EVENT_VERSION, processor_version=PROCESSOR_VERSION,
-                max_source_bytes=MAX_SOURCE_BYTES, max_data_rows=MAX_DATA_ROWS)
+                max_source_bytes=MAX_SOURCE_BYTES, max_data_rows=MAX_DATA_ROWS, provenance_version=RECORD_VERSION)
 
 
 def initialize_processing(database):
@@ -89,6 +91,7 @@ def initialize_processing(database):
             WHEN NEW.status='completed' AND NOT EXISTS(SELECT 1 FROM processing_outputs WHERE run_id=NEW.id)
             BEGIN SELECT RAISE(ABORT,'Missing processing output'); END;
         """)
+        initialize_provenance(connection)
         connection.execute("UPDATE processing_runs SET status='failed',finished_at=?,error='PROCESSING_INTERRUPTED' "
                            "WHERE status IN ('queued','running')", (_now(),))
 
@@ -97,8 +100,10 @@ def publish_outputs(connection, run, output):
     """One transaction owned by caller; insert and terminal pointer commit together."""
     connection.execute('INSERT INTO processing_outputs VALUES (?,?,?,?,?,?,?)',
                        (run['id'], run['case_id'], run['evidence_id'], *output))
+    finished_at = _now()
+    record_processing_provenance(connection, run, output, finished_at)
     connection.execute("UPDATE processing_runs SET status='completed',finished_at=? WHERE id=? AND status='running'",
-                       (_now(), run['id']))
+                       (finished_at, run['id']))
 
 
 def process_run(app, run_id):

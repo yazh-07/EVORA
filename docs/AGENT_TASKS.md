@@ -539,3 +539,17 @@ starting a second U04 implementation. No U04 changes were merged here.
 | Input/output | Real immutable P04 SQL Events and cited source/participant records -> existing EventPage only; no source/history mutation |
 | Proof | 20 focused PASS including real Uvicorn HTTP; full backend 268 PASS/1 existing Windows symlink SKIP, frontend48/coordination122 PASS; contract/types/build/DESIGN and real I00 loopback PASS. Actual sources/time/participants, negatives, history/concurrent snapshot; doubles and setup limits in PREIMPLEMENTATION_REVIEW |
 | Handoff | Complete after authorized merge c0e25d401651b468d05a60ff5f5e3525e87e6f5f and passing 20 focused/verifier/real I00 post-merge smoke; task commit b6dddc721f056fd9542049bc5f314dc32b2e0cc1 pushed. Full scope/additions preserved. Checkpoint1B/M2 remain open. Next eligible M2 P14, no next task started |
+
+
+### P14 assignment — 2026-11-02
+
+| Field | Recorded assignment |
+|---|---|
+| Task/checkpoint/owner | P14 / 1B / M2 yazh-07: immutable private versioned processing provenance, exact input/output/run joins and no sensitive public logs |
+| Branch/base | feat/p14-processing-provenance / **98a28260f2fb2d91dd803c2f1835de264c5d0973**, clean fetched shared docs/coordination-foundation; isolated worktree, no prior active claim |
+| Allowed paths | User approved backend/processing_provenance.py, backend/tests/test_processing_provenance.py, backend/processing.py initialization/publication, backend/tests/test_skeleton.py table inventory, backend/README.md and bounded AGENT_TASKS/COMMUNICATION/ROADMAP/PREIMPLEMENTATION_REVIEW records. No M1 table/spec/frontend/dependency/parser edits |
+| Dependencies | Real P04 merge f851dd11fd8f7e11140317cf44d022a9999044dd and P01/P02/P03/P03B/P03C/F00/F03/F05; integrated P04B/P05/P05B source validators/readback, completed 0/1A regressions |
+| Approved policy | One processing-owned append-only table; success provenance/input hash-size/frozen versions-parameters/model-not-used/output ID manifests-digest/completion timestamp commit atomically with output/completed pointer. Bump new-run processor version. No fabricated legacy backfill; failed runs retain config/safe errors without success provenance. Internal reader rechecks membership and exact same-case Evidence/run joins; unavailable/corrupt safe404, no public route/field |
+| Input/output | Real immutable originals/frozen P04 config/output -> versioned private record; original/source bytes/history unchanged; F08 public audit and P14B/P14C remain separate required tasks |
+| Proof | 18 focused PASS including real Uvicorn HTTP/private SQL; full backend286 PASS/1 existing Windows symlink SKIP, frontend48/coordination122 PASS; contract/types/build/DESIGN/real I00 loopback PASS. Exact real inputs/outputs/config/time/digest, rollback/immutability/auth/privacy/history and labeled migration/corruption controls; limits in PREIMPLEMENTATION_REVIEW |
+| Handoff | In Progress; user explicitly authorizes implement/test/commit/push/merge P14 into docs/coordination-foundation. Entire scope/additions preserved. Next M2 P14B; no next task started |
