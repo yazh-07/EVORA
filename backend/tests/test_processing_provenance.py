@@ -215,7 +215,7 @@ class ProcessingProvenanceTests(unittest.IsolatedAsyncioTestCase):
         failed = (await self.start('bad', self.base(self.case, malformed['id']))).json()
         self.assertEqual((await self.poll(failed, self.base(self.case, malformed['id'])))['status'], 'failed')
         self.denied(failed, evidence=malformed)
-        unsupported = await self.upload('document')
+        unsupported = await self.upload('image')
         self.assertEqual((await self.start('unsupported', self.base(self.case, unsupported['id']))).status_code, 415)
         self.assertEqual(self.rows('processing_provenance'), [])
 

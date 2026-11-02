@@ -16,13 +16,14 @@ from backend.evidence import download_evidence, invalid_input
 from backend.parsers.network_csv import NetworkCSVError
 from backend.parsers.gps_csv import GPSCSVError
 from backend.parsers.messages_csv import MessageCSVError
+from backend.parsers.text_document import TextDocumentError
 from backend.parsers.message_entities import PROJECTOR_VERSION as MESSAGE_ENTITY_VERSION, project_message_entities
 from backend.processing_dispatch import adapter_for
 from backend.parsers.normalization import NORMALIZER_VERSION, normalize_observations
 from backend.parsers.candidate_entities import PROJECTOR_VERSION as ENTITY_VERSION, project_candidate_entities
 from backend.parsers.source_events import PROJECTOR_VERSION as EVENT_VERSION, project_source_events
 from backend.processing_provenance import (
-    PROCESSOR_VERSION, MESSAGE_PROCESSOR_VERSION, RECORD_VERSION, initialize_provenance, record_processing_provenance,
+    PROCESSOR_VERSION, MESSAGE_PROCESSOR_VERSION, DOCUMENT_PROCESSOR_VERSION, RECORD_VERSION, initialize_provenance, record_processing_provenance,
 )
 from backend.processing_publication import verify_publication
 
@@ -47,6 +48,11 @@ def _not_found():
 
 
 def _versions(adapter):
+    if adapter.kind == 'document':
+        return dict(parser_version=adapter.parser_version, normalizer_version='not-used',
+                    entity_version='not-used', event_version='not-used',
+                    processor_version=DOCUMENT_PROCESSOR_VERSION, max_source_bytes=adapter.max_source_bytes,
+                    max_source_lines=adapter.max_source_lines, provenance_version=RECORD_VERSION)
     message = adapter.kind == 'message'
     versions = dict(parser_version=adapter.parser_version, normalizer_version=NORMALIZER_VERSION,
                 entity_version=MESSAGE_ENTITY_VERSION if message else ENTITY_VERSION,
@@ -148,19 +154,24 @@ def process_run(app, run_id):
         if len(data) != config['size_bytes'] or hashlib.sha256(data).hexdigest() != config['sha256']:
             raise ValueError('source integrity')
         observations = adapter.parse(data, case_id=case_id, evidence_id=evidence_id, processing_run_id=UUID(run_id))
-        if adapter.kind == 'message':
+        if adapter.kind == 'document':
+            normalized, entities = observations, ()
+            events = ()  # Text Entity/Event extraction remains P13/P13B.
+        elif adapter.kind == 'message':
             candidates = project_message_entities(observations, case_id=case_id)
             events = ()  # Required message/text event extraction belongs to P13B.
         else:
             candidates = project_candidate_entities(normalize_observations(observations), case_id=case_id)
             events = project_source_events(candidates, case_id=case_id)
-        output = (_json([x.observation.to_wire() for x in candidates.observations]),
-                  _json([x.to_wire() for x in candidates.entities]),
+        if adapter.kind != 'document':
+            normalized, entities = candidates.observations, candidates.entities
+        output = (_json([x.observation.to_wire() for x in normalized]),
+                  _json([x.to_wire() for x in entities]),
                   _json([x.event.to_wire() for x in events]),
                   _json([{'observation_id': str(x.observation.id), 'time': {
                       'raw_value': x.time.raw_value, 'utc_value': x.time.utc_value,
                       'status': x.time.status, 'source_offset': x.time.source_offset},
-                      'coordinate_status': x.coordinate_status} for x in candidates.observations]))
+                      'coordinate_status': x.coordinate_status} for x in normalized]))
         with database.connect() as connection:
             connection.execute('BEGIN IMMEDIATE')
             current = connection.execute('SELECT status FROM processing_runs WHERE id=?', (run_id,)).fetchone()
@@ -171,7 +182,8 @@ def process_run(app, run_id):
                 raise AccessError(404, 'SOURCE_UNAVAILABLE', 'Source unavailable.')
             publish_outputs(connection, run, output)
     except Exception as error:
-        code = ('CSV_' + error.code if isinstance(error, (NetworkCSVError, GPSCSVError, MessageCSVError)) else
+        code = ('TEXT_' + error.code if isinstance(error, TextDocumentError) else
+                'CSV_' + error.code if isinstance(error, (NetworkCSVError, GPSCSVError, MessageCSVError)) else
                 'SOURCE_UNAVAILABLE' if isinstance(error, (AccessError, OSError)) else 'PROCESSING_FAILED')
         try:
             with database.connect() as connection:

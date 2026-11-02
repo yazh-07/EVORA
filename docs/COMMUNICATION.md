@@ -494,3 +494,34 @@ yet claimed at this recording point. This independent task does not close1B,
 automatically eligible until preceding gates, including2A/2B/2C, exit; an earlier
 independent handoff requires explicit assignment and format/resource/file-scope
 decisions. No next task started; full product scope preserved.
+
+
+## P07 approved independent document policy — 2026-11-02
+
+User explicitly assigned independent P07(3A), approved its bounded file handoff,
+plain UTF-8 text format, optional initial BOM, exact line/whitespace/duplicate
+retention, LF/CRLF/CR locators and decoded code-point spans. Exclude separators
+from line values, include them in offsets; final separator creates no extra line.
+Empty/BOM-only succeeds with zero output. Invalid UTF-8/NUL/50MiB/100000-line
+overflow fails atomically. Kind document selects the actual text adapter; MIME
+and filenames are not content verification, no OCR/PDF/DOCX decoder is claimed.
+Any strict UTF-8 NUL-free text meeting these bounds is accepted as plain text;
+this does not certify the semantic format or authenticity of its contents.
+No timestamp is extracted from arbitrary prose; omit both time fields. Confidence0
+is unavailable. No Entities/Events; P13/P13B remain required. Preserve original
+bytes/hash and source line values without Unicode/whitespace normalization.
+
+New document runs use processing-lifecycle/4, parser document-text/1;
+normalizer/entity/event version not-used (no P03 timestamp/coordinate or candidate
+projector execution). Freeze max_source_bytes and max_source_lines in existing
+private processing-provenance/1 parameter map; record deterministic/no-model.
+Existing processor2/3 outputs/config/private records stay unchanged. Extend only
+processing-owned version guards, no tables/columns/public API/schema/dependencies.
+Safe TEXT_* failures use the existing failed-run error string. Atomic publication,
+SQL read-back, replay/retry/history and case/source authorization remain required.
+Earlier1B/I00B,1C/I01,2A/2B/2C exits stay open; this independent task closes none.
+Full FEATURE_SCOPE/additions preserved. No later task started.
+
+P07 additional user-approved handoff: fixture-only unsupported document -> image
+updates in backend/tests/test_processing.py and test_processing_provenance.py;
+retain existing415/replay/no-publication assertions unchanged.
