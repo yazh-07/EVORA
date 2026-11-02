@@ -502,4 +502,3 @@ class MessageLoopbackTests(unittest.TestCase):
                 process.terminate()
                 try: process.communicate(timeout=10)
                 except subprocess.TimeoutExpired: process.kill(); process.communicate(timeout=10)
-
