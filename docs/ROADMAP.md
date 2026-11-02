@@ -467,13 +467,19 @@ handoff); no next task started, Checkpoint1B/M2 remain open.
 
 ### P06 independent handoff — 2026-11-02
 
-**P06 / 2A / M2 yazh-07 / In Progress.** Explicit user-assigned independent work
+**P06 / 2A / M2 yazh-07 / Complete (explicit independent row only).** Explicit user-assigned independent work
 from verified **9454430a56502dfa8dad791e3d3f420c05424509**, isolated
 feat/p06-message-mentions. Real P04 prerequisite and source/provenance/atomic
 publication chain integrated. User approved bounded message policy/files and
-push/merge after tests; acceptance/integration pending. Earlier1B/I00B and1C/I01
+push/merge after tests; integrated at **1b938d93c09ad82f2ef5af8eac214026d7a820f7** with
+24 focused P06/verifier/real I00 post-merge smoke PASS. Full backend337 run:
+336 PASS/1 existing Windows symlink SKIP, added upgrade1 PASS; frontend48/
+coordination122/contract/types/build/DESIGN PASS. Earlier1B/I00B and1C/I01
 exits remain required and open; no phase/checkpoint closure implied. Entire
-FEATURE_SCOPE/additions retained; no later task started.
+FEATURE_SCOPE/additions retained. A07/U06B/I02 remain required;2A stays open.
+Next M2 catalog P07(3A) requires preceding checkpoint exits (including2A/2B/2C)
+for automatic selection or a separately explicit independent handoff with its
+format/resource/allowed-file decisions. No later task started.
 
 ## Module assignment and live task state
 

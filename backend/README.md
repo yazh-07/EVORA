@@ -3,8 +3,9 @@
 P06 / Checkpoint 2A / M2 yazh-07 is explicitly assigned independent work from
 verified shared base 9454430a56502dfa8dad791e3d3f420c05424509 on
 feat/p06-message-mentions. Earlier 1B/I00B and 1C/I01 gates remain open.
-Implementation passed local verification and is In Progress pending integration; the full agreed initial
-scope and approved additions in docs/FEATURE_SCOPE.md remain unchanged.
+Complete after authorized merge 1b938d93c09ad82f2ef5af8eac214026d7a820f7 and passing24 focused
+P06/verifier/real I00 post-merge smoke. The full agreed initial scope and approved
+additions in docs/FEATURE_SCOPE.md remain unchanged.
 
 The real message adapter accepts UTF-8 (optional BOM), exact ordered
 message_id,timestamp,sender,body columns and nonblank required cells. Header-only

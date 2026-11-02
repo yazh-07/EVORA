@@ -468,3 +468,29 @@ both versions; no new table/column or public route/field/dependency/frontend/M1
 change. Malformed/over-limit message input is accepted then fails safely, never
 partial publication. Earlier checkpoint exits, A07/U06B/I02 and all later scope
 remain required; this independent row cannot certify those integrations.
+
+
+### P06 integrated acceptance — 2026-11-02
+
+User-authorized implementation283d5a3 and whitespace-only849d12b (task head
+**849d12b085681c92507eabc4da8a72ca09324c4a**) pushed to feat/p06-message-mentions.
+Clean shared docs/coordination-foundation remained at the verified base and
+merged without conflicts at **1b938d93c09ad82f2ef5af8eac214026d7a820f7**. On that
+exact merge:24 focused P06 PASS (including old-version trigger upgrade and real
+Uvicorn HTTP/private SQL); coordination verifier PASS; real I00 intake/audit/
+hash/original/actor/error smoke PASS. Full337 backend matrix and separately added
+upgrade test above remain valid; no runtime changes after that matrix. Final
+whitespace/protected-path guard PASS. Entire FEATURE_SCOPE/additions/spec/
+frontend/old parsers/normalizer/M1 tables/dependencies remain unchanged; original
+dirty checkout and other worktrees preserved.
+
+P06 Complete after actual prerequisite integration and merged acceptance;
+supersedes pending status. All synthetic/scheduler/registry/verification/SQL
+corruption controls and production-auth/model/UI/performance/power-loss limits
+above still apply. Existing local Windows symlink skip disclosed. Hosted CI not
+yet claimed at this recording point. This independent task does not close1B,
+1C or2A; F08/M4 processing/overview/shared I00B (explicit assignee required),
+1C/I01, and A07/U06B/I02 remain required. Next M2 catalog row P07(3A) is not
+automatically eligible until preceding gates, including2A/2B/2C, exit; an earlier
+independent handoff requires explicit assignment and format/resource/file-scope
+decisions. No next task started; full product scope preserved.
