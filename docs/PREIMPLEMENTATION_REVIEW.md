@@ -3108,3 +3108,72 @@ explicit independent work must be separately assigned. P13 now has real P06/P07
 prerequisites but its own extraction/evaluation acceptance remains required;
 P12/P13/P13B/P08 and every initial modality/approved addition remain required.
 No next task started; full scope preserved.
+
+
+### P11 independent implementation verification — 2026-11-02
+
+P11 / 3A / M2 yazh-07, feat/p11-mobile-records from verified common base
+c12deb1fa58863b333bbb6fe2b835e848dfa504d. User explicitly assigned independent
+work and approved mobile layout/output/time/resource/files plus commit/push/merge
+after acceptance. Real P04 and source/access/provenance/read/atomic publication
+prerequisites integrated. Earlier checkpoint exits remain open, no milestone
+closure from this independent row. Full FEATURE_SCOPE/additions preserved.
+
+Final focused P11+dispatch36 PASS (P11 contributes22). Initial run had35 PASS/1
+test-helper error (async page-collection generator); corrected eager collection,
+then36 PASS. First frontend invocation raced ignored dependency-junction setup
+and failed to find esbuild; rerun after setup passed48/build/real I00 smoke. These
+were verification harness/setup errors, not passing application claims. Runtime
+parser/projection successful paths were not replaced or relaxed. OpenAPI lint/
+bundle PASS (one existing missing-license warning), fresh generated declarations
+compile; DESIGN0 errors/0 warnings, pip check PASS. Full backend/coordination
+results pending at this initial recording point, not inferred from focused tests.
+
+Actual synthetic two-row mobile source yields6/2/2 Observation/Entity/Event
+records, case-sensitive device:D-007/device:D-8 keys, exact raw values/row locators,
+first precise UTC2026-01-12T10:00:00.123456789Z, second unknown UTC omitted. Every
+Event reports source label, cites all3 row Observations and a real same-case
+candidate Entity sharing device source. Actual five adapters together22/9/5,
+separate originals retain separate identical-key Entity UUIDs/confidence0. Exact
+source hash/bytes, private manifests/versions/parameters and old output/private
+record read-back, all-page source APIs, replay/conflict/new-key/historical IDs,
+concurrent replay/duplicate worker, restart/interrupted retry and old2/3/4 guard
+upgrade are exercised. Real byte/row limits and actual processing100001-row
+failure, malformed/wrong-layout/late blank/encoding controls publish no partial
+output/provenance. Raw invalid/uncertain time is not fabricated into UTC.
+
+Doubles/limits: synthetic actors/tokens/CSV; actual FastAPI/SQLite/private files/
+parsers/time/projectors/provenance/publication/readers. In-process HTTPX ASGI and
+independent Uvicorn real HTTP/private SQL. Explicit scheduler/registry/verifier/
+missing-participant injections, temporary old-guard recreation and trigger-
+bypassing SQL corruption; no successful producer substitution. Earlier suites
+retain documented controls, including P14C dedicated-child real hard exits.
+No real acquisition/evidence, production auth, model, full UI/graph workflow,
+distributed deployment, hardware power-loss or maximum-size successful pipeline
+benchmark claim. Exact commands/inputs/outputs/failures/cleanup in backend/README.md.
+Tests clean temporary files/servers; optional TEMP bundle cleanup separately.
+
+Protected FEATURE_SCOPE/additions/spec/frontend/M1 tables/dependencies/old parsers/
+normalizer/source-read APIs unchanged; existing dirty checkout and other worktrees
+preserved. Only bounded existing dispatch expectations and P07 old-guard fixture
+change. P11 In Progress until actual integration and post-merge acceptance.
+Next M2 catalog P12(3A) needs its own format/policy/file handoff and preceding
+checkpoint exits for automatic selection, or explicit independent assignment;
+no next task started. All remaining scope stays required.
+
+
+### P11 pre-integration results — 2026-11-02
+
+Final combined Windows candidate full backend378 run:377 PASS/1 existing SKIP
+(creating symlinks unavailable on this platform/account),261.223s. Focused36
+P11/dispatch PASS, P11 contributes22. No runtime changes after full matrix.
+Frontend48 PASS; coordination122 PASS; verifier PASS (27 operations/126 tasks/
+39 capabilities). Fresh OpenAPI lint/bundle PASS with one existing missing-license
+warning; generated declarations compile; frontend API freshness/typecheck/build
+PASS; DESIGN0 errors/0 warnings; actual I00 real HTTP intake/audit/hash/original/
+actor/error smoke PASS; pip check and whitespace/protected-path guards PASS.
+CPython3.14.8/SQLite3.50.4/jsonschema4.25.1/Node22.23.3/npm12.2.0.
+Initial test-helper/setup failures and their successful reruns are recorded above.
+Exact commands and synthetic/failure-control/untested limits remain applicable.
+P11 In Progress pending actual integration/post-merge acceptance; hosted CI not
+yet claimed. Full scope/additions preserved; no next task started.

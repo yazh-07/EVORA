@@ -614,3 +614,18 @@ starting a second U04 implementation. No U04 changes were merged here.
 P07 additional user-approved handoff: fixture-only unsupported document -> image
 updates in backend/tests/test_processing.py and test_processing_provenance.py;
 retain existing415/replay/no-publication assertions unchanged.
+
+
+### P11 explicitly assigned independent work — 2026-11-02
+
+| Field | Recorded assignment |
+|---|---|
+| Task/checkpoint/owner | P11 / 3A / M2 yazh-07, user explicitly assigned independent mobile-record work while earlier checkpoint gates remain open |
+| Branch/base | feat/p11-mobile-records / **c12deb1fa58863b333bbb6fe2b835e848dfa504d**, verified fetched shared docs/coordination-foundation, isolated worktree, no competing P11 claim |
+| Allowed paths | Approved backend/parsers/mobile_csv.py, mobile_events.py and backend/tests/test_mobile.py; backend/processing.py, processing_dispatch.py, processing_provenance.py including processing-owned version guards; bounded backend/tests/test_processing_dispatch.py expectations and old-version guard fixture in test_documents.py; backend/README.md and AGENT_TASKS/COMMUNICATION/ROADMAP/PREIMPLEMENTATION_REVIEW records. No public field/route/table/column/M1/existing-parser/dependency/frontend change |
+| Dependencies | Real P04 f851dd1 and integrated P14/P14B/P14C/P04B/P05/P05B source/access/atomic publication chain; preserve actual P01/P02/P06/P07 producers/history. Previously completed0/1A regressions required; no earlier checkpoint closure claimed |
+| Approved format | mobile_log activity CSV: strict UTF-8 optional initial BOM, exact timestamp,device_id,event,detail columns, all cells nonblank. Preserve raw values/device case/leading zeros/duplicates/physical row spans. Header-only empty success;50MiB/100000 data rows, malformed/overflow fails atomically |
+| Approved outputs | Three Observations per row, same-run exact device:<raw ID> candidate Entity grouping only; one mobile.activity source-report Event per row cites all row Observation/Evidence IDs and actual same-case device Entity sharing its device Observation. Confidence0 unavailable; no owner/person identity/verified-occurrence claim. P03 raw invalid/uncertain time retained without invented UTC |
+| Input/output | Authorized immutable original -> actual registered adapter/projector/normalization -> source/Entity/Event APIs and private frozen versions/byte-row parameters, verified atomic publication. No physical acquisition or model |
+| Acceptance/tests | Focused P11/dispatch36 PASS, P11 contributes22; full backend378 run:377 PASS/1 existing Windows symlink SKIP. Frontend48/coordination122 PASS; contract/types/build/DESIGN/verifier/real I00 smoke PASS. Actual source/API/SQL/private refs/limits/history/replay/rollback/upgrade/recovery controls; initial verification fixes/doubles/limits in PREIMPLEMENTATION_REVIEW |
+| Handoff | In Progress; user approved scope/policy and commit/push/merge after acceptance into docs/coordination-foundation. Preserve full FEATURE_SCOPE/additions/earlier checkpoint gates; no next task started |

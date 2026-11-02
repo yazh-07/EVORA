@@ -1,3 +1,131 @@
+# P11 exported mobile activity — 2026-11-02
+
+P11 / Checkpoint3A / M2 yazh-07, explicit independent assignment on
+feat/p11-mobile-records from verifiedc12deb1fa58863b333bbb6fe2b835e848dfa504d.
+User approved format/output/file scope and commit/push/merge after acceptance.
+In Progress pending integration. Full docs/FEATURE_SCOPE.md including approved
+additions remains unchanged; earlier checkpoint gates stay open. Older sections
+below are historical.
+
+Evidence kind mobile_log selects actual mobile-csv/1. One agreed exported activity
+layout: strict UTF-8 optional initial BOM, exact timestamp,device_id,event,detail
+columns, nonblank cells,50MiB/100000 data rows. Preserve raw whitespace, device
+case/leading zeros, duplicates and physical row/multiline spans. Strict CSV quoting;
+malformed/over-limit input fails atomically. Header-only genuine empty success.
+MIME/name alone never verifies content, and this is not physical acquisition.
+
+mobile-identifiers/1 emits three Observations per row: mobile.device/mobile.event/
+mobile.detail, exact raw/normalized strings and source row/column locators. P03
+source-normalization/1 resolves only supported explicit time offsets, preserving
+raw timestamps/precision and uncertainty; invalid nonblank/unknown/ambiguous time
+remains raw with no invented UTC. Exact device:<raw ID> keys group only inside
+one supplied case/run, with fresh candidate Entity IDs and all supporting device
+Observation/Evidence references. Device IDs are not verified people or owners.
+
+mobile-source-events/1 emits one mobile.activity Event per complete row, summary
+'Source mobile log reports: ' plus its original event label. Each Event cites all
+three same-case row Observations, original Evidence and actual device Entity
+sharing that row's device Observation. It is a source report, not a verified
+occurrence. Confidence0 is unavailable for Observations/Entities/Events, with no
+boost from duplicates or matches to separate originals. Copies/reruns do not alter
+old outputs, keys or source records. No person identification/model inference.
+
+Real startProcessing reads authorized immutable originals, verifies hash/size,
+executes actual parser/projector and publishes output/provenance/completion
+atomically after SQL read-back. Freeze processing-lifecycle/5, parser/normalizer/
+Entity/Event versions and byte/row limits in existing processing-provenance/1;
+deterministic/no model. Processing-owned guards add version5 transactionally;
+existing processor2/3/4 output/config/private records stay unchanged, no backfill.
+Same-key replay returns original run; new keys permit retry, interrupted startup
+runs fail safely. Supported malformed content becomes accepted failed CSV_* with
+no partial output/private success record. Other unsupported kinds still415 before
+run/key creation. No public route/field/table/column/M1/old-parser/dependency/
+frontend change. Shared full-modality/P05C/P14D/UI/analytical gates remain required.
+
+Local results: P11/dispatch36 PASS (P11 contributes22); full backend378 run:
+377 PASS/1 existing Windows symlink SKIP; frontend48/coordination122 PASS.
+Contract/types/build/DESIGN/verifier/real I00 smoke PASS. Details and resolved
+initial verification issues in docs/PREIMPLEMENTATION_REVIEW.md. Hosted CI pending.
+
+## How you can test P11
+
+PowerShell from repository root with pinned requirements and Node22.23.3 installed.
+Use CPython3.14.8. The tested local workspace interpreter is:
+
+    $py = (Resolve-Path '../evora-tools/python/tools/python.exe').Path
+
+For another checkout with Python3.14.8 on PATH, use $py = (Get-Command python).Source.
+Build a contract bundle and run focused tests:
+
+    npx.cmd --yes @redocly/cli@2.57.0 bundle specs/openapi.yaml -o "$env:TEMP/evora-p11-openapi.json"
+    $env:PYTHONUTF8 = '1'
+    $env:EVORA_CONTRACT_BUNDLE = "$env:TEMP/evora-p11-openapi.json"
+    & $py -W error::ResourceWarning -m unittest backend.tests.test_mobile -v
+
+Expect22 PASS. Test-generated CSV input is:
+
+    timestamp,device_id,event,detail
+    2026-01-12T15:30:00.123456789+05:30,D-007,authentication.success,"Synthetic login, not ownership"
+    2026-01-12T10:00:00,D-8,app.open,Synthetic application report
+
+Expect6 Observations/2 candidate Entities/2 source-report Events. Keys device:D-007
+and device:D-8 preserve leading zeros/exact text. First row UTC is
+2026-01-12T10:00:00.123456789Z; second row lacks UTC. Every Event cites its three
+row Observations and real device Entity. No identity/ownership/truth claim.
+Actual network/GPS/message/document/mobile test sources yield22/9/5; the three
+separate device:D-8 Entities retain distinct UUIDs, sources and confidence0.
+
+Independent real HTTP smoke starts/stops temporary Uvicorn/private SQL:
+
+    & $py -W error::ResourceWarning -m unittest backend.tests.test_mobile.MobileLoopbackTests -v
+
+Expect1 PASS: actual multipart upload/start/poll/source/Entity/Event APIs,
+participant joins, original byte roundtrip, replay and private hash/version
+read-back. Synthetic timestamp,device_id,event,detail followed by t,D-7,e, (blank
+detail) is accepted then fails CSV_INVALID_ROW. It publishes no new output/private
+success record; prior good totals stay6/2/2.
+
+Failure/resource controls:
+
+    & $py -W error::ResourceWarning -m unittest backend.tests.test_mobile.MobileProcessingTests.test_malformed_wrong_layout_encoding_late_row_and_actual_overflow_publish_nothing -v
+    & $py -W error::ResourceWarning -m unittest backend.tests.test_mobile.MobileParserProjectionTests.test_real_byte_limit_and_overflow backend.tests.test_mobile.MobileParserProjectionTests.test_real_row_limit_and_atomic_overflow -v
+
+Expect PASS: malformed header/encoding/late blank cell/wrong layout and100001 rows
+fail with safe CSV_* codes and zero output/provenance. Actual50MiB/100000-row
+parser boundaries pass; +1 byte/row fails. Caps are not reduced test substitutes.
+Other focused tests exercise BOM/multiline/unicode/whitespace/duplicate/exact-key
+controls, raw invalid/uncertain time, mixed-context rejection, same-case source/
+participant joins, schema and all-page source APIs, concurrent replay/duplicate
+worker, new-key/history, interrupted startup/retry, missing originals/auth/body400,
+old-version upgrade, private corruption and verifier/participant rollback.
+
+Regression commands:
+
+    & $py -W error::ResourceWarning -m unittest discover -s backend/tests -v
+    & $py scripts/verify_coordination.py "$env:EVORA_CONTRACT_BUNDLE"
+    & $py -m unittest discover -s scripts -p 'test_*.py' -q
+    npm.cmd --prefix frontend test
+    npm.cmd --prefix frontend run build
+    $env:EVORA_TEST_PYTHON = $py
+    node frontend/test/cases.integration.mjs
+
+Doubles/limits: synthetic tokens/actors/CSV only. Actual FastAPI/SQLite/private
+originals/parser/time/projectors/provenance/publication/read APIs execute. Core
+HTTPX ASGI is in process; independent Uvicorn is real HTTP. Explicit scheduler,
+changed-registry/verifier/missing-participant injections, old-version guard
+recreation and trigger-bypassing temp SQL corruption are test controls. No
+successful producer is replaced. Earlier suites retain documented controls,
+including actual dedicated-child hard exits around P14C publication. No real
+mobile acquisition/evidence, production identity provider, model, full processing
+UI/graph workflow, distributed deployment, hardware power-loss or maximum-size
+successful full-pipeline performance certification. Tests clean temp files/servers;
+optional cleanup removes only your generated TEMP bundle.
+
+Next M2 catalog task P12(3A) transaction CSV needs its own format/resource/file
+handoff. Automatic selection still awaits earlier checkpoint exits; independent
+work requires a separately explicit assignment. P13/P13B/P08 and every initial
+feature/approved addition remain required. No next task started.
+
 # P07 plain-text documents — 2026-11-02
 
 P07 / Checkpoint3A / M2 yazh-07, explicit independent assignment on
