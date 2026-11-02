@@ -384,3 +384,26 @@ payload in public AuditEvent/application logs. F08 will link safe audit through
 existing run references; it remains separate required M1 work. P14B dispatch and
 P14C full failure/recovery gates remain separate required M2 work. No M1 table,
 parser, dependency, frontend, spec or entire FEATURE_SCOPE/addition change.
+
+
+## P14B approved first-adapter dispatch handoff — 2026-11-02
+
+User approved bounded P14B paths and reuse of recorded P01/P02/P04 C-04 policy.
+An explicit immutable registry binds network_log to actual network-csv/1 and gps
+to actual gps-csv/1, including parser-owned50MiB/100000-row limits. Declared kind
+selects the adapter; actual original content must pass that parser's exact UTF-8/
+optional BOM/header/quote/row/value validation. Filename, extension, MIME and
+source label do not establish format or success. Never silently sniff/reroute a
+wrong-layout source to another kind. Unsupported kind415 before run/key creation;
+malformed/wrong-layout supported CSV is accepted then fails with safe existing
+codes, no output/provenance partial success. Header-only input is genuine empty
+success, not upload-as-processing. All existing byte/row/field/time rules remain.
+
+P04 freezes selected kind/parser_version/row-byte limits and existing producer
+versions; worker verifies them against the registered adapter before execution.
+P14 records exact actual input/output/versions/parameters/time privately. This
+refactors selection without changing dispatch policy, wire/config/provenance
+format or processor/parser version; no historical records rewritten/backfilled.
+Same-key replay precedes current selection, new key may retry. No new public
+route/field, schema, parser, dependency, frontend or model. P14C full retry/recovery
+and F08 audit remain separate required tasks; full FEATURE_SCOPE/additions stay.

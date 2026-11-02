@@ -2685,3 +2685,92 @@ above. New hosted CI not yet claimed at this recording point. Next eligible M2
 P14B network/GPS dispatch (real P04/P01/P02 integrated); P14C/F08 and later full
 modality/model tasks remain required. No next task started; entire initial scope
 and approved additions preserved.
+
+
+### P14B verification — 2026-11-02
+
+P14B / Checkpoint1B / M2 yazh-07. User approved bounded file handoff/unchanged
+recorded C-04 policy and explicitly authorized implement/test/commit/push/merge.
+Isolated feat/p14b-processing-dispatch from clean fetched common base
+acf07fec95442c8ae8b9c099dda827a9f68c9a5d. Real P04 f851dd1/P01 cab08f1/P02
+389652c, source chain and P14 c03361b are integrated, not planning documents.
+No active competing P14B claim/branch found. Completed0/1A regressions preserved.
+
+Actual final source commands/results:
+- CPython3.14.8/jsonschema4.25.1, python -m pip check PASS/no broken requirements;
+  Node22.23.3/npm12.2.0, reused tested local cached tools/dependencies.
+- Redocly2.57.0 lint/bundle specs/openapi.yaml PASS (existing missing-license
+  warning); EVORA_CONTRACT_BUNDLE set to fresh temporary P14B bundle.
+- python -W error::ResourceWarning -m unittest backend.tests.test_processing_dispatch
+  backend.tests.test_processing -v:35 PASS/no skips (14 new P14B tests plus21
+  existing processing tests; real Uvicorn HTTP/private SQL smoke included).
+- python -W error::ResourceWarning -m unittest discover -s backend/tests -v:
+  301 run,300 PASS/one existing Windows symlink-permission SKIP.
+- python scripts/verify_coordination.py <bundled-json-path> PASS;
+  python -m unittest discover -s scripts -p 'test_*.py' -q:122 PASS/no skips.
+- npm --prefix frontend test:48 PASS/no skips; npm --prefix frontend run build
+  PASS (API freshness/TypeScript/esbuild). openapi-typescript7.10.1 generated
+  declarations/strict TypeScript5.9.3 compile PASS. DESIGN0.4.0 lint PASS with
+  zero errors/warnings; git diff --check PASS.
+- EVORA_TEST_PYTHON pinned to tested interpreter; Node frontend/test/cases.integration.mjs
+  PASS actual localhost U02/U02B/U03/U04/I00 intake/audit/hash/original/actor/error
+  regressions. No source producer double in successful chain or HTTP smoke.
+
+Immutable mapping/frozen descriptors bind actual parser callables and producer-
+owned versions/limits; no duplicate hardcoded parser version or dynamic filename/
+MIME fallback. Real network/GPS originals publish6/4/2 and3/1/1 Observation/Entity/
+Event records through actual P04/P14, with matching input hash, selected parser
+version/limits and private completion/manifests. Valid network bytes named gps.csv
+with image/png MIME still use network parser; valid GPS bytes named network.bin
+with application/pdf MIME still use GPS. Actual content, not metadata, validates
+success. Upload alone creates no processing run/provenance/derived observations.
+BOM, CRLF/multiline quoting, raw cell values/source locators, uncertain GPS time
+and unchanged original bytes/hash survive the complete pipeline. Matching
+header-only CSV is genuine empty success with empty private output manifests.
+
+Opposite-kind layout on both registered kinds accepts then fails safe
+CSV_INVALID_HEADER, never silently reroutes. Every other currently declared kind
+(document/image/video/audio/message/mobile_log/transaction) returns415 before
+run/key creation, even with valid network bytes; rejected key can subsequently
+start a supported target. Malformed UTF-8/quotes/NUL/IP/GPS coordinate/timestamp
+controls fail safely without private cell text, output or success provenance.
+Actual100001-row uploads on both adapters fail CSV_ROW_LIMIT with no partial
+prefix or private record. Existing full parser regressions exercise inclusive
+50MiB/100000-row boundaries and overflow; P14B does not claim a maximum-size
+successful normalized/published full-pipeline benchmark.
+
+Frozen current selection matches accepted kind/parser version/byte-row limits.
+Test-only selected-descriptor version/limit changes fail before parser invocation.
+Same-key replay precedes current lookup, retaining original run/private record
+even with a test-only unavailable selection; fresh key evaluates selection and
+can retry after restoration. Failed late row/new-key failures expose no prefix
+and preserve older successful sources/private provenance. Actual F00 denies
+foreign/missing/invalid actor cases before selection/run creation. Existing P04
+running/revocation tests retain assertions/real source execution; only two
+injection points/imports now wrap selected descriptor instead of mutating the
+removed private _PARSERS dictionary.
+
+Real Uvicorn HTTP/private SQL smoke uses misleading .bin/octet-stream metadata,
+executes network/GPS success, malformed and both cross-layout failures, and
+unsupported document415/no run. Exactly two success-provenance records; actual
+public read totals9 Observations/5 Entities/3 Events, with matching private
+input/hash/time/manifest IDs and no new private endpoint. No mere-upload success.
+
+Doubles/limits: synthetic actors/tokens/CSV only; real FastAPI/SQLite/private
+files/P01/P02/P03/P03B/P03C/P04/P14. Core HTTPX ASGI is in process; independent
+Uvicorn is real localhost HTTP/private SQL. Held scheduler and replaced selection/
+version/limit/parser wrappers are labeled test-only controls, not substitute
+successful producers. Prior suites retain their disclosed fault/schema fixtures.
+No real evidence/model/provider/production identity, OS power-loss/distributed
+worker/full processing UI or maximum-size successful pipeline benchmark claim.
+Existing C-04 behavior/config/provenance/wire/parser/processor versions remain
+unchanged; source format/limits were not loosened to pass a test. Exact commands,
+synthetic inputs/counts, real HTTP smoke, wrong-layout failure and cleanup are in
+backend/README.md How you can test P14B.
+
+Protected-path guard confirms no parser/P14 format/schema/spec/frontend/dependency/
+M1 table/read API/full FEATURE_SCOPE/addition change. Original dirty checkout and
+other worktrees preserved. P14B In Progress pending integration/smoke/hosted CI;
+Checkpoint1B/M2 remain open. F08 audit/P14C full failure-retry-recovery gate and
+all later adapters remain required. Next eligible M2 P14C after this integration
+(P04 already integrated); no next task started.

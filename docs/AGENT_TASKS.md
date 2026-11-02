@@ -553,3 +553,17 @@ starting a second U04 implementation. No U04 changes were merged here.
 | Input/output | Real immutable originals/frozen P04 config/output -> versioned private record; original/source bytes/history unchanged; F08 public audit and P14B/P14C remain separate required tasks |
 | Proof | 18 focused PASS including real Uvicorn HTTP/private SQL; full backend286 PASS/1 existing Windows symlink SKIP, frontend48/coordination122 PASS; contract/types/build/DESIGN/real I00 loopback PASS. Exact real inputs/outputs/config/time/digest, rollback/immutability/auth/privacy/history and labeled migration/corruption controls; limits in PREIMPLEMENTATION_REVIEW |
 | Handoff | Complete after authorized merge c03361b8171e6506d2c160a85cc1e89e76315fb3 and passing 18 focused/verifier/real I00 post-merge smoke; task commit aee4220dd6e16de377591a95fcf86f23b7c4a1f1 pushed. Entire scope/additions preserved. Checkpoint1B/M2 remain open. Next M2 P14B, no next task started |
+
+
+### P14B assignment — 2026-11-02
+
+| Field | Recorded assignment |
+|---|---|
+| Task/checkpoint/owner | P14B / 1B / M2 yazh-07: explicit network/GPS dispatch through actual registered adapters and private versioned provenance |
+| Branch/base | feat/p14b-processing-dispatch / **acf07fec95442c8ae8b9c099dda827a9f68c9a5d**, clean fetched shared docs/coordination-foundation; isolated worktree, no prior active claim |
+| Allowed paths | Approved backend/processing_dispatch.py, backend/tests/test_processing_dispatch.py, backend/processing.py, two injection points/imports in backend/tests/test_processing.py, backend/README.md, bounded AGENT_TASKS/COMMUNICATION/ROADMAP/PREIMPLEMENTATION_REVIEW records; no parser/provenance format/schema/spec/frontend/dependency edits |
+| Dependencies | Real P04 f851dd1/P01 cab08f1/P02 389652c with P03/P03B/P03C/F00/F03/F05/P04B/P05/P05B; P14 c03361b private provenance. Completed0/1A regressions |
+| Approved policy | Reuse existing C-04 unchanged: kind selects immutable registered adapter; actual content must pass exact parser, no filename/MIME success or cross-kind fallback. Unsupported kind415 before run; malformed/wrong-layout supported input accepted failed with safe errors. Existing50MiB/100000 rows, frozen kind/version/parameters and P14 provenance/history/replay preserved |
+| Input/output | Authorized original -> actual network-csv/1 or gps-csv/1 -> existing normalized immutable outputs/private provenance; upload alone is not processing success |
+| Proof | 14 P14B plus21 existing processing PASS, real Uvicorn HTTP/private SQL; full backend300 PASS/1 Windows symlink SKIP, frontend48/coordination122 PASS, contract/types/build/DESIGN/real I00 loopback PASS. Actual source/provenance, cross-layout/unsupported/row-overflow/frozen selection/replay/case negatives; doubles/limits in PREIMPLEMENTATION_REVIEW |
+| Handoff | In Progress; user authorizes implement/test/commit/push/merge P14B into docs/coordination-foundation. Entire scope/additions retained. Next M2 P14C; no next task started |
