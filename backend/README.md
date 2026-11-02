@@ -1,3 +1,89 @@
+# P05 source-backed candidate Entity listing — 2026-11-01
+
+P05 / Checkpoint 1B / M2 yazh-07, feat/p05-entity-list from verified shared base
+abeb516ba879636afb18aaa2a800b2143915e0f7. User approved the bounded scope/read
+policy and authorized implementation/test/commit/push/merge. In Progress pending
+final verification/integration; current state in docs/ROADMAP.md. Older notes are
+historical. Entire agreed initial scope/additions remain unchanged.
+
+GET /api/v1/cases/{caseId}/entities now reads actual persisted P03B/P04 candidate
+records from latest completed output per Evidence, matching P04B exact UTC
+finished_at/UUID selection. No Entity IDs are regenerated or merged on GET.
+
+- Preserve IDs, keys, labels, confidence and source arrays exactly; duplicate keys
+  with different persisted IDs remain separate source records. D-7/D-8 stay distinct.
+  Existing Event participant UUIDs remain valid. No inferred identity/ownership,
+  confidence boost or independent-corroboration claim. Current parser score 0 is
+  the documented unavailable sentinel; readers do not reinterpret stored scores.
+- Validate every Entity's same-case selected Observation/Evidence citations and
+  source locators. Evidence set must match cited source observations; any present
+  Observation entity_key must agree. Generic future sources need not invent an
+  entity_key field absent from the contract. Missing/corrupt/broken/stale/foreign
+  references or ambiguous duplicate record UUIDs fail the whole read with safe 404.
+  No partial result or silent older-run fallback. This validates wire/context/joins,
+  not arbitrary database-tampering authenticity or factual truth of a source.
+- Contract limit default 20/min 1/max 100, offset default 0/min 0; huge beyond-end
+  offsets return empty items with true total. Order candidate_key then Entity UUID.
+  One read transaction keeps selection/citations/total/page coherent; separate
+  requests may select newer outputs. This is a live processing view, not a frozen
+  historical analysis view. No new run/analysis/evidence selector or public field.
+- Existing F00 guards return auth 401 and foreign/missing case 404; invalid/unknown/
+  duplicate query parameters return safe 400. Every response is no-store. Empty or
+  unprocessed cases, header-only or selected empty completed outputs return empty
+  candidate pages. Pending/running/failed/partial outputs remain invisible.
+- Source joins use materialized read-query records and indexed citation lookups;
+  no persistent schema/index, source producer, dependency or frontend change.
+  Reads never mutate SQL/history/originals/audit or schedule processing. P05B Event
+  listing, later modalities/provenance/recovery/UI remain separate required tasks.
+
+## How you can test P05
+
+PowerShell at repository root, Python 3.14.8 and installed requirements:
+
+    npx.cmd --yes @redocly/cli@2.57.0 bundle specs/openapi.yaml -o "$env:TEMP/evora-p05-openapi.json"
+    $env:PYTHONUTF8 = '1'
+    $env:EVORA_CONTRACT_BUNDLE = "$env:TEMP/evora-p05-openapi.json"
+    python -W error::ResourceWarning -m unittest backend.tests.test_entities -v
+
+Expect 17 passing tests. Real network.csv -> four Entity records; gps.csv -> one,
+so default total 5, each record's Observation IDs resolve to the same-case selected
+P04B source observations and correct Evidence set. Entity records exactly match
+stored wire values; actual source Event participant IDs are retained. Reprocessing
+selects new immutable records and retains old history; a failed retry does not
+replace completed candidates. Uploading a second identical network fixture yields
+nine records total, including two separate device:D-7 records with confidence 0.
+
+Run independent real localhost smoke (starts/stops its own server/temp storage):
+
+    python -W error::ResourceWarning -m unittest backend.tests.test_entities.EntityLoopbackTests -v
+
+Expect PASS: actual upload/process/Observation/Entity APIs, source citations,
+limit=2/offset=2 returns two items with total 9 after the repeated network source,
+and malformed supported CSV fails without adding candidates. No producer double.
+
+Relevant broken-citation failure control:
+
+    python -m unittest backend.tests.test_entities.EntityTests.test_foreign_and_stale_observation_refs_fail_without_exposing_old_or_other_case -v
+
+Expect PASS: replacing a citation with an older-run or another case's Observation
+UUID yields safe 404 for the entire Entity read, never leaked/partial records.
+Faults are explicit temp-only corruption fixtures bypassing immutable triggers,
+not a claim of a production incident. The normal pipeline uses actual source IDs.
+
+Other cases cover 28-record all-page totals/order/no duplicates, exact fractional/
+offset completion ties, empty latest versus older output, bad queries/auth/revoked
+access, malformed Entity/source JSON/fields/references and concurrent publication.
+Core tests use actual FastAPI/F00/F03/F05/P04/P04B/parsers/normalization/projections,
+SQLite/private files and in-process HTTPX ASGI, with synthetic identities. Real
+HTTP smoke uses a Uvicorn subprocess. Selection-only SQL fixtures exercise precise
+completion metadata; one generic account/text wire fixture checks schema-only
+compatibility, not an implemented text/account producer. Scheduler/publication/
+corruption gates and read/publication race are labeled. Earlier suites retain
+existing doubles. No maximum-size benchmark, OS power-loss/distributed worker,
+production auth, full Entity inspector or real-evidence claim. Full regression
+results in docs/PREIMPLEMENTATION_REVIEW.md. Optional cleanup: remove TEMP bundle.
+Next M2 P05B source-backed Event listing; no next task started here.
+
 # P04B source-backed Observation listing — 2026-11-01
 
 P04B / Checkpoint 1B / M2 yazh-07, feat/p04b-observation-list from verified

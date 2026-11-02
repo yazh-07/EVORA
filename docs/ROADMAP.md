@@ -396,6 +396,20 @@ I00 post-merge HTTP smoke PASS. Checkpoint 1B remains open. Entire scope/additio
 preserved. Next M2 P05 candidate
 Entity list, then P05B Event list by dependency/catalog order. No next task started.
 
+### P05 live handoff — 2026-11-01
+
+**P05 / 1B / M2 yazh-07 / In Progress.** Isolated feat/p05-entity-list from
+verified shared base **abeb516ba879636afb18aaa2a800b2143915e0f7** with actual
+P03B/P04B prerequisites and P04/source producer chain; 0/1A Complete. Approved
+scope/read policy in AGENT_TASKS.md/COMMUNICATION.md. Actual listEntities keeps
+persisted IDs/keys/labels/confidence and validates same-case selected Observation/
+Evidence citations; duplicate keys remain distinct records. Live latest-completed
+selection, deterministic pagination, one read snapshot and fail-closed invalid
+references. 17 focused PASS including real HTTP; full backend 248 PASS/1 Windows
+symlink SKIP, frontend 48 PASS, coordination 122 PASS; contract/types/build/DESIGN
+and real I00 loopback PASS. Integration pending; no Complete claim. Full scope/additions retained.
+Next M2 P05B source-backed Event list, no next task started.
+
 ## Module assignment and live task state
 
 | Module | Assigned GitHub handle | Accountable boundary | State |

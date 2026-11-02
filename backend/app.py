@@ -16,6 +16,7 @@ from backend.cases import SQLiteCaseAccess, initialize_cases, router
 from backend.evidence import initialize_evidence, router as evidence_router
 from backend.processing import initialize_processing, router as processing_router
 from backend.observations import router as observations_router
+from backend.entities import router as entities_router
 from backend.errors import AccessError, access_error, invalid_request
 
 
@@ -65,6 +66,7 @@ def create_app(
     app.include_router(audit_router)
     app.include_router(processing_router)
     app.include_router(observations_router)
+    app.include_router(entities_router)
     return app
 
 

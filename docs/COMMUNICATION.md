@@ -294,3 +294,38 @@ Entity/Event APIs. Full agreed initial scope including approved transcription
 remains required; existing optional transcript wire fields/conditionals are
 preserved, not converted into an implemented transcript producer. P05/P05B and
 later UI/provenance/dispatch/recovery rows remain separate tasks.
+
+
+## P05 approved Entity-read policy — 2026-11-01
+
+User approved the bounded files/read policy. listEntities is a live processing
+view over persisted candidate Entity records in latest completed output per
+Evidence, using the same exact UTC finished_at/UUID choice as P04B. No new run/
+analysis/evidence selectors are added to this limit/offset-only operation.
+Historical analytical sources remain frozen internal snapshot references, not
+live Entity lists. One read transaction keeps selection, sources, total and page
+coherent per response; separate requests may see newer completed outputs.
+
+Preserve persisted Entity UUIDs, keys, labels, confidence and source arrays exactly.
+Never regenerate/merge IDs on GET: actual Event participants must remain valid.
+Identical candidate_key values from distinct persisted records stay distinct;
+shared identifier text alone is not verified identity/ownership or independent
+corroboration. D-7/D-8 stay distinct. No confidence boost or key normalization.
+
+Validate wire shape, unique record/reference UUIDs, case context and every cited
+Observation in same-case selected completed outputs. Evidence IDs must exactly
+match the cited observations' Evidence set, including the stored output's source
+Evidence. If a cited observation carries entity_key, it must match this candidate
+key; do not invent a mandatory entity_key on future generic source observations.
+Missing/corrupt selected records, broken/foreign/stale citations or ambiguous
+repeated Entity UUIDs fail the whole read with the same safe 404; no partial
+records or silent older-run fallback. Pending/failed output remains invisible.
+An accessible case with no completed candidates returns an empty page.
+
+Use existing limit default 20/min 1/max 100 and offset default 0/min 0, with no
+invented maximum offset. Order candidate_key then canonical Entity UUID ascending.
+Unknown/duplicate query parameters are invalid 400. Existing F00 guards apply
+on every request; responses are no-store. No SQL writes, source mutation, new
+public fields, DB/schema/producer/dependency/frontend changes or Event API.
+All future modalities/scope additions stay required; current candidate listing
+is not implementation of future extraction/identity/graph features. P05B is next.
