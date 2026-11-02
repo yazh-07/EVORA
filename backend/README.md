@@ -3,8 +3,9 @@
 P14 / Checkpoint 1B / M2 yazh-07, feat/p14-processing-provenance from verified
 shared base 98a28260f2fb2d91dd803c2f1835de264c5d0973. User approved bounded
 paths/private-record policy and authorized implementation/test/commit/push/merge
-into shared docs/coordination-foundation. In Progress pending final verification
-and integration; current state in docs/ROADMAP.md. Older notes are historical.
+into shared docs/coordination-foundation. Complete after merge
+c03361b8171e6506d2c160a85cc1e89e76315fb3 and passing post-merge smoke;
+current state in docs/ROADMAP.md. Older notes are historical.
 Entire initial FEATURE_SCOPE including approved additions remains unchanged.
 
 New processing-lifecycle/2 runs freeze processing-provenance/1 plus existing

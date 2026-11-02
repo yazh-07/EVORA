@@ -427,13 +427,14 @@ task started. Checkpoint 1B/M2 remain open.
 
 ### P14 live handoff — 2026-11-02
 
-**P14 / 1B / M2 yazh-07 / In Progress.** Isolated feat/p14-processing-provenance
+**P14 / 1B / M2 yazh-07 / Complete.** Isolated feat/p14-processing-provenance
 from verified shared base **98a28260f2fb2d91dd803c2f1835de264c5d0973** with
 real P04 and source-chain prerequisites integrated. User approved bounded file/
 private-provenance policy in AGENT_TASKS.md/COMMUNICATION.md and authorized push/
 merge after verification. 18 focused PASS; full backend286 PASS/1 Windows symlink
 SKIP, frontend48/coordination122 PASS; contract/types/build/DESIGN/real I00
-loopback PASS. Integration pending; no Complete claim. Full
+loopback PASS. Integrated at c03361b8171e6506d2c160a85cc1e89e76315fb3;
+18 focused/verifier/real I00 post-merge smoke PASS. Full
 scope/additions retained; Checkpoint1B/M2 remain open. Next M2 P14B network/GPS
 dispatch, no next task started.
 

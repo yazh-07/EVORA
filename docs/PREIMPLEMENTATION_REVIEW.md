@@ -2627,7 +2627,7 @@ key retries with new immutable output IDs, old input/hash/history unchanged.
 Private reader rechecks actual SQLite membership and exact same-case Evidence/
 run/output joins under one read snapshot. Foreign/missing/mismatched/pending/
 failed/legacy/revoked references and corrupt payload/version/context/digest/
-manifest/model/parameters/output JSON return identical safe404. No fallback or
+manifest/model/output JSON return identical safe404. No fallback or
 private content in error messages. UPDATE/DELETE/REPLACE/UPSERT collisions and
 hidden-rowid bypass blocked by WITHOUT ROWID and append-only triggers. Startup
 adds empty private table, preserves existing completed history without fabricated
@@ -2665,3 +2665,23 @@ original dirty checkout/other worktrees preserved. P14 In Progress pending actua
 merge/smoke; hosted CI not yet claimed. Checkpoint1B/M2 remain open. F08 audit and
 P14B dispatch/P14C full failure-recovery remain required. Next eligible M2 P14B
 (P04/P01/P02 integrated); no next task started.
+
+
+### P14 integrated acceptance — 2026-11-02
+
+User-authorized task commit **aee4220dd6e16de377591a95fcf86f23b7c4a1f1** pushed to
+feat/p14-processing-provenance. Clean shared docs/coordination-foundation remained
+at the verified common base; merged without conflicts at
+**c03361b8171e6506d2c160a85cc1e89e76315fb3**. On that exact merge:18 focused
+provenance tests PASS (including real Uvicorn HTTP/private SQL smoke), coordination
+verifier PASS, real I00 intake/audit/hash/original/actor/error smoke PASS. No runtime
+or test changes after final full287 matrix above. Protected-path guard confirms
+full FEATURE_SCOPE/spec/frontend/M1 tables/parsers/dependencies/source read APIs
+unchanged; original dirty checkout and other worktrees preserved. P14 Complete
+after real prerequisite integration and merged acceptance; supersedes pending
+handoff. Checkpoint1B/M2 remain open. The Windows symlink skip and all synthetic/
+fault/schema-fixture/setup/deployment/model/UI/performance limits remain explicit
+above. New hosted CI not yet claimed at this recording point. Next eligible M2
+P14B network/GPS dispatch (real P04/P01/P02 integrated); P14C/F08 and later full
+modality/model tasks remain required. No next task started; entire initial scope
+and approved additions preserved.
