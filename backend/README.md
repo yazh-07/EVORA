@@ -3,8 +3,9 @@
 P12 / Checkpoint3A / M2 yazh-07, explicit independent assignment on
 feat/p12-transaction-csv from verifiedbd1e03de15a7f212e77dac391b5efd8d6fc7af07.
 User approved the bounded format/amount/currency/time/source-output policy and
-commit/push/merge after acceptance. In Progress pending integration. Entire
-docs/FEATURE_SCOPE.md including approved additions remains unchanged; earlier
+commit/push/merge after acceptance. Complete after merge
+c1165793cb791fe0e7eccaded43e7c8daa6ee498 with29 P12/verifier/real I00 post-merge
+smoke PASS. Entire docs/FEATURE_SCOPE.md including approved additions remains unchanged; earlier
 checkpoint gates stay open. Older sections below are historical.
 
 Evidence kind transaction selects actual transactions-csv/1: strict UTF-8 optional

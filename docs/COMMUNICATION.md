@@ -651,3 +651,30 @@ route/field/table/column/M1/old-parser/dependency/frontend change. Earlier gates
 remain open; independent P12 cannot close3A/I04 or any earlier checkpoint. Full
 FEATURE_SCOPE/additions and remaining modalities/features preserved. No next task
 started.
+
+
+### P12 integrated acceptance — 2026-11-02
+
+User-authorized task commit **e46a7a8361f971d9f27527e3516d7b3bfddfe590** pushed to
+feat/p12-transaction-csv. Clean shared docs/coordination-foundation stayed at
+verified base and merged without conflicts at
+**c1165793cb791fe0e7eccaded43e7c8daa6ee498**. On that exact merge:29 focused P12
+PASS including actual Uvicorn HTTP/private SQL, exact signed/zero/128-character
+decimal strings, source/account participants and old-version upgrade; coordination
+verifier PASS; real I00 intake/audit/hash/original/actor/error smoke PASS. Full407
+matrix above remains valid; no runtime changes after it. Final whitespace/
+protected-path guards PASS. Entire FEATURE_SCOPE/additions/spec/frontend/M1 tables/
+dependencies/old parsers/normalizer/source-read APIs unchanged; original dirty
+checkout and other worktrees preserved. Existing tests change only approved
+bounded dispatch expectations and P07/P11 old-version fixtures.
+
+P12 Complete after actual prerequisite integration and merged acceptance;
+supersedes pending status. Existing Windows symlink skip and synthetic/scheduler/
+registry/verifier/participant/SQL/old-guard/Decimal-context controls plus live-bank/
+production-auth/model/UI/graph/performance/power-loss limits remain disclosed.
+Hosted CI not yet claimed at this recording point. Independent row closes neither
+earlier checkpoints nor3A/I04. Next M2 catalog P13(3A) has actual P06/P07 but needs
+its own agreed text extraction/evaluation/file handoff; automatic selection awaits
+earlier exits, or earlier independent work must be separately explicitly assigned.
+P13B and every remaining modality/initial feature/approved addition stay required.
+No next task started; full scope preserved.

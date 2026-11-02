@@ -511,12 +511,17 @@ be separately explicitly assigned. No next task started.
 
 ### P12 independent handoff — 2026-11-02
 
-**P12 / 3A / M2 yazh-07 / In Progress.** Explicit independent user assignment,
+**P12 / 3A / M2 yazh-07 / Complete (independent row only).** Explicit independent user assignment,
 feat/p12-transaction-csv from verified **bd1e03de15a7f212e77dac391b5efd8d6fc7af07**.
 Real P04/source/publication prerequisites integrated; approved transaction/decimal/
 currency/time/source-output policy and bounded paths in AGENT_TASKS/COMMUNICATION.
-Acceptance/integration pending before authorized push/merge. Earlier checkpoints
-stay open; entire FEATURE_SCOPE/additions preserved. No later task started.
+Integrated at **c1165793cb791fe0e7eccaded43e7c8daa6ee498**;29 P12/verifier/real I00
+post-merge smoke PASS. Full backend407 run:406 PASS/1 existing Windows symlink
+SKIP; focused43/frontend48/coordination122/contract/types/build/DESIGN PASS.
+Earlier checkpoints and3A stay open; entire FEATURE_SCOPE/additions preserved.
+Next M2 catalog P13(3A) has actual P06/P07 prerequisites but needs extraction/
+evaluation/path decisions and earlier exits for automatic selection, or a separate
+explicit independent assignment. No later task started.
 
 ## Module assignment and live task state
 
