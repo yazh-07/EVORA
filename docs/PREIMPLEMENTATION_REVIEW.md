@@ -2449,3 +2449,20 @@ approved additions preserved; no schema/spec/producer/dependency/frontend edits.
 Original dirty checkout and other worktrees preserved. P05 In Progress pending
 actual integration/smoke; Checkpoint 1B/M2 remain open. Next eligible M2 P05B
 source-backed Event listing, with P03C/P04B integrated. No next task started.
+
+
+### P05 integrated acceptance — 2026-11-02
+
+User-authorized task commit **f67d840d84686ad3d07b4b479971621e7dc8cc40** pushed to
+feat/p05-entity-list; clean shared docs/coordination-foundation merged without
+conflicts at **04af24f1c44abbc8059b0c006d9079d271ced947**. On that exact merge:
+17 focused tests PASS (including real Uvicorn processing/Observation/Entity HTTP),
+coordination verifier PASS, real I00 intake/audit/hash/original/actor/error smoke
+PASS. No runtime changes after the full regression matrix recorded above.
+Protected scope/spec/frontend/schema/producers/dependencies unchanged; original
+dirty checkout and other worktrees preserved. P05 Complete after actual prerequisite
+integration and merged smoke; this supersedes the pending handoff. Checkpoint
+1B/M2 remain open; no whole-module or full UI claim. Doubles/limits/Windows skip
+remain disclosed above. New hosted CI not yet claimed at this recording point.
+Next eligible M2 P05B source-backed Event listing (P03C/P04B integrated), no next
+task started. Entire agreed scope including approved additions retained.

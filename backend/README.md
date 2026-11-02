@@ -2,8 +2,9 @@
 
 P05 / Checkpoint 1B / M2 yazh-07, feat/p05-entity-list from verified shared base
 abeb516ba879636afb18aaa2a800b2143915e0f7. User approved the bounded scope/read
-policy and authorized implementation/test/commit/push/merge. In Progress pending
-final verification/integration; current state in docs/ROADMAP.md. Older notes are
+policy and authorized implementation/test/commit/push/merge. Complete after
+merge 04af24f1c44abbc8059b0c006d9079d271ced947 and passing post-merge smoke;
+current state in docs/ROADMAP.md. Older notes are
 historical. Entire agreed initial scope/additions remain unchanged.
 
 GET /api/v1/cases/{caseId}/entities now reads actual persisted P03B/P04 candidate
