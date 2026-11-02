@@ -2384,3 +2384,68 @@ Next eligible M2 P05 candidate Entity listing: real P03B/P04B prerequisites are
 integrated. P05B Event listing follows by the catalog/dependency order; later
 provenance/dispatch/recovery/UI/full-scope gates remain required. No next task
 started; waiting for user review. Entire agreed scope/additions preserved.
+
+
+### P05 verification — 2026-11-02
+
+Continuation of the approved 2026-11-01 P05 / Checkpoint 1B / M2 yazh-07
+assignment. Isolated feat/p05-entity-list from verified common base
+abeb516ba879636afb18aaa2a800b2143915e0f7. Fetch on continuation confirms remote
+shared docs/coordination-foundation remains at that base. Real P03B/P04B and P04
+source chain are integrated prerequisites, not schema-only substitutes.
+
+Actual commands/results on final source:
+- Python 3.14.8 / jsonschema 4.25.1, pip check: no broken requirements.
+- EVORA_CONTRACT_BUNDLE set to Redocly 2.57.0 bundled specs/openapi.yaml;
+  python -W error::ResourceWarning -m unittest backend.tests.test_entities -v:
+  17 PASS, no skips, including real localhost Uvicorn upload/process/read-back.
+- python -W error::ResourceWarning -m unittest discover -s backend/tests -v:
+  249 run, 248 PASS and one pre-existing Windows symlink-permission SKIP.
+  Host suspension inflated elapsed wall time; no performance benchmark claimed.
+- python scripts/verify_coordination.py <bundled-json-path>: PASS;
+  python -m unittest discover -s scripts -p 'test_*.py' -v: 122 PASS, no skips.
+- Node 22.23.3/npm 12.2.0: frontend npm test 48 PASS; npm run build PASS
+  (API freshness/TypeScript/esbuild); real I00 cases.integration.mjs loopback PASS
+  with EVORA_TEST_PYTHON pinned to the tested interpreter.
+- Redocly lint/bundle PASS (existing missing-license warning); openapi-typescript
+  7.10.1 and strict TypeScript 5.9.3 declaration compilation PASS;
+  DESIGN 0.4.0 lint PASS, zero errors/warnings. git diff --check PASS.
+
+Actual network/GPS originals traverse F03/F05/P01/P02/P03/P03B/P03C/P04/P04B
+into immutable SQL Entity records: exact IDs/keys/labels/scores/source arrays,
+same-case Evidence/Observation joins, actual Event participant UUIDs. Real HTTP
+smoke totals 4 then 5 then 9 after duplicate network input; malformed supported
+CSV fails and total stays 9. limit=2/offset=2 returns two items/total9. Identical
+keys stay separate with score0, not inferred identity/corroboration. All-page
+28-record controls verify totals/order/no duplicate or skipped IDs; empty latest
+never falls back. Pending/running/failed partial outputs invisible; failed retry
+retains prior completed output. Reprocessing changes selected IDs, preserves history.
+
+Negatives cover unknown/duplicate query keys and invalid limits/UUIDs safe400,
+missing/invalid/duplicate auth401, revoked/foreign/missing case404; missing/corrupt
+output, malformed Entity/Observation fields/UUIDs/scores, duplicate IDs/references,
+stale/foreign/missing citations, Evidence mismatch and inconsistent entity_key
+fail the whole read safe404. Exact fractional UTC selection and UUID ties match
+P04B. A real writer-thread publication attempt during the held read transaction
+keeps response selection/total/items coherent; next read sees fresh outputs.
+Repeated reads preserve runs/outputs/audit/originals and schedule no work. Query
+plan probe confirms automatic covering indexes on observation_id and entity_id;
+no persistent schema/index change or throughput claim.
+
+Doubles/limits: synthetic auth actors/tokens and synthetic CSV only. Core tests
+use real FastAPI/SQLite/private files and actual producers; HTTPX ASGI is in
+process, and the separate Uvicorn subprocess exercises real HTTP. Scheduler and
+publication gates expose pending/failure states; selection-only SQL fixtures use
+controlled 2099 timestamps/UUID ties; temp-only corruption bypasses immutable
+triggers to test fail-closed reads. Generic account/text wire compatibility is
+schema-only, not an implemented producer. Existing unrelated test doubles remain
+disclosed in earlier records. No production auth, full Entity UI, OS power-loss,
+distributed worker, maximum-size benchmark or real-evidence claim. Shape/context/
+join validation does not establish source authenticity after arbitrary DB tampering.
+
+backend/README.md contains exact commands, synthetic inputs/counts, real HTTP
+smoke and stale/foreign-citation failure control. Full agreed FEATURE_SCOPE and
+approved additions preserved; no schema/spec/producer/dependency/frontend edits.
+Original dirty checkout and other worktrees preserved. P05 In Progress pending
+actual integration/smoke; Checkpoint 1B/M2 remain open. Next eligible M2 P05B
+source-backed Event listing, with P03C/P04B integrated. No next task started.

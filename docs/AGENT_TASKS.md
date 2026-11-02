@@ -511,3 +511,17 @@ starting a second U04 implementation. No U04 changes were merged here.
 | Input/output | Real immutable P04 SQL -> existing ObservationPage only; raw/normalized/time/source/run/Entity keys preserved, no new public field or listEntities/listEvents API |
 | Proof | 16 focused PASS; full backend 231 PASS/1 Windows symlink SKIP, frontend 48 PASS, coordination 122 PASS; contract/types/build/DESIGN and real Observation/processing/I00 HTTP regressions PASS. Selection/scheduler/corruption/transcript-schema fixtures and limits disclosed in PREIMPLEMENTATION_REVIEW |
 | Handoff | Complete after authorized merge c29e517f218c0851a9959cfa389b093242a255ab and passing 16 focused/verifier/real Observation/I00 post-merge HTTP smoke; task commit 5baa2f631f788466f6787d331734adda0f26dfca pushed. P04B only; preserve full FEATURE_SCOPE/additions. Checkpoint 1B open. Next M2 P05; no next task started |
+
+
+### P05 assignment — 2026-11-01
+
+| Field | Recorded assignment |
+|---|---|
+| Task/checkpoint/owner | P05 / 1B / M2 yazh-07: listEntities from actual source-backed candidate records, every Evidence/Observation citation same-case, no cross-case leakage |
+| Branch/base | feat/p05-entity-list / **abeb516ba879636afb18aaa2a800b2143915e0f7**, clean fetched shared docs/coordination-foundation, isolated worktree; no active P05 claim |
+| Allowed paths | Approved backend/entities.py, backend/tests/test_entities.py, backend/app.py router wiring, backend/README.md and bounded AGENT_TASKS/COMMUNICATION/ROADMAP/PREIMPLEMENTATION_REVIEW records. No DB/schema/producer/spec/dependency/frontend/Event API edits |
+| Dependencies | Actual P03B c58e7f2 and P04B c29e517 (publication abeb516), real P04/F00/F03/F05 and source parser/normalizer/event chain; completed 0/1A regressions |
+| Approved policy | Latest completed per evidence via exact UTC/UUID selection, unchanged persisted Entity IDs/keys/labels/confidence/references; identical keys with different record IDs remain separate. Same-case selected Observation/Evidence citations validated; missing/corrupt data fails whole read safe 404. Contract pagination, candidate_key then Entity UUID order, one read snapshot per response; no new selectors |
+| Input/output | Actual immutable P04 Entities and cited Observations -> existing EntityPage only; no identity inference, confidence boost, regrouping/regeneration or source/history mutation |
+| Proof | 17 focused PASS including real Uvicorn HTTP; full backend 248 PASS/1 existing Windows symlink-permission SKIP (249 run), frontend 48 PASS, coordination 122 PASS; contract/types/build/DESIGN and real I00 loopback PASS. Actual processing/source citations, negatives, exact selection/concurrent publication/read-only history; doubles and limits in PREIMPLEMENTATION_REVIEW |
+| Handoff | In Progress; user explicitly authorizes implement/test/commit/push/merge P05 only. Preserve full FEATURE_SCOPE/additions. Next M2 P05B, no next task started |
