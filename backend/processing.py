@@ -22,6 +22,7 @@ from backend.parsers.source_events import PROJECTOR_VERSION as EVENT_VERSION, pr
 from backend.processing_provenance import (
     PROCESSOR_VERSION, RECORD_VERSION, initialize_provenance, record_processing_provenance,
 )
+from backend.processing_publication import verify_publication
 
 _WIRE = ('id', 'case_id', 'evidence_id', 'status', 'processor_version', 'created_at', 'finished_at', 'error')
 router = APIRouter()
@@ -79,6 +80,10 @@ def initialize_processing(database):
             BEGIN SELECT RAISE(ABORT,'Invalid processing transition'); END;
           CREATE TRIGGER IF NOT EXISTS processing_run_no_delete BEFORE DELETE ON processing_runs
             BEGIN SELECT RAISE(ABORT,'Immutable processing history'); END;
+          CREATE TRIGGER IF NOT EXISTS processing_run_no_replace BEFORE INSERT ON processing_runs
+            WHEN EXISTS(SELECT 1 FROM processing_runs WHERE id=NEW.id OR rowid=NEW.rowid
+              OR (actor_id=NEW.actor_id AND case_id=NEW.case_id AND key_digest=NEW.key_digest))
+            BEGIN SELECT RAISE(ABORT,'Immutable processing history'); END;
           CREATE TRIGGER IF NOT EXISTS processing_output_insert BEFORE INSERT ON processing_outputs
             WHEN NOT EXISTS(SELECT 1 FROM processing_runs WHERE id=NEW.run_id AND status='running'
               AND case_id=NEW.case_id AND evidence_id=NEW.evidence_id)
@@ -86,6 +91,9 @@ def initialize_processing(database):
           CREATE TRIGGER IF NOT EXISTS processing_output_update BEFORE UPDATE ON processing_outputs
             BEGIN SELECT RAISE(ABORT,'Immutable processing output'); END;
           CREATE TRIGGER IF NOT EXISTS processing_output_delete BEFORE DELETE ON processing_outputs
+            BEGIN SELECT RAISE(ABORT,'Immutable processing output'); END;
+          CREATE TRIGGER IF NOT EXISTS processing_output_no_replace BEFORE INSERT ON processing_outputs
+            WHEN EXISTS(SELECT 1 FROM processing_outputs WHERE run_id=NEW.run_id OR rowid=NEW.rowid)
             BEGIN SELECT RAISE(ABORT,'Immutable processing output'); END;
           CREATE TRIGGER IF NOT EXISTS processing_completion_output BEFORE UPDATE OF status ON processing_runs
             WHEN NEW.status='completed' AND NOT EXISTS(SELECT 1 FROM processing_outputs WHERE run_id=NEW.id)
@@ -102,8 +110,11 @@ def publish_outputs(connection, run, output):
                        (run['id'], run['case_id'], run['evidence_id'], *output))
     finished_at = _now()
     record_processing_provenance(connection, run, output, finished_at)
-    connection.execute("UPDATE processing_runs SET status='completed',finished_at=? WHERE id=? AND status='running'",
-                       (finished_at, run['id']))
+    verify_publication(connection, run, output, finished_at)
+    updated = connection.execute("UPDATE processing_runs SET status='completed',finished_at=? WHERE id=? AND status='running'",
+                                 (finished_at, run['id']))
+    if updated.rowcount != 1:
+        raise ValueError('Processing completion not published')
 
 
 def process_run(app, run_id):

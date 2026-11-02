@@ -2794,3 +2794,103 @@ scheduler/fault/setup/UI/model/performance limits remain disclosed above. New
 hosted CI not yet claimed at this recording point. Next eligible M2 P14C
 failure/retry atomicity and full publication/recovery gate (P04/P14B integrated);
 F08 audit and all later modality tasks remain required. No next task started.
+
+
+### P14C verification — 2026-11-02
+
+P14C / Checkpoint1B / M2 yazh-07. User approved bounded file/lifecycle handoff
+and implement/test/commit/push/merge authorization. Isolated feat/p14c-atomic-processing
+from clean fetched common base fb52aba41310ae644bb9a12bd4884862367932cc;
+latest fetch still matches. Actual P04 f851dd1/P14B d7a4315/P14 c03361b and full
+source/read/access chain integrated; no planning-only producer substituted.
+Completed0/1A regressions retained; no competing P14C branch/claim found.
+
+Actual commands/results on final runtime/test source:
+- CPython3.14.8/jsonschema4.25.1, pip check PASS/no broken requirements;
+  Node22.23.3/npm12.2.0, reused tested local cached tools/dependencies.
+- Redocly2.57.0 lint/bundle specs/openapi.yaml PASS (existing missing-license
+  warning). EVORA_CONTRACT_BUNDLE set to fresh temporary P14C JSON bundle.
+- python -W error::ResourceWarning -m unittest backend.tests.test_processing_publication
+  backend.tests.test_processing -v:34 PASS/no skips (13 new P14C and21 existing
+  processing tests), including seven marker-verified hard-exit subcases and real
+  Uvicorn HTTP/private SQL smoke.
+- python -W error::ResourceWarning -m unittest discover -s backend/tests -v:
+  314 run,313 PASS/one existing Windows symlink-permission SKIP.
+- python scripts/verify_coordination.py <bundled-json-path> PASS;
+  python -m unittest discover -s scripts -p 'test_*.py' -q:122 PASS/no skips.
+- npm --prefix frontend test:48 PASS/no skips; npm --prefix frontend run build
+  PASS (API freshness/TypeScript/esbuild). Generated openapi-typescript7.10.1
+  declarations/strict TypeScript5.9.3 compile PASS. DESIGN0.4.0 lint PASS,
+  zero errors/warnings; git diff --check PASS.
+- EVORA_TEST_PYTHON pinned to tested interpreter; Node frontend/test/cases.integration.mjs
+  PASS actual localhost U02/U02B/U03/U04/I00 intake/hash/original/audit/actor/error
+  regressions. No source producer double on the successful source or HTTP chain.
+
+Real network/GPS processing publishes6/4/2 and3/1/1 Observation/Entity/Event IDs,
+with actual SQL output/private provenance present while the run is still running.
+The verifier reads back run/frozen fields, exact output JSON/private uncertainty,
+case/Evidence/run context and reconstructs P14 source/participant manifests/digest/
+time from SQL before exactly one running row can become completed. It does not
+trust only candidate values or successful INSERT. Missing/corrupt output/private
+rows, altered bytes/context/payload/time/frozen config fail the publication and
+roll back; safe PROCESSING_FAILED, no partial output/private rows. DDL corruption
+controls also roll back and normal retry works. Completion-row-count fault cannot
+pretend success. All public fields/status/error contracts remain unchanged.
+
+A held verified transaction proves outsiders see prior completed run/outputs only,
+no staged new output/private record; after release/commit, completed/new output/
+private data become visible together. Old historical pins and private data stay
+unchanged. Verification failure preserves earlier completed output; same key
+replays original failed resource without a worker call; new key retries. Eight
+concurrent same-key starts execute/publish exactly once using an actual parser
+wrapped only for counting. Same-key different-target concurrency returns202/409
+with one source-coherent output. Four distinct keys keep all histories; three
+racing worker claims on one queued run still publish once.
+
+Actual child Python processes run the real pipeline and hard-exit via os._exit(97)
+at seven marker-verified boundaries: queued, claimed running, output insert,
+provenance insert, verified SQL, completed pointer before transaction commit,
+and after committed publication. No graceful connection cleanup at hard exit.
+For all six pre-commit boundaries, actual SQLite rollback leaves no new output/
+private rows visible; prior completed default output stays unchanged. Fresh
+application lifespan on the same DB marks original queued/running resource failed
+PROCESSING_INTERRUPTED, same key replays it and new key successfully retries.
+Post-commit exit preserves actual completed resource/private record through fresh
+startup; replay retains it and new key creates new IDs. Existing original input
+hash/history and historical Observation IDs survive every boundary. SQLite
+integrity_check and foreign_key_check pass after every interruption/retry.
+
+Processing-owned INSERT guards reject run-ID/actor-case-key/REPLACE/UPSERT/hidden-
+rowid collisions, supplementing original UPDATE/DELETE immutability. Tested old
+completed output replacement into a new running target (previous context-only
+INSERT guard would allow it), and failed-run hidden-rowid replacement (no output
+FK to protect it). Both reject and preserve actual historical resources/private
+data. No new table, column or M1-table modification.
+
+Independent real Uvicorn HTTP smoke executes actual network/GPS upload/start/poll/
+list and private SQL read-back, malformed run failed without success provenance,
+public totals9 Observations/5 Entities/3 Events and no new private HTTP endpoint.
+F00 foreign actor reads remain safe404; a verification failure exposes no public
+partial observations/entities/events or raw exception text. Existing full P14
+privacy/source-validation tests remain applicable.
+
+Doubles/limits: synthetic actors/tokens/CSV only; real FastAPI/SQLite/private files
+and P01/P02/P03/P03B/P03C/P04/P14/P14B. Core HTTPX ASGI is in process; independent
+Uvicorn is real HTTP/private SQL. Held scheduler/verification gates, parser-count
+wrappers, transactional corruption temporarily bypassing immutable triggers and
+child crash-hook replacements are explicit test controls. Successful producers
+execute actual adapters/normalization/projectors. Hard exit/SQLite rollback and
+fresh app startup are real process-interruption tests, not hardware/OS power-loss
+certification or distributed deployment proof. Earlier suites retain documented
+doubles. No real evidence/model/production auth, full processing UI or maximum-
+size successful full-pipeline benchmark claim. Exact commands, synthetic counts,
+child-exit and corrupt-SQL failures plus cleanup in backend/README.md How you can
+test P14C. Only test-created children exit; user applications are not terminated.
+
+Protected paths preserve full FEATURE_SCOPE/additions/spec/frontend/parsers/P14
+format/dependencies/M1 tables and existing source-read APIs/tests. Original dirty
+checkout/other worktrees preserved. P14C In Progress pending integration/hosted CI; Checkpoint1B/M2 remain open. This is last M2 row in1B; F08 processing
+audit, M4 processing/overview and I00B remain required. No automatically eligible
+M2 row remains in earliest unfinished1B after this integration. Next catalog M2
+P06 is2A: automatic selection also awaits earlier1B/I00B and1C/I01 exits, while
+allowed independent work requires its own explicit handoff. No next task started.
