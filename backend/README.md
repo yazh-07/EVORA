@@ -1,3 +1,97 @@
+# P05B source-backed Event listing — 2026-11-02
+
+P05B / Checkpoint 1B / M2 yazh-07. Isolated feat/p05b-event-list from verified
+shared base b5cb37b8d3dbe3d8f23b29a6516162c407cf4335. User approved bounded
+paths/read policy and authorized implementation/test/commit/push/merge into
+shared docs/coordination-foundation. In Progress pending final verification and
+integration; current state in docs/ROADMAP.md. Older notes below are historical.
+Entire agreed initial FEATURE_SCOPE including approved additions is preserved.
+
+GET /api/v1/cases/{caseId}/events now reads actual immutable P03C/P04 Event
+records from latest completed output per Evidence using P04B's exact UTC
+finished_at then UUID selection. Return existing EventPage only.
+
+- Preserve Event IDs/kinds/summaries/raw and UTC time strings/confidence/source
+  arrays/participant UUIDs exactly. Never reproject/regenerate IDs or merge
+  duplicate source reports. Current network/GPS score0 means unavailable; the
+  reader does not infer identity, occurrence time, ownership or source truth.
+- Validate selected output shape/context and same-case Observation/Evidence
+  references. Event Evidence set exactly matches its cited source observations,
+  including the output's Evidence. Participant IDs resolve actual selected
+  Entity records with valid source citations; each participant must share an
+  Event Observation. Missing/corrupt/stale/foreign/duplicate/broken references
+  fail the whole read safe404, no partial page or silent older-output fallback.
+  This checks wire/context/joins, not authenticity after arbitrary DB tampering.
+- Optional timestamps and empty participant arrays remain supported by the
+  generic contract. Existing producers preserve malformed/missing-zone/unknown-
+  offset source text without fabricated UTC. Blank required CSV cells fail the
+  existing parser and publish no Events. No new producer/format is implemented.
+- Contract limit default20/min1/max100, offset default0/min0. Order by output
+  Evidence UUID then Event UUID, canonical ascending text, before paging. Huge
+  beyond-end offsets return empty items with true total. One read transaction
+  keeps sources/participants/selection/total/page coherent; a subsequent request
+  may see newer output. No historical-analysis/run/evidence selector is added.
+  This is a processing-source list, not chronological timeline reconstruction.
+- Unprocessed/header-only/empty latest outputs yield empty pages; queued/running/
+  failed partial outputs stay invisible. Existing F00 auth401/case404 and shared
+  invalid-input400 mapping apply; successful/Event access-error reads are no-store.
+  Reads never write history/audit/originals or schedule processing. Materialized
+  query records support reference joins; no persistent schema/index change.
+- No DB/schema/producer/spec/dependency/frontend changes. Full Entity/Event UI,
+  P14 private provenance, P14B dispatch/P14C recovery and all later adapters remain
+  separate required scope. Next eligible M2 is P14, not a whole-module completion.
+
+## How you can test P05B
+
+PowerShell from repository root with Python 3.14.8, Node 22.23.3 and installed
+requirements (synthetic inputs only; tests create/clean temporary SQLite/storage):
+
+    npx.cmd --yes @redocly/cli@2.57.0 bundle specs/openapi.yaml -o "$env:TEMP/evora-p05b-openapi.json"
+    $env:PYTHONUTF8 = '1'
+    $env:EVORA_CONTRACT_BUNDLE = "$env:TEMP/evora-p05b-openapi.json"
+    python -W error::ResourceWarning -m unittest backend.tests.test_events -v
+
+Expect 20 passing tests. Actual fixtures/synthetic-case/network.csv produces two
+Events, gps.csv one; default total3. Each Event's Observation IDs resolve the
+selected same-case P04B source locators; each participant is an actual P05 Entity
+with shared source references. Stored raw/UTC time strings, summary and score0
+are unchanged. Duplicate rows/Evidence stay separate reports with distinct IDs.
+27-record all-page test proves total/order/no duplicate/skip; default20/max100 and
+arbitrarily large beyond-end offsets are covered.
+
+Independent real localhost smoke (starts/stops Uvicorn and temporary storage):
+
+    python -W error::ResourceWarning -m unittest backend.tests.test_events.EventLoopbackTests -v
+
+Expect PASS: synthetic network -> total2, plus GPS ->3, second network ->5,
+malformed supported CSV -> failed run and total stays5. limit=2/offset=2 returns
+two items with total5; real Observation and Entity APIs resolve every citation/
+participant. No producer doubles in this HTTP smoke.
+
+Relevant stale/foreign/unrelated participant failure control:
+
+    python -m unittest backend.tests.test_events.EventTests.test_missing_stale_foreign_and_unrelated_participants_fail_safe_404 -v
+
+Expect PASS: missing/old-run/another case/unrelated same-case participant UUIDs
+cause safe404 for the whole Event read, with no private/partial records. These are
+explicit temporary DB corruption fixtures bypassing immutable triggers; the
+normal pipeline uses real source/participant UUIDs. Other negative tests cover
+invalid query/auth/revoked access, broken wire/UTC/source/output metadata and
+missing latest output. New processing selects new immutable IDs; historical
+outputs remain unchanged; failed retry retains last completed selection.
+
+Core tests use actual FastAPI/F00/F03/F05/P04/P04B/P05/parser/normalizer/projectors,
+SQLite/private files with synthetic actors/tokens; HTTPX ASGI is in process.
+The independent Uvicorn subprocess exercises real HTTP. Scheduler/publication
+fault gates, controlled timestamp selection SQL, temp corruption and held-read/
+real writer-thread race are labeled. A generic text Event fixture only proves
+schema compatibility (omitted optional time/empty participants/nonzero stored
+score), not a text extraction producer. Prior suites retain existing documented
+doubles. No production-auth/full Event UI/OS power-loss/distributed worker/
+maximum-size benchmark/real-evidence claim. Exact regression results are in
+docs/PREIMPLEMENTATION_REVIEW.md. Optional cleanup: remove the TEMP contract bundle.
+Next M2 P14 private versioned parser/model provenance; no next task started here.
+
 # P05 source-backed candidate Entity listing — 2026-11-01
 
 P05 / Checkpoint 1B / M2 yazh-07, feat/p05-entity-list from verified shared base

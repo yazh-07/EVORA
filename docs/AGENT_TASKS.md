@@ -525,3 +525,17 @@ starting a second U04 implementation. No U04 changes were merged here.
 | Input/output | Actual immutable P04 Entities and cited Observations -> existing EntityPage only; no identity inference, confidence boost, regrouping/regeneration or source/history mutation |
 | Proof | 17 focused PASS including real Uvicorn HTTP; full backend 248 PASS/1 existing Windows symlink-permission SKIP (249 run), frontend 48 PASS, coordination 122 PASS; contract/types/build/DESIGN and real I00 loopback PASS. Actual processing/source citations, negatives, exact selection/concurrent publication/read-only history; doubles and limits in PREIMPLEMENTATION_REVIEW |
 | Handoff | Complete after authorized merge 04af24f1c44abbc8059b0c006d9079d271ced947 and passing 17 focused/verifier/real I00 post-merge smoke; task commit f67d840d84686ad3d07b4b479971621e7dc8cc40 pushed. P05 only; full FEATURE_SCOPE/additions preserved. Checkpoint 1B/M2 remain open. Next M2 P05B; no next task started |
+
+
+### P05B assignment — 2026-11-02
+
+| Field | Recorded assignment |
+|---|---|
+| Task/checkpoint/owner | P05B / 1B / M2 yazh-07: source-backed listEvents; every event cites same-case Evidence/Observation IDs and real participants |
+| Branch/base | feat/p05b-event-list / **b5cb37b8d3dbe3d8f23b29a6516162c407cf4335**, clean fetched shared docs/coordination-foundation, isolated worktree; no prior active claim |
+| Allowed paths | User approved backend/events.py, backend/tests/test_events.py, backend/app.py router wiring, backend/README.md and bounded AGENT_TASKS/COMMUNICATION/ROADMAP/PREIMPLEMENTATION_REVIEW records. No DB/schema/producer/spec/dependency/frontend edits |
+| Dependencies | Actual P03C bb2d18f and P04B c29e517; integrated P05 04af24f supplies participant-read validator, real P04/F00/F03/F05 and source parser/normalizer/Entity/Event chain; completed 0/1A regressions |
+| Approved policy | Latest completed output per Evidence via exact UTC finished_at/UUID; preserve stored Event wire/time/score/IDs, no inference or merging. Same-case selected Observation/Evidence joins and actual selected Entity participants, each sharing a cited Observation. Missing/corrupt/stale/foreign references fail whole read safe404. Contract limit/offset; Evidence UUID then Event UUID order; one read snapshot per response, no new selectors |
+| Input/output | Real immutable P04 SQL Events and cited source/participant records -> existing EventPage only; no source/history mutation |
+| Proof | 20 focused PASS including real Uvicorn HTTP; full backend 268 PASS/1 existing Windows symlink SKIP, frontend48/coordination122 PASS; contract/types/build/DESIGN and real I00 loopback PASS. Actual sources/time/participants, negatives, history/concurrent snapshot; doubles and setup limits in PREIMPLEMENTATION_REVIEW |
+| Handoff | In Progress; user authorized implement/test/commit/push/merge P05B into shared docs/coordination-foundation. Full scope/additions preserved. Next eligible M2 P14 after P05B, no next task started |

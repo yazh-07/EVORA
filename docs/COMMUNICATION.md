@@ -329,3 +329,32 @@ on every request; responses are no-store. No SQL writes, source mutation, new
 public fields, DB/schema/producer/dependency/frontend changes or Event API.
 All future modalities/scope additions stay required; current candidate listing
 is not implementation of future extraction/identity/graph features. P05B is next.
+
+
+## P05B approved Event-read policy — 2026-11-02
+
+User approved the bounded file handoff and read policy. listEvents is a live
+processing-source view over immutable latest completed output per Evidence,
+using P04B exact UTC finished_at then UUID selection. Preserve stored Event IDs,
+kinds, summaries, raw/UTC time strings, confidence and source/participant arrays
+unchanged. Do not reproject/regenerate IDs, merge coincident/duplicate reports,
+infer time/identity or boost confidence. No new selector/public field or timeline
+reconstruction claim. Unknown/duplicate query parameters use safe400; existing
+F00 auth401/case404 and no-store behavior apply.
+
+Validate selected output/Observation/Entity/Event wire shape and same-case run
+context. Event Evidence sets exactly match cited selected Observations and include
+its output Evidence. Participant UUIDs resolve actual selected Entities whose
+citations also validate; each participant shares at least one Event source
+Observation. Empty participant arrays and omitted optional timestamps remain
+valid. Missing/corrupt/stale/foreign source or participant references fail the
+whole read safe404, no partial output or silent fallback. Validation establishes
+shape/context/source joins, not factual source truth or tamper authenticity.
+
+Contract limit default20/min1/max100 and offset default0/min0; canonical Evidence
+UUID then Event UUID ascending before slicing. One explicit read snapshot keeps
+selection/sources/participants/total/page coherent per response; another request
+may see newer completed output. Pending/failed partial outputs invisible; empty
+latest stays empty. No writes/processing on reads. No DB/schema/producer/spec/
+dependency/frontend edits. P14/P14B/P14C and later modalities/UI remain required;
+full FEATURE_SCOPE including approved additions is unchanged.

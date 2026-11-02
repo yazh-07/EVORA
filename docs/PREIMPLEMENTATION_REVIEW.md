@@ -2466,3 +2466,92 @@ integration and merged smoke; this supersedes the pending handoff. Checkpoint
 remain disclosed above. New hosted CI not yet claimed at this recording point.
 Next eligible M2 P05B source-backed Event listing (P03C/P04B integrated), no next
 task started. Entire agreed scope including approved additions retained.
+
+
+### P05B verification — 2026-11-02
+
+P05B / Checkpoint 1B / M2 yazh-07. User approved bounded files/read policy and
+explicitly authorized implementation/test/commit/push/merge. Isolated branch
+feat/p05b-event-list from clean fetched common base
+b5cb37b8d3dbe3d8f23b29a6516162c407cf4335 (local/remote read-back equal).
+Actual integrated P03C bb2d18f/P04B c29e517 plus P05 04af24f/P04/source chain;
+completed 0/1A regressions retained. No other active P05B branch/claim found.
+
+Commands/results on final runtime/test source:
+- CPython 3.14.8/jsonschema 4.25.1; python -m pip check PASS, no broken requirements.
+- Redocly 2.57.0 lint/bundle specs/openapi.yaml PASS (existing license warning).
+  EVORA_CONTRACT_BUNDLE points to the fresh temporary P05B JSON bundle.
+- python -W error::ResourceWarning -m unittest backend.tests.test_events -v:
+  20 PASS/no skips, including real Uvicorn localhost end-to-end producer/read test.
+- python -W error::ResourceWarning -m unittest discover -s backend/tests -v:
+  269 run, 268 PASS/one existing Windows symlink-permission SKIP.
+- python scripts/verify_coordination.py <bundled-json-path> PASS;
+  python -m unittest discover -s scripts -p 'test_*.py' -v: 122 PASS/no skips.
+- Node 22.23.3: frontend test 48 PASS/no skips; build (API freshness, TypeScript,
+  esbuild) PASS. Pinned npm 12.2.0 CLI runs the test command; initial build's nested
+  npm used bundled 10.9.9. Separate tool shim outside repo selects 12.2.0 for the
+  final pinned build; no dependency/workflow change. Registry certificate retries
+  fell back to cached package data; TLS verification was not disabled. This local
+  cache reuse is not a claim of a clean online install; fresh hosted CI remains
+  to verify after publication.
+- openapi-typescript 7.10.1 generation and strict TypeScript 5.9.3 declaration
+  compile PASS. DESIGN 0.4.0 lint PASS, zero errors/warnings.
+- EVORA_TEST_PYTHON pinned to tested interpreter, Node frontend/test/cases.integration.mjs
+  PASS: actual U02/U02B/U03/U04/I00 localhost case/intake/audit/original/hash/actor/
+  validation/error regressions. No upstream producer double.
+
+P05B real synthetic network/GPS source read-back: exact immutable stored Event
+wire, IDs/kinds/summaries/score0/raw/UTC/fractional strings and source arrays.
+Two network events plus one GPS event total3; each cites all three row observations
+with actual original Evidence IDs/locators. Participant IDs resolve real P05
+Entities and share Event source observations; GPS D-8 stays distinct. Repeated
+rows/Evidence remain distinct reports and IDs, no inferred identity/corroboration
+or confidence boost. Real HTTP totals2/3/5 after network/GPS/duplicate network;
+malformed supported CSV accepts a failed run and total stays5. HTTP limit2/offset2
+returns2/total5 and joins actual Observation/Entity APIs. No fabricated Event time.
+
+Full pagination over27 events verifies Evidence UUID then Event UUID order,
+default20/max100, all-page totals/no duplicates/skips, beyond-end and 10**100
+offsets. Empty/unprocessed/header-only and controlled empty latest return honest
+empty results with no older fallback. Actual newer processing selects new IDs;
+old immutable outputs/historical Observation pin remain unchanged. New-key failed
+retry leaves completed selection unchanged; scheduler-held queued/running/failed
+partial JSON invisible. Completion selection preserves sub-microsecond fractions,
+offset-equivalent instants and UUID ties. A real writer-thread publication during
+a held read transaction preserves coherent old sources/participants/total/page;
+subsequent read sees new IDs. Repeated reads preserve SQL/history/audit/originals
+and schedule no processing.
+
+Negatives: unknown/duplicate queries/selectors/invalid UUID/limits/offsets safe400;
+missing/invalid/duplicate auth401; inaccessible/missing/revoked case404. Corrupt
+selected JSON/shape/UUID/case/run/score/type/time, missing required fields, unknown
+private fields, duplicate IDs/source/participant refs, missing latest output,
+Evidence mismatch, invalid Entity/source joins, stale/foreign/missing/unrelated
+participants and Observation citations fail whole read safe404 without leaked
+content/partial pages or fallback. Generic Event wire fixture permits empty
+participants/omitted timestamps and preserves a nonzero stored score; it is
+schema-only compatibility, not another implemented adapter.
+
+First focused run:19 tests,18 PASS/one fixture error because blank required CSV
+timestamp was incorrectly expected to publish. Corrected the fixture to respect
+existing P01 rejection; added explicit failed-run/no-publication blank-time case.
+Final20 and full269 checks pass. Malformed timestamp text/missing timezone/unknown
+-00:00 offset are preserved with no UTC; valid fractions remain exact. No existing
+parser/normalizer changed to make the fixture pass.
+
+Doubles/limits: synthetic actors/tokens/CSV only; actual FastAPI/SQLite/private
+files and full F03/F05/P01/P02/P03/P03B/P03C/P04/P04B/P05 producer chain. Core HTTPX
+ASGI is in process; separate Uvicorn subprocess is real HTTP with temp cleanup.
+Scheduler/publication gates, controlled 2099 selection metadata, temporary DB
+corruption bypassing immutable triggers and held-read race are explicit fixtures.
+Generic text Event is schema-only; prior suites retain their documented doubles.
+No production auth/full Event UI/OS power-loss/distributed worker/maximum-size
+benchmark/real-evidence claim. Wire/context/joins do not prove factual source
+truth or authenticity after arbitrary DB tampering. Exact commands/synthetic
+counts/failure control and cleanup in backend/README.md How you can test P05B.
+
+Only approved router wiring is shared runtime change; no DB/schema/spec/producer/
+dependency/frontend change. Full FEATURE_SCOPE/additions and original dirty
+checkout/other worktrees preserved. P05B In Progress pending integration/smoke,
+Checkpoint1B/M2 remain open. Next eligible M2 P14 private versioned parser/model
+provenance (P04 integrated); no next task started.
