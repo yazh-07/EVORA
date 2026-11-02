@@ -13,6 +13,7 @@ from backend.observations import _utc_order, _valid_record
 RECORD_VERSION = 'processing-provenance/1'
 PROCESSOR_VERSION = 'processing-lifecycle/2'
 MESSAGE_PROCESSOR_VERSION = 'processing-lifecycle/3'
+DOCUMENT_PROCESSOR_VERSION = 'processing-lifecycle/4'
 _OUTPUT_FIELDS = ('observations_json', 'entities_json', 'events_json', 'uncertainty_json')
 _VERSIONS = ('parser_version', 'normalizer_version', 'entity_version', 'event_version', 'processor_version')
 _PARAMETERS = ('max_source_bytes', 'max_data_rows')
@@ -34,7 +35,7 @@ def initialize_provenance(connection):
       DROP TRIGGER IF EXISTS processing_provenance_context;
       CREATE TRIGGER processing_provenance_context BEFORE INSERT ON processing_provenance
         WHEN NOT EXISTS(SELECT 1 FROM processing_runs r JOIN processing_outputs o ON o.run_id=r.id
-          WHERE r.id=NEW.run_id AND r.status='running' AND r.processor_version IN ('processing-lifecycle/2','processing-lifecycle/3')
+          WHERE r.id=NEW.run_id AND r.status='running' AND r.processor_version IN ('processing-lifecycle/2','processing-lifecycle/3','processing-lifecycle/4')
           AND r.case_id=NEW.case_id AND r.evidence_id=NEW.evidence_id
           AND o.case_id=r.case_id AND o.evidence_id=r.evidence_id)
         BEGIN SELECT RAISE(ABORT,'Invalid processing provenance context'); END;
@@ -47,7 +48,7 @@ def initialize_provenance(connection):
         BEGIN SELECT RAISE(ABORT,'Immutable processing provenance'); END;
       DROP TRIGGER IF EXISTS processing_completion_provenance;
       CREATE TRIGGER processing_completion_provenance BEFORE UPDATE OF status ON processing_runs
-        WHEN NEW.status='completed' AND NEW.processor_version IN ('processing-lifecycle/2','processing-lifecycle/3') AND NOT EXISTS(
+        WHEN NEW.status='completed' AND NEW.processor_version IN ('processing-lifecycle/2','processing-lifecycle/3','processing-lifecycle/4') AND NOT EXISTS(
           SELECT 1 FROM processing_provenance p WHERE p.run_id=NEW.id AND p.case_id=NEW.case_id
           AND p.evidence_id=NEW.evidence_id AND p.record_version='processing-provenance/1'
           AND p.finished_at=NEW.finished_at)
@@ -72,12 +73,15 @@ def _payload(run, output, finished_at):
     if not isinstance(config, dict): raise ValueError('Invalid frozen provenance configuration')
     parameters = _PARAMETERS + (('max_device_mentions',) if config.get('kind') == 'message' else ())
     processor = MESSAGE_PROCESSOR_VERSION if config.get('kind') == 'message' else PROCESSOR_VERSION
+    if config.get('kind') == 'document':
+        parameters = ('max_source_bytes', 'max_source_lines')
+        processor = DOCUMENT_PROCESSOR_VERSION
     if (set(config) != set(_VERSIONS + parameters) |
             {'kind', 'sha256', 'size_bytes', 'provenance_version'}):
         raise ValueError('Invalid frozen provenance configuration')
     if (config['provenance_version'] != RECORD_VERSION or run['processor_version'] != processor
             or config['processor_version'] != run['processor_version']
-            or config['kind'] not in {'network_log', 'gps', 'message'}
+            or config['kind'] not in {'network_log', 'gps', 'message', 'document'}
             or any(not isinstance(config[key], str) or not config[key] for key in _VERSIONS)
             or not isinstance(config['sha256'], str) or not re.fullmatch('[0-9a-f]{64}', config['sha256'])
             or type(config['size_bytes']) is not int or config['size_bytes'] < 0
@@ -95,6 +99,9 @@ def _payload(run, output, finished_at):
         raise ValueError('Invalid provenance output arrays')
     if config['kind'] == 'message' and events:
         raise ValueError('Message candidate processing does not extract Events')
+    if config['kind'] == 'document' and (entities or events or
+            any(config[key] != 'not-used' for key in ('normalizer_version', 'entity_version', 'event_version'))):
+        raise ValueError('Plain text processing does not normalize time or extract candidates')
     manifests = {}
     for name, records, validator in (
             ('observation_ids', observations, lambda raw: _valid_record(raw, case_id, evidence_id, run_id)),

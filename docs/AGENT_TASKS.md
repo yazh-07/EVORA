@@ -596,3 +596,21 @@ starting a second U04 implementation. No U04 changes were merged here.
 | Input/output | Real uploaded message CSV -> source-preserving Observations/Entities through actual startProcessing/dispatch/private provenance/SQL verification. Existing P03 raw/uncertain time preserved without invented UTC. No Events here; P13B remains required |
 | Proof | Focused P06/dispatch37 PASS plus added old-trigger upgrade1 PASS; full backend337 run:336 PASS/1 existing Windows symlink SKIP. Frontend48/coordination122 PASS; contract/types/build/DESIGN/verifier/real I00 smoke PASS. Real API/SQL/source/private read-back, limits/history/replay/case/failure controls; doubles/limits in PREIMPLEMENTATION_REVIEW |
 | Handoff | Complete after authorized merge 1b938d93c09ad82f2ef5af8eac214026d7a820f7 and passing24 focused P06/verifier/real I00 post-merge smoke; pushed task head 849d12b085681c92507eabc4da8a72ca09324c4a (implementation283d5a3 plus whitespace-only follow-up). Independent P06 only; full scope/additions and checkpoint gates remain open. Next M2 catalog P07 requires preceding exits or separately explicit independent handoff/decisions; no later task started |
+
+
+### P07 explicitly assigned independent work — 2026-11-02
+
+| Field | Recorded assignment |
+|---|---|
+| Task/checkpoint/owner | P07 / 3A / M2 yazh-07; explicit independent user assignment, earlier checkpoint exits remain open |
+| Branch/base | feat/p07-document-text / **97564aea28775c96679439dd5ffc22077ea75a64**, verified fetched shared docs/coordination-foundation, isolated worktree, no competing claim |
+| Allowed paths | Approved backend/parsers/text_document.py, backend/tests/test_documents.py; processing.py, processing_dispatch.py, processing_provenance.py including processing-owned version guards; bounded test_processing_dispatch.py expectations; backend/README.md and AGENT_TASKS/COMMUNICATION/ROADMAP/PREIMPLEMENTATION_REVIEW records. No public route/field/table/column/M1/existing-parser/dependency/frontend change |
+| Dependencies | Real P04 f851dd1 and integrated P14/P14B/P14C/P04B/P05/P05B access/source/publication chain; P06 history must remain compatible. Earlier checkpoint0/1A regressions required; this row cannot close earlier gates |
+| Approved policy | Document plain text only: strict UTF-8 with optional first BOM; invalid encoding/NUL atomic failure. LF/CRLF/CR lines including blanks/duplicates/whitespace preserved; terminators excluded from line values but included in zero-based half-open decoded Unicode code-point offsets after BOM. 1-based physical line locators, final terminator no extra line; empty/BOM-only zero-output success. 50MiB/100000 source lines |
+| Input/output | Authorized original -> real registered text.line Observations, exact raw/normalized text, confidence0 unavailable, no invented timestamps/Entities/Events. P13/P13B retain required extraction. Frozen parser/byte-line parameters, immutable private provenance/replay/history/atomic publication |
+| Acceptance/tests | Focused18 PASS; full backend356 run:355 PASS/1 existing Windows symlink SKIP. Frontend48/coordination122 PASS; contract/types/build/DESIGN/verifier/real I00 smoke PASS. Real source/API/SQL/private read-back, boundaries/negative/history/replay/migration/recovery controls; doubles/limits in PREIMPLEMENTATION_REVIEW |
+| Handoff | In Progress; user approved independent scope/policy and commit/push/merge after testing into docs/coordination-foundation; preserve full FEATURE_SCOPE/additions, no later task started |
+
+P07 additional user-approved handoff: fixture-only unsupported document -> image
+updates in backend/tests/test_processing.py and test_processing_provenance.py;
+retain existing415/replay/no-publication assertions unchanged.

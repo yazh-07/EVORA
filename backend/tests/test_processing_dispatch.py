@@ -24,7 +24,7 @@ from backend.errors import AccessError
 from backend.processing_provenance import read_processing_provenance
 from backend.processing import process_run
 from backend.processing_dispatch import ADAPTERS, adapter_for
-from backend.parsers import gps_csv, network_csv, messages_csv
+from backend.parsers import gps_csv, network_csv, messages_csv, text_document
 
 ROOT = Path(__file__).resolve().parents[2]
 PYTHON = sys.executable
@@ -127,7 +127,7 @@ class DispatchTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(self.rows('processing_provenance'), [])
 
     async def test_every_other_declared_kind_415_before_run_key_or_output_creation(self):
-        for kind in ('document', 'image', 'video', 'audio', 'mobile_log', 'transaction'):
+        for kind in ('image', 'video', 'audio', 'mobile_log', 'transaction'):
             evidence = await self.upload(kind, filename='network.csv')
             response = await self.start('reusable-key', self.base(self.case, evidence['id']))
             self.assertEqual(response.status_code, 415)
@@ -265,7 +265,7 @@ class DispatchTests(unittest.IsolatedAsyncioTestCase):
 
 class AdapterRegistryTests(unittest.TestCase):
     def test_registry_and_descriptors_are_immutable_and_use_real_parser_metadata(self):
-        self.assertEqual(set(ADAPTERS), {'network_log', 'gps', 'message'})
+        self.assertEqual(set(ADAPTERS), {'network_log', 'gps', 'message', 'document'})
         for kind, module in [('network_log', network_csv), ('gps', gps_csv), ('message', messages_csv)]:
             adapter = adapter_for(kind)
             parser_name = {'network_log': 'parse_network_csv', 'gps': 'parse_gps_csv', 'message': 'parse_messages_csv'}[kind]
@@ -274,7 +274,13 @@ class AdapterRegistryTests(unittest.TestCase):
                              (kind, module.PARSER_VERSION, module.MAX_SOURCE_BYTES, module.MAX_DATA_ROWS))
             with self.assertRaises(FrozenInstanceError): adapter.parser_version = 'changed'
         with self.assertRaises(TypeError): ADAPTERS['document'] = adapter_for('gps')
-        for kind in ('document', 'GPS', 'network.csv', ''): self.assertIsNone(adapter_for(kind))
+        document = adapter_for('document')
+        self.assertIs(document.parse, text_document.parse_text_document)
+        self.assertEqual((document.parser_version, document.max_source_bytes, document.max_source_lines),
+                         (text_document.PARSER_VERSION, text_document.MAX_SOURCE_BYTES, text_document.MAX_SOURCE_LINES))
+        self.assertIsNone(document.max_data_rows)
+        with self.assertRaises(FrozenInstanceError): document.max_source_lines = 1
+        for kind in ('image', 'GPS', 'network.csv', ''): self.assertIsNone(adapter_for(kind))
 
 
 
@@ -335,7 +341,7 @@ class DispatchLoopbackTests(unittest.TestCase):
                                 self.assertEqual(len(payload['outputs']['observation_ids']), 6 if kind == 'network_log' else 3)
                         self.assertNotIn('output_sha256', run)
                         self.assertEqual(client.get(f'/api/v1/cases/{case}/processing-provenance').status_code, 404)
-                    evidence = client.post(f'/api/v1/cases/{case}/evidence', data={'kind': 'document', 'source_label': 'Synthetic unsupported'},
+                    evidence = client.post(f'/api/v1/cases/{case}/evidence', data={'kind': 'image', 'source_label': 'Synthetic unsupported'},
                         files={'file': ('network.csv', (ROOT/'fixtures/synthetic-case/network.csv').read_bytes(), 'text/csv')}).json()
                     unsupported_url = f"/api/v1/cases/{case}/evidence/{evidence['id']}/processing-runs"
                     self.assertEqual(client.post(unsupported_url, headers={'Idempotency-Key': str(uuid4())}).status_code, 415)

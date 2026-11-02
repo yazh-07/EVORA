@@ -3021,3 +3021,63 @@ yet claimed at this recording point. This independent task does not close1B,
 automatically eligible until preceding gates, including2A/2B/2C, exit; an earlier
 independent handoff requires explicit assignment and format/resource/file-scope
 decisions. No next task started; full product scope preserved.
+
+
+### P07 independent implementation verification — 2026-11-02
+
+P07 / 3A / M2 yazh-07, feat/p07-document-text from verified common base
+97564aea28775c96679439dd5ffc22077ea75a64. Explicit user independent assignment,
+approved plain-text policy/files and additional fixture-only unsupported-kind
+updates in test_processing/test_processing_provenance; commit/push/merge into
+docs/coordination-foundation authorized after acceptance. P04 and source/private
+provenance/read/atomic-publication prerequisites are real integrated producers.
+Earlier checkpoints remain open, not waived by this independent assignment.
+
+Focused final-runtime P07 tests18 PASS. Actual source/line/code-point offsets,
+UTF-8/BOM/newlines/blanks/whitespace/duplicates/empty behavior, no timestamp/entity/
+event inference and private frozen byte/line parameters are verified. Real parser
+50MiB/100000-line limits and actual processing100001-line failure, invalid UTF-8/
+NUL atomic failure and safe errors, replay/conflict/new-key/history, source/membership/
+body validation, restart/interrupted retry, old processor2/3 guard upgrade, no
+private-record completion, corrupted private404 and publication rollback controls.
+Independent Uvicorn uses real HTTP/private SQL. Synthetic BOM plus
+'😀 D-7  \r\n\rsecond\nsecond\n' yields4/0/0, spans0:7,9:9,10:16,17:23;
+combined actual network/GPS/message/document yields18/7/3. Source originals/hash
+unchanged; existing output/private records byte-for-byte preserved across upgrade.
+Full regression results pending at this initial recording point, not inferred
+from focused success. Exact commands and expected/failure results in backend/README.md.
+
+Doubles/limits: synthetic actors/tokens/text, real FastAPI/SQLite/private files/
+parser/publication/read/provenance. In-process HTTPX ASGI plus real independent
+Uvicorn. Explicit scheduler/registry/verifier controls, temp-only SQL corruption
+and old-guard recreation; no successful parser replacement. Earlier suites retain
+their documented controls, including P14C dedicated-child exits. No real evidence,
+production auth, processing UI, PDF/DOCX/OCR/model, distributed deployment,
+hardware power-loss or maximum-size successful pipeline benchmark claim. Real
+parser caps are tested, actual line-overflow processing uses original cap. Tests
+clean temporary files/servers; optional TEMP bundle cleanup separately.
+
+Protected full FEATURE_SCOPE/additions/spec/frontend/M1 tables/dependencies/old
+parsers/normalizer/source-read APIs remain unchanged; original dirty checkout and
+other worktrees preserved. P07 In Progress until actual authorized integration and
+merged acceptance. Next M2 catalog row P11(3A) requires its own mobile format/policy/
+file handoff; no automatic eligibility while earlier checkpoints unfinished. P13
+retains actual Entity extraction, P13B Event extraction; no scope removed/deferred.
+
+
+### P07 pre-integration results — 2026-11-02
+
+Final runtime candidate full backend356 run:355 PASS/1 existing Windows SKIP
+(creating symlinks unavailable on this platform/account),256.425s. Focused P07
+18 PASS, including independent Uvicorn HTTP/private SQL. All prior-checkpoint
+regressions and old adapter/publication/crash controls ran in the full suite.
+Frontend48 PASS; coordination122 PASS; verifier PASS (27 operations/126 tasks/
+39 capabilities); actual I00 real HTTP intake/audit/hash/original/actor/error
+smoke PASS. OpenAPI lint/bundle PASS with one existing missing-license warning;
+fresh generated declarations compile; frontend API freshness/typecheck/build
+PASS; DESIGN0 errors/0 warnings; pip check PASS; whitespace/protected-path checks
+PASS. CPython3.14.8/SQLite3.50.4/jsonschema4.25.1/Node22.23.3/npm12.2.0.
+No runtime changes after the full matrix. Exact commands, expected outputs,
+cleanup and synthetic/failure-control/untested limits above and backend/README.md
+apply. P07 In Progress until authorized integration and post-merge acceptance;
+hosted CI not yet claimed. Full scope/additions preserved, no later task started.

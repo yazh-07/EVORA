@@ -481,6 +481,16 @@ Next M2 catalog P07(3A) requires preceding checkpoint exits (including2A/2B/2C)
 for automatic selection or a separately explicit independent handoff with its
 format/resource/allowed-file decisions. No later task started.
 
+### P07 independent handoff — 2026-11-02
+
+**P07 / 3A / M2 yazh-07 / In Progress.** User explicitly assigned independent
+plain-text document parsing from verified **97564aea28775c96679439dd5ffc22077ea75a64**,
+feat/p07-document-text. Real P04 prerequisite integrated; approved format/resource/
+file-scope decisions in AGENT_TASKS/COMMUNICATION. Real source/publication/API and
+regression proof required before authorized push/merge. Full FEATURE_SCOPE and
+approved additions preserved; all earlier checkpoint gates remain open. No later
+task started.
+
 ## Module assignment and live task state
 
 | Module | Assigned GitHub handle | Accountable boundary | State |

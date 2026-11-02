@@ -126,7 +126,7 @@ class ProcessingTests(unittest.IsolatedAsyncioTestCase):
         before = self.rows('processing_outputs')
         # Mutable server state is deliberately corrupted; original-key replay must not resnapshot/read it.
         with self.app.state.database.connect() as connection:
-            connection.execute("UPDATE evidence SET kind='document',sha256=? WHERE id=?", ('0' * 64, self.evidence['id']))
+            connection.execute("UPDATE evidence SET kind='image',sha256=? WHERE id=?", ('0' * 64, self.evidence['id']))
         with patch('backend.processing.process_run') as job:
             replay = await self.start()
         self.assertEqual(replay.json(), original)
@@ -175,7 +175,7 @@ class ProcessingTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual((await self.poll(retry, url))['status'], 'failed')
 
     async def test_unsupported_kind_has_no_run_or_consumed_key(self):
-        unsupported = await self.upload('document')
+        unsupported = await self.upload('image')
         url = self.base(self.case, unsupported['id'])
         response = await self.start('free-key', url)
         self.assertEqual(response.status_code, 415)

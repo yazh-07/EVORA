@@ -1,3 +1,120 @@
+# P07 plain-text documents — 2026-11-02
+
+P07 / Checkpoint3A / M2 yazh-07, explicit independent assignment on
+feat/p07-document-text from verified97564aea28775c96679439dd5ffc22077ea75a64.
+User approved the plain-text policy, bounded files and fixture-only unsupported-
+kind updates, and commit/push/merge after acceptance. In Progress pending actual
+integration; earlier checkpoints stay open. Entire docs/FEATURE_SCOPE.md including
+approved additions remains unchanged. Older sections below are historical.
+
+Kind document now selects document-text/1 through actual startProcessing. Strict
+UTF-8 with one optional leading BOM; reject invalid UTF-8 and NUL bytes. Support
+LF/CRLF/CR; preserve blank lines, whitespace and duplicates. Each physical line
+emits one immutable text.line Observation with identical raw_value/normalized_value
+and confidence0 (unavailable). Locators use line N; chars=start:end: 1-based line,
+zero-based half-open Unicode code points into decoded source after its initial
+BOM. Separators are excluded from line values but count in offsets; final
+separator adds no extra line. Only CR/LF are separators, not Unicode paragraph
+separators or form feeds. Empty/BOM-only input completes with zero observations.
+Limits50MiB and100000 source lines; overflow rejects atomically. No trim/Unicode
+normalization, timestamp inference, Entity or Event extraction. P13/P13B retain
+those required tasks. Ordinary prose dates/D-7 remain text only.
+
+This is one plain-text format, not PDF/DOCX/OCR decoding. MIME/name are not proof
+of content; any bounded NUL-free valid UTF-8 text meets this format's byte-level
+rules without certifying authenticity or semantic format. Original source bytes,
+BOM, newlines and hash remain downloadable unchanged. Blank lines have an empty
+raw/normalized value and zero-width content span, retaining their physical line.
+
+Document runs freeze processing-lifecycle/4, document-text/1, normalizer/entity/
+event_version=not-used (no P03 normalization or candidate execution), max_source_bytes
+and max_source_lines in existing private processing-provenance/1. Deterministic,
+no model. Existing network/GPS processor2 and message processor3 records/config/
+provenance remain unchanged. Two processing-owned guards upgrade transactionally,
+no new table/column/public route/field or M1/dependency/frontend changes. Original
+access, hash verification, acceptance/replay, new-key retry, frozen history,
+private manifests/digest and verified atomic completion publication are retained.
+Bad text is accepted then fails safely with TEXT_INVALID_UTF8/TEXT_NUL_BYTE/
+TEXT_LINE_LIMIT (parser byte overflow TEXT_BYTE_LIMIT); no partial output/private
+success record. Upload's existing50MiB rejection happens before processing.
+
+Local results: focused18 PASS; full backend356 run (355 PASS/1 existing Windows
+symlink SKIP); frontend48/coordination122 PASS. Contract/types/build/DESIGN/
+verifier/real I00 smoke PASS. Details in docs/PREIMPLEMENTATION_REVIEW.md. Hosted
+CI not yet claimed.
+
+## How you can test P07
+
+PowerShell from repository root, installed pinned requirements and Node22.23.3.
+Select Python3.14.8. In this local workspace the tested interpreter is:
+
+    $py = (Resolve-Path '../evora-tools/python/tools/python.exe').Path
+
+For another checkout with Python3.14.8 on PATH, use $py = (Get-Command python).Source.
+Build the contract bundle and run the focused tests:
+
+    npx.cmd --yes @redocly/cli@2.57.0 bundle specs/openapi.yaml -o "$env:TEMP/evora-p07-openapi.json"
+    $env:PYTHONUTF8 = '1'
+    $env:EVORA_CONTRACT_BUNDLE = "$env:TEMP/evora-p07-openapi.json"
+    & $py -W error::ResourceWarning -m unittest backend.tests.test_documents -v
+
+Expect18 PASS. Synthetic UTF-8 BOM plus text (Python escape notation)
+'😀 D-7  \r\n\rsecond\nsecond\n' produces4 Observations,0 Entities,0 Events.
+Raw lines are '😀 D-7  ', '', 'second', 'second'; spans0:7,9:9,10:16,17:23.
+Offsets are code points, not UTF-8 bytes or UTF-16 units. Both time fields are
+absent, including date-like prose. Combined actual network/GPS/message/document
+sources yield18 Observations/7 Entities/3 Events; old private records stay intact.
+
+Independent real HTTP test starts/stops a temporary Uvicorn child:
+
+    & $py -W error::ResourceWarning -m unittest backend.tests.test_documents.DocumentLoopbackTests -v
+
+Expect1 PASS: real multipart upload/start/poll/list/source citations, replay and
+private SQL hash/parameter read-back. SOURCE above completes4/0/0. Synthetic
+b'ok\nSECRET\xff' is accepted then failed TEXT_INVALID_UTF8 with no new outputs/
+provenance and safe public error; prior good observations remain4. The source
+content/API hash roundtrip is also tested directly in the focused suite.
+
+Failure/limit checks:
+
+    & $py -W error::ResourceWarning -m unittest backend.tests.test_documents.DocumentProcessingTests.test_encoding_nul_and_actual_line_overflow_fail_without_partial_publication -v
+    & $py -W error::ResourceWarning -m unittest backend.tests.test_documents.DocumentParserTests.test_real_byte_limit_and_overflow backend.tests.test_documents.DocumentParserTests.test_real_line_limit_including_blanks_and_overflow -v
+
+Expect PASS: invalid UTF-8, NUL and100001 lines fail without partial output;
+actual50MiB and100000-line parser boundaries succeed, +1 byte/line fails. Caps are
+not patched lower. Empty bytes/BOM-only yield0, one newline yields1 blank line.
+Tests also exercise auth/foreign denial, membership revocation, missing original,
+body400, changed frozen parameters, publication rollback, private corruption,
+version guards, real old-guard upgrade, startup interrupted-run failure and retry.
+
+Regression commands:
+
+    & $py -W error::ResourceWarning -m unittest discover -s backend/tests -v
+    & $py scripts/verify_coordination.py "$env:EVORA_CONTRACT_BUNDLE"
+    & $py -m unittest discover -s scripts -p 'test_*.py' -q
+    npm.cmd --prefix frontend test
+    npm.cmd --prefix frontend run build
+    $env:EVORA_TEST_PYTHON = $py
+    node frontend/test/cases.integration.mjs
+
+Doubles/limits: synthetic identities/tokens/text only. Actual FastAPI/SQLite/
+private originals/parser/provenance/publication/read APIs execute. HTTPX ASGI is
+in process; separate Uvicorn is real HTTP. Scheduler holds, changed-registry and
+verifier-failure injections, temporary SQL corruption and recreating old version
+guards are explicit test controls; no successful text parser is substituted.
+Earlier suites retain their documented controls including P14C dedicated-child
+hard exits. No production identity provider, real evidence, processing UI,
+PDF/DOCX/OCR/model, distributed deployment, hardware power-loss or maximum-size
+successful full-pipeline performance claim. Tests clean temporary files/servers;
+optional cleanup removes only the TEMP bundle you created.
+
+Next M2 catalog work is P11(3A), one agreed mobile-record format, then P12/P13
+according to dependency readiness/catalog order. P13's real P06/P07 prerequisites
+become available after this integration; no extraction is claimed here. Automatic
+selection still waits for all preceding checkpoint exits; earlier independent
+work needs its own explicit handoff and format/resource decisions. No later task
+started; whole module/checkpoint completion is not claimed.
+
 # P06 message source and candidate device extraction — 2026-11-02
 
 P06 / Checkpoint 2A / M2 yazh-07 is explicitly assigned independent work from
