@@ -3,7 +3,8 @@
 P11 / Checkpoint3A / M2 yazh-07, explicit independent assignment on
 feat/p11-mobile-records from verifiedc12deb1fa58863b333bbb6fe2b835e848dfa504d.
 User approved format/output/file scope and commit/push/merge after acceptance.
-In Progress pending integration. Full docs/FEATURE_SCOPE.md including approved
+Complete after merge 212a5e204437ca02b40be08b3187d2f17c6c9577 with22 P11/verifier/
+real I00 post-merge smoke PASS. Full docs/FEATURE_SCOPE.md including approved
 additions remains unchanged; earlier checkpoint gates stay open. Older sections
 below are historical.
 

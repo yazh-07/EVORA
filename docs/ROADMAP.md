@@ -497,13 +497,17 @@ independent assignment. P12/P13/P13B remain required. No later task started.
 
 ### P11 independent handoff — 2026-11-02
 
-**P11 / 3A / M2 yazh-07 / In Progress.** Explicit user independent assignment,
+**P11 / 3A / M2 yazh-07 / Complete (independent row only).** Explicit user independent assignment,
 feat/p11-mobile-records from verified **c12deb1fa58863b333bbb6fe2b835e848dfa504d**.
 Real P04/source/publication prerequisites integrated; approved exported activity
 CSV, source/device candidate/Event/time policy and bounded paths in AGENT_TASKS/
-COMMUNICATION. Tests and integration pending before authorized push/merge. Earlier
-checkpoint gates stay open; entire FEATURE_SCOPE/additions preserved. No next task
-started.
+COMMUNICATION. Integrated at **212a5e204437ca02b40be08b3187d2f17c6c9577** with22
+P11/verifier/real I00 post-merge smoke PASS. Full backend378 run:377 PASS/1 existing
+Windows symlink SKIP; focused36/frontend48/coordination122/contract/types/build/
+DESIGN PASS. Earlier checkpoint gates and3A stay open; entire FEATURE_SCOPE/
+additions preserved. Next M2 catalog P12(3A) needs transaction format/resource/file
+handoff; automatic eligibility waits for earlier exits, or independent work must
+be separately explicitly assigned. No next task started.
 
 ## Module assignment and live task state
 

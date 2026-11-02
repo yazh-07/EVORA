@@ -3177,3 +3177,29 @@ Initial test-helper/setup failures and their successful reruns are recorded abov
 Exact commands and synthetic/failure-control/untested limits remain applicable.
 P11 In Progress pending actual integration/post-merge acceptance; hosted CI not
 yet claimed. Full scope/additions preserved; no next task started.
+
+
+### P11 integrated acceptance — 2026-11-02
+
+User-authorized task commit **4f0099b5003d45db81b1d20f50dd341735e80eba** pushed to
+feat/p11-mobile-records. Clean shared docs/coordination-foundation stayed at
+verified base and merged without conflicts at
+**212a5e204437ca02b40be08b3187d2f17c6c9577**. On that exact merge:22 focused P11
+PASS including actual Uvicorn HTTP/private SQL, complete source/participant joins
+and old-version upgrade; coordination verifier PASS; real I00 intake/audit/hash/
+original/actor/error smoke PASS. Full378 matrix above remains valid; no runtime
+changes after it. Final whitespace/protected-path guards PASS. Full FEATURE_SCOPE/
+additions/spec/frontend/M1 tables/dependencies/old parsers/normalizer/source-read
+APIs unchanged. Original dirty checkout and other worktrees preserved. Only
+approved existing dispatch expectations and P07 old-version guard fixture changed.
+
+P11 Complete after actual prerequisite integration and merged acceptance;
+supersedes pending status. Existing Windows symlink skip, initial verification
+helper/setup fixes, synthetic/scheduler/registry/verifier/participant/SQL/old-guard
+controls and production-auth/physical-acquisition/model/UI/graph/performance/
+power-loss limits remain disclosed above. Hosted CI not yet claimed at this
+recording point. Independent row closes no earlier gate or3A/I04. Next M2 catalog
+P12(3A) needs approved transaction format/resource/file handoff; automatic
+selection waits for earlier checkpoint exits, or earlier independent work needs
+its own explicit assignment. Every remaining modality/feature/approved addition
+remains required. No next task started; full scope preserved.
