@@ -509,6 +509,15 @@ additions preserved. Next M2 catalog P12(3A) needs transaction format/resource/f
 handoff; automatic eligibility waits for earlier exits, or independent work must
 be separately explicitly assigned. No next task started.
 
+### P12 independent handoff — 2026-11-02
+
+**P12 / 3A / M2 yazh-07 / In Progress.** Explicit independent user assignment,
+feat/p12-transaction-csv from verified **bd1e03de15a7f212e77dac391b5efd8d6fc7af07**.
+Real P04/source/publication prerequisites integrated; approved transaction/decimal/
+currency/time/source-output policy and bounded paths in AGENT_TASKS/COMMUNICATION.
+Acceptance/integration pending before authorized push/merge. Earlier checkpoints
+stay open; entire FEATURE_SCOPE/additions preserved. No later task started.
+
 ## Module assignment and live task state
 
 | Module | Assigned GitHub handle | Accountable boundary | State |

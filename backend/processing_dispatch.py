@@ -3,7 +3,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from types import MappingProxyType
 
-from backend.parsers import gps_csv, network_csv, messages_csv, text_document, mobile_csv
+from backend.parsers import gps_csv, network_csv, messages_csv, text_document, mobile_csv, transactions_csv
 
 
 @dataclass(frozen=True, slots=True)
@@ -15,11 +15,15 @@ class Adapter:
     max_data_rows: int | None
     max_device_mentions: int | None = None
     max_source_lines: int | None = None
+    max_amount_chars: int | None = None
 
 
 # Import actual producer metadata rather than a parallel format/version definition.
 # No runtime registration or filename/MIME fallback changes an accepted selection.
 ADAPTERS = MappingProxyType({
+    'transaction': Adapter('transaction', transactions_csv.PARSER_VERSION, transactions_csv.parse_transactions_csv,
+                           transactions_csv.MAX_SOURCE_BYTES, transactions_csv.MAX_DATA_ROWS,
+                           max_amount_chars=transactions_csv.MAX_AMOUNT_CHARS),
     'mobile_log': Adapter('mobile_log', mobile_csv.PARSER_VERSION, mobile_csv.parse_mobile_csv,
                           mobile_csv.MAX_SOURCE_BYTES, mobile_csv.MAX_DATA_ROWS),
     'document': Adapter('document', text_document.PARSER_VERSION, text_document.parse_text_document,

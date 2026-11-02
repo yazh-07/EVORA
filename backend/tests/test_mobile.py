@@ -343,7 +343,7 @@ class MobileProcessingTests(unittest.IsolatedAsyncioTestCase):
             for name in ('processing_provenance_context','processing_completion_provenance'):
                 sql=connection.execute('SELECT sql FROM sqlite_master WHERE name=?',(name,)).fetchone()[0]
                 connection.execute('DROP TRIGGER '+name)
-                connection.execute(sql.replace(",'processing-lifecycle/5'",''))
+                connection.execute(sql.replace(",'processing-lifecycle/5'",'').replace(",'processing-lifecycle/6'",''))
         initialize_processing(self.app.state.database)
         mobile=await self.start('after-upgrade');self.assertEqual((await self.poll(mobile))['status'],'completed')
         for run,evidence,private in saved:self.assertEqual(self.private(run,evidence),private)
