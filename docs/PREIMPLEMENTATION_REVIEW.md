@@ -2919,3 +2919,79 @@ No automatically eligible M2 task remains in earliest unfinished1B. P06(2A)
 message candidate mentions is next M2 catalog work; automatic selection awaits
 remaining1B/I00B and1C/I01 exits, or an earlier allowed independent-work assignment
 must be explicitly recorded separately. No next task started; full scope retained.
+
+
+### P06 independent implementation verification — 2026-11-02
+
+P06 / 2A / M2 yazh-07 on feat/p06-message-mentions, exact reviewed common base
+9454430a56502dfa8dad791e3d3f420c05424509. User explicitly assigned independent
+work and approved format/extraction/resource policies and bounded shared file
+handoff, including commit/push/merge into docs/coordination-foundation. Real P04
+prerequisite and P14/P14B/P14C/read/access chain integrated. Earlier1B/I00B and
+1C/I01 remain open; independent P06 cannot seal those gates or2A/I02.
+
+Actual message adapter parses authorized immutable original bytes and publishes
+source-preserving metadata/body/mention Observations and exact candidate keys.
+Synthetic messages.csv yields5/2/0 Observation/Entity/Event records; actual
+network/GPS/message fixtures yield14/7/3 with distinct persisted Entity UUIDs
+across originals. Body locators retain physical row spans and half-open Unicode
+code-point offsets, not CSV byte offsets. Same-case body and occurrence IDs are
+cited; no sender identification, ownership, identity or Event inference. P03 raw
+invalid/uncertain time and unavailable confidence0 are preserved. Header-only
+success is genuinely empty. Duplicate rows/occurrences stay separate source IDs.
+
+Limits50MiB/100000 rows/100000 mention occurrences are explicit, bounded and
+atomic. New message config/private record freezes all three parameters,
+messages-csv/1, message-candidates/1, processing-lifecycle/3 and no Event/model
+execution. Existing network/GPS processor2/private records stay unchanged. Two
+processing-owned version guards upgrade transactionally; no new table/column,
+public route/field, M1 table, dependencies or frontend changes. Real old-version
+trigger fixture upgrades successfully with prior output/provenance unchanged.
+
+Initial focused command (messages plus dispatch) passed37 tests; separate added
+old-trigger migration test passed1. Full backend/coordination checks are pending
+at this recording point, not inferred from focused success. OpenAPI lint/bundle
+passed (one existing missing-license warning); generated TypeScript compilation,
+DESIGN lint (0errors/0warnings), frontend48 tests/build and real I00 loopback
+intake/hash/download/audit/actor/error smoke passed. Final results recorded below
+only after actual completion. Source/API/schema/digest/manifest/versions/limits,
+replay/new-key/history, malformed/late invalid/overflow, wrong layout, case/auth,
+no sensitive body/key in public logs/audit, rollback/forbidden Event and safe
+corrupt-private-read controls are exercised by focused tests.
+
+Doubles/limits: only synthetic fixtures/identities/tokens. Real FastAPI/SQLite/
+private original storage/parsers/projection/publication/readers run; HTTPX ASGI
+is in process, independent Uvicorn is actual loopback HTTP/private SQL. Explicit
+scheduler holds, changed registry, verifier/forbidden-Event injections and
+trigger-bypassing corruption occur only in temporary test databases. No successful
+message producer is substituted. Older suites retain their documented controls,
+including real dedicated-child process exits around P14C publication boundaries.
+No real evidence, production identity provider, model, full processing UI,
+distributed deployment, hardware power-loss or maximum-size successful pipeline
+benchmark claim. Real parser byte/row/mention boundaries and actual processing
+row/mention overflow are tested, not reduced-cap substitutes. Exact commands and
+synthetic expected/failure outputs are in backend/README.md How you can test P06;
+tests clean temporary files/servers, optional TEMP-bundle cleanup is separate.
+
+Protected paths preserve full FEATURE_SCOPE/additions/spec/frontend/old parsers/
+normalizer/source-read APIs/dependencies/M1 tables. Existing original dirty
+checkout and all other worktrees preserved. P06 remains In Progress pending
+actual integration; next M2 catalog row P07(3A) requires earlier checkpoint exits
+for automatic selection or its own explicit independent handoff and decisions.
+
+
+### P06 pre-integration results — 2026-11-02
+
+Actual Windows combined candidate: full backend337 run,336 PASS/1 existing SKIP
+(creating symlinks unavailable on this platform/account),318.106s. The added
+old-version-guard migration test ran separately and PASS1; it was added after the
+full run's discovery, so it is not falsely counted in337. Initial focused P06/
+dispatch37 PASS. No runtime changes after this full matrix. Coordination122 PASS;
+verifier PASS (27 operations/126 tasks/39 capabilities); frontend48 PASS/build/API
+freshness/typecheck PASS; actual I00 real HTTP intake/audit/hash/download/actor/
+error smoke PASS. OpenAPI lint/bundle PASS with one existing missing-license
+warning; fresh generated types compile; DESIGN0 errors/0 warnings; pip check PASS;
+whitespace/protected-path checks PASS. CPython3.14.8/SQLite3.50.4/jsonschema4.25.1,
+Node22.23.3/npm12.2.0. Exact commands in backend/README.md; documented doubles and
+limits above apply. P06 still In Progress until authorized integration and
+post-merge checks. Hosted CI not yet claimed. Full scope/additions preserved.
