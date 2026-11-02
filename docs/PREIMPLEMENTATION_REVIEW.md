@@ -2574,3 +2574,94 @@ symlink skip and all doubles/setup/deployment/UI/performance limits remain
 explicit above. New hosted CI not yet claimed at this recording point.
 Next eligible M2 P14 private versioned parser/model provenance (P04 integrated);
 no next task started. Entire agreed initial scope/approved additions retained.
+
+
+### P14 verification — 2026-11-02
+
+P14 / Checkpoint1B / M2 yazh-07. User approved bounded file/private-provenance
+policy and explicitly authorized implement/test/commit/push/merge. Isolated
+feat/p14-processing-provenance from clean fetched common base
+98a28260f2fb2d91dd803c2f1835de264c5d0973; latest fetch still matches. Real P04
+f851dd1, P01/P02/P03/P03B/P03C/F00/F03/F05 plus P04B/P05/P05B are integrated,
+not planning-only prerequisites. Checkpoints0/1A regressions preserved.
+
+Actual commands/results on final runtime/test source:
+- CPython3.14.8, SQLite3.50.4, jsonschema4.25.1; python -m pip check PASS,
+  no broken requirements. Node22.23.3/npm12.2.0 read back; existing local cached
+  tools/dependencies reused, not a fresh online-install claim.
+- Redocly2.57.0 lint/bundle specs/openapi.yaml PASS (existing missing-license
+  warning); EVORA_CONTRACT_BUNDLE set to fresh temporary P14 bundle.
+- python -W error::ResourceWarning -m unittest backend.tests.test_processing_provenance -v:
+  18 PASS/no skips, including independent real Uvicorn HTTP/private SQL smoke.
+- python -W error::ResourceWarning -m unittest discover -s backend/tests -v:
+  287 run,286 PASS/one existing Windows symlink-permission SKIP.
+- python scripts/verify_coordination.py <bundled-json-path> PASS;
+  python -m unittest discover -s scripts -p 'test_*.py' -q:122 PASS/no skips.
+- npm --prefix frontend test:48 PASS/no skips; npm --prefix frontend run build
+  PASS (API freshness, TypeScript, esbuild). Generated openapi-typescript7.10.1
+  declarations and strict TypeScript5.9.3 compilation PASS.
+- DESIGN0.4.0 lint PASS, zero errors/warnings. git diff --check PASS.
+- EVORA_TEST_PYTHON pinned to tested interpreter; Node frontend/test/cases.integration.mjs
+  PASS actual localhost U02/U02B/U03/U04/I00 case/intake/audit/hash/original/actor/
+  error regressions. Initial compatibility run:44 P14/processing/skeleton PASS;
+  then two additional provenance boundary/real HTTP tests included in final18/287.
+
+Actual network/GPS originals traverse real F03/F05/P01/P02/P03/P03B/P03C/P04
+and publish processing-provenance/1 with processing-lifecycle/2. Network6/4/2
+Observation/Entity/Event IDs and GPS3/1/1 exactly match private manifests. Input
+Evidence/run/case/hash/size/kind, frozen parser/normalizer/projector/processor
+versions, byte/row parameters, accepted/completion timestamps and exact stored
+output digest read back correctly. Deterministic method/model=null honestly
+records no model use. Empty successful CSV has three empty ID manifests, not a
+failed-run disguise. All observations retain original run/source locators.
+
+Provenance, immutable output and completed pointer commit in one transaction,
+with identical completion time and SQL gate. Injected failure before provenance,
+after private insert and after completion update rolls back both private/output
+rows and leaves safe PROCESSING_FAILED, never completed/visible partial output.
+Missing/mismatched-time provenance blocks SQL completion. Duplicate output IDs,
+wrong source run and missing source/participant references cannot publish a
+provenance success. Same-key replay preserves one original record/failure; new
+key retries with new immutable output IDs, old input/hash/history unchanged.
+
+Private reader rechecks actual SQLite membership and exact same-case Evidence/
+run/output joins under one read snapshot. Foreign/missing/mismatched/pending/
+failed/legacy/revoked references and corrupt payload/version/context/digest/
+manifest/model/parameters/output JSON return identical safe404. No fallback or
+private content in error messages. UPDATE/DELETE/REPLACE/UPSERT collisions and
+hidden-rowid bypass blocked by WITHOUT ROWID and append-only triggers. Startup
+adds empty private table, preserves existing completed history without fabricated
+backfill, leaves old Observation/Entity/Event APIs usable and new processing
+provenance functional. Interrupted queued jobs fail per existing P04 policy,
+never fabricate success. Frozen config/safe errors remain available on failed runs.
+
+Real localhost Uvicorn test executes actual upload/start/poll/list for network/
+GPS and malformed CSV, directly reads its real private SQL records and matching
+run/evidence/hash/time/manifests, verifies failed run has no success record and
+undeclared provenance HTTP path404. Separate internal-reader controls exercise
+real membership revocation/case isolation. Public ProcessingRun schema unchanged
+except the existing processor_version value bump; public audit unchanged. A log
+capture using synthetic source/key/token/path sentinels confirms no raw private
+content/credentials in processing/audit responses or application logs. The
+manifest stores IDs/digests/configuration, not raw source text/locators or paths.
+
+Doubles/limits: synthetic actors/tokens/CSV only. Core FastAPI/SQLite/private
+files and actual parser/normalizer/Entity/Event chain are real, HTTPX ASGI is in
+process. Independent Uvicorn test is real HTTP/private SQL read-back, not an
+invented private route. Scheduler/publication faults and temp corruption bypassing
+immutability are explicit fixtures. Upgrade uses controlled pre-P14 schema/version
+fixture built from actual outputs, not an actual historic-deployment migration.
+No real evidence/model/provider, production identity, OS power-loss/distributed
+worker, full provenance UI or maximum-size benchmark claim. Hash/link validation
+is not a signature/certified chain of custody or authenticity after arbitrary
+DB tampering. Existing unrelated doubles remain disclosed in earlier records.
+Exact commands, synthetic counts, real HTTP smoke, atomic failure control and
+cleanup are in backend/README.md How you can test P14.
+
+Only approved processing initialization/publication and skeleton table-inventory
+line changed outside new private module/tests/docs. No M1 table, parser, spec,
+frontend, dependency or source-read API change. Full FEATURE_SCOPE/additions and
+original dirty checkout/other worktrees preserved. P14 In Progress pending actual
+merge/smoke; hosted CI not yet claimed. Checkpoint1B/M2 remain open. F08 audit and
+P14B dispatch/P14C full failure-recovery remain required. Next eligible M2 P14B
+(P04/P01/P02 integrated); no next task started.

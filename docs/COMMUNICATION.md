@@ -358,3 +358,29 @@ may see newer completed output. Pending/failed partial outputs invisible; empty
 latest stays empty. No writes/processing on reads. No DB/schema/producer/spec/
 dependency/frontend edits. P14/P14B/P14C and later modalities/UI remain required;
 full FEATURE_SCOPE including approved additions is unchanged.
+
+
+## P14 approved private processing-provenance policy — 2026-11-02
+
+User approved bounded P14 paths and one processing-owned append-only SQLite table.
+New runs use processing-lifecycle/2, freezing processing-provenance/1 with existing
+input hash/size/kind and parser/normalizer/Entity/Event/processor versions and
+byte/row parameters. Existing adapters are deterministic: model is explicitly
+not used, never an invented model/version. Each newly completed run publishes one
+private record with case/Evidence/run IDs, input snapshot, frozen execution
+versions/parameters, exact output-ID manifests and digest, and completion time.
+Provenance/output/completed pointer share one transaction and timestamp; a
+provenance failure publishes none. Success provenance is not attached to failed
+runs, whose existing frozen config/safe errors remain. Same-key replay preserves
+its original record; a new key yields a new immutable record without rewriting
+history or original bytes. Empty successful outputs receive genuine empty manifests.
+
+Old completed runs remain readable through existing APIs without fabricated
+backfill. Old pending/running jobs retain P04 interrupted-failure startup policy.
+An internal private reader rechecks current membership and same-case Evidence/run/
+output context; missing/legacy/pending/failed/foreign/corrupt provenance returns
+safe404, not another run or leaked details. No new public route/field or private
+payload in public AuditEvent/application logs. F08 will link safe audit through
+existing run references; it remains separate required M1 work. P14B dispatch and
+P14C full failure/recovery gates remain separate required M2 work. No M1 table,
+parser, dependency, frontend, spec or entire FEATURE_SCOPE/addition change.
