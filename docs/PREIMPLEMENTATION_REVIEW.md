@@ -3081,3 +3081,30 @@ No runtime changes after the full matrix. Exact commands, expected outputs,
 cleanup and synthetic/failure-control/untested limits above and backend/README.md
 apply. P07 In Progress until authorized integration and post-merge acceptance;
 hosted CI not yet claimed. Full scope/additions preserved, no later task started.
+
+
+### P07 integrated acceptance — 2026-11-02
+
+User-authorized task commit **213565a98d6688a01ab450707a23162e25f9f0de** pushed to
+feat/p07-document-text. Clean shared docs/coordination-foundation stayed at
+verified base and merged without conflicts at
+**c8b5331465a25175e6ee0e470795061fa786ce70**. On that exact merge:18 focused P07
+PASS, including real Uvicorn HTTP/private SQL and old-guard upgrade; coordination
+verifier PASS; real I00 intake/audit/hash/original/actor/error smoke PASS. Full356
+backend matrix above remains valid; no runtime changes after it. Final whitespace/
+protected-path guard PASS: full FEATURE_SCOPE/additions/spec/frontend/old parsers/
+normalizer/source-read APIs/M1 tables/dependencies unchanged. Original dirty
+checkout and other worktrees preserved. Both explicitly approved old unsupported-
+kind fixture substitutions retain original415/replay/no-publication assertions.
+
+P07 Complete after actual prerequisite integration and merged acceptance;
+supersedes pending status. Existing local Windows symlink skip and synthetic/
+scheduler/registry/verifier/SQL/old-guard controls plus auth/UI/OCR/model/performance/
+power-loss limits above remain disclosed. Hosted CI not yet claimed at this
+recording point. This independent row closes neither earlier gates nor3A. Next
+M2 catalog task P11(3A) requires one approved mobile-record format/resource/file
+handoff; automatic eligibility still waits for earlier checkpoint exits, or
+explicit independent work must be separately assigned. P13 now has real P06/P07
+prerequisites but its own extraction/evaluation acceptance remains required;
+P12/P13/P13B/P08 and every initial modality/approved addition remain required.
+No next task started; full scope preserved.

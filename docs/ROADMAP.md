@@ -483,13 +483,17 @@ format/resource/allowed-file decisions. No later task started.
 
 ### P07 independent handoff — 2026-11-02
 
-**P07 / 3A / M2 yazh-07 / In Progress.** User explicitly assigned independent
+**P07 / 3A / M2 yazh-07 / Complete (independent row only).** User explicitly assigned independent
 plain-text document parsing from verified **97564aea28775c96679439dd5ffc22077ea75a64**,
 feat/p07-document-text. Real P04 prerequisite integrated; approved format/resource/
-file-scope decisions in AGENT_TASKS/COMMUNICATION. Real source/publication/API and
-regression proof required before authorized push/merge. Full FEATURE_SCOPE and
-approved additions preserved; all earlier checkpoint gates remain open. No later
-task started.
+file-scope decisions in AGENT_TASKS/COMMUNICATION. Integrated at
+**c8b5331465a25175e6ee0e470795061fa786ce70**;18 focused/verifier/real I00 post-merge
+smoke PASS. Full backend356 run:355 PASS/1 existing Windows symlink SKIP;
+frontend48/coordination122/contract/types/build/DESIGN PASS. Full FEATURE_SCOPE
+and approved additions preserved; earlier checkpoint gates and3A stay open.
+Next M2 catalog P11(3A) mobile records needs format/resource/file handoff and
+preceding checkpoint exits for automatic selection, or a separately explicit
+independent assignment. P12/P13/P13B remain required. No later task started.
 
 ## Module assignment and live task state
 

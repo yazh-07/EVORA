@@ -3,8 +3,9 @@
 P07 / Checkpoint3A / M2 yazh-07, explicit independent assignment on
 feat/p07-document-text from verified97564aea28775c96679439dd5ffc22077ea75a64.
 User approved the plain-text policy, bounded files and fixture-only unsupported-
-kind updates, and commit/push/merge after acceptance. In Progress pending actual
-integration; earlier checkpoints stay open. Entire docs/FEATURE_SCOPE.md including
+kind updates, and commit/push/merge after acceptance. Complete after merge
+c8b5331465a25175e6ee0e470795061fa786ce70 and passing18 focused/verifier/real I00
+post-merge smoke; earlier checkpoints stay open. Entire docs/FEATURE_SCOPE.md including
 approved additions remains unchanged. Older sections below are historical.
 
 Kind document now selects document-text/1 through actual startProcessing. Strict
