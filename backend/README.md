@@ -3,8 +3,9 @@
 P14B / Checkpoint1B / M2 yazh-07, feat/p14b-processing-dispatch from verified
 shared base acf07fec95442c8ae8b9c099dda827a9f68c9a5d. User approved bounded
 paths/recorded C-04 policy and authorized implementation/test/commit/push/merge
-into shared docs/coordination-foundation. In Progress pending final verification
-and integration; current state in docs/ROADMAP.md. Older notes are historical.
+into shared docs/coordination-foundation. Complete after merge
+d7a4315377cc1fdae63200780bd7728c583a14dd and passing post-merge smoke;
+current state in docs/ROADMAP.md. Older notes are historical.
 Full FEATURE_SCOPE including approved additions remains unchanged.
 
 backend/processing_dispatch.py explicitly registers actual network-csv/1 and

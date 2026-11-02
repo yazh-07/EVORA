@@ -2774,3 +2774,23 @@ other worktrees preserved. P14B In Progress pending integration/smoke/hosted CI;
 Checkpoint1B/M2 remain open. F08 audit/P14C full failure-retry-recovery gate and
 all later adapters remain required. Next eligible M2 P14C after this integration
 (P04 already integrated); no next task started.
+
+
+### P14B integrated acceptance — 2026-11-02
+
+User-authorized task commit **2c7af4b68284f7d7c63e9b9c01d76da2d2c5caf9** pushed to
+feat/p14b-processing-dispatch. Clean shared docs/coordination-foundation remained
+at verified base; merged without conflicts at
+**d7a4315377cc1fdae63200780bd7728c583a14dd**. On that exact merge:14 focused
+P14B tests PASS, including actual100001-row overflow and real Uvicorn HTTP/private
+SQL dispatch; coordination verifier PASS; real I00 intake/audit/hash/original/
+actor/error smoke PASS. No runtime/test changes after final full301 matrix above.
+Protected-path guard confirms full FEATURE_SCOPE/additions/spec/frontend/schema/
+parsers/P14 format/dependencies/M1 tables/source-read APIs unchanged. Original
+dirty checkout and other worktrees preserved. P14B Complete after actual
+prerequisite integration and merged acceptance; supersedes pending handoff.
+Checkpoint1B/M2 remain open. Windows symlink skip and all synthetic/selection/
+scheduler/fault/setup/UI/model/performance limits remain disclosed above. New
+hosted CI not yet claimed at this recording point. Next eligible M2 P14C
+failure/retry atomicity and full publication/recovery gate (P04/P14B integrated);
+F08 audit and all later modality tasks remain required. No next task started.
