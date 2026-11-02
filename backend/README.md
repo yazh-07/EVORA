@@ -3,8 +3,9 @@
 P14C / Checkpoint1B / M2 yazh-07, feat/p14c-atomic-processing from verified
 shared base fb52aba41310ae644bb9a12bd4884862367932cc. User approved bounded
 files/recorded lifecycle policy and implementation/test/commit/push/merge into
-shared docs/coordination-foundation. In Progress pending final verification and
-integration; current state in docs/ROADMAP.md. Older notes are historical.
+shared docs/coordination-foundation. Complete after merge
+920331d95fdd359f1e20cfbcfba48fc6e2afb292 and passing post-merge smoke;
+current state in docs/ROADMAP.md. Older notes are historical.
 Full FEATURE_SCOPE including approved additions remains unchanged.
 
 Before marking a run completed, backend/processing_publication.py reads actual

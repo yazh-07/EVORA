@@ -2894,3 +2894,28 @@ audit, M4 processing/overview and I00B remain required. No automatically eligibl
 M2 row remains in earliest unfinished1B after this integration. Next catalog M2
 P06 is2A: automatic selection also awaits earlier1B/I00B and1C/I01 exits, while
 allowed independent work requires its own explicit handoff. No next task started.
+
+
+### P14C integrated acceptance — 2026-11-02
+
+User-authorized task commit **5b80124e488661c0f7efe320f386a2871dcfd9e4** pushed to
+feat/p14c-atomic-processing. Clean shared docs/coordination-foundation stayed at
+verified base and merged without conflicts at
+**920331d95fdd359f1e20cfbcfba48fc6e2afb292**. On that exact merge:13 focused P14C
+tests PASS, including all seven actual child hard-exit boundaries and real
+Uvicorn HTTP/private SQL smoke; coordination verifier PASS; real I00 intake/
+audit/hash/original/actor/error smoke PASS. No runtime/test changes after full314
+matrix above. Protected-path guard confirms entire FEATURE_SCOPE/additions/spec/
+frontend/parsers/P14 format/dependencies/M1 tables/previous source APIs/tests
+unchanged. Original dirty checkout and other worktrees preserved.
+
+P14C Complete after actual prerequisite integration and merged acceptance;
+supersedes pending handoff. Windows symlink skip and all synthetic/scheduler/
+counting/corruption/crash-hook controls plus OS power-loss/distributed deployment/
+UI/auth/model/performance limits remain disclosed above. New hosted CI not yet
+claimed at this recording point. This completes M2 rows in1B, not the module or
+checkpoint. F08, M4 processing/overview rows and shared I00B still required.
+No automatically eligible M2 task remains in earliest unfinished1B. P06(2A)
+message candidate mentions is next M2 catalog work; automatic selection awaits
+remaining1B/I00B and1C/I01 exits, or an earlier allowed independent-work assignment
+must be explicitly recorded separately. No next task started; full scope retained.
