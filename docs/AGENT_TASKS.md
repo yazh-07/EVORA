@@ -567,3 +567,17 @@ starting a second U04 implementation. No U04 changes were merged here.
 | Input/output | Authorized original -> actual network-csv/1 or gps-csv/1 -> existing normalized immutable outputs/private provenance; upload alone is not processing success |
 | Proof | 14 P14B plus21 existing processing PASS, real Uvicorn HTTP/private SQL; full backend300 PASS/1 Windows symlink SKIP, frontend48/coordination122 PASS, contract/types/build/DESIGN/real I00 loopback PASS. Actual source/provenance, cross-layout/unsupported/row-overflow/frozen selection/replay/case negatives; doubles/limits in PREIMPLEMENTATION_REVIEW |
 | Handoff | Complete after authorized merge d7a4315377cc1fdae63200780bd7728c583a14dd and passing 14 focused/verifier/real I00 post-merge smoke; task commit 2c7af4b68284f7d7c63e9b9c01d76da2d2c5caf9 pushed. Entire scope/additions retained. Checkpoint1B/M2 remain open. Next M2 P14C, no next task started |
+
+
+### P14C assignment — 2026-11-02
+
+| Field | Recorded assignment |
+|---|---|
+| Task/checkpoint/owner | P14C / 1B / M2 yazh-07: failed runs expose no partial output; stable replay/new-key retry/history; SQL verification precedes completed publication |
+| Branch/base | feat/p14c-atomic-processing / **fb52aba41310ae644bb9a12bd4884862367932cc**, clean fetched shared docs/coordination-foundation; isolated worktree, no prior active claim |
+| Allowed paths | Approved backend/processing_publication.py, backend/tests/test_processing_publication.py, backend/processing.py SQL verification/replacement protections, backend/README.md, bounded AGENT_TASKS/COMMUNICATION/ROADMAP/PREIMPLEMENTATION_REVIEW records. No new table/field/API/provenance format/parser/dependency/frontend/M1-table changes |
+| Dependencies | Real P04 f851dd1 and P14B d7a4315, P14 c03361b private provenance; actual source producers/readers/F00/F03/F05 and completed0/1A regressions |
+| Approved policy | Re-read/verify actual SQL run/output/P14 provenance including same-case Evidence/run IDs, exact output strings/manifests/digest/time inside publication transaction before completed pointer. Failure rolls back; old completed outputs immutable/readable; same key replays original, new key may retry. Restart interrupted queued/running jobs fail safely per existing P04 policy, no automatic resume/false completion |
+| Input/output | Actual immutable originals/frozen dispatch -> verified SQL outputs/private provenance/completed run; no partial result, public schema unchanged |
+| Proof | 13 P14C/21 existing processing PASS including seven real hard-exit boundaries and Uvicorn HTTP/private SQL; full backend313 PASS/1 existing Windows symlink SKIP, frontend48/coordination122 PASS; contract/types/build/DESIGN/real I00 loopback PASS. SQL readback/rollback/visibility/replay/retry/concurrency/replacement/history/source/auth controls; doubles/limits in PREIMPLEMENTATION_REVIEW |
+| Handoff | In Progress; user authorizes implement/test/commit/push/merge P14C into docs/coordination-foundation. Full scope/additions preserved. Afterwards no further M2 row in1B; P06(2A) awaits earlier1B/I00B and1C/I01 exits for automatic selection, or its own explicit allowed independent-work handoff |

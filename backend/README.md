@@ -1,3 +1,112 @@
+# P14C verified atomic processing publication — 2026-11-02
+
+P14C / Checkpoint1B / M2 yazh-07, feat/p14c-atomic-processing from verified
+shared base fb52aba41310ae644bb9a12bd4884862367932cc. User approved bounded
+files/recorded lifecycle policy and implementation/test/commit/push/merge into
+shared docs/coordination-foundation. In Progress pending final verification and
+integration; current state in docs/ROADMAP.md. Older notes are historical.
+Full FEATURE_SCOPE including approved additions remains unchanged.
+
+Before marking a run completed, backend/processing_publication.py reads actual
+SQL run/frozen context, output and P14 private record inside the publication
+transaction. It compares every prepared output JSON string (including private
+uncertainty) against persisted bytes, validates source/participant joins and
+reconstructs P14 manifests/digest/time from SQL. Missing, corrupt or mismatched
+run/case/Evidence/output/private metadata fails publication. Updating completion
+must affect exactly one running row; no inference from an INSERT call or producer
+return value. Output/private record/completed state commit together or roll back.
+
+Processing-owned INSERT collision guards supplement existing UPDATE/DELETE
+protections, rejecting REPLACE/UPSERT/key/hidden-rowid collisions that could
+rewrite completed or failed history. They add no table/field or M1-table change.
+Existing private provenance schema, public operations/status/error fields,
+parser versions/limits and processor version remain unchanged. A verification
+failure maps through existing safe PROCESSING_FAILED, never raw SQL/source data.
+
+Same-key lookup returns the original actor/case/request resource before new
+processing, including failure/interrupted history; another target conflicts409.
+A new key permits retry with prior completed outputs/private records intact.
+Concurrent same-key acceptance and duplicate worker claims publish once; separate
+keys preserve every completed run. Readers see only previously completed outputs
+while new SQL writes are staged; after verified commit, the new completed output
+becomes visible with matching provenance. Historical Observation pins stay intact.
+
+Existing startup policy is preserved: interrupted queued/running jobs become
+failed PROCESSING_INTERRUPTED, not resumed or falsely completed. Seven actual
+child-process hard-exit boundaries test queued, claimed running, output insert,
+private-provenance insert, verified output, completed pointer before commit, and
+after committed publication. Uncommitted writes roll back; a committed completed
+run survives restart. Fresh application startup rechecks the same SQLite file,
+then same-key replay retains the original resource and new-key retry succeeds.
+Tests assert boundary marker/exit code, old history and SQLite/FK integrity.
+This is real process-interruption testing, not hardware/OS power-loss certification.
+
+No new public route/field/table/provenance format/parser/dependency/frontend or
+M1-table changes. Core producers remain real, local and deterministic. F08 public
+processing audit and remaining UI/integration gates remain required. This is the
+last M2 row in1B, not whole-module/checkpoint completion. P06(2A) is next M2 catalog
+work; automatic selection awaits remaining1B/I00B and1C/I01 exits. Earlier allowed
+independent work needs its own explicit handoff. No next task started.
+
+## How you can test P14C
+
+PowerShell from repository root, Python3.14.8/Node22.23.3 and installed requirements:
+
+    npx.cmd --yes @redocly/cli@2.57.0 bundle specs/openapi.yaml -o "$env:TEMP/evora-p14c-openapi.json"
+    $env:PYTHONUTF8 = '1'
+    $env:EVORA_CONTRACT_BUNDLE = "$env:TEMP/evora-p14c-openapi.json"
+    python -W error::ResourceWarning -m unittest backend.tests.test_processing_publication -v
+
+Expect13 passing tests. Real synthetic network/GPS input publishes6/4/2 and3/1/1
+Observation/Entity/Event IDs with P14 hash/manifest/version/time joins. A verifier
+probe observes persisted outputs/private record while status is still running;
+completed is published only after verification. Eight concurrent same-key starts
+produce one run/execution/output/private record. Distinct-target reuse returns409;
+new keys/duplicate claims preserve unique immutable histories.
+
+Independent real localhost smoke (starts/stops Uvicorn/temp storage):
+
+    python -W error::ResourceWarning -m unittest backend.tests.test_processing_publication.PublicationLoopbackTests -v
+
+Expect PASS: actual network/GPS start/poll/list/private SQL, malformed CSV failed
+without provenance; public totals9 Observations/5 Entities/3 Events and no private
+HTTP endpoint. This smoke does not substitute successful producers.
+
+Relevant actual interruption/retry control:
+
+    python -W error::ResourceWarning -m unittest backend.tests.test_processing_publication.PublicationTests.test_real_child_crashes_rollback_or_preserve_commit_then_restart_replay_and_retry -v
+
+Expect PASS across seven hard-exit stages using temporary synthetic originals.
+Before commit: original resource becomes failed PROCESSING_INTERRUPTED on fresh
+startup, no new output/private row leaks, old completed data remains readable.
+After commit: completed run/private data survives. Same key replays exact recovered
+resource; new key succeeds with new IDs. Existing original hashes/history and
+pinned historical Observations stay unchanged; SQLite integrity/FK checks pass.
+Only test-created child processes exit; the user application is not terminated.
+
+SQL corruption failure control:
+
+    python -m unittest backend.tests.test_processing_publication.PublicationTests.test_sql_output_or_private_corruption_is_rejected_before_completion -v
+
+Expect PASS: explicit missing/corrupt SQL output/private/frozen-context fixtures
+roll back and produce safe PROCESSING_FAILED, zero partial records; normal retry
+still succeeds. Temp-only faults bypass immutable triggers inside the transaction;
+they are not a production mutation feature. Other tests cover staged-read isolation,
+exact completion row count, auth/foreign reads and REPLACE/UPSERT/hidden-rowid guards.
+
+Core tests use actual FastAPI/SQLite/private files and P01/P02/P03/P03B/P03C/P04/
+P14/P14B, HTTPX ASGI in process; independent Uvicorn is real HTTP/private SQL.
+Synthetic identities, held scheduler/verification gates, parser-count wrappers,
+transactional corruption and crash-hook replacements are explicit test controls.
+Successful producers execute actual parsers/normalizer/projectors. Hard exits use
+os._exit in dedicated test children at marker-verified boundaries, followed by
+real SQLite recovery/fresh application startup; not a simulated success response.
+Earlier suites retain their documented doubles. No real evidence/model/production
+auth, hardware power-loss, distributed deployment, full processing UI or maximum-
+size successful pipeline benchmark claim. Exact results in
+docs/PREIMPLEMENTATION_REVIEW.md. Temporary servers/files/children are cleaned;
+optional cleanup removes TEMP bundle. Checkpoint1B/M2 remain open; no next task started.
+
 # P14B registered network/GPS dispatch — 2026-11-02
 
 P14B / Checkpoint1B / M2 yazh-07, feat/p14b-processing-dispatch from verified

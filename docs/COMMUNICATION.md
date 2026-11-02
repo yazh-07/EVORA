@@ -407,3 +407,29 @@ format or processor/parser version; no historical records rewritten/backfilled.
 Same-key replay precedes current selection, new key may retry. No new public
 route/field, schema, parser, dependency, frontend or model. P14C full retry/recovery
 and F08 audit remain separate required tasks; full FEATURE_SCOPE/additions stay.
+
+
+## P14C approved atomic publication/recovery handoff — 2026-11-02
+
+User approved bounded P14C files and recorded lifecycle policy. Before completed
+publication, re-read actual SQL run/frozen context, exact output JSON and P14
+private record in the same transaction. Verify case/Evidence/run ownership,
+source/participant IDs, manifests/digest and identical completion timestamp
+against the prepared actual outputs; never infer successful persistence from a
+producer returning values or an INSERT call alone. Update exactly one running
+row to completed only after verification. Any failure rolls back output/private
+record/pointer together and leaves a safe failed run when failure persistence is
+available; a DB outage may leave interrupted state for startup recovery, never
+fictional completion. Harden processing-owned records against replacement as
+well as existing UPDATE/DELETE guards. No M1 table or new table/field change.
+
+Preserve existing behavior: same actor/case/key/fingerprint replays the original
+resource before selecting/executing new inputs, including failed/interrupted
+history; new key permits retry with old completed outputs preserved. Concurrent
+same-key acceptance/worker claim must not duplicate execution/publication. On
+restart, queued/running jobs become failed PROCESSING_INTERRUPTED rather than
+resume or claim completion. Actual child-process hard exits exercise SQLite
+rollback/committed durability; this is not a hardware/OS power-loss certification.
+No new endpoint/status/error contract/provenance format/parser/dependency/frontend
+or model. Entire FEATURE_SCOPE/additions remain required. P14C does not seal1B:
+F08/U05C/U05/U05B/U13/I00B integration remains required before the1B exit; automatic M2 P06 selection in2A also waits for1C/I01 exit. No later task started.
