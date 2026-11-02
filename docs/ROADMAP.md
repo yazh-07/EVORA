@@ -414,13 +414,14 @@ Next M2 P05B source-backed Event list, no next task started.
 
 ### P05B live handoff — 2026-11-02
 
-**P05B / 1B / M2 yazh-07 / In Progress.** Isolated feat/p05b-event-list from
+**P05B / 1B / M2 yazh-07 / Complete.** Isolated feat/p05b-event-list from
 verified shared base **b5cb37b8d3dbe3d8f23b29a6516162c407cf4335**; actual
 P03C/P04B prerequisites and P05 participant validation integrated. User approved
 bounded paths and Event read policy in AGENT_TASKS.md/COMMUNICATION.md; authorized
 push/merge after tests. 20 focused PASS; backend268 PASS/1 Windows symlink SKIP,
 frontend48/coordination122 PASS, contract/types/build/DESIGN/real I00 loopback PASS.
-Integration pending, no Complete claim. Preserve
+Integrated at c0e25d401651b468d05a60ff5f5e3525e87e6f5f;
+20 focused/verifier/real I00 post-merge smoke PASS. Preserve
 entire agreed scope/additions. Next M2 P14 private versioned provenance; no next
 task started. Checkpoint 1B/M2 remain open.
 

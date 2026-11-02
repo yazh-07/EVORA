@@ -2555,3 +2555,22 @@ dependency/frontend change. Full FEATURE_SCOPE/additions and original dirty
 checkout/other worktrees preserved. P05B In Progress pending integration/smoke,
 Checkpoint1B/M2 remain open. Next eligible M2 P14 private versioned parser/model
 provenance (P04 integrated); no next task started.
+
+
+### P05B integrated acceptance — 2026-11-02
+
+User-authorized task commit **b6dddc721f056fd9542049bc5f314dc32b2e0cc1** pushed to
+feat/p05b-event-list. Shared docs/coordination-foundation read back clean at the
+verified base and merged without conflicts at
+**c0e25d401651b468d05a60ff5f5e3525e87e6f5f**. On that exact merge:20 focused Event
+tests PASS (including real Uvicorn process-to-source/Event/participant reads),
+coordination verifier PASS, real I00 intake/audit/hash/original/actor/error smoke
+PASS. No runtime/test changes after the full regression matrix recorded above.
+Protected-path guard confirms full FEATURE_SCOPE/spec/frontend/schema/producers/
+dependencies unchanged; original dirty checkout and other worktrees preserved.
+P05B Complete after actual prerequisite integration and merged smoke; this
+supersedes the pending handoff. Checkpoint1B/M2 remain open. Existing Windows
+symlink skip and all doubles/setup/deployment/UI/performance limits remain
+explicit above. New hosted CI not yet claimed at this recording point.
+Next eligible M2 P14 private versioned parser/model provenance (P04 integrated);
+no next task started. Entire agreed initial scope/approved additions retained.

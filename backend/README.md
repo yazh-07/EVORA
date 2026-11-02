@@ -3,8 +3,9 @@
 P05B / Checkpoint 1B / M2 yazh-07. Isolated feat/p05b-event-list from verified
 shared base b5cb37b8d3dbe3d8f23b29a6516162c407cf4335. User approved bounded
 paths/read policy and authorized implementation/test/commit/push/merge into
-shared docs/coordination-foundation. In Progress pending final verification and
-integration; current state in docs/ROADMAP.md. Older notes below are historical.
+shared docs/coordination-foundation. Complete after merge
+c0e25d401651b468d05a60ff5f5e3525e87e6f5f and passing post-merge smoke;
+current state in docs/ROADMAP.md. Older notes below are historical.
 Entire agreed initial FEATURE_SCOPE including approved additions is preserved.
 
 GET /api/v1/cases/{caseId}/events now reads actual immutable P03C/P04 Event
