@@ -3203,3 +3203,71 @@ P12(3A) needs approved transaction format/resource/file handoff; automatic
 selection waits for earlier checkpoint exits, or earlier independent work needs
 its own explicit assignment. Every remaining modality/feature/approved addition
 remains required. No next task started; full scope preserved.
+
+
+### P12 independent implementation verification — 2026-11-02
+
+P12 / 3A / M2 yazh-07, feat/p12-transaction-csv from verified common base
+bd1e03de15a7f212e77dac391b5efd8d6fc7af07. User explicitly assigned independent
+work and approved transaction layout/decimal/currency/time/resource/source-output
+policy and bounded files, including commit/push/merge after acceptance. Real P04
+and access/source/private provenance/read/verified atomic publication prerequisites
+integrated. Full FEATURE_SCOPE/additions preserved; earlier checkpoints stay open.
+
+Focused P12+dispatch43 PASS (P12 contributes29). Actual source/API/SQL/participant/
+private parameters/manifests/versions/hash read-back, exact128-character high-
+precision decimal/sign/zero/negative-zero handling without floating conversion or
+rounding; test Decimal precision2 cannot change normalization. Currency label
+shape only, no ISO/minor-unit/FX claim. Malformed amount/currency/129-character
+literals/late invalid rows/wrong layouts/encoding/actual100001-row source fail
+atomically with safe CSV_* and no partial output/provenance. Real50MiB/100000-row
+parser caps, byte/row/amount +1 controls, strict BOM/quoting/whitespace/context/time
+and source-locator tests; same-case actual account participants, separate-source
+identical account keys stay distinct/unboosted, schema/all-page APIs, replay/
+conflict/retry/history, concurrency/duplicate worker, restart/interrupted failure,
+old2/3/4/5 guard upgrade and old immutable records preserved. Real Uvicorn HTTP.
+
+Synthetic two-row transaction yields6/2/2 Observation/Entity/Event, exact keys
+account:AC-007/account:AC-8, raw amounts preserved and normalized strings
+123456789012345678901234567890.12 / -1.23. First UTC2026-01-12T10:00:00.123456789Z,
+second unknown UTC omitted. Six actual adapters together28/11/7; account candidate
+link is not identity, verified transfer, fraud or guilt. Full backend/coordination
+results pending here, not inferred from focused success. Frontend48/build/API
+freshness/typecheck/real I00 smoke PASS; OpenAPI lint/bundle/generated compilation
+PASS (existing missing-license warning); DESIGN0errors/0warnings PASS.
+
+Doubles/limits: synthetic actors/tokens/CSV, real FastAPI/SQLite/private files/
+parser/P03 time/exact decimal/projector/provenance/publication/read APIs; in-process
+HTTPX ASGI and independent Uvicorn HTTP/private SQL. Explicit scheduler/registry/
+verifier/participant injections, temp-only old-guard recreation/trigger-bypassing
+SQL corruption; pure test Decimal context mutation, no successful producer stub.
+Earlier suites retain documented controls including P14C dedicated-child hard exits.
+No live bank/real evidence/production auth/model/full UI/graph workflow/distributed
+deployment/hardware power-loss or maximum-size successful pipeline benchmark.
+Exact commands/inputs/expected results/failures/cleanup in backend/README.md.
+Tests clean temporary files/servers; optional TEMP bundle cleanup separately.
+
+Protected FEATURE_SCOPE/additions/spec/frontend/M1 tables/dependencies/old parsers/
+normalizer/source-read APIs unchanged; original dirty checkout and other worktrees
+preserved. Existing tests change only bounded dispatch and old-guard fixtures.
+P12 In Progress until actual integration and post-merge acceptance. Next M2
+catalog P13(3A) has real P06/P07 prerequisites but needs its own extraction/
+evaluation/path decisions and earlier exits for automatic selection or a separately
+explicit independent assignment. All remaining scope stays required; no next task
+started.
+
+
+### P12 pre-integration results — 2026-11-02
+
+Final combined Windows candidate full backend407 run:406 PASS/1 existing SKIP
+(creating symlinks unavailable on this platform/account),396.205s. Focused43
+P12/dispatch PASS, P12 contributes29. No runtime changes after full matrix.
+Frontend48 PASS; coordination122 PASS; verifier PASS (27 operations/126 tasks/
+39 capabilities). OpenAPI lint/bundle PASS with existing missing-license warning;
+fresh generated declarations compile; frontend API freshness/typecheck/build PASS;
+DESIGN0errors/0warnings PASS; real I00 HTTP intake/audit/hash/original/actor/error
+smoke PASS; pip check/whitespace/protected-path guards PASS. CPython3.14.8/
+SQLite3.50.4/jsonschema4.25.1/Node22.23.3/npm12.2.0. Exact commands, synthetic inputs/
+outputs/failures and disclosed controls/untested limits above remain applicable.
+P12 In Progress until authorized integration and post-merge acceptance; hosted CI
+not yet claimed. Full scope/additions preserved; no next task started.

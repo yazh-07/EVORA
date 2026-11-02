@@ -251,7 +251,7 @@ class DocumentProcessingTests(unittest.IsolatedAsyncioTestCase):
             for name in ('processing_provenance_context','processing_completion_provenance'):
                 sql=connection.execute('SELECT sql FROM sqlite_master WHERE name=?',(name,)).fetchone()[0]
                 connection.execute('DROP TRIGGER '+name)
-                connection.execute(sql.replace(",'processing-lifecycle/4'",'').replace(",'processing-lifecycle/5'",''))
+                connection.execute(sql.replace(",'processing-lifecycle/4'",'').replace(",'processing-lifecycle/5'",'').replace(",'processing-lifecycle/6'",''))
         initialize_processing(self.app.state.database)
         run=await self.start('after-upgrade');self.assertEqual((await self.poll(run))['status'],'completed')
         for old,evidence,private in saved:self.assertEqual(self.private(old,evidence),private)

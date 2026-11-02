@@ -1,3 +1,136 @@
+# P12 exported transaction CSV — 2026-11-02
+
+P12 / Checkpoint3A / M2 yazh-07, explicit independent assignment on
+feat/p12-transaction-csv from verifiedbd1e03de15a7f212e77dac391b5efd8d6fc7af07.
+User approved the bounded format/amount/currency/time/source-output policy and
+commit/push/merge after acceptance. In Progress pending integration. Entire
+docs/FEATURE_SCOPE.md including approved additions remains unchanged; earlier
+checkpoint gates stay open. Older sections below are historical.
+
+Evidence kind transaction selects actual transactions-csv/1: strict UTF-8 optional
+initial BOM, exact timestamp,account_id,amount,currency columns, nonblank cells,
+50MiB/100000 rows. Preserve raw values, case/leading zeros/whitespace in account
+IDs, duplicate rows, physical row/multiline column locators. Header-only is genuine
+empty success. MIME/name is not content verification; no live banking access.
+
+Amount literals match ASCII -?[0-9]+(\.[0-9]+)?, at most128 characters including
+sign/decimal point. Accept negative/zero source values without inferring payment
+direction. Retain raw amount; exact canonical decimal string removes redundant
+integer/trailing-fraction zeros, keeps nonzero sign, negative zero ->0. No float,
+Decimal-context rounding, exponent, NaN/infinity, plus sign, grouping/separators,
+outer whitespace, conversion or currency-specific rounding. Currency matches
+[A-Z]{3} exactly and remains a source label, without claiming ISO validity,
+minor-unit rules or FX conversion. P03 time normalization preserves raw invalid/
+unknown/ambiguous timestamps without fabricated UTC and retains precise known UTC.
+
+transaction-identifiers/1 emits transaction.account/transaction.amount/
+transaction.currency Observations, with exact normalized amount strings and
+otherwise unchanged text. Exact account:<raw ID> keys group only within the same
+case/run; Entity refs retain all supporting account Observation/Evidence IDs.
+transaction-source-events/1 emits one transaction.record source-report Event per
+row: summary 'Source transaction record reports: ' plus raw amount and currency.
+Event cites all3 row Observations/original Evidence and actual same-case account
+Entity sharing that row's account Observation. Confidence0 unavailable throughout.
+No owner/person/verified transfer/fraud/criminality claim or matching-source boost.
+
+Real startProcessing validates authorized original bytes/hash/size and actual
+layout, then publishes immutable outputs/private provenance/completed pointer
+atomically after SQL read-back. Freeze processing-lifecycle/6, actual parser/
+account/Event versions, P03 source-normalization/1 time and parser-versioned exact
+amount normalization plus byte/row/amount-length caps in processing-provenance/1;
+deterministic/no model. Existing processors2/3/4/5 histories/config/output/private
+records unchanged. Processing-owned guards upgrade transactionally, no new table/
+column/public field/route/M1/old-parser/dependency/frontend changes. Malformed or
+over-limit supported input is accepted then fails safely CSV_* with no partial
+output/private success record. Same key replays original; new keys retry without
+rewriting history; interrupted startup fails safely. Remaining shared UI/graph/
+full-modality/analytical gates stay required.
+
+Local results: focused P12/dispatch43 PASS (P12 contributes29); full backend407
+run:406 PASS/1 existing Windows symlink SKIP; frontend48/coordination122 PASS.
+Contract/types/build/DESIGN/verifier/real I00 smoke PASS. Exact verification and
+limits in docs/PREIMPLEMENTATION_REVIEW.md. Hosted CI not yet claimed.
+
+## How you can test P12
+
+PowerShell from repository root with pinned requirements and Node22.23.3 installed.
+Use CPython3.14.8; tested local workspace interpreter:
+
+    $py = (Resolve-Path '../evora-tools/python/tools/python.exe').Path
+
+For another checkout with Python3.14.8 on PATH, use $py = (Get-Command python).Source.
+Generate the bundle and run focused tests:
+
+    npx.cmd --yes @redocly/cli@2.57.0 bundle specs/openapi.yaml -o "$env:TEMP/evora-p12-openapi.json"
+    $env:PYTHONUTF8 = '1'
+    $env:EVORA_CONTRACT_BUNDLE = "$env:TEMP/evora-p12-openapi.json"
+    & $py -W error::ResourceWarning -m unittest backend.tests.test_transactions -v
+
+Expect29 PASS. Test-generated synthetic input:
+
+    timestamp,account_id,amount,currency
+    2026-01-12T15:30:00.123456789+05:30,AC-007,000123456789012345678901234567890.1200,USD
+    2026-01-12T10:00:00,AC-8,-001.2300,EUR
+
+Expect6 Observations/2 account candidates/2 source-report Events. Account keys
+account:AC-007/account:AC-8 preserve exact text. Amounts normalize to
+123456789012345678901234567890.12 and -1.23, raw strings preserved. First UTC is
+2026-01-12T10:00:00.123456789Z; second UTC absent. Each Event cites all row sources
+and real account participant. Six actual adapter sources together28/11/7; separate
+identical account keys from distinct originals retain separate IDs/confidence0.
+
+Independent actual HTTP smoke starts/stops temporary Uvicorn/private SQL:
+
+    & $py -W error::ResourceWarning -m unittest backend.tests.test_transactions.TransactionLoopbackTests -v
+
+Expect1 PASS: upload/start/poll/source/Entity/Event APIs, original bytes, participant
+joins/replay/private hash/version read-back. Synthetic header above plus t,AC-7,1,
+(blank currency) is accepted then fails CSV_INVALID_ROW with no new output/private
+success record; prior good totals remain6/2/2.
+
+Signed/zero/decimal/currency/length failures:
+
+    & $py -W error::ResourceWarning -m unittest backend.tests.test_transactions.TransactionProcessingTests.test_signed_zero_and_128_character_amounts_publish_without_rounding backend.tests.test_transactions.TransactionProcessingTests.test_invalid_amount_currency_length_and_changed_frozen_amount_cap_fail_atomically -v
+    & $py -W error::ResourceWarning -m unittest backend.tests.test_transactions.TransactionParserProjectionTests.test_real_byte_limit_and_overflow backend.tests.test_transactions.TransactionParserProjectionTests.test_real_row_limit_and_atomic_overflow -v
+
+Expect PASS: -0.00 ->0 while raw preserved; exact128-character amounts and long
+fractional strings publish without rounding, including when test Decimal context
+precision is2. NaN/1e3/usd/129-character amounts fail CSV_INVALID_AMOUNT/
+CSV_INVALID_CURRENCY/CSV_AMOUNT_LIMIT; earlier valid row never leaks. Actual50MiB/
+100000-row parser boundaries succeed, +1 byte/row fails. Caps are not patched lower.
+Other tests cover BOM/multiline/unicode/blank/duplicate/precise/unknown-time/case/
+forged-context controls, actual100001-row failed run, all-page schemas and sources,
+concurrent replay/duplicate worker/new-key/history, membership/missing originals/
+body400, private corruption/participant rollback, interrupted retry and old guards.
+
+Regression commands:
+
+    & $py -W error::ResourceWarning -m unittest discover -s backend/tests -v
+    & $py scripts/verify_coordination.py "$env:EVORA_CONTRACT_BUNDLE"
+    & $py -m unittest discover -s scripts -p 'test_*.py' -q
+    npm.cmd --prefix frontend test
+    npm.cmd --prefix frontend run build
+    $env:EVORA_TEST_PYTHON = $py
+    node frontend/test/cases.integration.mjs
+
+Doubles/limits: synthetic tokens/actors/CSV only. Actual FastAPI/SQLite/private
+originals/parser/exact normalization/projectors/provenance/publication/readers.
+Core HTTPX ASGI is in process; independent Uvicorn is real HTTP/private SQL.
+Explicit scheduler/registry/verifier/missing-participant injections, old-guard
+recreation and trigger-bypassing temp SQL corruption are test controls. Decimal
+context precision is deliberately changed only in a pure test; producer uses no
+Decimal context. No successful producer replacement. Earlier suites retain their
+documented controls including P14C actual dedicated-child hard exits. No live bank/
+real evidence/production identity/model/full UI/graph workflow/distributed deployment/
+hardware power-loss or maximum-size successful pipeline performance claim. Tests
+clean temp files/servers; optional cleanup removes only your generated TEMP bundle.
+
+Next M2 catalog P13(3A) text candidate-entity extraction has actual P06/P07
+prerequisites but needs its own agreed extraction/evaluation/file handoff. Automatic
+selection still waits for earlier checkpoint exits; earlier independent work must
+be separately explicitly assigned. P13B and every remaining modality/feature/
+approved addition stay required. No next task started.
+
 # P11 exported mobile activity — 2026-11-02
 
 P11 / Checkpoint3A / M2 yazh-07, explicit independent assignment on

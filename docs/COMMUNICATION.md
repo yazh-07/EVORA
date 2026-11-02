@@ -613,3 +613,41 @@ P12(3A) needs approved transaction format/resource/file handoff; automatic
 selection waits for earlier checkpoint exits, or earlier independent work needs
 its own explicit assignment. Every remaining modality/feature/approved addition
 remains required. No next task started; full scope preserved.
+
+
+## P12 approved independent transaction policy — 2026-11-02
+
+User explicitly assigned independent P12(3A) and approved its bounded paths,
+format/amount/currency/time/source-output policy and commit/push/merge after tests.
+Evidence kind transaction selects transactions-csv/1: strict UTF-8 optional first
+BOM, exact timestamp,account_id,amount,currency header, nonblank cells,50MiB/
+100000 rows. Header-only genuinely empty, duplicate records retained separately,
+exact raw values and physical row/multiline locators preserved. Original row is
+the source transaction locator; no fabricated bank transaction ID or live access.
+Amounts match ASCII -?[0-9]+(\.[0-9]+)? and max128 characters. Retain raw text;
+canonical exact decimal string strips redundant integer/fraction zeros, preserves
+nonzero sign, negative zero ->0. No float/rounding/exponent/NaN/infinity/grouping/
+plus/outer whitespace; invalid/over-limit literal rejects atomically. Currency
+matches [A-Z]{3}, retained as a source label, no ISO-validity/minor-unit/FX claim.
+P03 timestamp handling retains raw invalid/uncertain time without invented UTC.
+
+Emit transaction.account/transaction.amount/transaction.currency Observations,
+exact same-run account:<raw ID> Entities and one transaction.record Event per row.
+Event summary 'Source transaction record reports: ' plus raw amount and currency;
+cites all3 same-case row Observation/Evidence IDs and actual account Entity sharing
+that row's account Observation. Candidate accounts preserve case/leading zeros;
+no owner/person/payment-direction/verified-transfer/fraud/criminality inference.
+Confidence0 unavailable throughout, no matching-source confidence boost.
+
+New transaction-identifiers/1, transaction-source-events/1, processing-lifecycle/6
+freeze actual parser, P03 source-normalization/1 time and exact decimal handling
+(versioned with parser), byte/row/amount-length parameters in existing private
+processing-provenance/1; deterministic/no model. Extend only processing-owned
+version guards transactionally. Older2/3/4/5 histories/config/output/private
+records stay unchanged; replay/new-key retry/verified atomic completion remain.
+Safe CSV_* failed runs expose no partial output/provenance. Existing dispatch
+expectations and old-version fixtures are bounded updates only. No new public
+route/field/table/column/M1/old-parser/dependency/frontend change. Earlier gates
+remain open; independent P12 cannot close3A/I04 or any earlier checkpoint. Full
+FEATURE_SCOPE/additions and remaining modalities/features preserved. No next task
+started.
