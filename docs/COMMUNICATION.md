@@ -552,3 +552,38 @@ explicit independent work must be separately assigned. P13 now has real P06/P07
 prerequisites but its own extraction/evaluation acceptance remains required;
 P12/P13/P13B/P08 and every initial modality/approved addition remain required.
 No next task started; full scope preserved.
+
+
+## P11 approved independent exported-mobile policy — 2026-11-02
+
+User explicitly assigned P11(3A) and approved its bounded format/output/file handoff,
+including commit/push/merge after tests. Source kind mobile_log selects strict
+UTF-8 optional-BOM CSV, exact ordered timestamp,device_id,event,detail header,
+nonblank cells,50MiB/100000-row caps, atomic layout/encoding/overflow failure.
+Header-only genuine empty success; duplicates remain separate rows. Preserve all
+raw values and physical row spans, including multiline/quoted cells. Device IDs
+are exact case-sensitive source identifiers, not person identities or ownership.
+Three mobile.device/mobile.event/mobile.detail Observations per row retain P03
+raw timestamp/precise UTC or uncertainty; invalid nonblank time is preserved with
+no invented UTC. Identical device:<raw ID> keys group only inside the supplied
+case/run. Entities cite all supporting device Observation/Evidence IDs.
+
+One mobile.activity Event per complete row reports 'Source mobile log reports: '
+plus the raw event label. It is a source report, not a verified occurrence or
+classified guilt. Event cites all row Observations, the original Evidence and
+only the actual same-case device Entity sharing that row's device Observation.
+No physical acquisition, person identification or model; confidence0 unavailable.
+New versions mobile-csv/1, mobile-identifiers/1, mobile-source-events/1 and
+processing-lifecycle/5 freeze P03 source-normalization/1, byte/row parameters and
+deterministic/no-model execution in existing private processing-provenance/1.
+Older processors2/3/4 records/config/outputs remain unchanged. Extend processing-
+owned version guards transactionally; no new table/column/public API/dependency/
+frontend/M1/existing-parser changes. Safe accepted CSV_* failures publish no
+partial outputs/provenance. Replay/new-key retry/source access/immutable history/
+verified atomic completion remain unchanged. Update only dispatch supported-kind
+expectations and P07's old-version guard fixture to preserve that fixture's exact
+pre-P07 versions2/3 during the new version5 rollout.
+
+Earlier checkpoints remain open; independent P11 cannot close3A/I04 or earlier
+milestones. Full FEATURE_SCOPE/additions and every remaining modality/feature
+remain required. No later task started.
