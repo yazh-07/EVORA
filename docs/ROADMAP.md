@@ -438,6 +438,17 @@ loopback PASS. Integrated at c03361b8171e6506d2c160a85cc1e89e76315fb3;
 scope/additions retained; Checkpoint1B/M2 remain open. Next M2 P14B network/GPS
 dispatch, no next task started.
 
+### P14B live handoff — 2026-11-02
+
+**P14B / 1B / M2 yazh-07 / In Progress.** Isolated feat/p14b-processing-dispatch
+from verified base **acf07fec95442c8ae8b9c099dda827a9f68c9a5d** with real
+P04/P01/P02 and P14 prerequisites integrated. User approved bounded files and
+unchanged C-04 dispatch policy; authorizes push/merge after tests. 14 P14B/21
+processing PASS, backend300 PASS/1 Windows symlink SKIP, frontend48/coordination122
+PASS; contract/types/build/DESIGN/real I00 loopback PASS. Integration pending, no
+Complete claim. Full scope/additions preserved;
+Checkpoint1B/M2 remain open. Next M2 P14C, no next task started.
+
 ## Module assignment and live task state
 
 | Module | Assigned GitHub handle | Accountable boundary | State |

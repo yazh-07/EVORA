@@ -13,8 +13,9 @@ from starlette.concurrency import run_in_threadpool
 from backend.auth import Actor, CaseAccessGrant, require_case_access
 from backend.errors import AccessError
 from backend.evidence import download_evidence, invalid_input
-from backend.parsers.network_csv import MAX_DATA_ROWS, MAX_SOURCE_BYTES, NetworkCSVError, parse_network_csv
-from backend.parsers.gps_csv import GPSCSVError, parse_gps_csv
+from backend.parsers.network_csv import NetworkCSVError
+from backend.parsers.gps_csv import GPSCSVError
+from backend.processing_dispatch import adapter_for
 from backend.parsers.normalization import NORMALIZER_VERSION, normalize_observations
 from backend.parsers.candidate_entities import PROJECTOR_VERSION as ENTITY_VERSION, project_candidate_entities
 from backend.parsers.source_events import PROJECTOR_VERSION as EVENT_VERSION, project_source_events
@@ -22,7 +23,6 @@ from backend.processing_provenance import (
     PROCESSOR_VERSION, RECORD_VERSION, initialize_provenance, record_processing_provenance,
 )
 
-_PARSERS = {'network_log': (parse_network_csv, 'network-csv/1'), 'gps': (parse_gps_csv, 'gps-csv/1')}
 _WIRE = ('id', 'case_id', 'evidence_id', 'status', 'processor_version', 'created_at', 'finished_at', 'error')
 router = APIRouter()
 
@@ -43,10 +43,10 @@ def _not_found():
     return AccessError(404, 'NOT_FOUND', 'Resource not found.')
 
 
-def _versions(kind):
-    return dict(parser_version=_PARSERS[kind][1], normalizer_version=NORMALIZER_VERSION,
+def _versions(adapter):
+    return dict(parser_version=adapter.parser_version, normalizer_version=NORMALIZER_VERSION,
                 entity_version=ENTITY_VERSION, event_version=EVENT_VERSION, processor_version=PROCESSOR_VERSION,
-                max_source_bytes=MAX_SOURCE_BYTES, max_data_rows=MAX_DATA_ROWS, provenance_version=RECORD_VERSION)
+                max_source_bytes=adapter.max_source_bytes, max_data_rows=adapter.max_data_rows, provenance_version=RECORD_VERSION)
 
 
 def initialize_processing(database):
@@ -119,17 +119,17 @@ def process_run(app, run_id):
         if not app.state.case_access.allows(run['actor_id'], case_id):
             raise AccessError(404, 'SOURCE_UNAVAILABLE', 'Source unavailable.')
         config = json.loads(run['config_json'])
-        if any(config.get(key) != value for key, value in _versions(config['kind']).items()):
+        adapter = adapter_for(config['kind'])
+        if adapter is None or any(config.get(key) != value for key, value in _versions(adapter).items()):
             # Never execute changed configuration under an older frozen version.
             raise ValueError('processing configuration changed')
         grant = CaseAccessGrant(Actor(run['actor_id']), case_id)
         original = download_evidence(case_id, evidence_id, Request({'type': 'http', 'app': app}), grant)
         with Path(original.path).open('rb') as source:
-            data = source.read(MAX_SOURCE_BYTES + 1)
+            data = source.read(adapter.max_source_bytes + 1)
         if len(data) != config['size_bytes'] or hashlib.sha256(data).hexdigest() != config['sha256']:
             raise ValueError('source integrity')
-        observations = _PARSERS[config['kind']][0](data, case_id=case_id, evidence_id=evidence_id,
-                                                  processing_run_id=UUID(run_id))
+        observations = adapter.parse(data, case_id=case_id, evidence_id=evidence_id, processing_run_id=UUID(run_id))
         candidates = project_candidate_entities(normalize_observations(observations), case_id=case_id)
         events = project_source_events(candidates, case_id=case_id)
         output = (_json([x.observation.to_wire() for x in candidates.observations]),
@@ -189,10 +189,11 @@ async def start_processing(caseId: UUID, evidenceId: UUID, request: Request, bac
                                       (str(evidenceId), str(caseId))).fetchone()
         if evidence is None:
             raise _not_found()
-        if evidence['kind'] not in _PARSERS:
+        adapter = adapter_for(evidence['kind'])
+        if adapter is None:
             raise AccessError(415, 'UNSUPPORTED_MEDIA', 'File cannot be processed as declared.')
         config = {key: evidence[key] for key in ('kind', 'sha256', 'size_bytes')}
-        config.update(_versions(evidence['kind']))
+        config.update(_versions(adapter))
         run_id = str(uuid4())
         connection.execute('INSERT INTO processing_runs (id,case_id,evidence_id,actor_id,key_digest,fingerprint,config_json,'
                            'processor_version,created_at,status) VALUES (?,?,?,?,?,?,?,?,?,?)',

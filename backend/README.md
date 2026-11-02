@@ -1,3 +1,101 @@
+# P14B registered network/GPS dispatch — 2026-11-02
+
+P14B / Checkpoint1B / M2 yazh-07, feat/p14b-processing-dispatch from verified
+shared base acf07fec95442c8ae8b9c099dda827a9f68c9a5d. User approved bounded
+paths/recorded C-04 policy and authorized implementation/test/commit/push/merge
+into shared docs/coordination-foundation. In Progress pending final verification
+and integration; current state in docs/ROADMAP.md. Older notes are historical.
+Full FEATURE_SCOPE including approved additions remains unchanged.
+
+backend/processing_dispatch.py explicitly registers actual network-csv/1 and
+gps-csv/1 producers with parser-owned versions and limits. A read-only mapping
+and frozen descriptors prevent runtime mutation of entries. Declared kind alone
+selects a registered adapter; the worker invokes that actual parser to validate
+original content. No filename/extension/MIME/source-label sniffing or silent
+cross-kind fallback. Upload is opaque intake, not successful processing.
+
+| Declared Evidence kind | Required exact ordered CSV header | Registered parser |
+|---|---|---|
+| network_log | timestamp,device_id,ip_address,event | network-csv/1 |
+| gps | timestamp,device_id,latitude,longitude | gps-csv/1 |
+
+Both retain existing UTF-8/optional leading BOM, comma/quote/multiline logical
+records, LF/CRLF/CR, exact header/row/value rules and inclusive50MiB/100000-row
+limits. P01/P02 own format/time/value details; no extra cap or new accepted format.
+The full regression suite retains actual parser byte/row boundary tests. This
+P14B suite also sends actual100001-row originals through upload/start/worker on
+both adapters and observes failed CSV_ROW_LIMIT with no output/provenance prefix.
+No maximum-size successful full-pipeline performance benchmark is claimed.
+
+Unsupported declared kinds return415 before run/key creation, even if bytes look
+like supported CSV. Wrong-layout or malformed supported-kind data is accepted
+queued then failed with fixed safe CSV errors, never successful empty output or
+rerouted to another adapter. Header-only matching CSV is genuine empty success.
+A misleading filename/MIME can accompany valid bytes without overriding kind or
+establishing success. Actual content validation remains mandatory.
+
+P04 acceptance freezes selected kind/parser_version/byte-row limits and existing
+normalizer/projector/processor versions. Worker compares current registered
+metadata before execution; mismatch fails without invoking a changed parser.
+P14's unchanged private record links actual input/hash/output IDs/digest/parameters/
+versions/completion time. No config/provenance/schema/wire format or processor/
+parser version change: dispatch policy is unchanged by this extraction. Same-key
+lookup happens before current selection, preserving original history; new key
+retries independently. Source bytes/history remain immutable, no model/provider.
+
+Two existing processing-test injection points now replace the selected descriptor
+with a test wrapper instead of mutating the removed private parser dictionary;
+all existing assertions/source execution remain. No parser, P14 format, M1 table,
+frontend, dependency, schema or spec edits. P14C full retry/recovery/publication
+and F08 audit remain separate required work, as do all later modality adapters.
+
+## How you can test P14B
+
+PowerShell at repository root with Python3.14.8/Node22.23.3 and installed requirements:
+
+    npx.cmd --yes @redocly/cli@2.57.0 bundle specs/openapi.yaml -o "$env:TEMP/evora-p14b-openapi.json"
+    $env:PYTHONUTF8 = '1'
+    $env:EVORA_CONTRACT_BUNDLE = "$env:TEMP/evora-p14b-openapi.json"
+    python -W error::ResourceWarning -m unittest backend.tests.test_processing_dispatch -v
+
+Expect14 passing tests using synthetic actors/CSV only. Actual network.csv/GPS.csv
+publish6/4/2 and3/1/1 Observation/Entity/Event IDs with matching P14 private inputs,
+versions/limits/manifests/completion timestamps. Valid network bytes named gps.csv
+with image/png MIME still use network-csv/1; valid GPS bytes named network.bin
+with application/pdf MIME still use gps-csv/1. Original hash/bytes are preserved.
+BOM/multiline quoted source locators/raw values and uncertain GPS time survive.
+
+Independent real localhost HTTP-to-private-SQL smoke:
+
+    python -W error::ResourceWarning -m unittest backend.tests.test_processing_dispatch.DispatchLoopbackTests -v
+
+Expect PASS: real network/GPS start/poll yields two matching private records,
+while malformed and cross-layout runs fail without provenance. Unsupported
+document-kind valid network CSV returns415 with no run. Actual API totals are
+9 Observations/5 Entities/3 Events, not uploaded-file counts. Server/temp storage
+are created and cleaned by the test; no private HTTP endpoint is added.
+
+Relevant wrong-layout failure control:
+
+    python -m unittest backend.tests.test_processing_dispatch.DispatchTests.test_wrong_layout_never_silently_dispatches_to_other_kind -v
+
+Expect PASS: GPS content declared network_log and network content declared gps
+are accepted then fail CSV_INVALID_HEADER, with zero output/provenance records
+and no fallback. Other controls cover bad encoding/NUL/quotes/IP/GPS values,
+all other declared kinds415, auth/case isolation, row overflow, frozen version/
+limit changes before parsing, replay-before-selection and failed-prefix history.
+
+Core tests use actual FastAPI/SQLite/private files/parsers/normalizer/projectors/
+P14 via HTTPX ASGI; independent Uvicorn subprocess is real HTTP/private SQL.
+Synthetic actors/tokens, held scheduler, replaced selection/version/limit/parser
+wrapper and failure controls are explicit test doubles. Core successful sources
+and HTTP smoke do not replace producers. Prior suites retain disclosed doubles.
+No production auth/model/OS power-loss/distributed worker/full processing UI/
+maximum-size successful pipeline benchmark/real-evidence claim. Exact matrix in
+docs/PREIMPLEMENTATION_REVIEW.md. Tests clean temp originals/database/server;
+optional cleanup removes TEMP bundle. Next M2 P14C, no next task started.
+Checkpoint1B/M2 remain open; full initial scope/additions preserved.
+
 # P14 private versioned processing provenance — 2026-11-02
 
 P14 / Checkpoint 1B / M2 yazh-07, feat/p14-processing-provenance from verified

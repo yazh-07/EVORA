@@ -1,6 +1,7 @@
 """P04 real HTTP/SQL/original pipeline; labeled scheduling and failure injections."""
 import asyncio
 from contextlib import closing
+from dataclasses import replace
 import hashlib
 import json
 import os
@@ -23,6 +24,7 @@ from backend.app import create_app
 from backend.auth import SyntheticTokenVerifier
 from backend.processing import process_run, publish_outputs, run_job
 from backend.parsers.network_csv import parse_network_csv
+from backend.processing_dispatch import adapter_for
 
 ROOT = Path(__file__).resolve().parents[2]
 PYTHON = sys.executable
@@ -260,7 +262,7 @@ class ProcessingTests(unittest.IsolatedAsyncioTestCase):
             entered.set()
             if not release.wait(10): raise RuntimeError('test gate timed out')
             return parse_network_csv(*args, **kwargs)
-        with patch.dict('backend.processing._PARSERS', {'network_log': (gated_parser, 'network-csv/1')}):
+        with patch('backend.processing.adapter_for', return_value=replace(adapter_for('network_log'), parse=gated_parser)):
             task = asyncio.create_task(asyncio.to_thread(process_run, *jobs[0]))
             try:
                 self.assertTrue(await asyncio.to_thread(entered.wait, 10))
@@ -353,7 +355,7 @@ class ProcessingTests(unittest.IsolatedAsyncioTestCase):
             with self.app.state.database.connect() as connection:
                 connection.execute('DELETE FROM case_members WHERE case_id=?', (self.case,))
             return observations
-        with patch.dict('backend.processing._PARSERS', {'network_log': (revoke_after_parse, 'network-csv/1')}):
+        with patch('backend.processing.adapter_for', return_value=replace(adapter_for('network_log'), parse=revoke_after_parse)):
             await self.start()
         self.assertEqual(self.rows('processing_runs')[0]['status'], 'failed')
         self.assertEqual(self.rows('processing_runs')[0]['error'], 'SOURCE_UNAVAILABLE')
