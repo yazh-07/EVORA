@@ -4763,3 +4763,108 @@ real merged producers and ResourceWarning-as-error:
 ```sh
 PYTHONPATH=/tmp/evora-u13-validation EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -W error::ResourceWarning -m unittest backend.tests.test_skeleton backend.tests.test_validation backend.tests.test_auth backend.tests.test_cases backend.tests.test_evidence backend.tests.test_audit backend.tests.test_audit_list backend.tests.test_m1_access backend.tests.test_network_csv backend.tests.test_gps_csv backend.tests.test_normalization backend.tests.test_candidate_entities backend.tests.test_source_events backend.tests.test_processing backend.tests.test_observations backend.tests.test_entities backend.tests.test_events backend.tests.test_processing_provenance backend.tests.test_processing_dispatch backend.tests.test_processing_publication backend.tests.test_processing_audit
 ```
+
+### A15 verification — 2026-11-03
+
+**A15 / Checkpoint 1C / M3 whale2186 / In Progress pending review/publication.**
+Execution 2026-11-04 on initially clean `feat/a15-explainable-triage-findings`.
+Actual reviewed HEAD/common contract/base and coordination ref:
+**eb256aa8def4a3e7b453982e4b1413868db4a47c**, different from the supplied full SHA.
+Required real A04/A02 merges are **7858cce3cc21dbf0efe680094b28c3182b72d336**
+and **51ee2ed3432b8956cf3af9ebd410a04483e917d7**; G02/A01/A03/A03B,
+A05/A05B/A06 and completed 1B producers are merged ancestors. Allowed paths and
+exact producer/consumer limits are in AGENT_TASKS.md. No contract/frontend/
+dependency edits or staging/commit/push/merge performed.
+
+Implementation: deterministic G02 explanation with actual producer bases,
+base/normalized weights, factor values, per-factor rounded contributions,
+sum/cap and uncertainty. Inconsistent arithmetic/priority/order fails closed.
+A04 calls the generator, so new A05/A06 results and immutable history contain
+the explanation. A02 finding helper follows the exact finding observation IDs
+to same-case source evidence and row/column locators; unsupported rules, missing
+sources, foreign cases, wrong keys/evidence and mixed selected runs fail closed.
+No SHAP/learned feature importance is computed for these deterministic rules.
+No Finding field is added; its helper returns separate plain text.
+
+**Source-attribution limitation:** TriageFactor carries evidence IDs without
+observation IDs. Optional triage locator lists are explicitly evidence context,
+not exact per-factor support. Exact per-factor observation attribution remains
+unavailable under this handoff; the communication queue in AGENT_TASKS.md records
+M3 producer -> M4 U06/U07B/U06B/A17 consumer impact. Callers must select the
+original frozen observations; same-case validation cannot establish snapshot
+membership or authorization. This work does not claim that missing attribution
+has been solved by joining every observation in an evidence item.
+
+Actual required commands all pass:
+
+```sh
+npx @redocly/cli bundle specs/openapi.yaml --output /tmp/evora-openapi.json
+python scripts/verify_coordination.py /tmp/evora-openapi.json
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -m unittest discover -s scripts -p 'test_*.py'
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json /home/whale2186/.hermes/cache/scratch/test_neo4j_venv/bin/python -W error::ResourceWarning -m unittest discover -s backend/tests -p 'test_explanations.py' -v
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json /home/whale2186/.hermes/cache/scratch/test_neo4j_venv/bin/python -W error::ResourceWarning -m unittest discover -s backend/tests -p 'test_triage_endpoints.py' -v
+npm --prefix frontend run test
+git diff --check
+```
+
+Results: **10 A15**, **8 A06 endpoint**, **122 coordination**, **101 frontend**
+tests pass, no skips in those suites. The backend virtualenv actually runs
+Python **3.14.9**, jsonschema **4.25.1**; this is not proof of a clean pinned
+3.14.8 setup. Actual bundled Finding/TriageResult schemas are used with UUID
+and explicit UTC date-time checks, including unknown/missing field and invalid
+source/score/enum negatives. Initial test setup incorrectly passed string case
+IDs to a parser that requires UUID objects, and expected the literal word
+`column` in the producer's `row 2, device_id` locator. Corrected the tests to
+use actual producer contracts; no production workaround or locator rewrite.
+
+Counterfactual uses real parsers/normalization/candidate projection/A01/A02/
+A03/A03B/A04 over committed network CSV and a clearly labeled synthetic shared
+GPS variant. Target D-7 removal holds known keys/observations fixed: relevance
+**.8 -> .6**, connectivity **.1 -> 0**, score **48.88 -> 33.33**, candidate link
+removed and D-7 absent from the new explanation. Inputs remain unchanged and
+replay is deterministic. Diagnostic run UUIDs/time are unpersisted test context,
+not completed analysis resources. Saturation/rounding can mask removals for
+other datasets; no universal sensitivity or benchmark claim.
+
+Published acceptance creates a real temporary SQLite/private-original backend
+and exercises real FastAPI upload, processing, bodyless analysis, completed
+poll, pinned findings/triage and per-evidence history read-back. Findings retain
+source locators and uncertainty; results exactly retain the new generator's
+text in history. A second actor's triage read returns 404. The inherited Neo4j
+projection is an explicit test double, not a real server. No processing/factor/
+relationship/SQLite producer doubles are used.
+
+Additional focused regressions: **128 run, 126 pass, 2 opt-in live Neo4j skips**:
+
+```sh
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json /home/whale2186/.hermes/cache/scratch/test_neo4j_venv/bin/python -W error::ResourceWarning -m unittest backend.tests.test_triage_aggregation backend.tests.test_triage_policy backend.tests.test_relevance_factor backend.tests.test_connectivity_factor backend.tests.test_graph_links backend.tests.test_graph_nodes backend.tests.test_analysis backend.tests.test_graph_findings -v
+```
+
+Earlier completed-checkpoint backend regressions: **327 pass**, no skips:
+
+```sh
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json /home/whale2186/.hermes/cache/scratch/test_neo4j_venv/bin/python -W error::ResourceWarning -m unittest backend.tests.test_skeleton backend.tests.test_validation backend.tests.test_auth backend.tests.test_cases backend.tests.test_evidence backend.tests.test_audit backend.tests.test_audit_list backend.tests.test_m1_access backend.tests.test_network_csv backend.tests.test_gps_csv backend.tests.test_normalization backend.tests.test_candidate_entities backend.tests.test_source_events backend.tests.test_processing backend.tests.test_observations backend.tests.test_entities backend.tests.test_events backend.tests.test_processing_provenance backend.tests.test_processing_dispatch backend.tests.test_processing_publication backend.tests.test_processing_audit
+```
+
+Shared workflow and real earlier-checkpoint HTTP smoke also pass:
+
+```sh
+npx --yes @redocly/cli@2.57.0 lint specs/openapi.yaml
+npx --yes openapi-typescript@7.10.1 specs/openapi.yaml -o /tmp/evora-a15-api.d.ts
+frontend/node_modules/.bin/tsc --noEmit --strict /tmp/evora-a15-api.d.ts
+npm --prefix frontend run build
+npx --yes @google/design.md@0.4.0 lint DESIGN.md
+EVORA_TEST_PYTHON=/home/whale2186/.hermes/cache/scratch/test_neo4j_venv/bin/python node frontend/test/cases.integration.mjs
+```
+
+Existing OpenAPI missing-license warning only; DESIGN zero errors/warnings.
+Generated declarations compile and frontend build verifies declaration freshness.
+Initial HTTP smoke with default `python` failed import of Neo4j; selecting the
+provided virtualenv via the harness's EVORA_TEST_PYTHON setting passes. No
+package changes. Real localhost smoke exercises original bytes/hash/download,
+audit target/actor, authorized intake, network/GPS source inspection, pagination,
+processing command/poll, case/actor isolation and 400/401/404 controls.
+No live Neo4j, Windows, hosted CI, browser visual/accessibility, full NLP/model
+suite, benchmark or complete checkpoint proof is claimed. Checkpoint 1C/I01 and
+M3 remain open; next bounded consumer handoffs U06/U07B, followed by I01 only
+after all prerequisites and runbook exit evidence. No later task started.
