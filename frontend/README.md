@@ -811,11 +811,11 @@ failure diagnostics render as escaped text. Even a completed POST response needs
 a confirming GET before it becomes the selected completed analysis.
 
 `CaseAnalysisWorkspace` owns the controller and exposes
-`useAnalysisWorkspace(): { caseId, analysis_run_id: string | null }` to its
-children. A null pin means no confirmed completed analysis has been selected.
-Later U06/U07/U07B views must consume this single pin for all requests/pages,
-validate returned run IDs, and discard old view data when the pin changes.
-These views are separate tasks and are not implemented here. An earlier completed
+`useAnalysisWorkspace()` (case ID, selected analysis ID and completed-run adoption callback) to its
+children. A null pin means no completed analysis has been selected. U06 can adopt the
+completed ID returned by an initial latest triage read. U06 and future U07/U07B
+views consume this single pin for all requests/pages, validate returned run IDs,
+and discard old view data when the pin changes. An earlier completed
 pin stays selected while a new analysis is pending or fails; a completed poll
 switches the pin atomically. Case selection changes and session changes clear
 case state. No pending partition is requested or exposed by this component.
@@ -846,3 +846,52 @@ existing explicit transactional test double, not a live server. Set
 `EVORA_TEST_PYTHON` to a backend environment containing the repository dependencies
 when default `python` lacks them. No browser-mounted, visual/accessibility,
 Windows or full I01 completion claim follows from these tests.
+
+## U06: priority list
+
+The selected case displays **Triage & Priority** inside CaseAnalysisWorkspace.
+PriorityList and triageController use the generated `listTriage` client with
+`analysis_run_id`, `limit` and `offset`. The workspace pin selects a completed
+snapshot; without one, the first latest read adopts the API's completed ID.
+Every subsequent page/refresh keeps that ID. New completed analysis polling
+switches the shared selection and resets the list to page one. Earlier pins
+survive pending/failed newer work. Before any completed analysis, uploads appear
+as an explicitly live unscored list; completion during pagination restarts at
+the first page of the selected snapshot.
+
+The table shows Evidence ID, automated priority, two-decimal score, available
+factor values/weights/contributions and supporting Evidence IDs, explanation,
+and effective priority. Evidence without an automated result reads
+**Unprocessed / Not Scored**, with blank score/factors/explanation. Live override
+priority/reason are separate and never reorder the computed list. Refresh
+priorities rereads the pinned snapshot's first page and live overlays; it does
+not select a newer snapshot. Previous/Next follow authoritative server totals.
+Evidence and factor source buttons open the same-case evidence inspector. Its
+live metadata/processing view is labeled separately from the analytical snapshot.
+No fabricated scores, absent factors, evidence names or exact factor-to-observation
+attribution are added. All source strings render as React text.
+
+Mismatched run/case/evidence, changed pinned totals/previously read results,
+duplicates/order inconsistencies and malformed pages fail without showing stale
+or mixed entries. Fixed errors handle 401/404/transport failures; retry repeats
+the failed page. A 401 clears the session; reopen access and reselect the case.
+Requests abort and late responses are ignored on case/pin/session change or
+unmount. Snapshot checks remain in case-scoped memory and clear on disposal.
+
+```sh
+npm --prefix frontend run test
+node --test frontend/test/priority-list.test.mjs
+npm --prefix frontend run build
+node frontend/test/cases.integration.mjs
+```
+
+Focused tests require `.test-build` from `npm test`. Unit checks use synthetic
+Fetch doubles, static React rendering and panel handlers, including override
+refresh, pagination, mixed-run/failure/retry and controller lifecycle races.
+The real HTTP harness checks exact producer scores/factors/history and all-page
+membership/order after uploads and newer completed analyses. It uses real
+FastAPI/SQLite/processing/analysis with a declared transactional Neo4j double;
+set `EVORA_TEST_PYTHON` to an environment containing repository dependencies.
+Mounted browser/visual/accessibility, native Windows, live Neo4j and real override
+mutation acceptance are not established by these checks. Checkpoint 1C remains
+open for U07/U07B and I01 exit evidence.

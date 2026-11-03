@@ -6,12 +6,13 @@ import { useApiClient } from '../api/ApiProvider';
 import { createEvidenceStore, evidenceKinds } from './evidenceStore';
 import type { Evidence, EvidenceState } from './evidenceStore';
 
-export function EvidenceWorkspace({ caseId }: { caseId: string }) {
+export function EvidenceWorkspace({ caseId, sourceSelection }: { caseId: string; sourceSelection?: { id: string } }) {
   const client = useApiClient();
   const store = useMemo(() => createEvidenceStore(client, caseId), [client, caseId]);
   const state = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot);
   useEffect(() => { void store.start(); return () => store.dispose(); }, [store]);
-  return <EvidencePanels state={state} load={offset => { void store.load(offset); }} select={id => { void store.select(id); }} upload={store.upload} />;
+  useEffect(() => { if (sourceSelection) void store.select(sourceSelection.id); }, [store, sourceSelection]);
+  return <>{sourceSelection && <p role="status">Source evidence inspection shows live metadata and processing outputs, separately from the selected analysis snapshot.</p>}<EvidencePanels state={state} load={offset => { void store.load(offset); }} select={id => { void store.select(id); }} upload={store.upload} /></>;
 }
 function Metadata({ item, detailed = false }: { item: Evidence; detailed?: boolean }) {
   return <dl className="evidence-metadata">

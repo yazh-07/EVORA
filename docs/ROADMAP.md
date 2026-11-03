@@ -52,6 +52,34 @@ Comma-separated IDs below are **exhaustive assignments**, not ranges. Each catal
 | 6C | I06 | I06 | I06 reports measured threats/provenance/resource/privacy/competitor limitations after the full-scope gates; no invented metrics/originality/admissibility claims. | Backlog |
 
 
+### U06 live record — 2026-11-03
+
+**U06 / Checkpoint 1C / M4 JebasJ / In Progress pending review/publication.**
+Executed 2026-11-04 on initially clean `feat/u06-priority-list-ui`.
+Actual common contract/base **291ccfc364126ea678b4a0113494d0acaa4ec731** differs
+from the supplied full SHA. Exact merged dependencies and user-authorized paths
+are recorded in AGENT_TASKS.md; draft 0.3.0 is unchanged.
+
+PriorityList is embedded in the case analysis workspace. Typed listTriage reads
+pin the workspace completed analysis across server pages; an initial latest
+read adopts its selected completed run into the shared workspace. Run/case/
+evidence mismatches, changing pinned totals/results/order and malformed pages
+fail closed. Unscored evidence has no computed badge/score. Computed factors,
+source Evidence IDs and explanations render as escaped text. Source actions
+open the case-scoped inspector, explicitly labeled as a separate live view. Live overrides
+update effective priority without sorting or mutating automated history.
+Previous/Next follow server totals; safe errors/retry, aborts and late-delivery
+controls cover selection/session/unmount. Pre-analysis uploads are labeled live.
+
+Actual results and environment limits are in PREIMPLEMENTATION_REVIEW.md.
+Real HTTP integration uses merged FastAPI/SQLite/processing/analysis/scoring
+producers and an explicit Neo4j projection double, with permitted synthetic
+network/GPS inputs. It exercises exact scores/factors and immutable all-page
+membership/order after uploads and newer completed analyses. Override writes
+remain U09/2B; overlay rendering is tested against synthetic Fetch responses.
+Checkpoint 1C/I01 and M4 stay open. Next bounded tasks U07/U07B and remaining I01
+prerequisites/runbook exit evidence. No stage, commit, push or merge performed.
+
 ### U05D live record — 2026-11-03
 
 **U05D / Checkpoint 1C / M4 JebasJ / In Progress pending review/publication.**

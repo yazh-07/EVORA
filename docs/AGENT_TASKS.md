@@ -1078,3 +1078,40 @@ by client disposal. Full proposal and approved speech addition remain required.
   Neo4j double; live Neo4j remains opt-in. Results/limits in
   PREIMPLEMENTATION_REVIEW.md. Checkpoint 1C/I01 remains open; next consumer
   handoff is I01 after its remaining UI prerequisites and runbook exit evidence.
+
+### U06 assignment — 2026-11-03
+
+- **U06 / Checkpoint 1C / M4 Investigator Application / JebasJ**.
+  User-assigned clean `feat/u06-priority-list-ui`, Backlog -> In Progress
+  pending review/publication. Execution date 2026-11-04.
+- Exact actual reviewed common contract/base and coordination ref:
+  **291ccfc364126ea678b4a0113494d0acaa4ec731**. Supplied full SHA
+  `291ccfce06b2f76fe3ce5926ecdbd0c8ec1712a7` differs. Draft 0.3.0 unchanged.
+- Required real dependency merges: U01
+  **f8c5fe7b7abf62a02d8dd96fd89ad7bd6e57b029**, A06
+  **eb256aa8def4a3e7b453982e4b1413868db4a47c**. Consumed workspace pin U05D
+  **291ccfc364126ea678b4a0113494d0acaa4ec731**, A15 explanations
+  **9184bed7f5b0ff1ab265452f54392aa168fbe6cc**. All are merged ancestors;
+  completed checkpoints 0/1A/1B remain preserved. No missing producer substitute.
+- Allowed paths: `frontend/src/cases/`, `frontend/test/`,
+  `frontend/README.md`, `docs/AGENT_TASKS.md`, `docs/ROADMAP.md`,
+  `docs/PREIMPLEMENTATION_REVIEW.md`. Explicit user shared-doc handoff;
+  no spec/backend/dependency edits, stage/commit/push/merge authorization.
+- Acceptance: typed listTriage, pinned completed snapshot on every page,
+  server total/order, evidence IDs, automated bands/two-decimal scores/factors/
+  explanations, honest unscored/empty states, separate live override indicator,
+  fixed safe errors/retry and abort/disposal/session controls. Schema-derived
+  Fetch doubles plus real HTTP/SQLite/processing/analysis acceptance, exact
+  score/factor/history read-back and upload/new-completion between page reads.
+- Producer/consumer queue A06/U05D -> U06 and future U07/U07B: resolved using
+  existing selected-run response and workspace pin. A latest triage response
+  adopts a completed ID only while the workspace has no pin; a confirmed newer
+  analysis completion switches all consumers coherently. Refresh priorities
+  retains the selected snapshot and refreshes live overlays, never re-sorts.
+  Before any completed run the upload list is explicitly live/unscored. A15
+  factors carry Evidence IDs, not observation IDs; no exact factor-level locator
+  attribution or new route/field is invented. No unresolved U06 contract gate.
+- Override mutation remains U09/2B; U06 overlay tests use declared synthetic
+  responses. Actual verification/doubles/limits are in PREIMPLEMENTATION_REVIEW.md.
+  Checkpoint 1C/I01 and M4 remain open; next bounded handoffs U07/U07B, then I01
+  after all prerequisites and runbook exits. Other module owners unchanged.
