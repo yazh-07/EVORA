@@ -132,6 +132,29 @@ no stage/commit/push/merge authorized. This supersedes U05C's historical stateme
 that its accepted-status view does not poll. Next bounded M4 row is U05B, with
 its own handoff; U13/I00B and Checkpoint 1B remain open. No module closure.
 
+### U05B live record — 2026-11-03
+
+**U05B / Checkpoint 1B / M4 JebasJ / In Progress pending review/publication.**
+User-assigned branch `feat/u05b-observation-inspector-ui` starts clean at actual
+common contract/base **32b8adeecec8903edc1dde5ae56ad8a175a61607**, matching local
+`docs/coordination-foundation`; the supplied full hash differs. U05 and real
+P04B merge **c29e517f218c0851a9959cfa389b093242a255ab** are integrated ancestors;
+AGENT_TASKS.md records the exact bounded/shared-path handoff.
+
+Selected evidence loads latest completed observations through the generated
+client, including exact source locators/raw/normalized/time/confidence fields.
+A U05 completed-status notification refreshes the inspector; the investigator can
+pin that completed run across pages, retaining the pin if another run completes.
+Server totals control pagination; empty/error/session/abort states are explicit.
+Foreign evidence/run responses are rejected. Real synthetic network outputs,
+historical read-back after newer completion and case isolation are verified in
+PREIMPLEMENTATION_REVIEW.md, U05B verification. Unit rendering uses synthetic
+Fetch doubles, without a browser mount/accessibility claim.
+
+Spec/backend/dependencies remain unchanged; no stage/commit/push/merge authorized.
+U13 and joint I00B need separate handoffs. Checkpoint 1B stays open; no module or
+full-scope completion claim.
+
 ## Work in parallel without breaking the sequence
 
 Four people keep their module responsibility and contribute the part needed for the active checkpoint. M2/M3 have heavier work; scoped help is allowed with one accountable interface. Nobody waits for an entire module to finish.

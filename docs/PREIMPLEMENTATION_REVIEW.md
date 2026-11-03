@@ -3551,3 +3551,92 @@ task. Earlier checkpoint exits and the full agreed initial scope stay open.
 The combined Windows backend run discovered 428 tests. It passed 427 with the existing Windows symlink skip. Cross-platform GitHub Actions verification is tracked on the shared integration commit.
 
 P13 merged in c5647755b84a25fd4a976ee3207e0e32324de896 from task head 1d57842. All nine focused and document loopback tests passed on the merge, together with the coordination verifier and real I00/U05C smoke after rebuilding frontend test assets.
+
+
+### U05B verification — 2026-11-03
+
+**U05B / Checkpoint 1B / M4 JebasJ / In Progress pending review/publication and
+full backend environment verification.** Clean starting branch
+`feat/u05b-observation-inspector-ui` and local `docs/coordination-foundation` both
+read back at **32b8adeecec8903edc1dde5ae56ad8a175a61607**; this actual Git commit
+differs from the supplied full hash. Real U05 task
+**50a5e9c4a36afc986f20200b2adfa28f1a938002** and P04B merge
+**c29e517f218c0851a9959cfa389b093242a255ab** are confirmed ancestors. Assignment,
+allowed paths and shared-document handoff are in AGENT_TASKS.md. No spec/backend/
+package dependency edits, staging, commit, push, merge or fresh remote read-back.
+
+Implemented the API-only selected-evidence observation inspector with exact
+kind/source locator/raw/normalized/source time/UTC/confidence and output-run ID.
+Unknown times display as not provided. Values render as escaped React text,
+including hostile markup and preserved raw whitespace; confidence remains
+separate from source reliability and conclusion uncertainty. Pagination uses
+server total/limit/offset; no completed output and empty later pages are distinct.
+Fixed alerts cover 400/401/404/500/network failures and retry the current page;
+after 401 reopen an authorized session/reselect evidence. Session changes clear
+values. Selection, optional run selector and completion-refresh changes dispose
+the controller, abort in-flight requests and ignore stale delivery; the inspector
+creates no timers. Existing U05 owns polling and terminal/disposal timer cleanup.
+Completed-status callbacks refresh latest observations. Optional historical pin
+captures that completed run and retains it across pages/newer completions.
+Unpinned reads intentionally follow the existing per-request latest policy, so
+concurrent reprocessing can change unpinned page membership; pin for stable pages.
+No new contract choice or producer/consumer mismatch was needed.
+
+Actual Linux environment: **Python 3.14.9, SQLite 3.54.1, Node v22.23.4,
+npm 12.2.1**. The system jsonschema was 4.26.0; verification instead uses
+`/tmp/evora-u05b-venv` created with `python -m venv --system-site-packages` and
+installed **jsonschema 4.25.1**, without editing repository requirements. Pip
+reported an inherited unrelated gns3-gui requirement for jsonschema >=4.26.0;
+this is not a clean full-dependency setup claim. The committed P13 worker requires
+Python 3.14.8 and exact spaCy 3.8.18/thinc 8.3.14/numpy 2.5.4/model 3.8.0.
+The local environment lacks spaCy/model; the full suite therefore cannot certify
+that producer here. Available alternate Python installations are 3.11/3.12,
+not the pinned 3.14.8. No manifest weakening or synthetic model substitution.
+
+| Actual command (repository root; temporary environment activated for Python checks) | Result |
+|---|---|
+| `npx @redocly/cli bundle specs/openapi.yaml --output /tmp/evora-openapi.json` | PASS; requested unpinned invocation resolved Redocly 2.73.0 |
+| `npx --yes @redocly/cli@2.57.0 lint specs/openapi.yaml` | PASS; existing missing info.license warning |
+| `npx --yes openapi-typescript@7.10.1 specs/openapi.yaml -o /tmp/evora-u05b-api.d.ts` and `frontend/node_modules/.bin/tsc --noEmit --strict /tmp/evora-u05b-api.d.ts` | PASS |
+| `python scripts/verify_coordination.py /tmp/evora-openapi.json` | PASS; 27 operations / 126 tasks / complete phase/DAG/link/scope checks |
+| `EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -m unittest discover -s scripts -p 'test_*.py'` | PASS, **122 tests** |
+| `EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -W error::ResourceWarning -m unittest discover -s backend/tests -v` | **428 run: 413 pass, 7 failures, 8 errors**; existing document/NLP model-unavailable paths and dependent old-adapter-history tests |
+| Same Python flags with `-m unittest backend.tests.test_observations backend.tests.test_processing backend.tests.test_auth backend.tests.test_cases backend.tests.test_evidence backend.tests.test_audit backend.tests.test_m1_access backend.tests.test_validation -v` | PASS, **131 tests**; real current producers and prior intake/access/validation regressions |
+| `npm --prefix frontend run test` | PASS, **79 tests**, including **13 U05B tests** |
+| `npm --prefix frontend run build` | PASS; generated declaration freshness, TypeScript and bundle |
+| `node frontend/test/cases.integration.mjs` | PASS; real FastAPI/SQLite/client/controller plus prior I00/U02/U02B/U03/U04/U05C/U05 smoke |
+| `npx --yes @google/design.md@0.4.0 lint DESIGN.md` | PASS, 0 errors/warnings |
+| `git diff --check` | PASS |
+
+Unit coverage uses synthetic Fetch doubles, static React rendering and actual
+panel pagination/retry handlers: source/raw/normalized/time/confidence and markup
+escaping, server-authoritative totals/bounds, genuine empty versus later empty,
+400/401/404/500/network failures, per-page historical selector, foreign response
+rejection, request replacement, selection/disposal late success/error and session
+change. No browser-mounted interaction, visual, screen-reader, Windows, hosted
+CI or production identity verification is claimed.
+
+Real integration uploads permitted `fixtures/synthetic-case/network.csv`, starts
+and polls real merged P04, then reads six real P04B observations. Exact expected
+locators/raw values: row 2 device_id D-7, ip_address 203.0.113.7, event connected;
+row 3 device_id D-9, ip_address 203.0.113.9, event connected. Raw/normalized,
+source/UTC time and confidence 0 match the producer. Pinned pages at offsets
+0/2/4/6 preserve all six unique IDs/order and authoritative total; the actual
+inspector controller reads the exact completed output. A newer real run completes:
+default reads select it, while pinned historical output remains exactly equal.
+Unprocessed evidence returns total 0. Invalid limit returns 400; missing run,
+same-case mismatched evidence/run and foreign case return safe 404 ApiError.
+Original byte/hash/private intake-audit regression remains green.
+
+Baseline control: archived committed **32b8adeecec8903edc1dde5ae56ad8a175a61607**
+to `/tmp/evora-u05b-base-32b8ade` using `git archive HEAD` (no repository backend
+edits), then ran the same full backend command/environment there. It also ran
+**428 tests with the identical 7 failure / 8 error test names**. All 15 failing
+paths therefore reproduce on the unchanged task base; the candidate introduces
+no additional backend failures in this environment. This does not make the
+required full backend regression green.
+
+No checkpoint completion is claimed. Full backend model-runtime verification
+remains unavailable locally; Checkpoint 1B still needs U13 and real joint I00B
+exit evidence under their own bounded handoffs. Full initial proposal/additions
+remain required; this session starts no next task.

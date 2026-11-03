@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 import { createApiClient } from '../.test-build/src/api/client.mjs';
 import { createOriginalDownload } from '../.test-build/src/cases/downloadController.mjs';
 import { createCaseStore } from '../.test-build/src/cases/store.mjs';
-import { createEvidenceStore, createProcessingController, createProcessingStatusController } from '../.test-build/src/cases/CaseWorkspace.mjs';
+import { createEvidenceStore, createProcessingController, createProcessingStatusController, createObservationController } from '../.test-build/src/cases/CaseWorkspace.mjs';
 
 // Run explicitly after npm test + build. Real HTTP, FastAPI and SQLite; synthetic identities/data only.
 const temporary = await mkdtemp(join(tmpdir(), 'evora-u02-'));
@@ -229,8 +229,68 @@ try {
     path: { ...runPath, caseId: first.items[0].id },
   }), { status: 404 });
   console.log('PASS U05 real P04: status controller polls exact case/evidence/run to completed, version/finished_at read-back, terminal stop, missing-run/foreign-case 404.');
+  // U05B: real P04B outputs, exact physical source locators/raw values, no SQL output doubles.
+  const observationQuery = { evidence_id: processingEvidence.id };
+  const observations = query => client.request('get', '/api/v1/cases/{caseId}/observations', {
+    path: { caseId: created.id }, query: { ...observationQuery, ...query },
+  });
+  const latestObservations = await observations({ limit: 20, offset: 0 });
+  assert.equal(latestObservations.total, 6);
+  const expectedSources = [
+    ['network.device', 'row 2, device_id', 'D-7'],
+    ['network.ip', 'row 2, ip_address', '203.0.113.7'],
+    ['network.event', 'row 2, event', 'connected'],
+    ['network.device', 'row 3, device_id', 'D-9'],
+    ['network.ip', 'row 3, ip_address', '203.0.113.9'],
+    ['network.event', 'row 3, event', 'connected'],
+  ];
+  assert.deepEqual(latestObservations.items.map(item => [item.kind, item.source_locator, item.raw_value]).sort(), expectedSources.sort());
+  for (const item of latestObservations.items) {
+    assert.equal(item.case_id, created.id); assert.equal(item.evidence_id, processingEvidence.id);
+    assert.equal(item.processing_run_id, acceptedRun.id); assert.equal(item.normalized_value, item.raw_value);
+    assert.equal(item.observed_at_raw, item.source_locator.startsWith('row 2,') ? '2026-01-12T10:01:00Z' : '2026-01-12T10:02:00Z');
+    assert.equal(item.observed_at_utc, item.observed_at_raw); assert.equal(item.extraction_confidence, 0);
+  }
+  const pinnedQuery = { processing_run_id: acceptedRun.id };
+  const collected = [];
+  for (const offset of [0, 2, 4, 6]) {
+    const page = await observations({ ...pinnedQuery, limit: 2, offset });
+    assert.deepEqual([page.total, page.limit, page.offset], [6, 2, offset]); collected.push(...page.items);
+  }
+  assert.deepEqual(collected, latestObservations.items); assert.equal(new Set(collected.map(item => item.id)).size, 6);
+  const inspector = createObservationController(client, created.id, processingEvidence.id, acceptedRun.id);
+  try { inspector.start(); await inspector.load(); assert.deepEqual(inspector.getSnapshot().page, latestObservations); }
+  finally { inspector.dispose(); }
+  const unprocessedObservations = await client.request('get', '/api/v1/cases/{caseId}/observations', {
+    path: { caseId: created.id }, query: { evidence_id: emptyEvidence.id },
+  });
+  assert.equal(unprocessedObservations.total, 0); assert.deepEqual(unprocessedObservations.items, []);
+  for (const query of [{ ...observationQuery, processing_run_id: '00000000-0000-4000-8000-000000000000' }, { ...observationQuery, limit: 0 }]) {
+    await assert.rejects(client.request('get', '/api/v1/cases/{caseId}/observations', { path: { caseId: created.id }, query }),
+      { status: query.limit === 0 ? 400 : 404 });
+  }
+  await assert.rejects(observations({ evidence_id: emptyEvidence.id, ...pinnedQuery }), error => {
+    assert.equal(error.status, 404); assert.deepEqual(error.apiError, { code: 'NOT_FOUND', message: 'Resource not found.' }); return true;
+  });
+  await assert.rejects(client.request('get', '/api/v1/cases/{caseId}/observations', {
+    path: { caseId: first.items[0].id }, query: { ...observationQuery, ...pinnedQuery },
+  }), error => {
+    assert.equal(error.status, 404); assert.deepEqual(error.apiError, { code: 'NOT_FOUND', message: 'Resource not found.' }); return true;
+  });
+  console.log('PASS U05B real P04B: all six exact source/raw/normalized/time/confidence values, inspector read-back, pinned pagination without skips, honest empty output, invalid query/missing run/foreign case isolation.');
   await processing.submit();
   assert.notEqual(processing.getSnapshot().run.id, acceptedRun.id, 'new explicit action uses a new key/run');
+  const newerRun = processing.getSnapshot().run;
+  for (let attempt = 0; ; attempt++) {
+    const run = await client.request('get', '/api/v1/cases/{caseId}/evidence/{evidenceId}/processing-runs/{runId}', {
+      path: { ...runPath, runId: newerRun.id },
+    });
+    if (run.status === 'completed') break;
+    assert.notEqual(run.status, 'failed'); assert.ok(attempt < 100, 'new run completes');
+    await new Promise(resolve => setTimeout(resolve, 10));
+  }
+  assert.deepEqual(await observations(pinnedQuery), latestObservations, 'historical completed output survives real newer completion');
+  assert.ok((await observations()).items.every(item => item.processing_run_id === newerRun.id));
   const path = { caseId: created.id, evidenceId: processingEvidence.id };
   await assert.rejects(client.request('post', '/api/v1/cases/{caseId}/evidence/{evidenceId}/processing-runs', { path, header: { 'Idempotency-Key': '' } }), { status: 400 });
   await assert.rejects(client.request('post', '/api/v1/cases/{caseId}/evidence/{evidenceId}/processing-runs', { path: { ...path, evidenceId: '00000000-0000-4000-8000-000000000000' }, header: { 'Idempotency-Key': crypto.randomUUID() } }), { status: 404 });

@@ -683,3 +683,42 @@ uses the U05 status controller (10 ms test interval) after starting synthetic
 network.csv, checks exact run/case/evidence/version and terminal finished_at
 against API read-back, checks terminal polling stops and missing-run/foreign-case
 404, and retains prior intake/download/audit/start-processing regressions.
+
+
+### U05B observation inspector
+
+Selecting evidence loads `listObservations` with its `evidence_id`, `limit=20`
+and `offset=0`. The inspector shows source kind/locator, exact raw and normalized
+values, source time/UTC when provided, extraction confidence and processing run.
+Observations remain unverified; extraction confidence is separate from source
+reliability or conclusion certainty. All source values render as React text.
+
+Latest completed output is the default, including a genuine empty state for
+unprocessed or completed empty outputs. U05 completion refreshes this view. A
+checkbox can pin the just-completed run; that historical pin survives a newer
+completion and applies to every page. Unchecking selects current latest output.
+`ObservationInspector` also accepts `processingRunId` for a specific historical
+run. Page navigation follows the server's `total`, `limit` and `offset`; an empty
+later page does not claim there are no completed observations. Refresh returns to
+the first page. Fixed alerts handle invalid requests, unavailable evidence/runs,
+authentication and transport failures; retry repeats the failed page. After a
+401, reopen an authorized session and reselect evidence. Selection/run/session
+changes and unmount abort requests and discard stale delivery; this inspector
+creates no timers and retains no persistent evidence cache.
+
+Run from the repository root:
+
+```sh
+npm --prefix frontend run test
+node --test frontend/test/observation-inspector.test.mjs
+npm --prefix frontend run build
+node frontend/test/cases.integration.mjs
+```
+
+The focused command requires the `.test-build` output produced by `npm test`.
+Unit tests use synthetic Fetch doubles, static React rendering and actual panel
+button handlers. The integration script starts real FastAPI/SQLite with synthetic
+identities and permitted `network.csv`, verifies all six exact source values,
+completed-run selection/pagination/history and foreign-case 404 ApiError, and
+reruns the earlier intake/download/start/status smoke. It is not a browser mount
+or visual/accessibility certification. Full checkpoint 1B exit remains I00B.

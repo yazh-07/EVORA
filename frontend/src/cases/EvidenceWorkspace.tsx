@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useSyncExternalStore } from 'react';
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { ObservationInspector } from './ObservationInspector';
 import { OriginalDownload } from './OriginalDownload';
 import { StartProcessing } from './StartProcessing';
 import { useApiClient } from '../api/ApiProvider';
@@ -82,8 +83,22 @@ export function EvidencePanels({ state, load, select, upload }: {
         {state.detailStatus === 'loading' && <p role="status">Loading evidence metadata...</p>}
         {state.detailStatus === 'error' && <p role="alert">{state.detailMessage} Select evidence again to retry.</p>}
         {state.detail && <><h3>{state.detail.source_label}</h3><Metadata item={state.detail} detailed /><OriginalDownload key={state.detail.id} item={state.detail} />
-          <StartProcessing key={`${state.detail.case_id}:${state.detail.id}`} caseId={state.detail.case_id} evidenceId={state.detail.id} /></>}
+          <EvidenceProcessingInspection key={`${state.detail.case_id}:${state.detail.id}`} item={state.detail} /></>}
       </aside>
     </div>
   </div>;
+}
+
+/** Selection-keyed lifetime also discards the previous completion/pin on evidence switches. */
+export function EvidenceProcessingInspection({ item }: { item: Evidence }) {
+  const [completedRunId, setCompletedRunId] = useState<string>();
+  const [pinnedRunId, setPinnedRunId] = useState<string>();
+  return <>
+    <StartProcessing caseId={item.case_id} evidenceId={item.id} onCompleted={setCompletedRunId} />
+    {completedRunId && <label><input type="checkbox" checked={pinnedRunId !== undefined} onChange={event => setPinnedRunId(event.target.checked ? completedRunId : undefined)} />
+      Pin observations to completed run {pinnedRunId ?? completedRunId}
+    </label>}
+    <ObservationInspector caseId={item.case_id} evidenceId={item.id}
+      processingRunId={pinnedRunId} refreshKey={pinnedRunId ?? completedRunId} />
+  </>;
 }
