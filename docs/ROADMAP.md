@@ -386,6 +386,34 @@ blocks A01. Checkpoint 1C and M3 remain open; next bounded M3 handoff is A02.
 Neo4j partition/recovery, analysis publication and I01 exit remain required.
 No staging, commit, push, merge, Windows or hosted-CI result is claimed.
 
+
+### A02 live record — 2026-11-03
+
+**A02 / Checkpoint 1C / M3 / whale2186 / In Progress, locally implemented pending review/publication.**
+User-assigned `feat/a02-candidate-link-rule`, clean actual reviewed contract/base
+**11961c4ab4c1167e1d0ad8c83fe52440b2466a9a**, matching the local coordination
+ref. The supplied full hash differs and is not a local Git object. Real A01
+is merged at that HEAD; G02 and all 1B dependencies are ancestors. Exact task
+version, allowed paths and shared-doc handoff are in A02 assignment in
+AGENT_TASKS.md. Draft 0.3.0 stays unchanged.
+
+`backend/graph_links.py` derives deterministic frozen candidate edges/findings
+from exact namespaced Entity keys and checked same-case Observation citations.
+Distinct source Entity UUIDs are retained, all source arrays and output IDs sort
+deterministically, and unrelated/same-evidence/singleton candidates stay unlinked.
+Missing/foreign/broken sources, conflicting UUIDs and mixed processing-run inputs
+fail closed. Findings use the contract's `relationship` enum with a candidate
+summary and `candidate_link_shared_identifier:v1`; confidence 0 is unassessed.
+The producer/consumer discrepancy is resolved in the assignment review queue.
+
+13 focused tests pass, including real upload/processing/API source read-back and
+A01 nodes. Committed network/GPS inputs are a no-match control; positive tests
+use a labeled in-test GPS D-7/D-8 variant while network D-9 remains unlinked.
+Full shared checks/regression results and limits are in A02 verification in
+PREIMPLEMENTATION_REVIEW.md. Checkpoint 1C and M3 stay open: A01B/A05 publication
+and I01 exit remain required. Next bounded M3 handoff is A03 or A03B. No staging,
+commit, push, merge, Windows or hosted-CI result is claimed.
+
 ## Checkpoint 1B processing audit
 
 ### G02 live record — 2026-11-03

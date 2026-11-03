@@ -785,3 +785,36 @@ by client disposal. Full proposal and approved speech addition remain required.
 | Verification/dependency handling | Actual commands/results, private SQL read-back and labeled fault injections versus real HTTP acceptance are in I00B verification in PREIMPLEMENTATION_REVIEW.md. Later NLP model failures are recorded separately; no unresolved contract choice or producer gate affects network/GPS acceptance |
 | State | **Complete**, locally verified against real merged dependencies; Checkpoint 1B sealed in the ledger, Checkpoint 1C active. Separate later NLP full-suite failures remain recorded |
 | Publication/next handoff | No stage/commit/push/merge authorized or performed. Checkpoint completion is a locally verified ledger result, not a merged-commit smoke claim. Next checkpoint 1C becomes active after the gate; G01D/G02 require their own bounded assignments and policy/setup acceptance |
+
+### A02 assignment — 2026-11-03
+
+- **A02 / Checkpoint 1C / M3 Evidence Fusion and Adaptive Triage / whale2186**,
+  explicitly assigned on `feat/a02-candidate-link-rule`; initially Backlog,
+  now In Progress pending review/publication. Module interfaces remain M1
+  sharmelas-925, M2 yazh-07, M3 whale2186 and M4 JebasJ.
+- Clean actual reviewed common contract/base and local coordination ref:
+  **11961c4ab4c1167e1d0ad8c83fe52440b2466a9a**. The supplied full hash
+  `11961c47ea414ce558f6c91a3cfb8b7eb36ea6ad` is not a local Git object.
+  The actual base contains real A01 merge at that HEAD (task
+  **16e6429a22fa6250fdeebc4c47f6ab0a4d0349bf**), G02 merge
+  **d1f16ef02a62c2ce94bdd19539037a7b60cecabf** and completed 1B/I00B
+  at **740f40662158caeed41b2de963cbb185b69fa51d**. No producer substitute.
+- Allowed paths: `backend/graph_links.py`, `backend/tests/test_graph_links.py`,
+  `backend/README.md`, `docs/AGENT_TASKS.md`, `docs/ROADMAP.md`,
+  `docs/PREIMPLEMENTATION_REVIEW.md`; explicit user handoff for shared docs.
+  No spec/frontend/dependency edit or stage/commit/push/merge authorization.
+- Acceptance: exact shared candidate key across distinct Evidence; deterministic
+  source UUID endpoints; unique nonempty same-case Evidence/Observation citations
+  resolving locators; D-9 unlinked; strict bundled GraphEdge/Finding validation;
+  empty-input, case isolation and invalid-source controls. Real merged network/GPS
+  processing and A01 nodes are integrated in acceptance.
+- Resolved handoff discrepancy / producer-consumer review queue: unchanged draft
+  0.3.0 requires Finding.kind `relationship`, not `candidate_match`; A02 produces
+  `relationship` with a candidate summary and versioned rule. A03/A03B/A05B and
+  M4 U07B consumers must use that existing enum. No new enum or spec change.
+  Committed GPS contains only D-8: preserve the original negative control and use
+  a labeled in-test D-7/D-8 synthetic variant for positive acceptance. No pending
+  choice blocks A02. Nonempty entities require observations for checked joins.
+- Exact verification/limitations are in A02 verification in
+  PREIMPLEMENTATION_REVIEW.md. Checkpoint 1C/I01 remains open; next bounded
+  dependency-ready M3 handoff is A03 or A03B, separately assigned.
