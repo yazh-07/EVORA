@@ -52,6 +52,26 @@ Comma-separated IDs below are **exhaustive assignments**, not ranges. Each catal
 | 6C | I06 | I06 | I06 reports measured threats/provenance/resource/privacy/competitor limitations after the full-scope gates; no invented metrics/originality/admissibility claims. | Backlog |
 
 
+### A05B live record — 2026-11-03
+
+**A05B / Checkpoint 1C / M3 whale2186 / In Progress pending review/publication.**
+Explicit bounded assignment on clean initial `feat/a05b-expose-graph-findings`,
+actual common contract/base **266f39f4df18e261a156240ff4d828f74afafe2b**;
+supplied full SHA differs. Execution 2026-11-04. AGENT_TASKS.md records allowed
+paths and integrated dependency versions.
+
+Authorized getGraph/listFindings read the same immutable SQL-published completed
+run, selected by optional ID or UTC created time then UUID descending. Pending,
+failed, foreign and nonexistent selectors are hidden with standard 404. No-run
+empty results omit the ID; selected empty results retain it. Findings retain
+stored order, authoritative total and stable pinned pagination across new runs.
+Reads use SQL output as explicitly assigned, not a live Neo4j query/rebuild.
+Default tests use real processing/A05/A01B SQL publication with a declared Neo4j
+double. Verification and inherited regression limits are recorded in
+PREIMPLEMENTATION_REVIEW.md. Checkpoint 1C/I01 and M3 stay open; next bounded
+M3 row A06 and M4 U07/U07B integration need their own handoffs. No publication
+or later task started.
+
 ### A05 live record — 2026-11-03
 
 **A05 / Checkpoint 1C / M3 whale2186 / In Progress.** Explicit user assignment

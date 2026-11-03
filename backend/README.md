@@ -2754,3 +2754,42 @@ positive control appends one permitted synthetic D-7 row to the uploaded bytes;
 checked-in fixtures remain unchanged. Failed verification/retry, same-key
 concurrent SQLite writers, frozen queued recovery, post-graph-commit restart,
 UTC/UUID selection, algorithm immutability and actor/case negatives are covered.
+
+## A05B graph and findings reads (Checkpoint 1C)
+
+- `GET /api/v1/cases/{caseId}/graph` (`getGraph`) returns the selected completed
+  run's immutable SQL graph.
+- `GET /api/v1/cases/{caseId}/findings` (`listFindings`) returns stored-order
+  findings with authoritative `total`, `limit` (default 20, range 1–100) and
+  `offset` (default 0, nonnegative).
+
+Both require case access and accept optional `analysis_run_id` to pin one
+same-case completed snapshot. Without it, selection uses UTC `created_at`
+descending, then UUID descending, rather than finish time. A selected snapshot's
+ID is returned even for empty graphs/findings or an out-of-range page. Before
+any completed analysis, graph nodes/edges and finding items are empty, total is
+zero and the ID is omitted. Missing, foreign, queued, running or failed selectors
+return 404 `ApiError` with `Resource not found.` Invalid parameters return the
+shared safe 400; missing authentication returns 401. Unknown/repeated query
+parameters are rejected. Responses use `Cache-Control: no-store`.
+
+A01B verifies projection/source coherence before SQL completion. These endpoints
+read that completed authoritative `analysis_outputs` record in a consistent SQL
+transaction; pending/failed persisted output is never exposed. They do not query
+or rebuild live Neo4j on reads. The existing projection verification/rebuild
+helpers remain separate. Pin the returned ID across every findings page and
+related graph/triage requests to avoid mixing newer snapshots. No findings imply
+verified identity, source truth or guilt.
+
+```sh
+npx @redocly/cli bundle specs/openapi.yaml --output /tmp/evora-openapi.json
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json /home/whale2186/.hermes/cache/scratch/test_neo4j_venv/bin/python -W error::ResourceWarning -m unittest discover -s backend/tests -p 'test_graph_findings.py' -v
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json /home/whale2186/.hermes/cache/scratch/test_neo4j_venv/bin/python -W error::ResourceWarning -m unittest discover -s backend/tests -p 'test_analysis.py' -v
+```
+
+Use your installed pinned Python environment on other machines. Default A05B
+coverage uses real HTTP/SQLite/processing/analysis/publication with synthetic
+actors/data and an explicit transactional Neo4j double. The optional
+`EVORA_NEO4J_INTEGRATION=1` test requires a disposable configured Neo4j, verifies
+real partition publication/read-back and removes its own partitions. Default
+success does not certify actual Neo4j, Windows, hosted CI or I01 integration.
