@@ -1,6 +1,21 @@
 # EVORA scoped agent assignment templates
 
 
+### U05D assignment — 2026-11-03
+
+| Field | Recorded assignment |
+|---|---|
+| Task/checkpoint/module/owner | U05D / 1C / M4 Investigator Application / JebasJ; explicit bounded user handoff; execution 2026-11-04 |
+| Branch/common contract base | Initially clean `feat/u05d-start-analysis-ui`; actual HEAD and local `docs/coordination-foundation` **d49a6baa84a0a919131963efdd918634eb0e4856**. Supplied full SHA `d49a6ba2e604ce19ad37c15243aa71ec5053f1d8` differs. OpenAPI 0.3.0 unchanged |
+| Allowed paths | `frontend/src/cases/`, `frontend/test/`, `frontend/README.md`, `docs/AGENT_TASKS.md`, `docs/ROADMAP.md`, `docs/PREIMPLEMENTATION_REVIEW.md`; explicit shared-document handoff. No spec/backend/dependency edits or stage/commit/push/merge authorization |
+| Real dependency versions | U01 merge f8c5fe7b7abf62a02d8dd96fd89ad7bd6e57b029; A05 266f39f4df18e261a156240ff4d828f74afafe2b; F08B d49a6baa84a0a919131963efdd918634eb0e4856. A01B/A05B/A06/A15 and completed 0/1A/1B producers are merged ancestors |
+| Interface/dependency handling | U01 typed bodyless startAnalysis plus UUID header -> A05 accepted AnalysisRun -> serial getAnalysisRun -> confirmed completed workspace pin. Real HTTP/FastAPI/SQLite/processing/analysis acceptance, explicit transactional Neo4j double |
+| Acceptance | Explicit action, unique UUID keys and busy guard, queued/running/failed/completed states, default 750 ms serial polling, terminal stop, completed GET before atomic pin, prior completed pin survives new pending/failed work, safe 400/401/404/network alerts and fresh-key retry, case/session/unmount abort and stale-delivery rejection |
+| Resolved producer/consumer handoff | M3 whale2186 A05 produces immutable completed runs; M4 JebasJ U05D exposes `useAnalysisWorkspace` in `frontend/src/cases/StartAnalysis.tsx` with caseId and nullable analysis_run_id. U06/U07/U07B must consume this pin for every read/page, reject mismatched IDs and reset view data on pin changes. No downstream UI implementation or I01 closure claimed; no unresolved U05D contract gate |
+| State/next | In Progress pending review/publication. Verification and limitations in PREIMPLEMENTATION_REVIEW.md. Next bounded consumer task U06; U07/U07B retain their own acceptance, then I01 exit evidence. Checkpoint 1C and M4 remain open |
+
+
+
 ### A06 assignment — 2026-11-03
 
 | Field | Recorded assignment |

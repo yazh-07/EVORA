@@ -1,6 +1,7 @@
 """U02 local synthetic integration server; not a production entry point.
 
-Real F00/F01/F02/F03/F04 and SQLite; only identity tokens and fixtures are synthetic.
+Real FastAPI/SQLite/processing/analysis producers; synthetic identities/data.
+U05D uses the existing transactional Neo4j double, not a live graph service.
 The static mount serves the built UI on the API origin without changing CORS.
 """
 import argparse
@@ -13,6 +14,13 @@ import uvicorn
 from starlette.staticfiles import StaticFiles
 from backend.app import create_app
 from backend.auth import SyntheticTokenVerifier
+from backend import analysis
+from backend.tests.test_analysis import GraphDouble
+
+# Test-only factory: preserve real analysis/publication logic and SQLite outputs.
+# No claim of live Neo4j acceptance (I01 retains that gate).
+_graph = GraphDouble()
+analysis.Neo4jGraphDatabase = lambda: _graph
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--database', required=True)

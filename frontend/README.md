@@ -799,3 +799,50 @@ rendering. Real HTTP/FastAPI/SQLite acceptance uploads 23 synthetic items across
 two pages and verifies exact kind/status counts, real completed processing
 history, unprocessed items and an empty case. No browser-mounted layout or
 Windows execution is claimed.
+
+## U05D: start and follow case analysis
+
+The selected case workspace has an explicit **Start Analysis** action above its
+content. It sends bodyless `startAnalysis` through the generated typed client
+with a fresh UUID `Idempotency-Key`. Duplicate clicks are disabled while starting
+or polling. Serial `getAnalysisRun` checks run every 750 ms until completed or
+failed. Queued, running, completed and failed messages come from API state;
+failure diagnostics render as escaped text. Even a completed POST response needs
+a confirming GET before it becomes the selected completed analysis.
+
+`CaseAnalysisWorkspace` owns the controller and exposes
+`useAnalysisWorkspace(): { caseId, analysis_run_id: string | null }` to its
+children. A null pin means no confirmed completed analysis has been selected.
+Later U06/U07/U07B views must consume this single pin for all requests/pages,
+validate returned run IDs, and discard old view data when the pin changes.
+These views are separate tasks and are not implemented here. An earlier completed
+pin stays selected while a new analysis is pending or fails; a completed poll
+switches the pin atomically. Case selection changes and session changes clear
+case state. No pending partition is requested or exposed by this component.
+
+400/404 and network failures pause polling and show fixed safe alerts. 401 clears
+the shared session. **Retry analysis with new key** explicitly starts another
+run, including after an uncertain network outcome; the earlier server run may
+still finish. This UI uses new-key starts, not same-key replay. Unmount, case
+switch and session changes abort in-flight requests, cancel timers and discard
+late success/error responses. Client cancellation does not cancel server work.
+
+From the repository root:
+
+```sh
+npm --prefix frontend run test
+node --test frontend/test/start-analysis.test.mjs
+npm --prefix frontend run build
+node frontend/test/cases.integration.mjs
+```
+
+The focused test needs `.test-build` from `npm test`. Unit tests use synthetic
+Fetch doubles, static React rendering, handlers and controlled timers. The HTTP
+harness uses real FastAPI/SQLite and merged processing/analysis producers with
+synthetic network/GPS inputs. It checks immutable input manifests and canonical
+SHA-256, completed pins, terminal polling stop, pinned graph/findings/triage reads
+and actor isolation while retaining I00/I00B regressions. Its Neo4j layer is the
+existing explicit transactional test double, not a live server. Set
+`EVORA_TEST_PYTHON` to a backend environment containing the repository dependencies
+when default `python` lacks them. No browser-mounted, visual/accessibility,
+Windows or full I01 completion claim follows from these tests.
