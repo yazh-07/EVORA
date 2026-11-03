@@ -854,3 +854,40 @@ by client disposal. Full proposal and approved speech addition remain required.
 - Actual verification/read-back and unit-versus-real acceptance limits are in
   A03 verification in PREIMPLEMENTATION_REVIEW.md. Checkpoint 1C/I01 stays open;
   next bounded handoff is A03B, then A04 once its dependencies are ready.
+
+### A03B assignment — 2026-11-03
+
+- **A03B / Checkpoint 1C / M3 Evidence Fusion and Adaptive Triage / whale2186**,
+  explicitly assigned on clean `feat/a03b-connectivity-factor`; initially Backlog,
+  now In Progress pending review/publication. M1 sharmelas-925, M2 yazh-07 and
+  M4 JebasJ retain their accountable interfaces.
+- Actual reviewed common contract/base (also local coordination ref):
+  **ec4ab3c153961c416785348edd73eb5f6ed4bd68**, the A03 merge. Supplied hash
+  `ec4ab3c5c9ee2c6ebfd6e082878bf893e364024b` is not a local Git object.
+  Draft 0.3.0 remains the sole HTTP authority. Records retain the requested date;
+  execution occurred 2026-11-04.
+- Real committed dependencies: G02 policy task
+  **01daaed0cf1c2a95d443c01d6f459ce0d76f2fac**, A02 task
+  **ca6cb6727bcb87a31bc8b1b9cc18efbc42d99ed0**, A01 task
+  **16e6429a22fa6250fdeebc4c47f6ab0a4d0349bf**; A03 task
+  **c9a36eaf5f59e15c577ae69a33b2875208e85848** and completed 1B/I00B are
+  ancestors. No producer doubles in real API acceptance.
+- Allowed paths: `backend/triage/`, `backend/tests/test_connectivity_factor.py`,
+  `backend/README.md`, `docs/AGENT_TASKS.md`, `docs/ROADMAP.md`,
+  `docs/PREIMPLEMENTATION_REVIEW.md`. User handoff explicitly covers shared docs;
+  no spec/frontend/dependency edits or staging/commit/push/merge authorization.
+- Acceptance: G02 unique non-self external degree/10 saturated at 1; deterministic
+  source-backed count explanation, sorted target/neighbor citations, finite
+  bounded weight and rounded contribution; absent unknown/zero observations or
+  missing graph evaluation; evaluated zero retained. Strict actual-bundle factor
+  validation, invalid UUID/case/reference negatives and real A01/A02 integration.
+- Resolved internal producer/consumer handoff: `target_nodes` supplies the complete
+  selected graph; target membership derives from Evidence citations, not labels.
+  A01/A02 producers retain source validation; A04/A05 must authorize/select the
+  coherent full graph and target observation count, since this signature cannot
+  join private Evidence/Observation ownership independently. None means unknown;
+  an empty evaluated graph is distinct. No unresolved A03B policy or wire gate.
+  A04 must normalize raw factor weights through G02, never use neighbor scores.
+- Actual verification and limits are in A03B verification in
+  PREIMPLEMENTATION_REVIEW.md. Checkpoint 1C/I01 and M3 remain open; next bounded
+  dependency-ready handoff is A04. No later task started.

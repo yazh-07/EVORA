@@ -440,6 +440,40 @@ in PREIMPLEMENTATION_REVIEW.md. Checkpoint 1C/I01 and M3 remain open; A01B/A05
 coherent publication is still required. Next bounded task is A03B, followed by
 A04 when dependency-ready. No staging, commit, push or merge is authorized.
 
+
+### A03B live record — 2026-11-03
+
+**A03B / Checkpoint 1C / M3 / whale2186 / In Progress, locally implemented pending review/publication.**
+Clean user-assigned `feat/a03b-connectivity-factor` starts at reviewed common
+contract/base **ec4ab3c153961c416785348edd73eb5f6ed4bd68**, matching local
+`docs/coordination-foundation`. The supplied full hash is not a local Git object.
+Real G02/A02/A01/A03 and all completed 1B producers are ancestors. Exact task
+versions and allowed paths/shared-doc handoff are in A03B assignment in
+AGENT_TASKS.md. Draft 0.3.0, frontend and dependencies remain unchanged.
+
+`backend/triage/factors.py` calculates G02 distinct external topological degree
+for nodes citing the target Evidence, bounded at ten neighbors. Direction,
+parallel links, repeated observations, confidence and neighbor scores do not
+boost degree. Self/internal links are excluded. Output explains the candidate
+neighbor count and cites sorted target/incident edge/neighbor Evidence IDs.
+Default weight 0.20 and explicit bounded weights round only contributions.
+Unknown/zero observation count or missing graph evaluation is absent; evaluated
+zero connections remains 0.0. Invalid UUIDs, foreign cases, malformed references,
+conflicting UUIDs, dangling endpoints and unsupported target links fail closed.
+Caller authorization, coherent selection and source ownership validation through
+A01/A02 remain required; the narrow signature cannot independently join private
+Evidence/Observation records. A04 normalizes factors through G02; A05/A01B own
+frozen selection, persistence and coherent publication.
+
+14 A03B tests pass, including strict actual-bundle schema negatives and real
+FastAPI/SQLite network/GPS processing, A01 nodes, A02 links and exact D-7 source
+locator read-back. Both synthetic Evidence items have one neighbor, value 0.1
+and standalone contribution 2.0. Positive GPS is a labeled in-test D-7/D-8
+variant; original downloads and producer inputs stay unchanged. Shared checks,
+regressions, commands and limitations are in A03B verification in
+PREIMPLEMENTATION_REVIEW.md. Checkpoint 1C/I01 and M3 remain open; next bounded
+handoff is A04 when dependency-ready. No staging/commit/push/merge authorized.
+
 ## Checkpoint 1B processing audit
 
 ### G02 live record — 2026-11-03

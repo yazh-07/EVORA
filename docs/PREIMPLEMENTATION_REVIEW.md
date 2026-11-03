@@ -4105,3 +4105,106 @@ coherent publication. Real completed-analysis publication and I01 are not
 claimed. Checkpoint 1C and M3 remain open. Next bounded handoff is A03B, then
 A04 once dependency-ready. Changes remain unstaged/uncommitted; no commit,
 push or merge was authorized or performed.
+
+### A03B verification — 2026-11-03
+
+**A03B / Checkpoint 1C / M3 / whale2186**, locally implemented on clean assigned
+`feat/a03b-connectivity-factor`, In Progress pending review/publication. Actual
+reviewed common contract/base **ec4ab3c153961c416785348edd73eb5f6ed4bd68**
+matches local coordination ref; supplied
+`ec4ab3c5c9ee2c6ebfd6e082878bf893e364024b` is not a local Git object.
+Exact merged G02/A02/A01/A03 dependency task versions, allowed shared paths and
+resolved internal handoff are in A03B assignment in AGENT_TASKS.md. Requested
+date retained; commands ran 2026-11-04. No spec/frontend/dependency edits.
+
+Read-back: G02 computes `min(len(unique_external_neighbor_ids) / 10, 1.0)`.
+Target nodes are those citing target Evidence in the complete selected A01
+node collection. Edges are undirected for degree; self/internal/parallel links
+and repeated mentions do not boost it. Only contribution is rounded, with
+bounded finite weight (standalone default 0.20). Explanations state the actual
+candidate neighbor count and attention limits; unique sorted Evidence citations
+union target, incident edges and neighbor nodes. Unknown/zero observation count
+or None graph inputs stays absent; evaluated zero stays 0.0. Validation precedes
+absent returns, checking canonical UUIDs, cases, nonempty unique source arrays,
+edge confidence, conflicting IDs, endpoint resolution when nodes are available,
+and target support on incident links. No scores feed topology.
+
+Requested sequence executed successfully (Python commands use the pre-existing
+scratch jsonschema **4.25.1**, independently read back; no install or repository
+dependency change):
+
+```sh
+export PYTHONPATH=/tmp/evora-u13-validation
+python -c "import importlib.metadata as m; print(m.version('jsonschema'))"
+npx @redocly/cli bundle specs/openapi.yaml --output /tmp/evora-openapi.json
+python scripts/verify_coordination.py /tmp/evora-openapi.json
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -m unittest discover -s scripts -p 'test_*.py'
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -W error::ResourceWarning -m unittest discover -s backend/tests -p 'test_connectivity_factor.py' -v
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -W error::ResourceWarning -m unittest discover -s backend/tests -p 'test_relevance_factor.py' -v
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -W error::ResourceWarning -m unittest discover -s backend/tests -p 'test_graph_links.py' -v
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -W error::ResourceWarning -m unittest discover -s backend/tests -p 'test_graph_nodes.py' -v
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -W error::ResourceWarning -m unittest discover -s backend/tests -p 'test_triage_policy.py' -v
+npm --prefix frontend run test
+git diff --check
+```
+
+Results: **14 A03B, 14 A03, 13 A02, 19 A01, 33 G02, 122 coordination and 101
+frontend tests pass**, no skips. Verifier checks 27 operations, 126 tasks,
+18 checkpoints, 39 capabilities and all 40 proposal mappings. Actual bundled
+Draft202012Validator/FormatChecker validates every non-absent test result and
+rejects missing/extra fields, invalid name/ranges/types/UUIDs/duplicate citations.
+Unit controls cover 1/2/9/10/15 neighbors, distinct node versus Evidence counts,
+multiple target nodes, reverse/self/internal/unrelated links, duplicates/order/
+generators, immutable inputs/results, missing graph/observations, evaluated zero,
+weights/count negatives, foreign cases including absent paths, dangling/forged
+links and conflicts. G02 read-back normalizes a sole connectivity value 0.1 to
+weight 1 and score 10; confidence and observation repetition do not affect it.
+
+Real producer acceptance uses temporary SQLite/private original storage and
+FastAPI ASGITransport with synthetic identities, without producer doubles:
+upload committed network.csv and labeled in-test GPS D-7/D-8 variant, start/poll
+both real processing runs to completed, read complete Evidence/Entity/Event/
+Observation pages, build real A01 nodes and derive the real A02 candidate link.
+Both targets produce value 0.1/contribution 2.0, citing both Evidence items.
+Each edge Observation resolves to the same-case source device_id row containing
+D-7 in original bytes. Producer-value and wire-mapping calculations agree;
+repeat results, inputs and original downloads remain unchanged. Foreign actor
+Evidence reads return 404. Analysis UUID is explicitly unpersisted: no completed
+analysis, Neo4j partition or publication proof is claimed.
+
+Additional shared checks pass:
+
+```sh
+npx --yes @redocly/cli@2.57.0 lint specs/openapi.yaml
+npx --yes openapi-typescript@7.10.1 specs/openapi.yaml -o /tmp/evora-a03b-api.d.ts
+frontend/node_modules/.bin/tsc --noEmit --strict /tmp/evora-a03b-api.d.ts
+npm --prefix frontend run build
+node frontend/test/cases.integration.mjs
+npx --yes @google/design.md@0.4.0 lint DESIGN.md
+```
+
+OpenAPI retains its existing missing-license warning only; DESIGN has zero
+errors/warnings. Generated declarations compile strictly; frontend build checks
+API freshness and TypeScript. Real localhost I00/I00B smoke passes original
+upload/download/hash/audit, network/GPS process/poll/source inspection, paginated
+overview and actor isolation. Local Python **3.14.9**; jsonschema **4.25.1** via
+scratch path. No clean install, Windows, hosted CI, browser mount or benchmark
+claim. The full later-adapter backend suite was not rerun; previously documented
+NLP model limitations are outside A03B and are not claimed repaired.
+
+
+Earlier completed-checkpoint backend regressions: **327 pass**, no skips:
+
+```sh
+PYTHONPATH=/tmp/evora-u13-validation EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -W error::ResourceWarning -m unittest backend.tests.test_skeleton backend.tests.test_validation backend.tests.test_auth backend.tests.test_cases backend.tests.test_evidence backend.tests.test_audit backend.tests.test_audit_list backend.tests.test_m1_access backend.tests.test_network_csv backend.tests.test_gps_csv backend.tests.test_normalization backend.tests.test_candidate_entities backend.tests.test_source_events backend.tests.test_processing backend.tests.test_observations backend.tests.test_entities backend.tests.test_events backend.tests.test_processing_provenance backend.tests.test_processing_dispatch backend.tests.test_processing_publication backend.tests.test_processing_audit
+```
+
+Caller contract: authorize case access, supply coherent frozen full A01/A02
+inputs and target observation count, and retain source ownership/locator checks
+in those real producers. This signature cannot independently verify private
+Evidence/Observation joins or establish a caller-supplied observation count.
+A04 consumes raw factors through G02 normalized aggregation; A05/A01B own
+snapshot selection, SQL/Neo4j persistence and coherent publication. No unresolved
+A03B wire/policy gate. Checkpoint 1C/I01 and M3 stay open; next bounded handoff is
+A04 when dependency-ready. Changes remain unstaged/uncommitted; no commit, push
+or merge was authorized or performed.
