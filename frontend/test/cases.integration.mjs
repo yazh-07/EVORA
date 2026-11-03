@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 import { createApiClient } from '../.test-build/src/api/client.mjs';
 import { createOriginalDownload } from '../.test-build/src/cases/downloadController.mjs';
 import { createCaseStore } from '../.test-build/src/cases/store.mjs';
-import { createEvidenceStore, createProcessingController } from '../.test-build/src/cases/CaseWorkspace.mjs';
+import { createEvidenceStore, createProcessingController, createProcessingStatusController } from '../.test-build/src/cases/CaseWorkspace.mjs';
 
 // Run explicitly after npm test + build. Real HTTP, FastAPI and SQLite; synthetic identities/data only.
 const temporary = await mkdtemp(join(tmpdir(), 'evora-u02-'));
@@ -194,15 +194,41 @@ try {
   assert.equal(acceptedRun.status, 'queued');
   assert.ok(statuses.some(item => item.method === 'POST' && item.status === 202));
   const runPath = { caseId: created.id, evidenceId: processingEvidence.id, runId: acceptedRun.id };
+  const statusController = createProcessingStatusController(client, acceptedRun, 10);
   let readBack;
-  // Harness-only bounded polling: background completion need not precede 202 delivery.
-  for (let attempt = 0; attempt < 100; attempt++) {
-    readBack = await client.request('get', '/api/v1/cases/{caseId}/evidence/{evidenceId}/processing-runs/{runId}', { path: runPath });
-    if (readBack.status === 'completed' || readBack.status === 'failed') break;
-    await new Promise(resolveDelay => setTimeout(resolveDelay, 50));
-  }
-  assert.equal(readBack.id, acceptedRun.id);
-  assert.equal(readBack.status, 'completed');
+  try {
+    await new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => reject(Error('U05 real processing status timeout')), 10000);
+      const off = statusController.subscribe(() => {
+        const state = statusController.getSnapshot();
+        if (state.message || state.run?.status === 'completed' || state.run?.status === 'failed') {
+          clearTimeout(timeout); off();
+          if (state.message) reject(Error(state.message));
+          else { readBack = state.run; resolve(); }
+        }
+      });
+      statusController.start();
+    });
+    assert.equal(readBack.id, acceptedRun.id);
+    assert.equal(readBack.case_id, created.id);
+    assert.equal(readBack.evidence_id, processingEvidence.id);
+    assert.equal(readBack.processor_version, acceptedRun.processor_version);
+    assert.ok(readBack.processor_version.length > 0);
+    assert.equal(readBack.status, 'completed');
+    assert.ok(Number.isFinite(Date.parse(readBack.finished_at)));
+    assert.deepEqual(await client.request('get', '/api/v1/cases/{caseId}/evidence/{evidenceId}/processing-runs/{runId}', { path: runPath }), readBack,
+      'terminal finished_at and all fields equal real API read-back');
+    const requestCount = statuses.length;
+    await new Promise(resolve => setTimeout(resolve, 40));
+    assert.equal(statuses.length, requestCount, 'terminal controller stops polling real HTTP');
+  } finally { statusController.dispose(); }
+  await assert.rejects(client.request('get', '/api/v1/cases/{caseId}/evidence/{evidenceId}/processing-runs/{runId}', {
+    path: { ...runPath, runId: '00000000-0000-4000-8000-000000000000' },
+  }), { status: 404 });
+  await assert.rejects(client.request('get', '/api/v1/cases/{caseId}/evidence/{evidenceId}/processing-runs/{runId}', {
+    path: { ...runPath, caseId: first.items[0].id },
+  }), { status: 404 });
+  console.log('PASS U05 real P04: status controller polls exact case/evidence/run to completed, version/finished_at read-back, terminal stop, missing-run/foreign-case 404.');
   await processing.submit();
   assert.notEqual(processing.getSnapshot().run.id, acceptedRun.id, 'new explicit action uses a new key/run');
   const path = { caseId: created.id, evidenceId: processingEvidence.id };
@@ -213,6 +239,7 @@ try {
   evidenceStore.dispose();
   const beforeDeniedAudit = intakeSnapshot();
   client.setToken('u02-synthetic-one'); await store.load();
+  await assert.rejects(client.request('get', '/api/v1/cases/{caseId}/evidence/{evidenceId}/processing-runs/{runId}', { path: runPath }), { status: 404 });
   const foreignProcessing = createProcessingController(client, created.id, processingEvidence.id);
   await foreignProcessing.submit(); assert.equal(foreignProcessing.getSnapshot().status, 'error');
   assert.match(foreignProcessing.getSnapshot().message, /unavailable/); foreignProcessing.dispose();

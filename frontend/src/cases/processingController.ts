@@ -61,7 +61,7 @@ function processingError(error: unknown): string {
   return 'Could not confirm whether processing started. Check processing history before trying again; another action starts a new run.';
 }
 
-function validRun(run: ProcessingRun, caseId: string, evidenceId: string): boolean {
+export function validRun(run: ProcessingRun, caseId: string, evidenceId: string): boolean {
   const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   return !!run && typeof run.id === 'string' && uuid.test(run.id) && run.case_id === caseId && run.evidence_id === evidenceId &&
     ['queued', 'running', 'completed', 'failed'].includes(run.status) && typeof run.processor_version === 'string' &&

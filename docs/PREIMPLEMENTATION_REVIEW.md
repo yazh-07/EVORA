@@ -3451,6 +3451,79 @@ is claimed here. Aborting client delivery does not cancel accepted server work;
 unknown transport failure is labeled uncertain and a new action can create a new
 run. Checkpoint 1B/I00B and the full proposal remain open.
 
+### U05 verification — 2026-11-03
+
+**U05 / Checkpoint 1B / M4 JebasJ / In Progress pending review/publication.**
+User-assigned branch `feat/u05-processing-status-ui` began clean at actual HEAD
+and local `docs/coordination-foundation` base
+**f6d5c17f1f23d17048bd9b582e1f64d20ce27c1a**. The supplied full hash differs;
+the actual reviewed Git commit is recorded here. Real U05C merge at that commit
+(task **d7e9ecfed43f8a3f4f21fef219b1190560302c0d**) and P04 merge
+**f851dd11fd8f7e11140317cf44d022a9999044dd** are committed ancestors.
+Current publication/private provenance/audit producers remain integrated.
+Only allowed frontend and documentation paths changed. No spec/backend/package
+dependency edits or stage/commit/push/merge.
+
+`frontend/src/cases/ProcessingStatus.tsx` and
+`frontend/src/cases/processingStatusController.ts` consume the accepted U05C run.
+Generated-client GET requests use the exact case/evidence/run selector, immediately
+then serially 750 ms after each nonterminal success. Completed/failed stops the
+loop. Actual API status, created/finished time and processor version display
+without local estimates; failed diagnostics render escaped text. Invalid or
+foreign successful payloads never replace the last valid run. Network/server/
+protocol failures pause with an explicit same-run retry and stale-value wording;
+404 stops with a safe alert; 401 clears the shared token and status data. Timers
+and requests cancel on disposal/session changes; stale deliveries are discarded,
+including dispose/reconnect. Client abort does not cancel server processing.
+
+Unit tests in `frontend/test/processing-status.test.mjs` use declared synthetic
+Fetch doubles, Node mock timers and React static rendering. They cover queued →
+running → completed, running → failed with escaped MALFORMED_CSV diagnostic,
+terminal stop, 401/404/network/500, same-run retry button dispatch, scheduled and
+in-flight disposal, session replacement, late success/error after reconnect,
+nonoverlap, malformed/context mismatches and an initially terminal run. These
+are controller/static-render checks, not mounted browser/effect, visual, keyboard,
+accessibility or Windows proof. Node emits its experimental MockTimers warning.
+Prior U05C tests now render the status component inside the shared API provider
+and check the new last-reported wording; prior action/error/race coverage remains.
+
+The real local HTTP/FastAPI/SQLite smoke uploads permitted synthetic network.csv,
+starts through U05C, then polls via the actual U05 status controller with a 10 ms
+test interval. It verifies exact run/case/evidence/version, completed status,
+finished_at and all fields against a repeated API read; terminal state issues no
+further GET. A nonexistent UUID run, mismatched case and foreign actor return 404.
+Earlier intake/create/pagination/upload/download/hash/audit/auth/error regression
+checks remain included. No backend producer is doubled here. Test-only SQL/file
+snapshots and synthetic identities are harness controls; application code uses
+only HTTP. Harness-owned temporary storage is removed. All four status transitions
+are deterministic unit coverage; live HTTP timing need not expose running before
+completion. No run-history/observation view or I00B checkpoint closure is claimed.
+
+Python checks use `PYTHONPATH=/tmp/evora-u05c-validation`, the existing isolated
+validator directory, read back as **jsonschema 4.25.1** (host version 4.26.0).
+No dependency installation or package-manifest changes were needed. Actual Linux
+runtime: Python **3.14.9**, SQLite **3.54.1**, Node **22.23.4**, npm **12.2.1**,
+FastAPI **0.162.0**, Starlette **1.10.0**, uvicorn **0.54.0**. These differ from
+the pinned setup baseline; this is local candidate verification, not clean pinned
+setup, Windows or remote CI certification.
+
+| Actual command/check | Result |
+|---|---|
+| `npx @redocly/cli bundle specs/openapi.yaml --output /tmp/evora-openapi.json` | PASS |
+| `npx --yes @redocly/cli@2.57.0 lint specs/openapi.yaml` | PASS; existing missing-license warning only |
+| `npx --yes openapi-typescript@7.10.1 specs/openapi.yaml -o /tmp/evora-u05-api.d.ts` and `frontend/node_modules/.bin/tsc --noEmit --strict /tmp/evora-u05-api.d.ts` | PASS |
+| `python scripts/verify_coordination.py /tmp/evora-openapi.json` | PASS: 27 operations, 126 tasks |
+| `EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -m unittest discover -s scripts -p 'test_*.py'` | PASS: 122 tests |
+| `EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -W error::ResourceWarning -m unittest discover -s backend/tests -v` | PASS: 420 tests, no skips |
+| `npm --prefix frontend run test` | PASS: 66 tests, including 11 U05 tests; prior 55 preserved |
+| `npm --prefix frontend run build` | PASS: generated declaration freshness, TypeScript, production bundle |
+| `node frontend/test/cases.integration.mjs` | PASS: real status controller and existing intake/start/download/audit/auth regressions |
+| `npx --yes @google/design.md@0.4.0 lint DESIGN.md` | PASS: zero errors/warnings |
+| `git diff --check` | PASS after final documentation read-back |
+
+U05 remains local pending review/publication. Checkpoint 1B/I00B and full proposal/
+approved additions remain open. Next bounded M4 row U05B requires its own handoff;
+no next task started and no module-complete claim.
 ### P13 independent verification — 2026-11-03
 
 The task started from verified shared base `6980b4d` and incorporated `f6d5c17`

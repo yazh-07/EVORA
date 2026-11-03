@@ -630,7 +630,7 @@ uses the generated typed API client and a fresh `crypto.randomUUID()`
 `Idempotency-Key`, with no request body. The button reads **Starting processing...**
 and is disabled while submitting; a controller guard also blocks duplicate clicks.
 The inspector retains the returned ProcessingRun and shows its ID and status at
-acceptance. This view does not refresh that status; U05 owns polling. A further
+acceptance, then U05 polls that same run in the status panel below. A further
 explicit action requests a new run with a new key.
 
 400, 401, 404, 409 and 415 receive fixed safe alerts. The shared client clears the
@@ -650,3 +650,36 @@ controller, asserts HTTP 202/queued, reads back the exact completed run, verifie
 new action creates another run, and exercises 400/401/404 with real producers.
 The harness retains prior checkpoint intake/download/audit regressions and removes
 its own temporary synthetic database/files. Application code accesses only HTTP.
+
+
+## U05: processing-run status
+
+The selected evidence inspector displays the accepted run immediately, then polls
+`getProcessingRun` with its exact case/evidence/run IDs. Serial requests start
+immediately and repeat 750 ms after each successful nonterminal read. Queued,
+running, completed and failed are API values; created time, processor version,
+finished time and failed-run diagnostics render as plain escaped text. No local
+clock or estimated completion supplies timestamps. Completed/failed stops polling.
+
+401 clears the shared session and shows an authentication alert. Missing/foreign
+resources return a safe 404 alert. Network/server/protocol failures pause polling
+and retain explicitly labeled last-reported values; **Retry status check** reads
+the same run without starting another. Unmount, evidence/run selection change and
+session replacement abort requests, clear timers and ignore late deliveries.
+Client cancellation does not cancel backend processing. This task does not add a
+run-history selector or extracted-observation view.
+
+`npm --prefix frontend run test` includes `test/processing-status.test.mjs`:
+Fetch doubles, deterministic timer progression, safe diagnostics, terminal stop,
+retry, identity validation, no overlapping requests and disposal/session races.
+Tests render React statically and invoke controller/button handlers; mounted
+browser, visual, keyboard and native Windows acceptance are not established.
+`createProcessingStatusController` accepts an optional polling interval and exposes
+an immediate `refresh()` for tests; production defaults to 750 ms.
+
+After `npm --prefix frontend run test` and `npm --prefix frontend run build`, run
+`node frontend/test/cases.integration.mjs`. The real local FastAPI/SQLite harness
+uses the U05 status controller (10 ms test interval) after starting synthetic
+network.csv, checks exact run/case/evidence/version and terminal finished_at
+against API read-back, checks terminal polling stops and missing-run/foreign-case
+404, and retains prior intake/download/audit/start-processing regressions.
