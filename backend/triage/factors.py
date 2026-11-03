@@ -1,0 +1,106 @@
+"""A03 source-backed relevance; pure construction from authorized frozen inputs."""
+from collections.abc import Iterable, Mapping
+import math
+
+from backend.graph_nodes import _records, _text, _uuid, build_graph_nodes
+from backend.triage.policy import ATTENTION_NOTICE, BASE_WEIGHTS, relevance
+
+
+def calculate_relevance_factor(
+    *, evidence_id: str, case_id: str,
+    target_entities: Iterable[Mapping] | None,
+    known_case_entities: Iterable[Mapping] | None,
+    evidence_records: Iterable[Mapping], observations: Iterable[Mapping],
+    weight: float | None = None,
+) -> dict | None:
+    """Unique exact target/known key intersection divided by unique known keys.
+
+    Entity inputs are P03B wire mappings, never unscoped labels. The complete
+    same-case Evidence allowlist and source observations are required to check
+    ownership/lineage, even on absent paths. Caller authorizes the case, selects
+    completed immutable outputs and supplies the full known entity set. A04/A05
+    own snapshot selection, normalization of aggregate weights and publication.
+
+    None target means unevaluated; [] means evaluated with no candidates.
+    No target observations or no known keys means absent. Exact namespaced keys
+    preserve case/spacing/Unicode; repeated mentions never boost relevance.
+    Keep the exact policy float (no intermediate rounding); round contribution
+    only. This does not establish source truth, identity or corroboration.
+    """
+    _uuid(case_id, "case_id")
+    _uuid(evidence_id, "evidence_id")
+    weight = BASE_WEIGHTS["relevance"] if weight is None else weight
+    if (isinstance(weight, bool) or not isinstance(weight, (int, float))
+            or not math.isfinite(weight) or not 0 <= weight <= 1):
+        raise ValueError("weight must be a finite number in [0,1]")
+    targets = None if target_entities is None else list(_records(target_entities, "Entity"))
+    known = None if known_case_entities is None else list(_records(known_case_entities, "Entity"))
+    entities = (targets or []) + (known or [])
+    evidence = list(_records(evidence_records, "Evidence"))
+    # A01 validates source UUIDs, case ownership and the Evidence allowlist.
+    build_graph_nodes(case_id, evidence, entities, [])
+    allowed = {record["id"] for record in evidence}
+    if evidence_id not in allowed:
+        raise ValueError("Target evidence must belong to the authorized case")
+    sources, evidence_runs, run_evidence = {}, {}, {}
+    for record in _records(observations, "Observation"):
+        oid = _uuid(record.get("id"), "Observation.id")
+        if _uuid(record.get("case_id"), "Observation.case_id") != case_id:
+            raise ValueError("Observation.case_id does not match requested case")
+        eid = _uuid(record.get("evidence_id"), "Observation.evidence_id")
+        run = _uuid(record.get("processing_run_id"), "Observation.processing_run_id")
+        _text(record.get("source_locator"), "Observation.source_locator")
+        if eid not in allowed or oid in sources:
+            raise ValueError("Observation must be unique and cite authorized evidence")
+        if (evidence_runs.setdefault(eid, run) != run
+                or run_evidence.setdefault(run, eid) != eid):
+            raise ValueError("Expected one selected processing run per Evidence")
+        sources[oid] = record
+
+    seen = {}
+    for entity in entities:
+        key = _text(entity.get("candidate_key"), "Entity.candidate_key")
+        kind = _text(entity.get("kind"), "Entity.kind")
+        label = _text(entity.get("canonical_label"), "Entity.canonical_label")
+        if key != f"{kind}:{label}":
+            raise ValueError("Entity candidate_key must agree with kind and label")
+        identifier = entity["id"]
+        if identifier in seen and seen[identifier] != entity:
+            raise ValueError("Conflicting Entity UUID")
+        seen[identifier] = entity
+        oids = entity.get("observation_ids")
+        eids = entity.get("evidence_ids")
+        if not isinstance(oids, (list, tuple)) or not oids:
+            raise ValueError("Entity source IDs must be nonempty and unique")
+        for oid in oids:
+            _uuid(oid, "Entity.observation_ids item")
+        if len(set(oids)) != len(oids) or len(set(eids)) != len(eids):
+            raise ValueError("Entity source IDs must be nonempty and unique")
+        cited_evidence = set()
+        for oid in oids:
+            source = sources.get(oid)
+            if source is None or source.get("entity_key") != key:
+                raise ValueError("Entity must resolve to a source observation with its exact key")
+            cited_evidence.add(source["evidence_id"])
+        if cited_evidence != set(eids):
+            raise ValueError("Entity Evidence IDs must equal its observation sources")
+    for entity in targets or []:
+        if evidence_id not in entity["evidence_ids"] or not any(
+                sources[oid]["evidence_id"] == evidence_id for oid in entity["observation_ids"]):
+            raise ValueError("Target entity must be backed by target evidence")
+
+    known_keys = None if known is None else {entity["candidate_key"] for entity in known}
+    matched = None if targets is None or evidence_id not in evidence_runs else {
+        entity["candidate_key"] for entity in targets
+    } & (known_keys or set())
+    value = relevance(matched, known_keys)
+    if value is None:
+        return None
+    keys = ", ".join(sorted(matched)) if matched else "none"
+    return {
+        "name": "relevance", "value": value, "weight": float(weight),
+        "contribution": round(value * weight * 100, 2),
+        "explanation": (f"Matched {len(matched)} of {len(known_keys)} known case "
+                        f"candidate entities: {keys}. {ATTENTION_NOTICE}"),
+        "evidence_ids": [evidence_id],
+    }

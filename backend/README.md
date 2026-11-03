@@ -2358,3 +2358,43 @@ for the positive match with network D-7/D-9. No repository fixture is changed.
 The real API integration uses ASGITransport and an unpersisted analysis UUID;
 it does not certify Neo4j or completed analysis publication. See A02 verification
 in `docs/PREIMPLEMENTATION_REVIEW.md` for the full command results.
+
+## A03 relevance factor
+
+`calculate_relevance_factor` in `backend/triage/factors.py` returns the draft
+0.3.0 `TriageFactor` dictionary or `None`. Pass keyword arguments `case_id`,
+`evidence_id`, `target_entities`, `known_case_entities`, `evidence_records`,
+`observations` and optional `weight`. Entity inputs are P03B wire mappings;
+bare labels cannot establish case ownership. Supply the complete authorized
+Evidence allowlist and selected completed source observations. A01 validates
+source UUIDs/case/Evidence membership; A03 checks exact entity/observation keys,
+nonempty unique source IDs, locators and one selected processing run per Evidence.
+Foreign, missing or conflicting references raise `ValueError`, even on absent
+paths. This is an internal calculation boundary, with no new HTTP route.
+
+G02 `relevance` calculates unique target keys intersected with unique known keys
+over unique known keys. Exact namespaced candidate keys retain case/spacing;
+duplicate mentions and extraction confidence never increase the result. The
+exact fraction float is preserved. Default weight is G02's 0.25; explicit finite
+weights must be in [0,1]. Contribution is `round(value * weight * 100, 2)`.
+The explanation lists sorted matched keys and matched/known counts, with the
+target Evidence ID as its sole citation. Candidates remain unverified.
+
+`target_entities=None` means unevaluated; an evaluated empty list yields zero
+when known entities and target observations exist. Missing/empty known entities
+or no target observations return `None`, never a fabricated zero/P4. The caller
+must authorize and provide the complete coherent selected case entity set;
+A04/A05 own aggregation, normalized weights, frozen snapshot selection and
+publication. Pass the raw value/reason/citations to G02 `FactorValue` when
+aggregating; the default standalone weight is not an aggregate weight.
+
+```sh
+npx @redocly/cli bundle specs/openapi.yaml --output /tmp/evora-openapi.json
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -W error::ResourceWarning -m unittest discover -s backend/tests -p 'test_relevance_factor.py' -v
+```
+
+Tests use strict bundled schema validation, synthetic negative controls and real
+FastAPI/SQLite upload/processing/source read-back with A02. The committed network
+fixture produces four unique keys (including D-7/D-9); a labeled in-test GPS
+D-7/D-8 variant makes five unique case keys: network relevance 4/5, GPS 2/5.
+No fixture bytes change. This does not certify completed analysis/Neo4j or I01.

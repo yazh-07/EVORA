@@ -818,3 +818,39 @@ by client disposal. Full proposal and approved speech addition remain required.
 - Exact verification/limitations are in A02 verification in
   PREIMPLEMENTATION_REVIEW.md. Checkpoint 1C/I01 remains open; next bounded
   dependency-ready M3 handoff is A03 or A03B, separately assigned.
+
+
+### A03 assignment — 2026-11-03
+
+- **A03 / Checkpoint 1C / M3 Evidence Fusion and Adaptive Triage / whale2186**,
+  explicitly assigned on clean `feat/a03-relevance-factor`; initially Backlog,
+  now In Progress pending review/publication. Other accountable interfaces remain
+  M1 sharmelas-925, M2 yazh-07 and M4 JebasJ.
+- Exact actual reviewed common contract/base and local coordination ref:
+  **51ee2ed3432b8956cf3af9ebd410a04483e917d7**. The supplied full hash
+  `51ee2edca1ba2bc71946ebdf4ef139cc75e840d5` differs from the actual Git object.
+  Unchanged `specs/openapi.yaml` draft 0.3.0 is the sole HTTP authority.
+- Real dependencies: A02 merge at the common base (task
+  **ca6cb6727bcb87a31bc8b1b9cc18efbc42d99ed0**), A01 merge
+  **11961c4ab4c1167e1d0ad8c83fe52440b2466a9a**, G02 merge
+  **d1f16ef02a62c2ce94bdd19539037a7b60cecabf**, completed 1B/I00B
+  **740f40662158caeed41b2de963cbb185b69fa51d**. No producer substitute.
+- Allowed paths: `backend/triage/`, `backend/tests/test_relevance_factor.py`,
+  `backend/README.md`, `docs/AGENT_TASKS.md`, `docs/ROADMAP.md`,
+  `docs/PREIMPLEMENTATION_REVIEW.md`. Explicit user handoff covers shared docs;
+  no spec/frontend/dependency change or staging/commit/push/merge authorization.
+- Acceptance: deterministic G02 unique matched/known ratio, sorted candidate-key
+  explanation/counts, target Evidence citation, default/explicit bounded weight,
+  rounded contribution; empty/missing known or unanalyzed/no-observation target
+  absent; evaluated zero preserved; strict bundled TriageFactor validation and
+  source/case/UUID negatives; real merged processing/API/A02 integration.
+- Resolved producer/consumer handoff: bare entity labels and an Evidence UUID
+  cannot prove ownership. Internal builder requires P03B Entity wire mappings,
+  complete same-case `evidence_records` and selected source `observations`.
+  A04/A05 must authorize/select the complete coherent snapshot, pass these inputs
+  and feed raw factor values into G02 aggregation for normalized weights.
+  Source observations must carry the producer's exact `entity_key`; unsupported
+  keyless inputs fail closed. No wire change or unresolved A03 gate.
+- Actual verification/read-back and unit-versus-real acceptance limits are in
+  A03 verification in PREIMPLEMENTATION_REVIEW.md. Checkpoint 1C/I01 stays open;
+  next bounded handoff is A03B, then A04 once its dependencies are ready.

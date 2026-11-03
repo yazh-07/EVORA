@@ -4011,3 +4011,97 @@ authorize and select inputs, with A01 checking the complete Evidence allowlist;
 nonempty entity input without observations is rejected. No completed analysis
 or I01/checkpoint/module closure is claimed. Next bounded handoff is A03 or A03B.
 No staging, commit, push or merge was authorized or performed.
+
+
+### A03 verification — 2026-11-03
+
+**A03 / Checkpoint 1C / M3 / whale2186**, locally implemented on
+`feat/a03-relevance-factor`, In Progress pending review/publication. Clean actual
+starting HEAD/common contract/base is
+**51ee2ed3432b8956cf3af9ebd410a04483e917d7**, matching the coordination ref;
+the user-supplied full hash differs. Exact committed G02/A02/A01/1B dependency
+versions and allowed shared paths are in A03 assignment in AGENT_TASKS.md.
+The requested record date is retained; execution occurred 2026-11-04 local time.
+Spec draft 0.3.0, frontend, dependencies and fixture bytes are unchanged.
+
+The builder uses G02's exact ratio float, deduplicates exact namespaced keys,
+intersects target with known keys, defaults to weight 0.25 and rounds only the
+contribution to two decimal places. Sorted keys/counts explain the factor with
+one canonical target Evidence citation. Missing known inputs, empty known set,
+unevaluated target or target without observations is absent. An evaluated zero
+retains a factor. Weights reject booleans, NaN, infinity and out-of-range inputs.
+A01 validates case/Evidence/source UUID ownership; A03 checks source locators,
+entity-to-observation keys/Evidence joins, unique citations, conflicting entity
+UUIDs and selected processing-run consistency before any absent return.
+
+Executed commands (Python validation uses the existing scratch installation;
+no repository dependency edits or installs):
+
+```sh
+export PYTHONPATH=/tmp/evora-u13-validation
+python -c "import importlib.metadata as m; print(m.version('jsonschema'))"
+npx @redocly/cli bundle specs/openapi.yaml --output /tmp/evora-openapi.json
+python scripts/verify_coordination.py /tmp/evora-openapi.json
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -m unittest discover -s scripts -p 'test_*.py'
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -W error::ResourceWarning -m unittest discover -s backend/tests -p 'test_relevance_factor.py' -v
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -W error::ResourceWarning -m unittest discover -s backend/tests -p 'test_graph_links.py' -v
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -W error::ResourceWarning -m unittest discover -s backend/tests -p 'test_graph_nodes.py' -v
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -W error::ResourceWarning -m unittest discover -s backend/tests -p 'test_triage_policy.py' -v
+npm --prefix frontend run test
+npx --yes @redocly/cli@2.57.0 lint specs/openapi.yaml
+npx --yes openapi-typescript@7.10.1 specs/openapi.yaml -o /tmp/evora-a03-api.d.ts
+frontend/node_modules/.bin/tsc --noEmit --strict /tmp/evora-a03-api.d.ts
+npm --prefix frontend run build
+node frontend/test/cases.integration.mjs
+npx --yes @google/design.md@0.4.0 lint DESIGN.md
+git diff --check
+```
+
+Results: **14 A03, 13 A02, 19 A01, 33 G02, 122 coordination and 101 frontend
+tests pass**, no skips. Strict real-bundle Draft202012Validator/FormatChecker
+checks cover output and required-field/extra-field/name/type/range/UUID/duplicate
+source negatives. Verifier checks 27 operations, 126 tasks, 18 checkpoints,
+39 capabilities and all 40 proposal mappings. jsonschema **4.25.1** was read
+back and used; system jsonschema is 4.26.0. OpenAPI lint passes with its existing
+missing-license warning; DESIGN has zero errors/warnings. Generated strict
+TypeScript, frontend API freshness/typecheck/build and whitespace checks pass.
+
+Real merged producer acceptance uses FastAPI ASGITransport, temporary SQLite and
+private original storage, without producer doubles: upload committed synthetic
+network.csv and labeled GPS D-7/D-8 variant, start/poll completed processing,
+read complete Evidence/Entity/Observation pages, derive A02's one candidate
+link/finding, calculate network relevance **4/5 = 0.8** and GPS **2/5 = 0.4**.
+Network includes candidate D-7, D-9 and two IPs; GPS adds D-8 while D-7 is
+counted once. Resolve each matched entity through source Observation IDs and
+exact row locators to original bytes. Repeated calculations, source dictionaries
+and original downloads remain unchanged; foreign-actor Evidence read is 404.
+Unit tests separately use real parsers/projectors and labeled mutations for
+foreign/missing/forged sources, partial/full/zero, weight limits, absent data,
+duplicates/order/generators, exact namespace/case/spacing and confidence controls.
+G02 aggregation read-back proves the standalone factor's value yields weight 1
+and score 80 when it is the only available factor; no-observation input stays
+unscored. No extraction confidence or count boost is introduced.
+
+Earlier completed checkpoint regressions: **327 tests pass**, no skips:
+
+```sh
+PYTHONPATH=/tmp/evora-u13-validation EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -W error::ResourceWarning -m unittest backend.tests.test_skeleton backend.tests.test_validation backend.tests.test_auth backend.tests.test_cases backend.tests.test_evidence backend.tests.test_audit backend.tests.test_audit_list backend.tests.test_m1_access backend.tests.test_network_csv backend.tests.test_gps_csv backend.tests.test_normalization backend.tests.test_candidate_entities backend.tests.test_source_events backend.tests.test_processing backend.tests.test_observations backend.tests.test_entities backend.tests.test_events backend.tests.test_processing_provenance backend.tests.test_processing_dispatch backend.tests.test_processing_publication backend.tests.test_processing_audit
+```
+
+Real localhost UI/API smoke passes I00/I00B with upload/download/hash/audit,
+network/GPS processing/poll/source inspection, paginated overview and actor
+isolation. Local runtime: CPython **3.14.9**, Node **22.23.4**, npm **12.2.1**.
+No Windows, clean installation, hosted CI, browser-mount or benchmark claim.
+Later NLP adapter suites were not rerun; existing documented model limitations
+remain outside A03. This is a pure internal factor, not an HTTP endpoint;
+HTTP 400 mapping remains covered by existing validation regressions.
+
+Internal handoff: callers must authorize case access and supply the complete
+coherent selected known entity set, Evidence allowlist and observations. Bare
+labels and keyless source observations fail closed; current P03B producers
+satisfy the boundary. A04 must aggregate raw values through G02 normalized
+weights. A05 owns frozen input selection; A01B/A05 own SQL/Neo4j persistence and
+coherent publication. Real completed-analysis publication and I01 are not
+claimed. Checkpoint 1C and M3 remain open. Next bounded handoff is A03B, then
+A04 once dependency-ready. Changes remain unstaged/uncommitted; no commit,
+push or merge was authorized or performed.
