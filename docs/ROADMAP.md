@@ -272,6 +272,34 @@ Next gate **I00** is shared real API/UI intake verification and requires an
 explicit assignee. It is not M1-only and has not been started. Later M1 F08
 waits for P04/P14; full M1/product scope is not complete.
 
+## Checkpoint 1B processing audit
+
+### F08 live record — 2026-11-02
+
+**F08 / Checkpoint 1B / M1 / sharmelas-925 / In Progress.** Explicit user
+assignment on `feat/f08-processing-audit`, clean actual reviewed HEAD/common
+contract base **6980b4d0b2fd14a6bf372ae84cb7ab8e78b38d93**. Supplied full
+base hash was unavailable locally; the assignment records the discrepancy.
+F06/P04/P14 and F07/P14C are real integrated ancestors; exact dependency commits
+and allowed paths are in AGENT_TASKS. Unchanged draft 0.3.0 contract.
+
+Terminal completion/failure and interrupted-run recovery now append one safe
+`startProcessing` event in the same SQLite transaction as the run state. The
+Evidence target, original actor, run/version reference, terminal time/state and
+allowlisted failure code are visible through existing authorized audit listing;
+private processing parameters/output provenance stay private. Existing audit
+mutation triggers, run transition guards and serialized key replay remain in use.
+
+13 focused tests / 420 backend / 122 coordination / 48 frontend PASS; real I00
+HTTP intake regression, contract lint/bundle/generated types, frontend freshness/
+typecheck/build and DESIGN PASS. Existing OpenAPI license warning only. Exact
+commands, read-back, injections and runtime limitations are in
+PREIMPLEMENTATION_REVIEW's F08 verification. Review/integration is pending; no
+commit/push/merge performed. Checkpoint 1B remains open until all rows and I00B
+exit evidence pass; full proposal and approved additions remain required.
+Next handoff I00B awaits remaining UI dependencies; later M1 F08B depends on
+A05 and a separate assignment. No later task started.
+
 ## P01 current handoff — 2026-11-01
 
 P01 / 1B / M2 yazh-07 / Complete, feat/p01-network-csv, verified clean shared

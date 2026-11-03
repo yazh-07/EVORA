@@ -2,6 +2,19 @@
 
 Coordination-branch draft 0.3.0, not a running app. Four people each work on one module; confirmed GitHub-handle assignments and integration coordination are in [ROADMAP.md](ROADMAP.md#module-assignment-and-live-task-state). Full initial proposal scope is fixed. Use the canonical phase/checkpoint ledger in [ROADMAP.md](ROADMAP.md). Assign one catalog row, not an entire module, milestone or full dashboard. Codex fills the task card from recorded repository decisions before editing. Missing common-base/allowed-path choices or a shared G/I assignee need a short clarification, not a guessed assignment.
 
+### F08 assignment — 2026-11-02
+
+| Field | Recorded assignment |
+|---|---|
+| Task/checkpoint/module/owner | F08 / 1B / M1 Evidence Foundation / sharmelas-925, per confirmed ROADMAP module table and explicit user assignment |
+| Branch/reviewed common contract base | `feat/f08-processing-audit`, clean starting HEAD **6980b4d0b2fd14a6bf372ae84cb7ab8e78b38d93** on the local coordination history; unchanged OpenAPI draft 0.3.0 and CONTRACTS.md. User-supplied full hash `6980b4df3ea582d909ca3a628a55dbb8214309a4` is unavailable locally; exact actual HEAD recorded rather than claiming that object |
+| Allowed paths | `backend/audit.py`, `backend/processing.py`, `backend/tests/test_processing_audit.py` (or test_audit.py), `backend/README.md`, `docs/AGENT_TASKS.md`, `docs/ROADMAP.md`, `docs/PREIMPLEMENTATION_REVIEW.md`. No spec/frontend/dependency edits; no staging/commit/push/merge authorization |
+| Real dependencies | F06 merge **1b5166d91e0f3b86b85585d714a917a3efc82d44**; P04 merge **f851dd11fd8f7e11140317cf44d022a9999044dd**; P14 merge **c03361b8171e6506d2c160a85cc1e89e76315fb3**. P14C verified publication merge **920331d95fdd359f1e20cfbcfba48fc6e2afb292** and F07 list API also present in actual base |
+| Producer/consumer handoff | M2 terminal processing/recovery -> M1 safe append-only AuditEvent -> existing authorized F07 list API and I00B. Run/version reference joins to private frozen configuration and successful versioned provenance; failed runs have no fabricated completed provenance |
+| Acceptance | Exactly one terminal event with original actor/case/Evidence/run/version/state/time, safe diagnostic only; no sensitive audit/log contents; atomic status/output/provenance/audit rollback, replay/concurrency/recovery deduplication, case isolation and UTC listing, SQL append-only guards |
+| Tests/doubles | 13 focused tests and full 420 backend tests PASS, 122 coordination and 48 frontend PASS; real HTTP intake regression and contract/types/build/DESIGN checks PASS. Real ASGI/SQLite/original/parser/provenance producers; synthetic identities/fixtures, explicit scheduler/registry/SQL/commit failure injections only. Exact commands and environment caveats in PREIMPLEMENTATION_REVIEW |
+| State/next | In Progress pending review/integration; no checkpoint/module completion. Next handoff is I00B after its remaining real UI dependencies; later M1 F08B requires A05 and its own assignment. No next task started |
+
 ### I00 assignment — 2026-11-01
 
 | Field | Recorded assignment |

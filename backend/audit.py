@@ -14,6 +14,22 @@ from backend.database import SQLiteDatabase
 
 INTAKE_RECORD_VERSION = "intake-source.v1"
 
+# Public diagnostics are application codes, never exception messages or source
+# values. Unknown future adapter codes fail closed to the generic diagnostic.
+_PROCESSING_ERRORS = frozenset({
+    "PROCESSING_FAILED", "PROCESSING_INTERRUPTED", "SOURCE_UNAVAILABLE",
+    *("CSV_" + code for code in (
+        "INVALID_SOURCE", "INVALID_CONTEXT", "BYTE_LIMIT", "INVALID_UTF8",
+        "MALFORMED_CSV", "INVALID_HEADER", "ROW_LIMIT", "INVALID_ROW",
+        "INVALID_IP", "INVALID_TIMESTAMP", "INVALID_TIMEZONE", "INVALID_COORDINATE",
+        "MENTION_LIMIT", "INVALID_AMOUNT", "AMOUNT_LIMIT", "INVALID_CURRENCY",
+    )),
+    *("TEXT_" + code for code in (
+        "INVALID_SOURCE", "INVALID_CONTEXT", "BYTE_LIMIT", "INVALID_UTF8",
+        "NUL_BYTE", "LINE_LIMIT",
+    )),
+})
+
 # Intake producers store UTC with a Z suffix. Canonical fractional comparison
 # keeps whole-second and fractional timestamps in chronological order, retaining
 # microseconds (SQLite date functions would round them to milliseconds).
@@ -68,6 +84,31 @@ def initialize_audit(database: SQLiteDatabase) -> None:
                 f"WHEN EXISTS (SELECT 1 FROM {table} WHERE {collision}) "
                 "BEGIN SELECT RAISE(ABORT, 'Intake records are append-only.'); END"
             )
+
+
+def record_processing_audit(
+    connection: sqlite3.Connection, run, status: str, finished_at: str,
+    error: str | None = None,
+) -> None:
+    """Append in the terminal transition transaction; never commit separately.
+
+    The frozen server run/version links to private processing configuration and,
+    on success, processing_provenance.run_id. Failures have no published output
+    provenance. Callers serialize the transition and only append after updating
+    one nonterminal run, so replay/recovery cannot append a second event.
+    """
+    if status not in {"completed", "failed"}:
+        raise ValueError("Processing audit requires a terminal state.")
+    reason = f"run:{run['id']};status:{status};version:{run['processor_version']}"
+    if status == "failed":
+        code = error if error in _PROCESSING_ERRORS else "PROCESSING_FAILED"
+        reason += f";error:{code}"
+    connection.execute(
+        "INSERT INTO audit_events (id, case_id, actor_id, action, target_id, created_at, reason) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?)",
+        (str(uuid4()), run['case_id'], run['actor_id'], "startProcessing",
+         run['evidence_id'], finished_at, reason),
+    )
 
 
 def record_intake(

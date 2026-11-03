@@ -2179,6 +2179,47 @@ Every invalid request response is validated against the shared bundle's
 Tests clean up their temporary files. A manual server run leaves its ignored
 SQLite file for inspection; remove only your own synthetic test file when finished.
 
+## F08 terminal processing audit
+
+F08 / Checkpoint 1B / M1 / sharmelas-925 adds
+`record_processing_audit(connection, run, status, finished_at, error=None)` in
+`backend/audit.py`. Processing appends one `startProcessing` AuditEvent on
+completion or failure, including startup recovery of queued/running jobs as
+`PROCESSING_INTERRUPTED`. The authenticated initiating actor, case, Evidence ID
+and exact terminal timestamp come from the persisted run/transition. The safe
+reason holds `run:<UUID>;status:<state>;version:<processor version>` and, for
+failure, an allowlisted diagnostic code. Unknown diagnostics become
+`PROCESSING_FAILED` in public audit; no exception text is copied.
+
+Completion inserts output, private versioned provenance, run state and audit in
+one SQLite transaction. Failure/recovery likewise commits state and audit
+together. An audit or commit failure rolls back its entire transition; if failure
+accounting also fails, the run remains nonterminal for startup recovery. Existing
+write serialization, terminal-state guards and key replay prevent duplicates.
+The existing audit UPDATE/DELETE/REPLACE/UPSERT guards protect these events.
+
+The public run/version reference joins to private `processing_runs` frozen
+configuration and successful `processing_provenance.run_id`; failed runs have
+no completed output/provenance fabricated for them. Raw cells, source filenames,
+storage paths, credentials, private parameters and output contents remain outside
+audit/logs. Existing authorized `listAuditEvents` provides UTC-ordered pagination
+with case-membership isolation. Historical terminal runs receive no backfill.
+
+From the repository root with the existing pinned dependencies installed:
+
+```sh
+npx @redocly/cli bundle specs/openapi.yaml --output /tmp/evora-openapi.json
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -W error::ResourceWarning -m unittest backend.tests.test_processing_audit -v
+```
+
+Expected: 13 tests pass, exercising real synthetic upload/processing/API/SQLite
+producers, private provenance joins, malformed-input diagnostics, concurrent key
+replay/workers, audit listing/foreign-case denial, append-only triggers and
+injected publication/audit/commit/recovery failures. Scheduler holds and failure
+injections are test-only. Full verification and local runtime limitations are
+recorded in `docs/PREIMPLEMENTATION_REVIEW.md` under F08. F08 remains In Progress
+pending review/integration; Checkpoint 1B still requires I00B and its other rows.
+
 ## F03 original evidence upload
 
 `POST /api/v1/cases/{caseId}/evidence` (`uploadEvidence`) accepts multipart
