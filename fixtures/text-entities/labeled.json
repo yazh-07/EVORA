@@ -1,0 +1,117 @@
+[
+  {
+    "id": "names",
+    "text": "Alice Smith visited Paris on January 12, 2026.",
+    "mentions": [
+      {
+        "kind": "person",
+        "start": 0,
+        "end": 11
+      },
+      {
+        "kind": "location",
+        "start": 20,
+        "end": 25
+      },
+      {
+        "kind": "date",
+        "start": 29,
+        "end": 45
+      }
+    ]
+  },
+  {
+    "id": "organization",
+    "text": "Nora Reed joined Microsoft in London.",
+    "mentions": [
+      {
+        "kind": "person",
+        "start": 0,
+        "end": 9
+      },
+      {
+        "kind": "organization",
+        "start": 17,
+        "end": 26
+      },
+      {
+        "kind": "location",
+        "start": 30,
+        "end": 36
+      }
+    ]
+  },
+  {
+    "id": "identifiers",
+    "text": "Devices D-7 and D-007 used account AC-007. Call +15550101234 or 192.0.2.1.",
+    "mentions": [
+      {
+        "kind": "device",
+        "start": 8,
+        "end": 11
+      },
+      {
+        "kind": "device",
+        "start": 16,
+        "end": 21
+      },
+      {
+        "kind": "account",
+        "start": 35,
+        "end": 41
+      },
+      {
+        "kind": "phone",
+        "start": 48,
+        "end": 60
+      },
+      {
+        "kind": "ip",
+        "start": 64,
+        "end": 73
+      }
+    ]
+  },
+  {
+    "id": "ipv6",
+    "text": "The addresses are 2001:0DB8::1 and 2001:db8::1.",
+    "mentions": [
+      {
+        "kind": "ip",
+        "start": 18,
+        "end": 30
+      },
+      {
+        "kind": "ip",
+        "start": 35,
+        "end": 46
+      }
+    ]
+  },
+  {
+    "id": "near-misses",
+    "text": "The values xD-7, d-7, AC-8-extra, +12345 and 999.0.0.1 are placeholders.",
+    "mentions": []
+  },
+  {
+    "id": "ambiguity",
+    "text": "May is a button label here.",
+    "mentions": []
+  },
+  {
+    "id": "lowercase",
+    "text": "The report names a person called quinn sample.",
+    "mentions": [
+      {
+        "kind": "person",
+        "start": 33,
+        "end": 45
+      }
+    ]
+  },
+  {
+    "id": "plain",
+    "text": "the switch is off and the box is empty.",
+    "mentions": []
+  }
+]

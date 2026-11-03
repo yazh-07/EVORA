@@ -678,3 +678,29 @@ its own agreed text extraction/evaluation/file handoff; automatic selection awai
 earlier exits, or earlier independent work must be separately explicitly assigned.
 P13B and every remaining modality/initial feature/approved addition stay required.
 No next task started; full scope preserved.
+
+
+## P13 approved independent local text NLP policy — 2026-11-02
+
+User approved the complete P13 handoff recorded in AGENT_TASKS: P07 document
+format; local CPU spaCy3.8.18/en_core_web_sm3.8.0 English; pinned official model
+wheel/dependencies, setup/CI public downloads only, no runtime downloads/evidence
+transfer. Model candidate PERSON/ORG/GPE/LOC/FAC/DATE plus literal device/account/
+phone/IP candidates; exact source spans/text/case, identifier priority, source-
+backed same-run kind/key grouping and confidence0 unavailable. No person identity
+resolution/coreference/ownership/truth/guilt/occurrence-UTC/Event inference. Dates
+are literal source mentions, not event times. P13B remains required. Other
+producers, including P06 message behavior, remain unchanged.
+
+Preserve full source-line IDs and add literal-span Observations; Entities cite
+actual full-line/mention/Evidence IDs. Existing50MiB/100000-line parser caps and
+NLP1000000 decoded characters including separators,20000/line,100000 mentions,
+one worker/app process,120-second queue/inference deadline; missing/wrong/corrupt
+model, timeout or overflow fails atomically without silent regex fallback. Empty/
+no-mention success requires functioning pipeline. New processor7 records actual
+model/digest/version/resources privately; legacy processor4 config/output/private
+history is not rewritten or fabricated. No public route/field/table/column/M1/
+frontend changes. Real labeled English synthetic evaluation reports actual counts,
+false positives/misses/precision/recall without claiming universal accuracy or
+perfect recognition. Every original feature/approved addition remains required;
+earlier checkpoints stay open, no later task started.

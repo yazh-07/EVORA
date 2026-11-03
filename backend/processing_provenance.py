@@ -37,7 +37,7 @@ def initialize_provenance(connection):
       DROP TRIGGER IF EXISTS processing_provenance_context;
       CREATE TRIGGER processing_provenance_context BEFORE INSERT ON processing_provenance
         WHEN NOT EXISTS(SELECT 1 FROM processing_runs r JOIN processing_outputs o ON o.run_id=r.id
-          WHERE r.id=NEW.run_id AND r.status='running' AND r.processor_version IN ('processing-lifecycle/2','processing-lifecycle/3','processing-lifecycle/4','processing-lifecycle/5','processing-lifecycle/6')
+          WHERE r.id=NEW.run_id AND r.status='running' AND r.processor_version IN ('processing-lifecycle/2','processing-lifecycle/3','processing-lifecycle/4','processing-lifecycle/5','processing-lifecycle/6','processing-lifecycle/7')
           AND r.case_id=NEW.case_id AND r.evidence_id=NEW.evidence_id
           AND o.case_id=r.case_id AND o.evidence_id=r.evidence_id)
         BEGIN SELECT RAISE(ABORT,'Invalid processing provenance context'); END;
@@ -50,7 +50,7 @@ def initialize_provenance(connection):
         BEGIN SELECT RAISE(ABORT,'Immutable processing provenance'); END;
       DROP TRIGGER IF EXISTS processing_completion_provenance;
       CREATE TRIGGER processing_completion_provenance BEFORE UPDATE OF status ON processing_runs
-        WHEN NEW.status='completed' AND NEW.processor_version IN ('processing-lifecycle/2','processing-lifecycle/3','processing-lifecycle/4','processing-lifecycle/5','processing-lifecycle/6') AND NOT EXISTS(
+        WHEN NEW.status='completed' AND NEW.processor_version IN ('processing-lifecycle/2','processing-lifecycle/3','processing-lifecycle/4','processing-lifecycle/5','processing-lifecycle/6','processing-lifecycle/7') AND NOT EXISTS(
           SELECT 1 FROM processing_provenance p WHERE p.run_id=NEW.id AND p.case_id=NEW.case_id
           AND p.evidence_id=NEW.evidence_id AND p.record_version='processing-provenance/1'
           AND p.finished_at=NEW.finished_at)
@@ -83,8 +83,23 @@ def _payload(run, output, finished_at):
     if config.get('kind') == 'transaction':
         parameters = _PARAMETERS + ('max_amount_chars',)
         processor = TRANSACTION_PROCESSOR_VERSION
+    model = None
+    method = 'deterministic'
+    if config.get('kind') == 'document' and run['processor_version'] == 'processing-lifecycle/7':
+        processor = 'processing-lifecycle/7'
+        parameters += ('max_source_chars', 'max_line_chars', 'max_mentions', 'ner_timeout_seconds', 'ner_workers')
+        model = config.get('model')
+        if (not isinstance(model, dict) or set(model) !=
+                {'name', 'version', 'language', 'artifact_sha256', 'files_sha256', 'runtime'} or
+                any(not isinstance(model[key], str) or not model[key] for key in ('name', 'version', 'language')) or
+                any(not isinstance(model[key], str) or not re.fullmatch('[0-9a-f]{64}', model[key])
+                    for key in ('artifact_sha256', 'files_sha256')) or
+                not isinstance(model['runtime'], dict) or set(model['runtime']) != {'python', 'spacy', 'thinc', 'numpy'} or
+                any(not isinstance(value, str) or not value for value in model['runtime'].values())):
+            raise ValueError('Invalid frozen model provenance')
+        method = 'local_cpu_ner_plus_rules'
     if (set(config) != set(_VERSIONS + parameters) |
-            {'kind', 'sha256', 'size_bytes', 'provenance_version'}):
+            {'kind', 'sha256', 'size_bytes', 'provenance_version'} | ({'model'} if model else set())):
         raise ValueError('Invalid frozen provenance configuration')
     if (config['provenance_version'] != RECORD_VERSION or run['processor_version'] != processor
             or config['processor_version'] != run['processor_version']
@@ -106,8 +121,9 @@ def _payload(run, output, finished_at):
         raise ValueError('Invalid provenance output arrays')
     if config['kind'] == 'message' and events:
         raise ValueError('Message candidate processing does not extract Events')
-    if config['kind'] == 'document' and (entities or events or
-            any(config[key] != 'not-used' for key in ('normalizer_version', 'entity_version', 'event_version'))):
+    if config['kind'] == 'document' and (events or config['event_version'] != 'not-used' or
+            (model is None and (entities or any(config[key] != 'not-used'
+                for key in ('normalizer_version', 'entity_version'))))):
         raise ValueError('Plain text processing does not normalize time or extract candidates')
     manifests = {}
     for name, records, validator in (
@@ -139,7 +155,7 @@ def _payload(run, output, finished_at):
     return dict(record_version=RECORD_VERSION, case_id=case_id, evidence_id=evidence_id,
         processing_run_id=run_id, input={key: config[key] for key in ('kind', 'sha256', 'size_bytes')},
         execution=dict(versions={key: config[key] for key in _VERSIONS},
-                       parameters={key: config[key] for key in parameters}, method='deterministic', model=None),
+                       parameters={key: config[key] for key in parameters}, method=method, model=model),
         outputs=manifests, output_sha256=digest, accepted_at=run['created_at'], finished_at=finished_at)
 
 
