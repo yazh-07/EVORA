@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 import { createApiClient } from '../.test-build/src/api/client.mjs';
 import { createOriginalDownload } from '../.test-build/src/cases/downloadController.mjs';
 import { createCaseStore } from '../.test-build/src/cases/store.mjs';
-import { createEvidenceStore, createProcessingController, createProcessingStatusController, createObservationController, createCaseOverviewController } from '../.test-build/src/cases/CaseWorkspace.mjs';
+import { createAnalysisController, createEvidenceStore, createProcessingController, createProcessingStatusController, createObservationController, createCaseOverviewController } from '../.test-build/src/cases/CaseWorkspace.mjs';
 
 // Run explicitly after npm test + build. Real HTTP, FastAPI and SQLite; synthetic identities/data only.
 const temporary = await mkdtemp(join(tmpdir(), 'evora-u02-'));
@@ -406,9 +406,56 @@ try {
     } finally { gpsInspector.dispose(); }
   } finally { gpsStatus.dispose(); gpsProcessing.dispose(); gpsStore.dispose(); }
   console.log('PASS I00B real GPS: UI start/poll/inspection, D-8 source-backed candidates, exact row/raw/normalized coordinates and UTC.');
+  // U05D: real bodyless start + polling in both processed source cases.
+  // The server uses an explicit Neo4j double; all other producers are real.
+  const analysisRuns = [];
+  for (const [caseId, evidenceId, processingRunId, observationCount] of [
+    [created.id, processingEvidence.id, newerRun.id, 6],
+    [gpsCase.id, gpsEvidence.id, gpsRun.id, 3],
+  ]) {
+    const analysis = createAnalysisController(client, caseId, 10);
+    try {
+      analysis.start(); await analysis.submit();
+      for (let attempt = 0; ; attempt++) {
+        const state = analysis.getSnapshot();
+        assert.equal(state.message, ''); assert.notEqual(state.run?.status, 'failed');
+        if (state.status === 'terminal') break;
+        assert.equal(state.pinnedAnalysisRunId, null);
+        assert.ok(attempt < 300, 'analysis completes');
+        await new Promise(resolve => setTimeout(resolve, 10));
+      }
+      const state = analysis.getSnapshot(); const completed = state.run;
+      assert.equal(completed.status, 'completed');
+      assert.equal(state.pinnedAnalysisRunId, completed.id);
+      const path = { caseId, runId: completed.id };
+      assert.deepEqual(await client.request('get', '/api/v1/cases/{caseId}/analysis-runs/{runId}', { path }), completed);
+      const snapshot = completed.input_snapshot;
+      assert.equal(snapshot.case_id, caseId);
+      assert.ok(snapshot.evidence_ids.includes(evidenceId));
+      assert.deepEqual(snapshot.processing_run_ids, [processingRunId]);
+      assert.equal(snapshot.observation_ids.length, observationCount);
+      for (const ids of [snapshot.evidence_ids, snapshot.processing_run_ids, snapshot.observation_ids]) {
+        assert.deepEqual(ids, [...new Set(ids)].sort());
+      }
+      const canonical = JSON.stringify({ case_id: caseId, evidence_ids: snapshot.evidence_ids,
+        observation_ids: snapshot.observation_ids, processing_run_ids: snapshot.processing_run_ids });
+      assert.equal(snapshot.sha256, createHash('sha256').update(canonical, 'utf8').digest('hex'));
+      const requestCount = statuses.length; await new Promise(resolve => setTimeout(resolve, 40));
+      assert.equal(statuses.length, requestCount, 'terminal analysis stops polling');
+      for (const route of ['/api/v1/cases/{caseId}/graph', '/api/v1/cases/{caseId}/findings', '/api/v1/cases/{caseId}/triage']) {
+        const page = await client.request('get', route, { path: { caseId }, query: { analysis_run_id: state.pinnedAnalysisRunId } });
+        assert.equal(page.analysis_run_id, completed.id, 'real read agrees with workspace pin');
+      }
+      analysisRuns.push(path);
+    } finally { analysis.dispose(); }
+  }
+  console.log('PASS U05D real HTTP/FastAPI/SQLite analysis: network/GPS frozen snapshots and SHA-256, completed pins, terminal stop, pinned graph/findings/triage. Neo4j is an explicit double.');
   evidenceStore.dispose();
   const beforeDeniedAudit = intakeSnapshot();
   client.setToken('u02-synthetic-one'); await store.load();
+  for (const path of analysisRuns) {
+    await assert.rejects(client.request('get', '/api/v1/cases/{caseId}/analysis-runs/{runId}', { path }), { status: 404 });
+  }
   await assert.rejects(client.request('get', '/api/v1/cases/{caseId}/evidence/{evidenceId}/processing-runs/{runId}', { path: runPath }), { status: 404 });
   for (const route of ['/api/v1/cases/{caseId}/entities', '/api/v1/cases/{caseId}/events']) {
     for (const caseId of [created.id, '00000000-0000-4000-8000-000000000000']) {

@@ -52,6 +52,31 @@ Comma-separated IDs below are **exhaustive assignments**, not ranges. Each catal
 | 6C | I06 | I06 | I06 reports measured threats/provenance/resource/privacy/competitor limitations after the full-scope gates; no invented metrics/originality/admissibility claims. | Backlog |
 
 
+### U05D live record — 2026-11-03
+
+**U05D / Checkpoint 1C / M4 JebasJ / In Progress pending review/publication.**
+Executed 2026-11-04 on initially clean `feat/u05d-start-analysis-ui`.
+Actual reviewed HEAD/common contract base and local coordination ref:
+**d49a6baa84a0a919131963efdd918634eb0e4856**, differing from the supplied full SHA.
+U01/A05 dependencies and preceding completed checkpoints are merged ancestors;
+exact versions, allowed paths and consumer handoff are in AGENT_TASKS.md.
+
+The case workspace explicitly starts bodyless analysis with a fresh UUID key,
+serially polls every 750 ms, shows real lifecycle states and confirms terminal
+POST responses with GET before pinning completed analysis_run_id. One workspace
+context exposes that pin to future U06/U07/U07B consumers. Previous completed
+selection survives pending/failed newer work; completion switches it atomically.
+Safe alerts, fresh-key retry, session clearing and cancellation/late-delivery
+controls cover case changes/unmount/session replacement. No downstream view or
+pending graph partition is displayed.
+
+Actual results and test environment limits are in PREIMPLEMENTATION_REVIEW.md.
+Real localhost FastAPI/SQLite/processing/analysis read-back uses synthetic inputs
+and an explicit transactional Neo4j double; no live Neo4j or full I01 proof.
+Checkpoint 1C and M4 remain open. Next bounded handoff U06, with U07/U07B and I01
+retaining their gates. Changes remain unstaged/uncommitted; no publication or
+main merge authorized or performed.
+
 ### F08B live record — 2026-11-03
 
 **F08B / Checkpoint 1C / M1 sharmelas-925 / In Progress pending review/publication.**

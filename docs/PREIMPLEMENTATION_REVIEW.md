@@ -4949,3 +4949,101 @@ and access/error controls. No full NLP/model suite, live Neo4j, browser visual,
 Windows, hosted CI, benchmark, module or Checkpoint 1C completion is claimed.
 I01 remains open pending its remaining prerequisites and runbook exit evidence.
 Changes are uncommitted/unpublished; no later task started.
+
+### U05D verification — 2026-11-03
+
+**U05D / Checkpoint 1C / M4 JebasJ / In Progress pending review/publication.**
+Executed 2026-11-04 on initially clean `feat/u05d-start-analysis-ui` at actual
+HEAD/common contract base **d49a6baa84a0a919131963efdd918634eb0e4856**,
+matching local `docs/coordination-foundation`. The supplied full SHA differs.
+U01 merge f8c5fe7b7abf62a02d8dd96fd89ad7bd6e57b029 and A05
+266f39f4df18e261a156240ff4d828f74afafe2b are integrated dependencies; other
+producer versions/allowed paths and the resolved M3 -> M4 handoff are recorded
+in AGENT_TASKS.md. Only authorized frontend/test/documentation paths changed;
+no spec/backend/dependency edits or stage/commit/push/merge performed.
+
+Implementation uses the generated typed client with a bodyless POST and new
+UUID key per explicit start/retry. Serial polling defaults to 750 ms and stops
+on completed/failed. A confirming GET is required even for terminal POST output.
+Run identity/case/snapshot validation fails closed. Completion publishes run and
+workspace pin in one controller update; an older completed pin remains selected
+through newer pending/failed/error work. Case workspace context exposes caseId
+and nullable analysis_run_id for U06/U07/U07B. Those future consumers must pin
+all reads/pages, reject response mismatches and clear old data on pin changes;
+their UI is outside this task. Fixed alerts never expose raw transport/ApiError
+text; failed-run diagnostics render as escaped React text. 401 clears session
+and pin. Case/unmount/session changes abort requests and timers; late successes
+and errors cannot repopulate state. Aborting client delivery does not cancel
+server analysis. Same-key replay is not exposed: this UI chooses fresh-key starts.
+
+Requested checks were run:
+
+```sh
+npx @redocly/cli bundle specs/openapi.yaml --output /tmp/evora-openapi.json
+python scripts/verify_coordination.py /tmp/evora-openapi.json
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -m unittest discover -s scripts -p 'test_*.py'
+npm --prefix frontend run test
+npm --prefix frontend run build
+node frontend/test/cases.integration.mjs
+git diff --check
+```
+
+Results: verifier passes (27 operations, 126 tasks); **122 coordination tests**
+and **119 frontend tests** pass, no skips. Build verifies generated declaration
+freshness and strict TypeScript. Initial build caught unchecked array indexing
+in the new manifest validator; fixed and rerun successfully. New unit coverage
+includes explicit button dispatch/bodyless POST/UUID uniqueness, busy guards,
+queued -> running -> completed, failed/new-key retry, 400/401/404/500/network
+failures at both POST and GET, terminal stop, 750 ms timing, malformed/foreign/
+changed snapshots, different poll IDs, atomic newer completion, JSON-key-order
+independence, prior completed-pin retention and late success/error disposal on
+case/session/unmount. Strict-effect reconnect and pending timer disposal pass.
+React checks use static rendering and controller/handler calls, not browser
+mounts or visual/accessibility certification.
+
+Default `node frontend/test/cases.integration.mjs` fails at server startup:
+system Python lacks `neo4j`. The existing supplied backend environment succeeds:
+
+```sh
+EVORA_TEST_PYTHON=/home/whale2186/.hermes/cache/scratch/test_neo4j_venv/bin/python node frontend/test/cases.integration.mjs
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json /home/whale2186/.hermes/cache/scratch/test_neo4j_venv/bin/python -m unittest discover -s scripts -p 'test_*.py'
+```
+
+The second scripts run also passes **122 tests**, using required jsonschema
+**4.25.1** (default Python has 4.26.0). HTTP acceptance passes after the final
+build. It creates temporary real FastAPI/SQLite/private originals, performs real
+network/GPS upload/processing and starts/polls analysis through the new controller
+in each processed source case. Completed run read-back matches the pinned ID;
+manifest arrays are sorted/unique and contain the actual latest completed
+processing run and source observations; the SHA-256 is recomputed from canonical
+JSON and matches. Real graph/findings/triage reads select that exact pin and
+return matching IDs; terminal polling stops and foreign actor run reads are 404.
+Prior I00/I00B intake/original-byte/hash/audit/source/overview/pagination/access
+smoke remains green. The test server uses the existing explicit transactional
+GraphDouble for Neo4j; no processing/analysis/scoring/SQLite producer is doubled.
+This proves real merged HTTP producer integration with a declared graph adapter
+double, not live Neo4j, pending-partition crash/recovery or full I01 acceptance.
+
+Additional shared workflow checks pass:
+
+```sh
+npx --yes @redocly/cli@2.57.0 lint specs/openapi.yaml
+npx --yes openapi-typescript@7.10.1 specs/openapi.yaml -o /tmp/evora-u05d-api.d.ts
+frontend/node_modules/.bin/tsc --noEmit --strict /tmp/evora-u05d-api.d.ts
+npx --yes @google/design.md@0.4.0 lint DESIGN.md
+```
+
+OpenAPI has the existing missing-license warning; DESIGN has zero errors or
+warnings. Completed-checkpoint backend regressions **327 pass**, no skips:
+
+```sh
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json /home/whale2186/.hermes/cache/scratch/test_neo4j_venv/bin/python -W error::ResourceWarning -m unittest backend.tests.test_skeleton backend.tests.test_validation backend.tests.test_auth backend.tests.test_cases backend.tests.test_evidence backend.tests.test_audit backend.tests.test_audit_list backend.tests.test_m1_access backend.tests.test_network_csv backend.tests.test_gps_csv backend.tests.test_normalization backend.tests.test_candidate_entities backend.tests.test_source_events backend.tests.test_processing backend.tests.test_observations backend.tests.test_entities backend.tests.test_events backend.tests.test_processing_provenance backend.tests.test_processing_dispatch backend.tests.test_processing_publication backend.tests.test_processing_audit
+```
+
+Actual local versions: Python 3.14.9, Node 22.23.4, npm 12.2.1; provided backend
+environment Neo4j driver 6.4.1 and jsonschema 4.25.1. These differ from workflow
+runtime pins Python 3.14.8/Node 22.23.3/npm 12.2.0; no clean pinned setup or
+Windows/hosted-CI/browser/live-Neo4j/full-NLP/model/benchmark claim. Checkpoint
+1C/I01 and M4 remain open. Next bounded consumer task U06, followed by other
+remaining 1C task acceptances and I01 runbook exit evidence. Changes remain
+uncommitted/unpublished for review.
