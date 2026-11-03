@@ -51,6 +51,40 @@ Comma-separated IDs below are **exhaustive assignments**, not ranges. Each catal
 | 6B | I09, I09B | I09, I09B | I09 exercises every feature/operation with real producers; I09B proves clean full-scope Windows and CI setup/build/run and distinguishes test adapters from actual provider runs. | Backlog |
 | 6C | I06 | I06 | I06 reports measured threats/provenance/resource/privacy/competitor limitations after the full-scope gates; no invented metrics/originality/admissibility claims. | Backlog |
 
+### A01B live record — 2026-11-03
+
+**A01B / Checkpoint 1C / M3 whale2186 / In Progress pending review/integration.**
+Explicit user assignment on clean `feat/a01b-versioned-graph-projection` from
+actual common contract/base **b0fd1f983c7369247cd915f6f94b68685a1d4629**;
+the supplied full hash differs. Execution occurred 2026-11-04. Real merged
+A01/A02/A04/G01D and G02/A03/A03B are verified ancestors. The assignment in
+AGENT_TASKS.md records exact dependencies and the six authorized paths.
+
+Immutable SQL acceptance/output history, committed running candidates,
+transactional idempotent Neo4j partitions, exact counts/properties/source and
+endpoint checks, verified SQL completion, completed-only graph reads and safe
+SQL-driven rebuild/resume are implemented in `backend/graph_projection.py`.
+Storage reuses G01D evora-graph/1 `Node`/`Edge` constraints; no second graph
+schema, HTTP route, frontend or dependency change. Failed/pending partitions
+remain hidden, including graph-commit/SQL-publication crashes. Failed runs stay
+terminal; rebuilding does not publish them. Completed recovery retains SQL
+history. A05 acceptance/auth/scheduling remains an explicit fixture in tests.
+
+**17 A01B tests pass with real Neo4j enabled** (16 pass/one opt-in skip by
+default), including merged real processing/A01/A02/A03/A03B/A04 sources,
+projection loss/read refusal/rebuild and restart. **17 G01D, 12 A04, 13 A02,
+19 A01, 327 completed-checkpoint backend, 122 coordination and 101 frontend
+tests pass**; real intake/processing HTTP smoke, contract/types/build/DESIGN
+and whitespace checks pass. Broader document/NLP-dependent failures reproduce
+unchanged on the reviewed base; details and exact commands are in
+PREIMPLEMENTATION_REVIEW.md. These results do not certify the full backend
+suite, Windows, hosted CI, throughput or I01.
+
+Checkpoint 1C and M3 remain open. Next bounded handoff is **A05**, including
+authorized frozen acceptance, worker restart scheduling and coherent API
+lifecycle, followed by A05B/A06 and F08B integration under their own assignments.
+No stage/commit/push/merge authorized or performed; no later task started.
+
 ### G01D live record — 2026-11-03
 
 **G01D / Checkpoint 1C / M3 whale2186 / In Progress pending review/integration.**

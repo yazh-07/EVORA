@@ -1,5 +1,123 @@
 # EVORA scope/contract verification and implementation readiness
 
+### A01B verification — 2026-11-03
+
+**A01B / 1C / M3 / whale2186 — locally verified, In Progress pending
+review/integration.** Execution date 2026-11-04. Clean initial branch
+`feat/a01b-versioned-graph-projection`, actual reviewed common contract/base
+**b0fd1f983c7369247cd915f6f94b68685a1d4629**. Supplied full hash
+`b0fd1f91b4ca2efb72b834e565983758b97d1b32` differs; no fresh fetch claimed.
+Exact integrated A01/A02/A04/G01D task commits and six authorized paths are in
+AGENT_TASKS.md. Unchanged OpenAPI draft 0.3.0 remains the sole HTTP authority.
+
+`backend/graph_projection.py` initializes private analysis storage/immutability
+guards, validates accepted frozen sources against real completed processing
+outputs, and commits running SQL plus graph/findings/triage JSON before Neo4j.
+It reuses G01D evora-graph/1 `Node`/`Edge` composite constraints/indexes rather
+than creating a competing `CaseGraphNode`/`CONNECTED` schema. Batched parameterized
+MERGE writes retain every required node/edge wire property. Atomic replacement
+and exact count/property/endpoint read-back precede SQL completed publication.
+SQL locking serializes helper operations; no distributed transaction is assumed.
+
+Negative controls cover unavailable connection, schema/write/deferred verification/
+graph commit failure, count/property/cross-run endpoint corruption, SQL completion
+and SQL commit failure after graph commit, failed failure-accounting, crash before
+graph and after graph commit, immutable retry/rebuild, source digest/locator/
+case/run/reference mismatches, duplicate IDs, empty completed graph, multiple
+versions, and SQL UPDATE/DELETE/REPLACE/UPSERT guards. SQL completed-only reads
+hide partial/failed partitions even when stale graph data physically remains.
+An interrupted running candidate resumes its original SQL output; failed runs
+stay terminal. Rebuild restores SQL's version without changing publication.
+
+Real producer acceptance uses FastAPI/SQLite intake, private originals, completed
+network/GPS processing, A01 nodes, A02 links/findings, A03/A03B factors and A04
+triage. A labeled synthetic GPS D-7 row supplies a positive match without changing
+committed fixtures. The opt-in real Neo4j test checks full property/source
+read-back, repeated projection, projection deletion/read refusal and SQL rebuild.
+Only A05 accepted-run creation remains a disclosed fixture. The default unit
+fault controls use synthetic source SQL tables and a stateful Neo4j transaction
+double; they do not independently prove Cypher or real driver behavior.
+
+Local environment read-back: **CPython 3.14.9 / SQLite 3.53.1**, **neo4j 6.4.1**,
+**pytz 2026.1**, **jsonschema 4.25.1**, FastAPI **0.143.1**, HTTPX **0.28.1** in
+the pre-existing requested scratch venv. Disposable server **Neo4j 5.26.0
+Community**, loopback port 17687, 256 MiB heap / 128 MiB page cache, no volume.
+Node **22.23.4**, npm **12.2.1** differ from skeleton setup pins. The bare `python`
+requested commands also passed, but that interpreter has SQLite 3.54.1,
+jsonschema 4.26.0, FastAPI 0.162.0 and Pydantic 2.14.2; the verifier, all 122
+coordination tests and the 44 A04/A02/A01 regressions were additionally rerun
+successfully in the scratch venv with required jsonschema **4.25.1**. No package
+dependencies were edited or installed; clean pinned setup/Windows/hosted CI
+were not demonstrated here.
+
+Requested commands executed (repository root):
+
+```sh
+npx @redocly/cli bundle specs/openapi.yaml --output /tmp/evora-openapi.json
+python scripts/verify_coordination.py /tmp/evora-openapi.json
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -m unittest discover -s scripts -p 'test_*.py'
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json /home/whale2186/.hermes/cache/scratch/test_neo4j_venv/bin/python -W error::ResourceWarning -m unittest discover -s backend/tests -p 'test_graph_projection.py' -v
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json /home/whale2186/.hermes/cache/scratch/test_neo4j_venv/bin/python -W error::ResourceWarning -m unittest discover -s backend/tests -p 'test_neo4j_setup.py' -v
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -W error::ResourceWarning -m unittest discover -s backend/tests -p 'test_triage_aggregation.py' -v
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -W error::ResourceWarning -m unittest discover -s backend/tests -p 'test_graph_links.py' -v
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -W error::ResourceWarning -m unittest discover -s backend/tests -p 'test_graph_nodes.py' -v
+npm --prefix frontend run test
+git diff --check
+```
+
+All exit 0: A01B **16 pass / one opt-in skip**; G01D **13 pass / four opt-in
+skips**; A04 **12**, A02 **13**, A01 **19**, coordination **122**, frontend
+**101** pass. Verifier confirms 27 operations / 126 tasks / 18 checkpoints /
+39 capabilities / 40 proposal mappings. Actual bundled Graph/Finding/TriageResult
+schema validation uses jsonschema 4.25.1, UUID formats and synthetic records.
+
+Additional executed checks:
+
+```sh
+npx --yes @redocly/cli@2.57.0 lint specs/openapi.yaml
+npx --yes openapi-typescript@7.10.1 specs/openapi.yaml -o /tmp/evora-api.d.ts
+npx --yes --package typescript@5.9.3 tsc --noEmit --strict /tmp/evora-api.d.ts
+npm --prefix frontend run build
+npx --yes @google/design.md@0.4.0 lint DESIGN.md
+EVORA_TEST_PYTHON=/home/whale2186/.hermes/cache/scratch/test_neo4j_venv/bin/python node frontend/test/cases.integration.mjs
+```
+
+All pass; existing OpenAPI missing-license warning remains. DESIGN has zero
+errors/warnings. Frontend build includes API freshness and typecheck. Real HTTP
+smoke prints all I00/I00B intake/processing/source/overview PASS messages and
+cleans up its server/data. The exact prior 327-test completed-checkpoint command
+recorded in A01 verification was rerun using the scratch venv (without
+its historical PYTHONPATH override): **327 pass, zero skips**.
+
+With the disposable G01D service and its private `NEO4J_*` environment configured,
+both focused suites were rerun with `EVORA_NEO4J_INTEGRATION=1`: **17 A01B / 17
+G01D pass, zero skips**. A final service-restart readiness + real A01B probe also
+passes. An initial per-item cold projection failed closed before switching to
+batched writes; the exact underlying cold failure was not established. Final
+batched suite/restart read-back succeeds with default 1-second configuration;
+this does not certify large graphs or throughput. The disposable service is
+removed after verification. Backend setup/reproduction/negative commands are
+in `backend/README.md`.
+
+Broader-suite limitation: final full warning-strict backend discovery ran **567
+tests: 547 pass, seven failures, eight errors, five opt-in skips**. It also
+exercises later document/NLP adapters; the failures/errors include
+`MODEL_INVALID`, failed expected document completions and missing completed
+private outputs. An isolated `git archive HEAD` export of the unchanged reviewed
+base, running `backend.tests.test_documents`, `backend.tests.test_text_entities`,
+`backend.tests.test_mobile` and `backend.tests.test_transactions` with the same
+scratch interpreter and contract bundle, reproduces **the same seven failures
+and eight errors (77 tests)**. The baseline has no A01B code. These model/runtime
+failures are outside the six allowed files; full-backend green is not claimed.
+Exact discovery command was
+`EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json /home/whale2186/.hermes/cache/scratch/test_neo4j_venv/bin/python -W error::ResourceWarning -m unittest discover -s backend/tests`.
+
+No analysis HTTP/auth/startup worker/audit integration, I01 exit, module closure,
+benchmark, new dependency, spec/frontend change, staging/commit/push/merge or
+later task is claimed. A05 must extend acceptance metadata and wire authorized
+snapshot/idempotency/trigger/startup scheduling; A05B/A06/F08B retain their own
+handoffs. **Checkpoint 1C stays In Progress.**
+
 ### G01D verification — 2026-11-03
 
 G01D / Checkpoint 1C / M3 / whale2186, locally verified pending review/integration

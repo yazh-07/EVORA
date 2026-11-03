@@ -6,7 +6,8 @@ harness. Tested baseline: **Neo4j 5.26.0 Community**, Python driver
 `requirements.txt`; no frontend package or HTTP operation is added. Imports and
 driver construction are lazy; connectivity requires a successful real query in
 the configured database. SQLite remains authoritative. A01B owns validated
-partition writes/rebuilds and A05 owns completed SQL publication; setup creates
+partition writes/rebuilds and the verified SQL completion primitive; A05 owns
+authorized acceptance, worker scheduling and coherent API lifecycle. Setup creates
 no analysis results or scores.
 
 | Backend environment variable | Default / validation |
@@ -2593,3 +2594,102 @@ FastAPI/SQLite tests upload/process the committed network.csv and gps.csv and
 read original/source APIs through A01 -> A02 -> A03/A03B -> A04. A separately
 labeled GPS D-7 variant exercises a positive link. Neither test persists or
 publishes completed analysis/Neo4j; A01B/A05/I01 remain separate gates.
+
+## A01B versioned SQL/Neo4j projection
+
+`backend/graph_projection.py` uses the real `SQLiteDatabase` and G01D
+`Neo4jGraphDatabase`. Call `initialize_graph_projection(sql_db)` explicitly
+before accepting work. It creates `analysis_runs` and `analysis_outputs` with
+immutable acceptance/output/terminal-history guards. Initialization preserves
+interrupted work. A05 must supply an authenticated accepted `queued` row with
+actor, key digest and the frozen `AnalysisInputSnapshot`; this helper never
+invents these values. A05 will add its trigger/algorithm/fingerprint metadata
+and startup worker integration. No analysis HTTP route is installed by A01B.
+
+`project_analysis_run(sql_db, neo4j_db, case_id=..., analysis_run_id=...,
+graph=..., findings=..., triage=...)` accepts producer wire dictionaries.
+`triage` contains computed A04 `TriageResult` dictionaries; unscored members
+remain in the frozen evidence manifest, without a fabricated result. A06 can
+derive the ordered complete `TriageEntry` membership and live overlays later.
+The graph always includes its run ID, including empty completed graphs.
+
+The helper joins the frozen evidence, completed processing outputs, observations
+and nonblank source locators in SQLite. It checks snapshot digest/membership,
+source UUID node contents, endpoint membership, unique IDs, same-case/run
+findings and triage, and observation/evidence references. It then commits the
+run as `running` with all three canonical JSON outputs **before** contacting
+Neo4j. Output bytes cannot be changed by retry, SQL UPDATE/DELETE/REPLACE/UPSERT
+or a new caller payload under the same run ID.
+
+Projection reuses **evora-graph/1 `:Node` / `:Edge`** and G01D's six constraints/
+indexes. `CaseGraphNode`/`CONNECTED` would bypass those installed constraints,
+so no second storage schema is created. In one Neo4j transaction, remove this
+partition's edges/nodes, batch `UNWIND`/`MERGE` the source UUID nodes and directed
+edges, and verify counts plus exact property/source arrays and endpoint
+case/run/labels. Every query uses case/run parameters. Node deletion refuses
+to detach foreign relationships. Commit Neo4j, then publish SQL `completed`
+and `finished_at`. There is no transaction spanning the two databases.
+
+During projection/read/rebuild, a SQLite `BEGIN IMMEDIATE` lock serializes these
+helpers across workers, including during Neo4j verification. Neo4j replacement
+is atomic; pending SQL candidates remain hidden. This deliberately favors
+correctness over concurrent write throughput and can temporarily delay other
+SQLite writers. Use the configured G01D connection/transaction timeout; large
+graphs and throughput have not been benchmarked.
+
+Graph failures record `failed`, UTC completion time and the fixed diagnostic
+`GRAPH_PROJECTION_FAILED`, then raise sanitized `ProjectionError`. No raw driver
+error or evidence content is logged. Partial/orphan graph data is isolated by
+SQL status, even if cleanup or Neo4j is unavailable. If SQL failure accounting
+also fails, the candidate remains `running` and hidden; the exception explicitly
+requires SQL recovery. A crash before projection or after graph commit likewise
+leaves a hidden running candidate. Resume by loading the original SQL JSON and
+calling `project_analysis_run` with those exact outputs; do not resnapshot.
+The worker's startup scheduling belongs to A05.
+
+`rebuild_graph_partition(sql_db, neo4j_db, case_id=..., analysis_run_id=...)`
+loads and validates the immutable SQL outputs, atomically replaces/verifies only
+that partition, and returns `True` on success or `False` for a Neo4j failure.
+It never changes publication state: rebuilding a failed/running run does not
+publish it. Failed runs remain terminal for same-key replay; a new accepted key
+creates a new run. Rebuilding a completed run repairs projection loss without
+mutating SQL history. Repeated completed projection calls only verify and retain
+the original terminal timestamp. A failed completed read/rebuild leaves SQL's
+completed history intact and refuses to serve an unavailable/incoherent graph.
+
+`get_projected_graph(sql_db, neo4j_db, case_id=..., analysis_run_id=...)` returns
+the authoritative SQL Graph only after exact Neo4j read-back. Missing/foreign/
+queued/running/failed selectors raise the same `AccessError(404)` before graph
+access. Caller must first enforce F00 case authorization. There is no silent
+older-run fallback. A05B owns HTTP integration and latest-completed selection;
+A05/F08B own the orchestration and safe audit integration.
+
+With the pinned backend dependencies and jsonschema 4.25.1, from repository root:
+
+```sh
+npx @redocly/cli bundle specs/openapi.yaml --output /tmp/evora-openapi.json
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -W error::ResourceWarning -m unittest discover -s backend/tests -p 'test_graph_projection.py' -v
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -W error::ResourceWarning -m unittest backend.tests.test_graph_projection.ProjectionTests.test_failures_never_publish_and_hide_retained_partial_partition -v
+```
+
+Expect 16 default tests pass and one opt-in test skipped; the focused negative
+passes with SQL failed/404-hidden partitions for injected connection/schema/
+node/edge/verification/commit failures. Unit controls use a stateful synthetic
+Neo4j transaction driver and synthetic SQL source fixtures. A separate real
+FastAPI/SQLite test consumes merged intake/processing/A01/A02/A03/A03B/A04,
+with only A05 acceptance and Neo4j doubled. A labeled GPS D-7 variant supplies a
+positive candidate edge; committed fixture bytes remain unchanged.
+
+For actual Cypher/driver/source/rebuild acceptance, start the disposable G01D
+service above and set its private `NEO4J_*` environment, then run:
+
+```sh
+EVORA_NEO4J_INTEGRATION=1 EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -W error::ResourceWarning -m unittest discover -s backend/tests -p 'test_graph_projection.py' -v
+```
+
+Expect all 17 tests pass with no skips. The real test deletes only its own
+synthetic partition, proves read failure and SQL-driven restoration, and cleans
+up its test partition. A05 acceptance remains an explicit fixture; no full
+analysis API, I01, Windows or hosted CI completion is claimed. Exact commands,
+versions and broader-suite limitations are in A01B verification in
+`docs/PREIMPLEMENTATION_REVIEW.md`.

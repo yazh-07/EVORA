@@ -1,5 +1,17 @@
 # EVORA scoped agent assignment templates
 
+### A01B assignment — 2026-11-03
+
+| Field | Recorded assignment |
+|---|---|
+| Task/checkpoint/module/owner | A01B / 1C / M3 Evidence Fusion and Adaptive Triage / whale2186; explicit user assignment and shared-file handoff; execution 2026-11-04 |
+| Branch/common contract base | Clean `feat/a01b-versioned-graph-projection`, actual HEAD **b0fd1f983c7369247cd915f6f94b68685a1d4629**; supplied `b0fd1f91b4ca2efb72b834e565983758b97d1b32` differs. No fresh fetch claimed. Unchanged OpenAPI draft 0.3.0 |
+| Allowed paths | `backend/graph_projection.py`, `backend/tests/test_graph_projection.py`, `backend/README.md`, `docs/AGENT_TASKS.md`, `docs/ROADMAP.md`, `docs/PREIMPLEMENTATION_REVIEW.md`. No spec/frontend/dependency edits or stage/commit/push/merge authorization |
+| Real dependency commits | A01 **16e6429a22fa6250fdeebc4c47f6ab0a4d0349bf**, A02 **ca6cb6727bcb87a31bc8b1b9cc18efbc42d99ed0**, A04 **7dd450610b279cc77a39ff6b0e9e5c4132183d2e**, G01D **421f10ec4d229c909522bf9d65f06e063f65d115** are integrated ancestors; G02/A03/A03B and Checkpoints 0/1A/1B preserved |
+| Interface handoff | M1/M2 immutable SQLite sources and frozen accepted run -> M3 SQL outputs -> G01D evora-graph/1 `Node`/`Edge` partition -> verified SQL completed pointer -> A05/A05B/A06. Reuse existing constrained labels instead of introducing unconstrained `CaseGraphNode`/`CONNECTED` storage. All requested wire properties retained |
+| Acceptance/dependency handling | SQL running run/output committed first; atomic idempotent Neo4j replacement and exact count/property/endpoint verification; SQL completion last. Failures use safe errors; reads hide noncompleted partitions. Rebuild uses immutable SQL. A05 acceptance/auth/idempotency API is absent: tests explicitly supply its frozen accepted record, never invent production actor/key/snapshot. Real merged processing/A01/A02/A03/A03B/A04 and real Neo4j acceptance are exercised separately from synthetic driver controls |
+| State/next | In Progress, locally verified pending review/integration. 17 A01B tests pass with real Neo4j (16 pass/one skip by default); 327 completed-checkpoint regressions and required contract/frontend checks pass. Exact commands/broader NLP limitations in PREIMPLEMENTATION_REVIEW.md. Checkpoint 1C stays open. A05 is the next bounded M3 handoff, including startup worker scheduling/auth/trigger/algorithm metadata and F08B audit integration. No later task started |
+
 ### G01D assignment — 2026-11-03
 
 | Field | Recorded assignment |
