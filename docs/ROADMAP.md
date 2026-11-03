@@ -357,6 +357,35 @@ Next gate **I00** is shared real API/UI intake verification and requires an
 explicit assignee. It is not M1-only and has not been started. Later M1 F08
 waits for P04/P14; full M1/product scope is not complete.
 
+## Checkpoint 1C graph-node construction
+
+### A01 live record — 2026-11-03
+
+**A01 / Checkpoint 1C / M3 / whale2186 / In Progress, locally verified pending review/integration.**
+User-assigned `feat/a01-case-graph-nodes`, clean actual reviewed contract/base
+**d1f16ef02a62c2ce94bdd19539037a7b60cecabf**. The supplied full hash differs;
+the actual base includes merged G02 and all 1B tasks. Direct P03B/P03C dependency
+versions and the six allowed paths are recorded in the A01 assignment in
+AGENT_TASKS.md. OpenAPI draft 0.3.0 remains unchanged.
+
+`backend/graph_nodes.py` constructs frozen Evidence/Entity/Event nodes from
+selected source mappings, retaining source UUIDs and labels/kinds. Same-case
+Evidence membership, canonical UUIDs and nonblank fields are checked; duplicate
+UUIDs union sorted Evidence IDs only for matching category/kind/label. Nodes
+sort by kind then UUID and serialize exactly the GraphNode fields. Node
+observation IDs are neither required nor emitted. Real merged network/GPS API
+outputs feed the builder in the focused integration test; schema-only Graph
+envelopes and synthetic negatives are labeled separately.
+
+Verification: 19 A01, 33 G02, 122 coordination, 101 frontend and all 327 earlier
+checkpoint backend tests pass. Contract lint/bundle/generated strict types,
+frontend freshness/typecheck/build, real HTTP I00/I00B smoke, DESIGN and whitespace
+checks pass. Exact commands, read-back and environment limits are in A01
+verification in PREIMPLEMENTATION_REVIEW.md. No unresolved contract decision
+blocks A01. Checkpoint 1C and M3 remain open; next bounded M3 handoff is A02.
+Neo4j partition/recovery, analysis publication and I01 exit remain required.
+No staging, commit, push, merge, Windows or hosted-CI result is claimed.
+
 ## Checkpoint 1B processing audit
 
 ### G02 live record — 2026-11-03

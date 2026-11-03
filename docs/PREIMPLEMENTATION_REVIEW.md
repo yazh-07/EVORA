@@ -1,5 +1,90 @@
 # EVORA scope/contract verification and implementation readiness
 
+### A01 verification — 2026-11-03
+
+A01 / Checkpoint 1C / M3 / whale2186, `feat/a01-case-graph-nodes`, locally
+verified and awaiting review/integration. Clean initial HEAD/common contract base
+is **d1f16ef02a62c2ce94bdd19539037a7b60cecabf**, also the local coordination
+merge-base. The supplied full hash differs. Direct dependencies P03B
+**c58e7f24e4f7c21fc5120dc7288d02f960b58006** and P03C
+**bb2d18f1222c8e7fd4ab45dbdf7e1e17b252baca** are merged, with real processing
+readers/publication, I00B **740f40662158caeed41b2de963cbb185b69fa51d** and G02
+available in the reviewed base. Six allowed files changed; no contract, frontend,
+dependency, database or other producer changes.
+
+Actual focused read-back: upload the committed synthetic network/GPS originals,
+start and read completed processing, then read Evidence/Entity/Event/Observation
+APIs and build **10 nodes: 2 Evidence, 5 candidate Entities, 3 source Events**.
+Every node keeps its exact source UUID/kind/label and same-case Evidence IDs.
+Entity/Event observation references join back to the same-case Evidence and
+nonblank source locators. D-7/D-8/D-9 remain separate candidates. Downloaded
+original bytes and hashes are unchanged. Foreign actor/case metadata access is
+404; spliced foreign records and forged Evidence references fail in the builder.
+
+Unit controls cover empty/evidence-only cases; UUID preservation and malformed/
+uppercase/compact/braced/URN/nonstring rejection; missing fields and nonmapping
+records; blank labels/kinds; empty/invalid/foreign references; duplicate source
+unions; conflicting duplicate category/kind/label; distinct UUIDs with identical
+labels; stable kind/UUID ordering under reordering; immutable inputs/results and
+detached serialization; strict GraphNode extra-field/schema negatives. No node
+observation IDs are required. The unchanged GraphNode schema permits empty labels;
+the builder rejects them as the requested stricter internal policy. Graph-envelope
+tests use an explicitly synthetic analysis UUID solely to check the schema's
+nonempty-graph analysis-ID requirement; no analysis publication is claimed.
+
+Actual verification commands below use the existing scratch **jsonschema 4.25.1**
+installation through `PYTHONPATH=/tmp/evora-u13-validation` for Python checks
+(module path and distribution version read back). No dependency installation or
+manifest change was made. Local runtime: **Python 3.14.9, Node 22.23.4, npm 12.2.1,
+FastAPI 0.162.0, Pydantic 2.14.2, HTTPX 0.28.1**. These differ from several pinned
+setup versions; this is local behavioral verification, not clean pinned setup,
+Windows or hosted-CI proof.
+
+```sh
+npx @redocly/cli bundle specs/openapi.yaml --output /tmp/evora-openapi.json
+PYTHONPATH=/tmp/evora-u13-validation python scripts/verify_coordination.py /tmp/evora-openapi.json
+PYTHONPATH=/tmp/evora-u13-validation EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -m unittest discover -s scripts -p 'test_*.py'
+PYTHONPATH=/tmp/evora-u13-validation EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -W error::ResourceWarning -m unittest discover -s backend/tests -p 'test_graph_nodes.py' -v
+PYTHONPATH=/tmp/evora-u13-validation EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -W error::ResourceWarning -m unittest discover -s backend/tests -p 'test_triage_policy.py' -v
+npm --prefix frontend run test
+npx --yes @redocly/cli@2.57.0 lint specs/openapi.yaml
+npx --yes openapi-typescript@7.10.1 specs/openapi.yaml -o /tmp/evora-a01-api.d.ts
+frontend/node_modules/.bin/tsc --noEmit --strict /tmp/evora-a01-api.d.ts
+npx --yes @google/design.md@0.4.0 lint DESIGN.md
+npm --prefix frontend run build
+node frontend/test/cases.integration.mjs
+git diff --check
+```
+
+Results: **19 A01, 33 G02, 122 coordination and 101 frontend tests PASS**.
+Verifier passes 27 operations / 126 tasks / 18 checkpoints / 39 capabilities /
+40 proposal mappings. Contract lint/bundle, generated TypeScript 5.9.3 strict
+compilation, frontend API freshness/typecheck/build and whitespace checks pass.
+OpenAPI lint retains the existing missing-license warning; DESIGN 0.4.0 reports
+zero errors/warnings. Real HTTP smoke exits 0 and prints the I00 and I00B gate
+PASS messages. These results were checked again for final edited documentation.
+
+Completed-checkpoint regression command: **327 PASS**, no skips or failures:
+
+```sh
+PYTHONPATH=/tmp/evora-u13-validation EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -W error::ResourceWarning -m unittest backend.tests.test_skeleton backend.tests.test_validation backend.tests.test_auth backend.tests.test_cases backend.tests.test_evidence backend.tests.test_audit backend.tests.test_audit_list backend.tests.test_m1_access backend.tests.test_network_csv backend.tests.test_gps_csv backend.tests.test_normalization backend.tests.test_candidate_entities backend.tests.test_source_events backend.tests.test_processing backend.tests.test_observations backend.tests.test_entities backend.tests.test_events backend.tests.test_processing_provenance backend.tests.test_processing_dispatch backend.tests.test_processing_publication backend.tests.test_processing_audit
+```
+
+Doubles/limits: synthetic CSVs and identities only. Focused successful producers
+use real FastAPI/SQLite/private storage/parsers/normalizers/candidate projectors/
+publication/read APIs through in-process ASGI; none are replaced. Separate prior
+checkpoint suites retain their labeled fault injections/selection fixtures and
+frontend Fetch/static-render controls; the independent HTTP smoke uses actual
+servers/UI controllers. The full later-adapter backend suite was not rerun:
+I00B's recorded NLP/model failures are not resolved or certified by these checks.
+No Neo4j projection, graph HTTP endpoint, scoring assembly, frozen analysis
+publication, mounted browser, Windows, hosted CI or performance claim.
+
+No unresolved policy gate affects A01. No staging/commit/push/merge or post-merge
+smoke was performed. Checkpoint 1C remains In Progress; next bounded M3 task is
+A02 under a separate handoff. A01B/A05/I01 still own projection/publication and
+the checkpoint exit. Full proposal and approved speech scope remain required.
+
 ### G02 verification — 2026-11-03
 
 G02 / Checkpoint 1C / M3 / whale2186, `feat/g02-triage-scoring-policy`.

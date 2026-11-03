@@ -2,6 +2,19 @@
 
 Coordination-branch draft 0.3.0, not a running app. Four people each work on one module; confirmed GitHub-handle assignments and integration coordination are in [ROADMAP.md](ROADMAP.md#module-assignment-and-live-task-state). Full initial proposal scope is fixed. Use the canonical phase/checkpoint ledger in [ROADMAP.md](ROADMAP.md). Assign one catalog row, not an entire module, milestone or full dashboard. Codex fills the task card from recorded repository decisions before editing. Missing common-base/allowed-path choices or a shared G/I assignee need a short clarification, not a guessed assignment.
 
+### A01 assignment — 2026-11-03
+
+| Field | Recorded assignment |
+|---|---|
+| Task/checkpoint/module/owner | A01 / 1C / M3 Fusion and Adaptive Triage / whale2186, matching the ROADMAP module table and explicit user handoff |
+| Branch/reviewed common contract base | `feat/a01-case-graph-nodes`, clean initial HEAD **d1f16ef02a62c2ce94bdd19539037a7b60cecabf** on the coordination history. Supplied full hash `d1f16ef6ba9132204c311c6d3bc8f15d2a764d26` differs from the actual Git object. Unchanged `specs/openapi.yaml` draft 0.3.0 is the sole HTTP contract |
+| Allowed paths/shared handoff | `backend/graph_nodes.py`, `backend/tests/test_graph_nodes.py`, `backend/README.md`, `docs/AGENT_TASKS.md`, `docs/ROADMAP.md`, `docs/PREIMPLEMENTATION_REVIEW.md`. User authorizes these bounded shared ledger edits; no spec/frontend/dependency changes or staging/commit/push/merge authorization |
+| Real dependencies | P03B **c58e7f24e4f7c21fc5120dc7288d02f960b58006**, P03C **bb2d18f1222c8e7fd4ab45dbdf7e1e17b252baca** are merged ancestors. Real F03/F04/P04/P04B/P05/P05B producers and completed I00B **740f406** are present, plus G02 merge at the reviewed base |
+| Producer/consumer handoff | M2 normalized candidate Entity/Event wire mappings and M1 Evidence metadata -> pure source-UUID node builder -> M3 A02, then A01B/A05. Caller authorizes/selects coherent completed inputs; supplied Evidence records define the same-case reference allowlist |
+| Acceptance/policy | Preserve source UUID/text; no anonymous nodes or node observation-ID requirement; strict canonical UUID/case/reference/nonblank checks; unique sorted evidence unions; deterministic `(kind,id)` order; conflicting duplicate category/kind/label fails closed. Five-field immutable node serialization validates against the real OpenAPI bundle |
+| Tests/dependency handling | Synthetic negative fixtures and real merged FastAPI/SQLite network/GPS processing through source APIs, source-locator joins, original-byte/hash read-back, and foreign-case rejection. Actual command results and environment limits are recorded in A01 verification in PREIMPLEMENTATION_REVIEW.md |
+| State/next | In Progress, locally verified and awaiting review/integration; 19 A01, 33 G02, 122 coordination, 101 frontend and 327 completed-checkpoint backend tests pass, with build/real HTTP smoke/contract/types/DESIGN checks. Checkpoint 1C remains In Progress. Next bounded M3 row A02 requires a separate handoff; no next task started |
+
 ### G02 assignment — 2026-11-03
 
 | Field | Recorded assignment |
