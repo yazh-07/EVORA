@@ -709,3 +709,16 @@ No unresolved contract choice affects U05. Status fetch transport failures pause
 with an explicit same-run retry; only the separate start action creates a new run.
 No history endpoint or observation UI is added, and backend work is not cancelled
 by client disposal. Full proposal and approved speech addition remain required.
+
+
+### U05B assignment — 2026-11-03
+
+| Field | Scoped assignment |
+|---|---|
+| Task/checkpoint/owner | **U05B / 1B / M4 Investigator Application / JebasJ**, user-assigned bounded observation inspector row |
+| Branch/common contract commit | `feat/u05b-observation-inspector-ui`; clean actual starting HEAD/local `docs/coordination-foundation` **32b8adeecec8903edc1dde5ae56ad8a175a61607**. User-supplied full hash beginning 32b8ade differs from the actual Git object. Unchanged `specs/openapi.yaml` draft 0.3.0 is the sole HTTP authority |
+| Allowed paths/shared handoff | `frontend/src/cases/`, `frontend/test/`, `frontend/README.md`, `docs/AGENT_TASKS.md`, `docs/ROADMAP.md`, `docs/PREIMPLEMENTATION_REVIEW.md`; user explicitly assigned these documentation paths. No backend/spec/dependency changes |
+| Real dependencies | U05 task **50a5e9c4a36afc986f20200b2adfa28f1a938002**, integrated in starting HEAD; real P04B merge **c29e517f218c0851a9959cfa389b093242a255ab**, both committed ancestors. Existing P04 start/poll and real completed immutable outputs are consumed; no pending producer gate or new contract choice |
+| Acceptance | Latest completed evidence observations, optional historical completed run pin, exact kind/locator/raw/normalized/raw time/UTC/confidence, authoritative pagination/empty state, fixed safe 400/401/404/500/network alerts, abort/stale/session disposal and completion refresh. Real six-observation network fixture, pinned history after newer completion, pagination and foreign-case rejection |
+| Verification/state | In Progress pending review/publication. Exact commands/results and Fetch-double/static-render limits recorded in U05B verification in PREIMPLEMENTATION_REVIEW.md. No stage/commit/push/merge authorized |
+| Next handoff | U13 / I00B remain separate bounded assignments; Checkpoint 1B remains open. No module/phase closure |

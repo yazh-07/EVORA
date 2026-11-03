@@ -1,3 +1,5 @@
+export { createObservationController } from './observationController';
+export { ObservationPanel } from './ObservationInspector';
 export { createProcessingStatusController } from './processingStatusController';
 export { ProcessingStatusPanel } from './ProcessingStatus';
 import { EvidenceWorkspace } from './EvidenceWorkspace';
