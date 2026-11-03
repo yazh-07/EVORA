@@ -359,6 +359,19 @@ waits for P04/P14; full M1/product scope is not complete.
 
 ## Checkpoint 1B processing audit
 
+### G02 live record — 2026-11-03
+
+**G02 / Checkpoint 1C / M3 / whale2186 / Complete.**
+Branch `feat/g02-triage-scoring-policy`, based on `740f406` (`docs/coordination-foundation`).
+Resolves policy gate **C-05**:
+- Version all seven factor functions and bounds: anomaly (0..1), conflict strength (0..1), connectivity (0..1), gap coverage (0..1), relevance ratio (0..1), source quality (0..1), temporal window (0..1).
+- Base weights sum exactly to 1.0; proportional missing-factor re-weighting preserves [0, 100] scale.
+- Score capped at 100.00; canonical priority bands P1 (>=80), P2 (>=60), P3 (>=40), P4 (<40).
+- Tie-breaking: sorted by priority descending, score descending, then evidence UUID ascending.
+- Invariant: Unprocessed evidence is strictly unscored (never assigned a synthetic 0 or default P4 priority).
+- Source independence engine: distinguishes distinct origin devices/sensors from media derivatives or duplicated files.
+- Pure library implemented in `backend/triage/` with 33 unit tests in `backend/tests/test_triage_policy.py`.
+
 ### I00B live record — 2026-11-03
 
 **I00B / Checkpoint 1B / whale2186 / joint integration coordination / Complete.**
