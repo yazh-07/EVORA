@@ -1,3 +1,39 @@
+# A01 case-scoped graph nodes
+
+`backend.graph_nodes.build_graph_nodes(case_id, evidence_records, entity_records,
+event_records)` consumes selected Evidence/Entity/Event API mappings and returns
+a list of frozen `GraphNode` dataclasses. Serialize with `node.to_wire()`.
+The caller authorizes and selects a coherent input set; pass its complete evidence
+set as `evidence_records`. Candidate records may be supplied through their existing
+`to_wire()` methods. This pure builder performs no database reads or writes.
+
+Nodes retain exact lowercase canonical source UUIDs and original labels/kinds.
+Evidence uses its filename (or a supplied label when filename is absent) and its
+own ID as its only evidence reference. Entity/event references must belong to the
+supplied same-case evidence set. Repeated source UUIDs merge sorted unique Evidence
+IDs only when category, kind and label agree. Conflicts, foreign/missing sources,
+noncanonical UUIDs, empty references and blank labels/kinds raise `ValueError`.
+Distinct UUIDs with identical labels remain distinct. Output sorts by `(kind, id)`;
+inputs and prior results remain unchanged. Nodes contain exactly the five contract
+fields, with no observation IDs. Direct node construction requires nonempty sorted
+unique reference tuples; unknown constructor fields raise `TypeError`.
+
+Run from the repository root with the installed validation dependencies:
+
+```sh
+npx @redocly/cli bundle specs/openapi.yaml --output /tmp/evora-openapi.json
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -W error::ResourceWarning -m unittest discover -s backend/tests -p 'test_graph_nodes.py' -v
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -W error::ResourceWarning -m unittest discover -s backend/tests -p 'test_triage_policy.py' -v
+```
+
+The tests validate actual GraphNode/Graph schemas from the bundle and exercise
+real FastAPI/SQLite upload, network/GPS processing, source reads, case isolation,
+and unchanged original bytes/hash using synthetic data. A nonempty Graph envelope
+with a synthetic analysis ID is schema-only test data. Blank-label rejection is
+builder policy: the unchanged draft schema has no label length constraint.
+Node construction supplies A02; versioned Neo4j persistence and completed analysis
+publication remain A01B/A05 work. A01 does not close Checkpoint 1C or M3.
+
 # P13 local document entity extraction
 
 Document processing uses the pinned CPU spaCy 3.8.18 and en_core_web_sm 3.8.0 pipeline. Install the dependencies with Python 3.14.8 before starting the server. Model downloads occur during setup. Processing uses a local worker and sends no evidence to a service.
