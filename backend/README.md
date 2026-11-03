@@ -2317,3 +2317,44 @@ EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -W error::ResourceWarning -
 Expect exact fixture hash/size/private-byte read-back, empty/timestamp uploads,
 400 input/traversal, 401 authentication, 404 case isolation, 413 boundary and
 partial-copy/database-failure cleanup tests. F04/F05/F06 and I00 remain separate.
+
+## A02 shared-identifier candidate links
+
+`derive_candidate_links(case_id, analysis_run_id, entities, observations=None)`
+in `backend/graph_links.py` consumes selected Entity/Observation wire mappings.
+Nonempty entities require source observations; empty input returns `([], [])`.
+Use A01 to validate the complete Evidence allowlist and build source UUID nodes.
+The caller must authorize inputs and select one coherent completed output per
+Evidence, ultimately from the frozen analysis snapshot.
+
+Exact namespaced P03B keys (case-sensitive, without trimming or Unicode rewrites)
+match distinct Entity UUIDs across at least two Evidence items. Each matching
+pair emits one frozen GraphEdge and Finding, sorted by deterministic UUIDv5 IDs
+scoped to case, analysis run, rule and endpoints. Same-evidence pairs and
+singletons produce no edge, including no invented self-edge for a multi-source
+singleton. Exact duplicate entities are idempotent; conflicting IDs fail closed.
+Every source ID must resolve to a same-case observation with a nonblank locator;
+Evidence sets must equal the cited observation sources. Mixed processing runs
+per Evidence, foreign cases and broken/key-conflicting citations raise ValueError.
+
+Edges use `shared_identifier`; findings use the draft's allowed `relationship`
+kind and `candidate_link_shared_identifier:v1` rule. `candidate_match` is not a
+valid FindingKind in 0.3.0. Summaries explicitly require human verification;
+confidence 0 means unassessed association, with no probability, extraction-score
+boost, identity or independent-corroboration claim. Call `to_wire()` for exact
+contract dictionaries with fresh list containers. A01B/A05 own persistence,
+publication and analysis lifecycle; this pure function does not implement them.
+
+```sh
+npx @redocly/cli bundle specs/openapi.yaml --output /tmp/evora-openapi.json
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -W error::ResourceWarning -m unittest discover -s backend/tests -p 'test_graph_links.py' -v
+```
+
+Expected: 13 tests pass, using strict bundled GraphEdge/Finding validation,
+source/case/run negatives, immutable results and real FastAPI/SQLite processing
+plus A01 node integration. The committed GPS fixture has only D-8 and is a
+negative control; a labeled in-test GPS variant adds D-7 while retaining D-8
+for the positive match with network D-7/D-9. No repository fixture is changed.
+The real API integration uses ASGITransport and an unpersisted analysis UUID;
+it does not certify Neo4j or completed analysis publication. See A02 verification
+in `docs/PREIMPLEMENTATION_REVIEW.md` for the full command results.

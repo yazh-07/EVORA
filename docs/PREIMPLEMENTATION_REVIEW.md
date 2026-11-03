@@ -3910,3 +3910,104 @@ started by changing checkpoint state. No unresolved choice affects this gate;
 C-05 remains for G02/M3 factor policy and M4 explanations. All changes remain
 uncommitted; no staging/push/merge or merged-commit smoke is claimed. Full
 proposal and approved speech addition remain required; no module/phase closure.
+
+### A02 verification — 2026-11-03
+
+**A02 / Checkpoint 1C / M3 / whale2186** on
+`feat/a02-candidate-link-rule`, actual reviewed clean common contract/base
+**11961c4ab4c1167e1d0ad8c83fe52440b2466a9a**, matching local
+`docs/coordination-foundation`. The prompt's different full hash is not a local
+Git object. Real A01 task **16e6429a22fa6250fdeebc4c47f6ab0a4d0349bf** is
+merged at HEAD, with G02 merge **d1f16ef02a62c2ce94bdd19539037a7b60cecabf**
+and all 1B/I00B producers as ancestors. Six user-authorized paths only; unchanged
+OpenAPI draft 0.3.0; no dependency/frontend/spec edits. Records retain the
+requested handoff date; commands were executed locally on 2026-11-04.
+
+Implementation read-back: frozen GraphEdge/Finding values serialize exact
+contract fields, retain source Entity UUID endpoints and unique sorted source
+references, with deterministic case/run/rule/endpoint UUIDv5 IDs and output
+ordering. Exact P03B keys preserve namespace/spelling/case; no speculative
+identity normalization. Missing or foreign sources, empty/duplicate/forged joins,
+conflicting record IDs and mixed processing-run selections fail atomically.
+Confidence 0 is unassessed association, not probability/reliability/extraction
+confidence. Candidate summaries disclose verification and identity/guilt limits.
+
+Resolved review discrepancy: `candidate_match` is absent from the sole
+FindingKind enum. Output uses `relationship` with rule
+`candidate_link_shared_identifier:v1`; strict negative tests reject the requested
+invalid enum. Producer/consumer impact is recorded in the A02 assignment review
+queue. The original GPS fixture contains only D-8; original network/GPS remain
+an explicit no-match control. A labeled in-test GPS variant adds D-7 and retains
+D-8 for the positive case. No fixture or contract was changed.
+
+Requested sequence, all exit zero:
+
+```sh
+npx @redocly/cli bundle specs/openapi.yaml --output /tmp/evora-openapi.json
+python scripts/verify_coordination.py /tmp/evora-openapi.json
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -m unittest discover -s scripts -p 'test_*.py'
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -W error::ResourceWarning -m unittest discover -s backend/tests -p 'test_graph_links.py' -v
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -W error::ResourceWarning -m unittest discover -s backend/tests -p 'test_graph_nodes.py' -v
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -W error::ResourceWarning -m unittest discover -s backend/tests -p 'test_triage_policy.py' -v
+npm --prefix frontend run test
+git diff --check
+```
+
+Results: **13 A02**, **19 A01**, **33 G02**, **122 coordination** and
+**101 frontend** tests pass, no skips. Verifier confirms 27 operations, 126 tasks,
+18 checkpoints, 39 capabilities and all 40 proposal mappings. Initial system
+jsonschema was 4.26.0; required **4.25.1** was independently read back from the
+existing scratch path and used successfully for the repeated coordination suite
+and all 65 A02/A01/G02 tests:
+
+```sh
+PYTHONPATH=/tmp/evora-u13-validation EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -m unittest discover -s scripts -p 'test_*.py'
+PYTHONPATH=/tmp/evora-u13-validation EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -W error::ResourceWarning -m unittest backend.tests.test_graph_links backend.tests.test_graph_nodes backend.tests.test_triage_policy
+```
+
+Real merged producer acceptance uses FastAPI ASGITransport, temporary SQLite and
+private original storage: upload synthetic network and labeled GPS variant,
+start/poll both real processing runs to completed, read complete Evidence/Entity/
+Event/Observation pages, build A01 source nodes, derive exactly one D-7 edge and
+finding, and resolve each cited observation's exact row/device column back to
+original bytes. Both Evidence items are cited, endpoints exist among A01 nodes,
+D-9/D-8 remain unlinked, repeat derivation and original downloads stay unchanged.
+Two-actor foreign-case API reads return 404; injected foreign Entity/Observation
+records raise ValueError. Unit negatives use parser-derived records plus labeled
+mutations; they are separate from this real producer integration. Schema checks
+use the actual bundle with Draft202012Validator/FormatChecker, required-field,
+extra-field, UUID, enum, range, empty-array and duplicate-reference negatives.
+
+Earlier completed checkpoint regressions: **327 tests pass, no skips**, using:
+
+```sh
+PYTHONPATH=/tmp/evora-u13-validation EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -W error::ResourceWarning -m unittest backend.tests.test_skeleton backend.tests.test_validation backend.tests.test_auth backend.tests.test_cases backend.tests.test_evidence backend.tests.test_audit backend.tests.test_audit_list backend.tests.test_m1_access backend.tests.test_network_csv backend.tests.test_gps_csv backend.tests.test_normalization backend.tests.test_candidate_entities backend.tests.test_source_events backend.tests.test_processing backend.tests.test_observations backend.tests.test_entities backend.tests.test_events backend.tests.test_processing_provenance backend.tests.test_processing_dispatch backend.tests.test_processing_publication backend.tests.test_processing_audit
+```
+
+Additional checks all pass:
+
+```sh
+npx --yes @redocly/cli@2.57.0 lint specs/openapi.yaml
+npx --yes openapi-typescript@7.10.1 specs/openapi.yaml -o /tmp/evora-a02-api.d.ts
+frontend/node_modules/.bin/tsc --noEmit --strict /tmp/evora-a02-api.d.ts
+npm --prefix frontend run build
+node frontend/test/cases.integration.mjs
+npx --yes @google/design.md@0.4.0 lint DESIGN.md
+```
+
+OpenAPI retains its existing missing-license warning only; DESIGN has zero
+errors/warnings. Frontend build verifies generated API freshness and application
+TypeScript. Real localhost UI/API smoke passes I00/I00B and existing create/list/
+upload/download/hash/audit/process/poll/source-inspection/overview/isolation.
+Local runtime: CPython **3.14.9**, Node **22.23.4**, npm **12.2.1**. No clean
+installation, Windows, browser mount, hosted CI or model/benchmark claim.
+The later-adapter full backend suite was not rerun; previously documented NLP
+model failures remain outside this task and are not claimed repaired.
+
+A02 is locally verified, **In Progress pending review/publication**. Analysis UUIDs
+in focused tests are explicitly unpersisted; A01B/A05 must supply SQL/Neo4j
+partitioning, frozen inputs, coherent publication and lifecycle. Caller must
+authorize and select inputs, with A01 checking the complete Evidence allowlist;
+nonempty entity input without observations is rejected. No completed analysis
+or I01/checkpoint/module closure is claimed. Next bounded handoff is A03 or A03B.
+No staging, commit, push or merge was authorized or performed.
