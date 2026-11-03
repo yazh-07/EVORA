@@ -1,6 +1,74 @@
 # EVORA scope/contract verification and implementation readiness
 
 
+### A05B verification — 2026-11-03
+
+A05B / Checkpoint 1C / M3 Evidence Fusion and Adaptive Triage / whale2186;
+execution 2026-11-04 on clean initial `feat/a05b-expose-graph-findings`, actual
+common contract/base **266f39f4df18e261a156240ff4d828f74afafe2b** (the supplied
+full SHA differs). Integrated dependency versions and seven allowed paths are
+recorded in AGENT_TASKS.md. No spec/frontend/dependency edits, staging, commit,
+push or merge. Task remains In Progress pending review/publication; checkpoint
+1C/I01 and module completion are not claimed.
+
+getGraph/listFindings authorize the case before selecting a same-case completed
+run. The optional selector pins exact immutable SQL output; omitted selection
+uses UTC created time descending then UUID descending. Empty selected snapshots
+retain their ID, unlike pre-analysis empty responses. Findings preserve stored
+order and authoritative total through pagination, even beyond the end. One SQL
+read transaction covers selection and output. Missing output fails closed with
+404; no fallback to another run. Unknown/repeated query parameters and malformed
+UUID/pagination values return safe 400; access failures preserve 401/404 behavior.
+
+**Read policy:** the user's explicit SQL-read instruction is implemented: A01B
+source/projection verification precedes SQL completion; these routes return that
+published SQL snapshot and do not check/rebuild current Neo4j. The existing A01B
+live-projection helper remains separate. M4 consumers must pin the returned ID
+across pages and graph/findings/triage; A06 and U07/U07B still require their own
+integration. No unresolved task-specific wire choice remains.
+
+Actual commands/results:
+
+| Command | Result |
+|---|---|
+| `npx @redocly/cli bundle specs/openapi.yaml --output /tmp/evora-openapi.json` | PASS |
+| `python scripts/verify_coordination.py /tmp/evora-openapi.json` | PASS: 27 operations / 126 tasks / 18 checkpoints / 39 capabilities / 40 proposal mappings |
+| `EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -m unittest discover -s scripts -p 'test_*.py'` | PASS: 122 tests; system jsonschema 4.26.0 |
+| Same script suite using `/home/whale2186/.hermes/cache/scratch/test_neo4j_venv/bin/python` | PASS: 122 tests with required jsonschema 4.25.1 |
+| `EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json /home/whale2186/.hermes/cache/scratch/test_neo4j_venv/bin/python -W error::ResourceWarning -m unittest discover -s backend/tests -p 'test_graph_findings.py' -v` | PASS: 9 discovered, 8 pass / one optional real-Neo4j skip |
+| Same backend command with `-p 'test_analysis.py'` | PASS: 14 discovered, 13 pass / one optional real-Neo4j skip |
+| `npm --prefix frontend run test` | PASS: 101 tests |
+| `npx --yes @redocly/cli@2.57.0 lint specs/openapi.yaml` | PASS: existing missing-license warning |
+| `npx --yes openapi-typescript@7.10.1 specs/openapi.yaml -o /tmp/evora-api.d.ts` | PASS; generated outside repository |
+| `npx --yes --package typescript@5.9.3 tsc --noEmit --strict /tmp/evora-api.d.ts` | PASS |
+| `npx --yes @google/design.md@0.4.0 lint DESIGN.md` | PASS: zero errors/warnings |
+| `git diff --check` | PASS |
+
+Earlier completed-checkpoint regressions: **327 pass, no skips**. Actual command:
+
+```sh
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json /home/whale2186/.hermes/cache/scratch/test_neo4j_venv/bin/python -W error::ResourceWarning -m unittest backend.tests.test_skeleton backend.tests.test_validation backend.tests.test_auth backend.tests.test_cases backend.tests.test_evidence backend.tests.test_audit backend.tests.test_audit_list backend.tests.test_m1_access backend.tests.test_network_csv backend.tests.test_gps_csv backend.tests.test_normalization backend.tests.test_candidate_entities backend.tests.test_source_events backend.tests.test_processing backend.tests.test_observations backend.tests.test_entities backend.tests.test_events backend.tests.test_processing_provenance backend.tests.test_processing_dispatch backend.tests.test_processing_publication backend.tests.test_processing_audit
+```
+
+Test read-back uses real HTTP authorization, temporary SQLite/private originals,
+merged network/GPS processing, frozen A05 inputs, graph/link/factor producers and
+A01B publication. Exact graph and paginated findings match persisted JSON and
+validate against the actual OpenAPI bundle. Synthetic uploads produce multiple
+findings, pinned pages survive another upload/completed run without duplicate or
+skip, empty completed snapshots retain IDs, UTC offsets and UUID ties select
+deterministically. A graph-commit crash leaves running SQL output hidden until
+actual recovery publishes completion. Explicit doubles: synthetic bearer actors,
+permitted fixtures, transactional Neo4j, scheduler/crash/property-corruption
+injection and fixture-only timestamp mutation. Initial test attempts had two
+fixture assumptions corrected: multiple findings need additional network input;
+property corruption needs a nonempty graph. No production workaround was needed.
+
+Backend environment: Python 3.14.9, jsonschema 4.25.1, neo4j 6.4.1. No real
+Neo4j, Windows, hosted CI, performance or full later-modality regression claim
+is made for this task. Next bounded M3 task A06; real M4/I01 integration and
+remaining checkpoint rows/exit evidence stay required. Full original proposal
+and approved additions remain scope.
+
 ### A05 verification — 2026-11-03
 
 A05 / Checkpoint 1C / M3 / whale2186; execution 2026-11-04 on clean initial

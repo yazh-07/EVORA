@@ -1,6 +1,19 @@
 # EVORA scoped agent assignment templates
 
 
+### A05B assignment — 2026-11-03
+
+| Field | Recorded assignment |
+|---|---|
+| Task/checkpoint/module/owner | A05B / 1C / M3 Evidence Fusion and Adaptive Triage / whale2186; explicit user assignment; execution 2026-11-04 |
+| Branch/common contract base | Clean initial `feat/a05b-expose-graph-findings`, actual HEAD **266f39f4df18e261a156240ff4d828f74afafe2b**. Supplied full SHA `266f39fec07172fe4fecfdb33f20ee43dbd0fa2d` differs. OpenAPI 0.3.0 unchanged |
+| Allowed paths | `backend/findings.py` (chosen), `backend/app.py`, `backend/tests/test_graph_findings.py`, `backend/README.md`, `docs/AGENT_TASKS.md`, `docs/ROADMAP.md`, `docs/PREIMPLEMENTATION_REVIEW.md`; no frontend/spec/dependency edits or stage/commit/push/merge |
+| Real dependency versions | A05 266f39f, A01B ba7db7f, G01D b0fd1f9, A04 7858cce, A03B 2eca04b, A03 ec4ab3c, A02 51ee2ed, A01 11961c4, G02 d1f16ef and completed checkpoint producers in actual common base |
+| Interface/dependency handling | A05/A01B verified completed immutable SQL outputs -> getGraph/listFindings -> M4 U07/U07B and A06 same-run consumers. Real processing/analysis/publication logic; default tests explicitly double Neo4j and synthetic actors/data |
+| Acceptance | Completed same-case selectors, UTC-created-time/UUID latest ordering, hidden pending/failed output, historical pinning across newer publication, empty selected IDs, authoritative pagination totals and OpenAPI validation, 400/401/404 negatives |
+| Read policy/queue | Explicit user instructions resolve this task to SQL graph_json/findings_json reads after A01B completion; no live Neo4j read/rebuild is performed by these endpoints. Consumers receive the exact SQL-published snapshot. A01B live-projection verification/rebuild helper remains separate. No unresolved A05B contract choice |
+| State/next | In Progress pending review/publication; actual results/limitations in PREIMPLEMENTATION_REVIEW.md. Checkpoint 1C/I01 and M3 remain open. Next bounded M3 handoff A06; M4 U07/U07B and I01 retain their own acceptance |
+
 ### A05 assignment — 2026-11-03
 
 | Field | Recorded assignment |

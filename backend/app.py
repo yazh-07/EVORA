@@ -19,6 +19,7 @@ from backend.processing import initialize_processing, router as processing_route
 from backend.observations import router as observations_router
 from backend.entities import router as entities_router
 from backend.events import router as events_router
+from backend.findings import router as findings_router
 from backend.errors import AccessError, access_error, invalid_request
 
 
@@ -79,6 +80,7 @@ def create_app(
     app.include_router(entities_router)
     app.include_router(events_router)
     app.include_router(analysis_router)
+    app.include_router(findings_router)
     return app
 
 
