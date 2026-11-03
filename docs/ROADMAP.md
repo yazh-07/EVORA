@@ -1,6 +1,6 @@
 # EVORA phased roadmap and execution ledger
 
-**Checkpoint 0 and Checkpoint 1A are Complete.** All four foundation tasks (G00, G01, G01B, G01C) passed Ubuntu and Windows CI (Run 39102433077). All fifteen tasks of Checkpoint 1A (M1: F00, F01, F02, F03, F04, F05, F06, F07, F09; M4: U01, U02, U02B, U03, U04; Joint: I00) are merged and verified green. Real HTTP/SQLite smoke test exercises case creation, streaming upload of synthetic CSV, SHA-256 matching, original byte download roundtrip, audit event listing (`uploadEvidence`), actor isolation, and 400/401/404 error responses. Checkpoint 1A is **Complete**; Checkpoint 1B (M2: P01, P02, etc.) is now **unblocked and active**. The original proposal, four modules and selected architecture remain unchanged. Draft OpenAPI 0.3.0 coordinates the explicit user-approved initial-scope addition: local audio/video speech transcription, timestamped source segments, playback/search/candidate extraction and audited human corrections. This is not retroactively an original proposal requirement; all five new tasks remain Backlog, with no domain implementation or model installation claimed.
+**Checkpoints 0, 1A and 1B are Complete.** All four foundation tasks (G00, G01, G01B, G01C) passed Ubuntu and Windows CI (Run 39102433077). All fifteen tasks of Checkpoint 1A (M1: F00, F01, F02, F03, F04, F05, F06, F07, F09; M4: U01, U02, U02B, U03, U04; Joint: I00) are merged and verified green. Real HTTP/SQLite smoke test exercises case creation, streaming upload of synthetic CSV, SHA-256 matching, original byte download roundtrip, audit event listing (`uploadEvidence`), actor isolation, and 400/401/404 error responses. Checkpoint 1B is **Complete** after I00B real network/GPS source inspection and checkpoint regressions; Checkpoint 1C is now **unblocked and active**, with its individual tasks awaiting bounded handoffs. See the I00B live record for all 18 task acceptances and the separate later NLP regression limitation. The original proposal, four modules and selected architecture remain unchanged. Draft OpenAPI 0.3.0 coordinates the explicit user-approved initial-scope addition: local audio/video speech transcription, timestamped source segments, playback/search/candidate extraction and audited human corrections. This is not retroactively an original proposal requirement; all five new tasks remain Backlog, with no domain implementation or model installation claimed.
 
 ## Start here
 
@@ -34,8 +34,8 @@ Comma-separated IDs below are **exhaustive assignments**, not ranges. Each catal
 |---|---|---|---|---|
 | 0 | G00, G01, G01B, G01C | G00, G01, G01B, G01C | G00 records the shared base; G01/G01B start and pass real skeleton tests/type checks; G01C proves clean skeleton Windows/CI setup. Verified green on both ubuntu-latest and windows-latest (Run 39102433077). | Complete |
 | 1A | F00, F01, F02, F03, F04, F05, F06, F07, F09, U01, U02, U02B, U03, U04, I00 | I00 | I00 proves real authorized create/list/upload/hash/metadata/download and safe intake audit, two actors/cases and negative access/input paths. Verified green with full smoke. | Complete |
-| 1B | P01, P02, P03, P03B, P03C, P04, P04B, P05, P05B, P14, P14B, P14C, F08, U05C, U05, U05B, U13, I00B | I00B | I00B proves UI start/poll and immutable network/GPS observations/entities/events, raw/normalized source values, private provenance, atomic retries/failures and all-page overview. | Backlog |
-| 1C | G01D, G02, A01, A02, A03, A03B, A04, A01B, A05, A05B, A06, A15, F08B, U05D, U06, U07, U07B, I01 | I01 | I01 proves coherent SQL/Neo4j publication, source-backed graph/findings and initial relevance/connectivity scores, explanations, pinned reads/pagination and crash/recovery/auth negatives. | Backlog |
+| 1B | P01, P02, P03, P03B, P03C, P04, P04B, P05, P05B, P14, P14B, P14C, F08, U05C, U05, U05B, U13, I00B | I00B | I00B proves UI start/poll and immutable network/GPS observations/entities/events, raw/normalized source values, private provenance, atomic retries/failures and all-page overview. | Complete |
+| 1C | G01D, G02, A01, A02, A03, A03B, A04, A01B, A05, A05B, A06, A15, F08B, U05D, U06, U07, U07B, I01 | I01 | I01 proves coherent SQL/Neo4j publication, source-backed graph/findings and initial relevance/connectivity scores, explanations, pinned reads/pagination and crash/recovery/auth negatives. | In Progress |
 | 2A | P06, A07, U06B, I02 | I02 | I02 proves the message creates a previously absent D-7/D-8 candidate link and changes an earlier priority/rank under recorded golden outputs; historical runs stay intact. | Backlog |
 | 2B | U08, U08B, U09, U09B, F08C, I02B | I02B | I02B proves audited reviews and overrides, live override overlay with stable pinned page membership/order and unchanged automated history. | Backlog |
 | 2C | A16, U10, U11, I02C, I03 | I02C, I03 | I02C proves claim/source-locator navigation and unsupported answers with safe retrieval audit; I03 proves clean tracer Windows/CI execution, not full LLM RAG. | Backlog |
@@ -358,6 +358,68 @@ explicit assignee. It is not M1-only and has not been started. Later M1 F08
 waits for P04/P14; full M1/product scope is not complete.
 
 ## Checkpoint 1B processing audit
+
+### I00B live record — 2026-11-03
+
+**I00B / Checkpoint 1B / whale2186 / joint integration coordination / Complete.**
+User-assigned branch `feat/i00b-processing-inspection-gate`, clean initial actual
+reviewed common contract/base **1517b4d9479e2062ce2c85cb380fe43d7b512aa6**
+on `docs/coordination-foundation`. The supplied full hash differs; this is the
+verified Git object. Draft OpenAPI 0.3.0 and INTEGRATION.md remain unchanged.
+All 17 dependency integration commits below are ancestors of this base; I00
+and earlier Checkpoint 0/1A producers are also real integrated dependencies.
+This record supersedes earlier local/pending statuses for these 1B rows only.
+
+| Task | Accountable owner | Integrated version | Exit evidence on combined candidate | State |
+|---|---|---|---|---|
+| P01 | M2 yazh-07 | `cab08f1c38745255ca1c0a210636476b84bad43c` | Actual network device/IP/event/time/row parsing, bad header/row controls | Complete |
+| P02 | M2 yazh-07 | `389652c358fab4b3b20565d592db520549028b8f` | Actual GPS D-8 coordinates/time/row; invalid coordinates/zone controls | Complete |
+| P03 | M2 yazh-07 | `e9f01f586916f38c480a40ffc8aa3eb72fd146ff` | Raw time/coordinates preserved beside normalized values; ambiguous/missing-zone negatives | Complete |
+| P03B | M2 yazh-07 | `c58e7f24e4f7c21fc5120dc7288d02f960b58006` | Source-backed candidate keys; D-7/D-9 network and D-8 GPS stay distinct | Complete |
+| P03C | M2 yazh-07 | `bb2d18f1222c8e7fd4ab45dbdf7e1e17b252baca` | Source-row events cite real participants, Evidence/observations and supported times | Complete |
+| P04 | M2 yazh-07 | `f851dd11fd8f7e11140317cf44d022a9999044dd` | Real UI keyed start/poll; replay/conflict/new-key retry, immutable completion and failed-run isolation | Complete |
+| P04B | M2 yazh-07 | `c29e517f218c0851a9959cfa389b093242a255ab` | Latest and historical completed observations, exact pagination and selector isolation | Complete |
+| P05 | M2 yazh-07 | `04af24f1c44abbc8059b0c006d9079d271ced947` | Real entity list joins every nonempty unique observation ID to same-case source Evidence/locator; foreign reads 404 | Complete |
+| P05B | M2 yazh-07 | `c0e25d401651b468d05a60ff5f5e3525e87e6f5f` | Real event list source/time/participant joins and foreign reads 404 | Complete |
+| P14 | M2 yazh-07 | `c03361b8171e6506d2c160a85cc1e89e76315fb3` | Actual private SQL parser/version/parameters/input/output/digest/time read-back; mutation/privacy negatives | Complete |
+| P14B | M2 yazh-07 | `d7a4315377cc1fdae63200780bd7728c583a14dd` | Both real registered layouts; wrong layout/malformed/unsupported/row-limit controls, upload alone yields no outputs | Complete |
+| P14C | M2 yazh-07 | `920331d95fdd359f1e20cfbcfba48fc6e2afb292` | SQL read-back before publication, rollback/hidden partials, concurrent keys, restart and hard-exit recovery tests | Complete |
+| F08 | M1 sharmelas-925 | `747d223b1b04d134edaea6384e0c3cfcb1b40c5e` | One terminal audit per run; investigator-2/Evidence/finished_at/safe run-status-version reason read-back, atomic failure and privacy controls | Complete |
+| U05C | M4 JebasJ | `f6d5c17f1f23d17048bd9b582e1f64d20ce27c1a` | Actual UI controllers explicitly start both CSVs with unique keys; accepted HTTP 202 and negative/repeat behavior | Complete |
+| U05 | M4 JebasJ | `32b8adeecec8903edc1dde5ae56ad8a175a61607` | Actual status controller reaches completion, exact terminal run/version/time, stops polling; failed/error/stale unit controls | Complete |
+| U05B | M4 JebasJ | `138fd791808571c60ee7dc5ef831684c84d09d67` | Actual inspector network/GPS source/raw/normalized/time read-back; pinned history survives newer completion; empty/error/foreign controls | Complete |
+| U13 | M4 JebasJ | `1517b4d9479e2062ce2c85cb380fe43d7b512aa6` | Real 23-item/two-page overview, exact kinds/latest statuses and honest empty case; unit failure/race controls | Complete |
+| I00B | Joint whale2186 | Current uncommitted task candidate over reviewed base | Real API/UI-controller network/GPS source inspection, safe audit, actor isolation; all acceptance rows and prior checkpoint regressions below | Complete |
+
+**Checkpoint 1B is Complete.** The INTEGRATION.md 1B exit is supported by the
+real HTTP/FastAPI/SQLite smoke and **327 passing Checkpoint 0/1A/1B backend
+regressions**, **101 passing frontend tests**, **122 coordination tests with
+jsonschema 4.25.1**, contract lint/bundle, generated strict types, build, DESIGN
+and whitespace checks. Exact commands and fault-injection boundaries are in
+I00B verification in PREIMPLEMENTATION_REVIEW.md. The smoke prints
+`PASS I00B verified first network/GPS processing and source inspection gate.`
+Private provenance and failure/recovery proof comes from the backend suites,
+not invented public fields or UI-only fixtures. API responses and parser outputs
+in the smoke are real; unit Fetch/static-render and deliberate backend fault/
+selection fixtures remain explicitly labeled. No new mounted-browser, Windows,
+hosted-CI, graph or scoring acceptance is claimed.
+
+The additional **full 428-test backend run is not green: 7 failures / 8 errors**
+in later document/NLP and document-dependent mobile/transaction history tests
+with the unavailable local model. These are outside 0/1A/1B membership; none of
+the 327 checkpoint regression tests failed. This scoped checkpoint seal does
+not certify the later independently integrated adapters or authorize a main
+merge with failing full CI. No staging/commit/push/merge was performed, and no
+post-merge smoke or publication is claimed.
+
+**Checkpoint 1C is now unblocked and active** with its exact ledger membership:
+`G01D`, `G02`, `A01`, `A02`, `A03`, `A03B`, `A04`, `A01B`, `A05`, `A05B`,
+`A06`, `A15`, `F08B`, `U05D`, `U06`, `U07`, `U07B`, `I01`.
+Next dependency-ready work is bounded G01D setup and G02 scoring policy under
+separate explicit handoffs; activating the checkpoint does not assign/start
+those implementations or resolve C-05. Full proposal and approved speech
+addition remain required; this closes no whole module or Phase 1.
+
 
 ### F08 live record — 2026-11-02
 

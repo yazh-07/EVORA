@@ -278,6 +278,51 @@ try {
     assert.equal(error.status, 404); assert.deepEqual(error.apiError, { code: 'NOT_FOUND', message: 'Resource not found.' }); return true;
   });
   console.log('PASS U05B real P04B: all six exact source/raw/normalized/time/confidence values, inspector read-back, pinned pagination without skips, honest empty output, invalid query/missing run/foreign case isolation.');
+
+  // I00B: actual P05/P05B source joins and F08 terminal audit, no output doubles.
+  const entities = await client.request('get', '/api/v1/cases/{caseId}/entities', { path: { caseId: created.id } });
+  const events = await client.request('get', '/api/v1/cases/{caseId}/events', { path: { caseId: created.id } });
+  assert.equal(entities.total, 4); assert.equal(entities.items.length, entities.total);
+  assert.equal(events.total, 2); assert.equal(events.items.length, events.total);
+  for (const label of ['D-7', 'D-9']) {
+    assert.ok(entities.items.some(item => item.canonical_label === label && item.candidate_key === `device:${label}`));
+  }
+  const sourceById = new Map(latestObservations.items.map(item => [item.id, item]));
+  for (const item of [...entities.items, ...events.items]) {
+    assert.equal(item.case_id, created.id);
+    assert.deepEqual(item.evidence_ids, [processingEvidence.id]);
+    assert.ok(item.observation_ids.length > 0);
+    assert.equal(new Set(item.observation_ids).size, item.observation_ids.length);
+    for (const id of item.observation_ids) {
+      const source = sourceById.get(id);
+      assert.ok(source, 'every candidate source joins to this completed output');
+      assert.equal(source.evidence_id, processingEvidence.id);
+      assert.equal(source.processing_run_id, acceptedRun.id);
+      assert.ok(source.source_locator.length > 0);
+    }
+  }
+  assert.deepEqual(events.items.map(item => item.observed_at_utc).sort(), ['2026-01-12T10:01:00Z', '2026-01-12T10:02:00Z']);
+  for (const event of events.items) {
+    assert.equal(event.observed_at_raw, event.observed_at_utc);
+    assert.ok(event.entity_ids.length > 0);
+    assert.ok(event.entity_ids.every(id => entities.items.some(entity => entity.id === id)));
+    assert.ok(event.observation_ids.some(id => sourceById.get(id).kind === 'network.event'));
+  }
+  const beforeProcessingAudit = intakeSnapshot();
+  const processingAudit = await listAuditEvents(created.id);
+  const terminalEvents = processingAudit.items.filter(event => event.action === 'startProcessing' &&
+    event.target_id === processingEvidence.id);
+  assert.equal(terminalEvents.length, 1, 'one terminal audit event for the first run');
+  const [terminalEvent] = terminalEvents;
+  assert.equal(terminalEvent.case_id, created.id);
+  assert.equal(terminalEvent.actor_id, 'investigator-2');
+  assert.equal(terminalEvent.created_at, readBack.finished_at);
+  assert.equal(terminalEvent.reason, `run:${acceptedRun.id};status:completed;version:${readBack.processor_version}`,
+    'safe reason contains only run/status/version references, no source content or private parameters');
+  assert.deepEqual(Object.keys(terminalEvent).sort(), ['action', 'actor_id', 'case_id', 'created_at', 'id', 'reason', 'target_id']);
+  assert.deepEqual(await listAuditEvents(created.id), processingAudit);
+  assert.equal(intakeSnapshot(), beforeProcessingAudit, 'processing audit listing changes no persisted data');
+
   await processing.submit();
   assert.notEqual(processing.getSnapshot().run.id, acceptedRun.id, 'new explicit action uses a new key/run');
   const newerRun = processing.getSnapshot().run;
@@ -311,10 +356,69 @@ try {
   const emptyOverview = createCaseOverviewController(client, unicodeCase.id);
   emptyOverview.start(); await emptyOverview.load(); assert.equal(emptyOverview.getSnapshot().summary.total, 0); emptyOverview.dispose();
   console.log('PASS U13 real HTTP/FastAPI: 23 evidence across two pages, exact kind/latest-status counts, 22 unprocessed and honest empty case.');
+  // GPS uses the same real UI command/status/source controllers in a separate case
+  // so U13's network-case all-page counts above remain an independent assertion.
+  const gpsCase = await client.request('post', '/api/v1/cases', { body: { title: 'Synthetic I00B GPS case' } });
+  const gpsStore = createEvidenceStore(client, gpsCase.id);
+  const gpsBytes = await readFile(new URL('../../fixtures/synthetic-case/gps.csv', import.meta.url));
+  assert.equal(await gpsStore.upload(new File([gpsBytes], 'gps.csv', { type: 'text/csv' }), 'gps', 'Synthetic I00B GPS'), true);
+  const gpsEvidence = gpsStore.getSnapshot().detail;
+  const gpsProcessing = createProcessingController(client, gpsCase.id, gpsEvidence.id);
+  await gpsProcessing.submit();
+  assert.equal(gpsProcessing.getSnapshot().status, 'accepted');
+  const gpsRun = gpsProcessing.getSnapshot().run;
+  const gpsStatus = createProcessingStatusController(client, gpsRun, 10);
+  try {
+    gpsStatus.start();
+    for (let attempt = 0; ; attempt++) {
+      const state = gpsStatus.getSnapshot();
+      assert.equal(state.message, '');
+      assert.notEqual(state.run?.status, 'failed');
+      if (state.run?.status === 'completed') break;
+      assert.ok(attempt < 200, 'GPS status controller reaches completion');
+      await new Promise(resolve => setTimeout(resolve, 10));
+    }
+    const gpsInspector = createObservationController(client, gpsCase.id, gpsEvidence.id, gpsRun.id);
+    try {
+      gpsInspector.start(); await gpsInspector.load();
+      const page = gpsInspector.getSnapshot().page;
+      assert.equal(page.total, 3);
+      assert.deepEqual(page.items.map(item => [item.kind, item.source_locator, item.raw_value, item.normalized_value]).sort(), [
+        ['gps.device', 'row 2, device_id', 'D-8', 'D-8'],
+        ['gps.latitude', 'row 2, latitude', '12.9716', '12.9716'],
+        ['gps.longitude', 'row 2, longitude', '77.5946', '77.5946'],
+      ]);
+      for (const item of page.items) {
+        assert.equal(item.case_id, gpsCase.id); assert.equal(item.evidence_id, gpsEvidence.id);
+        assert.equal(item.processing_run_id, gpsRun.id);
+        assert.equal(item.observed_at_raw, '2026-01-12T10:02:00Z');
+        assert.equal(item.observed_at_utc, item.observed_at_raw);
+      }
+      for (const route of ['/api/v1/cases/{caseId}/entities', '/api/v1/cases/{caseId}/events']) {
+        const candidates = await client.request('get', route, { path: { caseId: gpsCase.id } });
+        assert.equal(candidates.total, 1); assert.equal(candidates.items.length, 1);
+        const [candidate] = candidates.items;
+        assert.equal(candidate.case_id, gpsCase.id); assert.deepEqual(candidate.evidence_ids, [gpsEvidence.id]);
+        assert.ok(candidate.observation_ids.length > 0);
+        assert.ok(candidate.observation_ids.every(id => page.items.some(item => item.id === id)));
+        if (route.endsWith('/entities')) assert.equal(candidate.candidate_key, 'device:D-8');
+      }
+    } finally { gpsInspector.dispose(); }
+  } finally { gpsStatus.dispose(); gpsProcessing.dispose(); gpsStore.dispose(); }
+  console.log('PASS I00B real GPS: UI start/poll/inspection, D-8 source-backed candidates, exact row/raw/normalized coordinates and UTC.');
   evidenceStore.dispose();
   const beforeDeniedAudit = intakeSnapshot();
   client.setToken('u02-synthetic-one'); await store.load();
   await assert.rejects(client.request('get', '/api/v1/cases/{caseId}/evidence/{evidenceId}/processing-runs/{runId}', { path: runPath }), { status: 404 });
+  for (const route of ['/api/v1/cases/{caseId}/entities', '/api/v1/cases/{caseId}/events']) {
+    for (const caseId of [created.id, '00000000-0000-4000-8000-000000000000']) {
+      await assert.rejects(client.request('get', route, { path: { caseId } }), error => {
+        assert.equal(error.status, 404);
+        assert.deepEqual(error.apiError, { code: 'NOT_FOUND', message: 'Resource not found.' });
+        return true;
+      });
+    }
+  }
   const foreignProcessing = createProcessingController(client, created.id, processingEvidence.id);
   await foreignProcessing.submit(); assert.equal(foreignProcessing.getSnapshot().status, 'error');
   assert.match(foreignProcessing.getSnapshot().message, /unavailable/); foreignProcessing.dispose();
@@ -349,6 +453,7 @@ try {
   console.log('PASS U02/U02B creation 201, immediate listing, whitespace 400, actor isolation; real HTTP/SQLite: empty, 21-case pagination/detail, two-actor isolation, foreign/missing 404, invalid limit 400, invalid token 401, same-origin UI HTTP 200.');
   if (auditFailures.length) throw new AggregateError(auditFailures, 'I00 audit producer acceptance failed; Checkpoint 1A cannot be sealed.');
   console.log('PASS I00 authorized intake gate, including uploadEvidence audit target/actor read-back.');
+  console.log('PASS I00B verified first network/GPS processing and source inspection gate.');
 } finally {
   child.kill(); await exited;
   // mkdtemp created this exact directory; only the owned synthetic database is removed.

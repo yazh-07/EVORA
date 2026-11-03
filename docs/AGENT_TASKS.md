@@ -748,3 +748,17 @@ by client disposal. Full proposal and approved speech addition remain required.
 - State: implemented locally, **In Progress pending review/publication**.
   No unresolved producer/consumer contract choice; oldest-first processing
   history is already specified. Next gate is joint I00B, not checkpoint closure.
+
+
+### I00B assignment — 2026-11-03
+
+| Field | Scoped assignment |
+|---|---|
+| Task/checkpoint/owner | **I00B / 1B final exit / whale2186 / joint integration coordination**, explicitly assigned by the user; module interface owners remain M1 sharmelas-925, M2 yazh-07, M3 whale2186, M4 JebasJ |
+| Branch/common contract | `feat/i00b-processing-inspection-gate`; clean starting HEAD and local `docs/coordination-foundation` **1517b4d9479e2062ce2c85cb380fe43d7b512aa6**. Supplied full hash `1517b4dfb6df009406085a67bb13c054238e55ec` differs from the actual Git object; actual reviewed base is authoritative. Unchanged `specs/openapi.yaml` draft 0.3.0 and INTEGRATION.md govern acceptance |
+| Allowed paths/shared handoff | Exactly `frontend/test/cases.integration.mjs`, `frontend/README.md`, `docs/AGENT_TASKS.md`, `docs/ROADMAP.md`, `docs/PREIMPLEMENTATION_REVIEW.md`; no backend/spec/dependency edits. User explicitly authorizes these shared ledger updates and checkpoint sealing after verification |
+| Real dependencies | P01, P02, P03, P03B, P03C, P04, P04B, P05, P05B, P14, P14B, P14C, F08, U05C, U05, U05B, U13 plus prior I00 are committed ancestors. Exact integration versions and all 18 acceptance rows are recorded in the I00B live record in ROADMAP.md; no schema-derived producer substitute |
+| Acceptance | UI network/GPS start/poll/inspection; immutable raw/normalized/source/time outputs; candidate Evidence/observation joins; safe processing audit actor/target/time/reason; actor-isolated 404 ApiError; private provenance, malformed/unsupported/replay/retry/failure/recovery regressions and all-page overview per INTEGRATION.md |
+| Verification/dependency handling | Actual commands/results, private SQL read-back and labeled fault injections versus real HTTP acceptance are in I00B verification in PREIMPLEMENTATION_REVIEW.md. Later NLP model failures are recorded separately; no unresolved contract choice or producer gate affects network/GPS acceptance |
+| State | **Complete**, locally verified against real merged dependencies; Checkpoint 1B sealed in the ledger, Checkpoint 1C active. Separate later NLP full-suite failures remain recorded |
+| Publication/next handoff | No stage/commit/push/merge authorized or performed. Checkpoint completion is a locally verified ledger result, not a merged-commit smoke claim. Next checkpoint 1C becomes active after the gate; G01D/G02 require their own bounded assignments and policy/setup acceptance |
