@@ -673,7 +673,7 @@ retain existing415/replay/no-publication assertions unchanged.
 | Approved resources | Existing50MiB/100000-line parser caps plus NLP1000000 decoded source characters including separators,20000 characters/line,100000 mentions, one local worker per app process and120-second queue/inference deadline. Missing/wrong/corrupt model/timeout/overflow fails atomically, no silent rules fallback; functioning empty/no-mention input honest success |
 | History/provenance | Old processor4 document records stay immutable/readable/replayable; new version freezes actual model/digest/versions/limits privately, verified atomic output/provenance/completion unchanged |
 | Acceptance/tests | Real model/source/API/SQL/history/replay/rollback/resource/model-unavailable/timeout/case controls, actual labeled precision/recall/FP/misses, regressions and Windows/Ubuntu CI. No invented accuracy or model results |
-| Handoff | In Progress; user authorizes install/implement/test/commit/push/merge into docs/coordination-foundation after acceptance. Full FEATURE_SCOPE/additions and earlier checkpoint gates preserved; no later task started |
+| Handoff | Complete after integration in c564775 with nine focused/loopback passes, the coordination verifier and real I00/U05C smoke. Full feature scope and earlier checkpoint gates preserved. P13B requires a separate handoff |
 
 ### U05C assignment — 2026-11-03
 

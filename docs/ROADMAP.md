@@ -572,13 +572,10 @@ explicit independent assignment. No later task started.
 
 ### P13 independent handoff — 2026-11-02
 
-**P13 / 3A / M2 yazh-07 / In Progress.** Explicit independent user assignment,
+**P13 / 3A / M2 yazh-07 / Complete.** Explicit independent user assignment,
 feat/p13-text-entities from verified **6980b4d0b2fd14a6bf372ae84cb7ab8e78b38d93**.
 Actual P06/P07 prerequisites integrated; approved local English model/extraction/
-resource/dependency/file policy in AGENT_TASKS/COMMUNICATION. Real model/source/
-labeled evaluation/regression acceptance and integration pending before authorized
-push/merge. Earlier checkpoints and full FEATURE_SCOPE/additions stay preserved;
-no next task started.
+resource/dependency/file policy in AGENT_TASKS/COMMUNICATION. Integrated in c564775 after real-model, source, labeled evaluation and regression checks. Earlier checkpoints and the full feature scope stay open. P13B requires its own handoff and is subject to earlier automatic-selection gates.
 
 ## Module assignment and live task state
 

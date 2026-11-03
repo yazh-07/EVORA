@@ -704,3 +704,5 @@ frontend changes. Real labeled English synthetic evaluation reports actual count
 false positives/misses/precision/recall without claiming universal accuracy or
 perfect recognition. Every original feature/approved addition remains required;
 earlier checkpoints stay open, no later task started.
+
+P13 integration accepted in c564775 on 2026-11-03. P13B is the next M2 catalog task and requires its own approved text Event policy and handoff. Earlier automatic-selection gates remain open.

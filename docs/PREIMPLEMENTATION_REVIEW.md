@@ -3476,3 +3476,5 @@ inference path uses the installed model. P13B remains the separate text Event
 task. Earlier checkpoint exits and the full agreed initial scope stay open.
 
 The combined Windows backend run discovered 428 tests. It passed 427 with the existing Windows symlink skip. Cross-platform GitHub Actions verification is tracked on the shared integration commit.
+
+P13 merged in c5647755b84a25fd4a976ee3207e0e32324de896 from task head 1d57842. All nine focused and document loopback tests passed on the merge, together with the coordination verifier and real I00/U05C smoke after rebuilding frontend test assets.
