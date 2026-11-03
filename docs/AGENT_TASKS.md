@@ -2,6 +2,16 @@
 
 Coordination-branch draft 0.3.0, not a running app. Four people each work on one module; confirmed GitHub-handle assignments and integration coordination are in [ROADMAP.md](ROADMAP.md#module-assignment-and-live-task-state). Full initial proposal scope is fixed. Use the canonical phase/checkpoint ledger in [ROADMAP.md](ROADMAP.md). Assign one catalog row, not an entire module, milestone or full dashboard. Codex fills the task card from recorded repository decisions before editing. Missing common-base/allowed-path choices or a shared G/I assignee need a short clarification, not a guessed assignment.
 
+### G02 assignment — 2026-11-03
+
+| Field | Recorded assignment |
+|---|---|
+| Task/checkpoint/module/owner | G02 / 1C / M3 Fusion and Adaptive Triage / whale2186 |
+| Scope & Acceptance | Version all seven factor functions/ranges, independence/confidence/count/quality rules, proportional missing-factor weights, score cap/bands/ties and canonical positive/counterexample outputs; unprocessed evidence not scored. Resolves C-05 policy. |
+| Branch & Base | `feat/g02-triage-scoring-policy` off `740f406` (`docs/coordination-foundation`) |
+| Allowed Paths | `backend/triage/`, `backend/tests/test_triage_policy.py`, `docs/AGENT_TASKS.md`, `docs/ROADMAP.md`, `docs/PREIMPLEMENTATION_REVIEW.md`, `docs/COMMUNICATION.md` |
+| Verification | 33 triage unit tests passing in `test_triage_policy.py`, 101 frontend tests, 122 coordination tests, strict OpenAPI bundling and types. |
+
 ### F08 assignment — 2026-11-02
 
 | Field | Recorded assignment |

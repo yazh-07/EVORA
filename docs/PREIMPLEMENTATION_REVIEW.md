@@ -1,5 +1,19 @@
 # EVORA scope/contract verification and implementation readiness
 
+### G02 verification — 2026-11-03
+
+G02 / Checkpoint 1C / M3 / whale2186, `feat/g02-triage-scoring-policy`.
+Base: `740f406` (`docs/coordination-foundation`).
+Implementation: Pure factor and triage scoring library in `backend/triage/`:
+- `backend/triage/policy.py`: 7 factor scoring functions, base weights summing to 1.0, proportional re-weighting, score capped at 100.0, P1-P4 priority bands, tie-breaking by evidence UUID ascending, source independence engine.
+- `backend/triage/goldens.py`: synthetic golden positive and counterexample fixtures matching OpenAPI wire schemas.
+- `backend/tests/test_triage_policy.py`: 33 unit tests validating mathematical rigor, OpenAPI schema compliance, negative validation, and tie-breaking.
+Verification:
+- 33 triage unit tests passing in 0.08s.
+- 101 frontend tests passing.
+- 122 coordination tests passing.
+- Strict OpenAPI bundling and generated TypeScript types clean.
+
 ### F08 verification — 2026-11-02
 
 F08 / 1B / M1 / sharmelas-925, `feat/f08-processing-audit`, In Progress pending
