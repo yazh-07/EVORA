@@ -157,6 +157,10 @@ class TextEntityProcessingTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(private['execution']['model'],model_info())
         self.assertEqual(private['execution']['parameters']['max_source_chars'],1000000)
         self.assertEqual(private['input']['sha256'],hashlib.sha256(SOURCE).hexdigest())
+        audit = [row for row in self.rows('audit_events') if row['action'] == 'startProcessing']
+        self.assertEqual(len(audit), 1)
+        self.assertIn(f"run:{run['id']};status:completed", audit[0]['reason'])
+        self.assertNotIn('Alice Smith', audit[0]['reason'])
 
     async def test_corrupt_manifest_fails_closed_then_real_retry(self):
         manifest=json.loads(MANIFEST_PATH.read_text(encoding='utf8'))
@@ -170,6 +174,10 @@ class TextEntityProcessingTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual((await self.poll(failed))['error'],'NLP_MODEL_INVALID')
         self.assertEqual(self.rows('processing_outputs'),[])
         self.assertEqual(self.rows('processing_provenance'),[])
+        audit = [row for row in self.rows('audit_events') if row['action'] == 'startProcessing']
+        self.assertEqual(len(audit), 1)
+        self.assertIn('status:failed', audit[0]['reason'])
+        self.assertTrue(audit[0]['reason'].endswith('error:PROCESSING_FAILED'))
         retry=await self.start('retry')
         self.assertEqual((await self.poll(retry))['status'],'completed')
 

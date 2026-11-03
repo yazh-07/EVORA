@@ -11,6 +11,7 @@ from fastapi.responses import JSONResponse
 from starlette.concurrency import run_in_threadpool
 
 from backend.auth import Actor, CaseAccessGrant, require_case_access
+from backend.audit import record_processing_audit
 from backend.errors import AccessError
 from backend.evidence import download_evidence, invalid_input
 from backend.parsers.network_csv import NetworkCSVError
@@ -133,8 +134,22 @@ def initialize_processing(database):
             BEGIN SELECT RAISE(ABORT,'Missing processing output'); END;
         """)
         initialize_provenance(connection)
-        connection.execute("UPDATE processing_runs SET status='failed',finished_at=?,error='PROCESSING_INTERRUPTED' "
-                           "WHERE status IN ('queued','running')", (_now(),))
+        connection.execute('BEGIN IMMEDIATE')
+        interrupted = connection.execute(
+            "SELECT * FROM processing_runs WHERE status IN ('queued','running')"
+        ).fetchall()
+        finished_at = _now()
+        for run in interrupted:
+            _fail_run(connection, run, finished_at, 'PROCESSING_INTERRUPTED')
+
+
+def _fail_run(connection, run, finished_at, code):
+    """Caller holds the write transaction; status and audit publish together."""
+    updated = connection.execute(
+        "UPDATE processing_runs SET status='failed',finished_at=?,error=? "
+        "WHERE id=? AND status IN ('queued','running')", (finished_at, code, run['id']))
+    if updated.rowcount == 1:
+        record_processing_audit(connection, run, 'failed', finished_at, code)
 
 
 def publish_outputs(connection, run, output):
@@ -148,6 +163,7 @@ def publish_outputs(connection, run, output):
                                  (finished_at, run['id']))
     if updated.rowcount != 1:
         raise ValueError('Processing completion not published')
+    record_processing_audit(connection, run, 'completed', finished_at)
 
 
 def process_run(app, run_id):
@@ -216,8 +232,10 @@ def process_run(app, run_id):
                 'SOURCE_UNAVAILABLE' if isinstance(error, (AccessError, OSError)) else 'PROCESSING_FAILED')
         try:
             with database.connect() as connection:
-                connection.execute("UPDATE processing_runs SET status='failed',finished_at=?,error=? "
-                                   "WHERE id=? AND status IN ('queued','running')", (_now(), code, run_id))
+                connection.execute('BEGIN IMMEDIATE')
+                current = connection.execute('SELECT * FROM processing_runs WHERE id=?', (run_id,)).fetchone()
+                if current is not None:
+                    _fail_run(connection, current, _now(), code)
         except Exception:
             # Database outage: leave nonterminal state for explicit startup recovery.
             return

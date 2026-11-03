@@ -11,7 +11,6 @@ from backend.parsers.text_document import TextLineResult, TextObservation
 
 ENTITY_VERSION = 'text-candidates/1'
 NORMALIZER_VERSION = 'text-identifiers/1'
-RULES_VERSION = 'literal-identifiers/1'
 KINDS = frozenset(('person','organization','location','date','device','account','phone','ip'))
 _IDENTIFIER = re.compile(r'(?<![\w-])(?:D|AC)-[0-9]+(?![\w-])')
 _PHONE = re.compile(r'(?<![\w+\-])\+[0-9]{8,15}(?![\w\-])')

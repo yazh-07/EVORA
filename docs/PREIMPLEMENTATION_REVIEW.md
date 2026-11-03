@@ -1,5 +1,86 @@
 # EVORA scope/contract verification and implementation readiness
 
+### F08 verification — 2026-11-02
+
+F08 / 1B / M1 / sharmelas-925, `feat/f08-processing-audit`, In Progress pending
+review/integration. Clean initial HEAD/common contract base:
+**6980b4d0b2fd14a6bf372ae84cb7ab8e78b38d93**. The supplied full hash
+`6980b4df3ea582d909ca3a628a55dbb8214309a4` does not resolve locally;
+`git rev-parse HEAD` and existing integrated producers establish the actual base.
+No fresh remote/hosted CI verification is claimed. Assignment/dependency commits
+are recorded in AGENT_TASKS. Only seven allowed files changed; contract, frontend
+and package manifests remain unchanged.
+
+Actual read-back: completed processing has exactly one UUID `startProcessing`
+event with matching actor/case/Evidence ID, terminal time, run ID and processor
+version; private versioned provenance joins on run/case/Evidence/time. Malformed
+CSV records `failed`/`CSV_INVALID_IP`, with no partial output/provenance. Startup
+recovery audits queued/running runs once with `PROCESSING_INTERRUPTED`. Repeated
+keys, duplicate/concurrent workers and repeated startup do not duplicate events.
+No historical terminal backfill is fabricated. Failure configuration stays in
+private frozen processing_runs; no completed provenance is invented for failure.
+
+Existing HTTP audit listing returns UTC chronological whole/fractional timestamps,
+coherent paginated totals, correct actors and safe fields. Two real synthetic
+actors/cases, foreign/missing/revoked-case 404 ApiError, UPDATE/DELETE/REPLACE/
+UPSERT denial, and absence of source/filename/path/token/parameter values from
+public audit/application logs pass. Unknown injected diagnostics are reduced to
+`PROCESSING_FAILED` in audit rather than copied as arbitrary strings.
+
+Publication failure after inserting audit, audit insertion failure, deferred
+commit failure and recovery audit failure all roll back terminal state/audit and
+completion outputs/provenance together. If failure accounting cannot persist,
+the run stays nonterminal until successful startup recovery; no false success is
+recorded. These are real SQLite trigger/foreign-key failures plus labeled test
+injections, not a hardware power-loss or production deployment claim.
+
+Commands executed from repository root (Python below selected via the clean
+temporary `/tmp/evora-f08-clean` venv, installed from unchanged requirements):
+
+```sh
+python -m pip install -r requirements.txt
+python -m pip check
+npx @redocly/cli bundle specs/openapi.yaml --output /tmp/evora-openapi.json
+npx --yes @redocly/cli@2.57.0 lint specs/openapi.yaml
+npx --yes openapi-typescript@7.10.1 specs/openapi.yaml -o /tmp/evora-f08-api.d.ts
+npx --yes --package typescript@5.9.3 tsc --noEmit --strict /tmp/evora-f08-api.d.ts
+python scripts/verify_coordination.py /tmp/evora-openapi.json
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -m unittest discover -s scripts -p 'test_*.py'
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -W error::ResourceWarning -m unittest backend.tests.test_processing_audit -v
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -W error::ResourceWarning -m unittest discover -s backend/tests -v
+npm --prefix frontend run test
+npm --prefix frontend run build
+EVORA_TEST_PYTHON=/tmp/evora-f08-clean/bin/python node frontend/test/cases.integration.mjs
+npx --yes @google/design.md@0.4.0 lint DESIGN.md
+git diff --check
+```
+
+Results: **13 focused F08 PASS; full backend 420 PASS with no skips;
+coordination 122 PASS; frontend 48 PASS.** Real I00 HTTP intake/hash/original/
+audit/actor/error smoke PASS. Bundle, lint, verifier (27 operations, 126 tasks,
+39 capabilities), generated strict type compilation, frontend API freshness/
+typecheck/build and DESIGN (0 errors/0 warnings) PASS. Lint retains the existing
+missing-license warning. Whitespace/scope review PASS.
+
+Environment: Linux CPython **3.14.9**, SQLite **3.54.1**, Node **22.23.4**, npm
+**12.2.1**; pinned requirements installed into a clean venv, including FastAPI
+0.143.1, Starlette 1.8.0, Pydantic 2.14.1, HTTPX 0.28.1 and jsonschema **4.25.1**;
+`pip check` PASS. Unversioned requested bundle used Redocly 2.72.1; lint used
+workflow-pinned 2.57.0. Earlier exploratory checks used host packages and a
+system-site-packages venv; authoritative full regression used the clean venv.
+Initial focused-test errors were fixture issues (registry patched during intake
+and timestamp string normalization); both fixed before final verification.
+This does not certify the documented 3.14.8/22.23.3/12.2.0 runtime, native Windows
+or hosted CI. Temporary tests clean their own databases/originals/servers.
+
+Tests use only synthetic evidence/authentication and real merged source/parser/
+publication/provenance/list producers. Scheduling holds, registry rejection,
+post-publication exceptions and SQLite failure triggers are explicit test-only
+controls. No real evidence, production identity provider, model, full processing
+UI/I00B, graph/analysis or new checkpoint exit is claimed. No staging/commit/
+push/merge. Next: review/integrate F08 and finish I00B prerequisites; F08B waits
+for A05 and a separate scoped assignment. Full initial scope remains required.
+
 ### I00 verification — 2026-11-01
 
 **I00 / Checkpoint 1A final exit gate / whale2186 / joint integration
@@ -3298,3 +3379,74 @@ its own agreed text extraction/evaluation/file handoff; automatic selection awai
 earlier exits, or earlier independent work must be separately explicitly assigned.
 P13B and every remaining modality/initial feature/approved addition stay required.
 No next task started; full scope preserved.
+
+### U05C verification — 2026-11-03
+
+**U05C / Checkpoint 1B / M4 JebasJ / In Progress pending review/publication.**
+Branch `feat/u05c-start-processing-ui`; initial tree clean. Actual HEAD and local
+`docs/coordination-foundation` base are **747d223b1b04d134edaea6384e0c3cfcb1b40c5e**.
+The supplied full hash beginning 747d223 does not equal actual Git; the verified
+commit is used throughout this assignment. Real U03
+**c5c9b5a5aefff113db6592996da4af1c780d88df** and P04 merge
+**f851dd11fd8f7e11140317cf44d022a9999044dd** are verified ancestors; current
+publication/provenance/audit producers are present. No spec/backend/dependency or
+out-of-scope file edits, and no stage/commit/push/merge.
+
+Implemented `frontend/src/cases/StartProcessing.tsx` and
+`frontend/src/cases/processingController.ts`, wired into the selected evidence
+inspector. The existing generated typed client requires singular `header` and
+`Idempotency-Key` spelling; this is used instead of the prompt's illustrative
+`headers` object. Each explicit bodyless action generates a fresh UUID key, busy
+state blocks repeated clicks, and accepted state retains the returned ProcessingRun
+for U05 consumption. Context/shape checks reject foreign/malformed responses;
+fixed safe errors never expose raw server messages. Abort/session guards suppress
+late responses, including dispose/reconnect. No optimistic run or completion state
+is invented; the UI labels the status as the value at acceptance.
+
+| Actual command/check | Result |
+|---|---|
+| `npx @redocly/cli bundle specs/openapi.yaml --output /tmp/evora-openapi.json` | PASS |
+| `npx --yes @redocly/cli@2.57.0 lint specs/openapi.yaml` | PASS; existing missing-license warning only |
+| `npx --yes openapi-typescript@7.10.1 specs/openapi.yaml -o /tmp/evora-u05c-api.d.ts` and `frontend/node_modules/.bin/tsc --noEmit --strict /tmp/evora-u05c-api.d.ts` | PASS generated declaration and strict compilation |
+| `python scripts/verify_coordination.py /tmp/evora-openapi.json` | PASS: 27 operations, 126 tasks and all coordination checks |
+| `EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -m unittest discover -s scripts -p 'test_*.py'` | PASS: 122 tests |
+| `EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -W error::ResourceWarning -m unittest discover -s backend/tests -v` | PASS: 420 tests, no skips |
+| `npm --prefix frontend run test` | PASS: 55 tests, including seven U05C tests; prior 48 preserved |
+| `npm --prefix frontend run build` | PASS: generated declaration freshness, TypeScript and production bundle |
+| `node frontend/test/cases.integration.mjs` | PASS: real local HTTP/FastAPI/SQLite; U05C start/read-back/repeat/errors and prior I00 create/list/upload/download/hash/audit/isolation regressions |
+| `npx --yes @google/design.md@0.4.0 lint DESIGN.md` | PASS: zero errors/warnings |
+| `git diff --check` | PASS |
+
+Python verification commands above used `PYTHONPATH=/tmp/evora-u05c-validation`:
+`python -m pip install --target /tmp/evora-u05c-validation jsonschema==4.25.1`
+installed the required validator outside the repository, without modifying package
+manifests or the global installation. The host has jsonschema 4.26.0; isolated
+4.25.1 was used for coordination/backend validation. pip printed host-package
+resolver notices; the target install exited successfully. Local runtime read-back:
+Python **3.14.9**, Node **22.23.4**, npm **12.2.1**, FastAPI **0.162.0**, Starlette
+**1.10.0**, uvicorn **0.54.0**. These differ from the setup baseline's Python
+3.14.8/Node 22.23.3/npm 12.2.0/FastAPI 0.143.1/Starlette 1.8.0. This is actual
+Linux candidate verification, not clean pinned setup, Windows or remote CI proof.
+
+Unit tests use explicit Fetch doubles and static React rendering. They invoke the
+button's dispatch handler and controller, check disabled/alert markup, keys,
+accepted run IDs/status, safe 400/401/404/409/415/server/network errors and retries,
+authentication reset, foreign/malformed response rejection, late success/error
+suppression on disposal/session change, and effect-style dispose/reconnect.
+They do not mount a browser or certify visual/keyboard/accessibility behavior.
+
+The real smoke uploads committed permitted `fixtures/synthetic-case/network.csv`
+through U03, starts through the actual U05C controller/generated client and asserts
+POST **202**, exact case/evidence association and initial **queued** status. It
+reads the same run back through the spec's `getProcessingRun` path with bounded
+harness-only polling and observes **completed** from the real producer. Another explicit action yields a different
+run ID. Empty key **400**, missing/foreign evidence **404** and invalid identity
+**401** are exercised; prior invalid-token case-list regression remains included.
+The test-only SQLite/file snapshots and synthetic identities are harness controls;
+application code remains API-only. Own temporary files are cleaned up.
+
+U05C is locally implemented and verified, awaiting authorized review/publication.
+U05 remains the next separately assigned task for polling; no polling/history UI
+is claimed here. Aborting client delivery does not cancel accepted server work;
+unknown transport failure is labeled uncertain and a new action can create a new
+run. Checkpoint 1B/I00B and the full proposal remain open.

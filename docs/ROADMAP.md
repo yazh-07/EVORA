@@ -93,6 +93,25 @@ candidate. OpenAPI lint/bundle, verifier, generated strict types, frontend
 freshness/typecheck/build, DESIGN and whitespace checks pass. Checkpoint 1A is
 **Complete**. Checkpoint 1B (M2: P01, P02, etc.) is now **unblocked and active**.
 
+### U05C live record — 2026-11-03
+
+**U05C / Checkpoint 1B / M4 JebasJ / In Progress.** User-assigned branch
+`feat/u05c-start-processing-ui` starts clean at actual common contract/base
+**747d223b1b04d134edaea6384e0c3cfcb1b40c5e**, matching local
+`docs/coordination-foundation` (the full hash in the prompt differs). Real U03
+**c5c9b5a5aefff113db6592996da4af1c780d88df** and P04 merge
+**f851dd11fd8f7e11140317cf44d022a9999044dd** are integrated ancestors.
+The explicit shared-path handoff is recorded in AGENT_TASKS.md. Draft 0.3.0,
+backend and package dependencies remain unchanged.
+
+The selected-evidence inspector starts a bodyless processing request with a fresh
+UUID key through the generated typed client, prevents busy duplicates and retains
+the actual accepted run. Fixed safe alerts and stale response/session disposal
+cover errors without inventing processing results. Status is labeled at acceptance;
+U05 polling is a separate next task. Exact verification and doubles/limits are in
+U05C verification in PREIMPLEMENTATION_REVIEW.md. No stage/commit/push/merge is
+authorized. Checkpoint 1B and I00B remain open; no module completion claim.
+
 ## Work in parallel without breaking the sequence
 
 Four people keep their module responsibility and contribute the part needed for the active checkpoint. M2/M3 have heavier work; scoped help is allowed with one accountable interface. Nobody waits for an entire module to finish.
@@ -271,6 +290,34 @@ temporary data removed. **F09 is Complete. Checkpoint 1A stays open.**
 Next gate **I00** is shared real API/UI intake verification and requires an
 explicit assignee. It is not M1-only and has not been started. Later M1 F08
 waits for P04/P14; full M1/product scope is not complete.
+
+## Checkpoint 1B processing audit
+
+### F08 live record — 2026-11-02
+
+**F08 / Checkpoint 1B / M1 / sharmelas-925 / In Progress.** Explicit user
+assignment on `feat/f08-processing-audit`, clean actual reviewed HEAD/common
+contract base **6980b4d0b2fd14a6bf372ae84cb7ab8e78b38d93**. Supplied full
+base hash was unavailable locally; the assignment records the discrepancy.
+F06/P04/P14 and F07/P14C are real integrated ancestors; exact dependency commits
+and allowed paths are in AGENT_TASKS. Unchanged draft 0.3.0 contract.
+
+Terminal completion/failure and interrupted-run recovery now append one safe
+`startProcessing` event in the same SQLite transaction as the run state. The
+Evidence target, original actor, run/version reference, terminal time/state and
+allowlisted failure code are visible through existing authorized audit listing;
+private processing parameters/output provenance stay private. Existing audit
+mutation triggers, run transition guards and serialized key replay remain in use.
+
+13 focused tests / 420 backend / 122 coordination / 48 frontend PASS; real I00
+HTTP intake regression, contract lint/bundle/generated types, frontend freshness/
+typecheck/build and DESIGN PASS. Existing OpenAPI license warning only. Exact
+commands, read-back, injections and runtime limitations are in
+PREIMPLEMENTATION_REVIEW's F08 verification. Review/integration is pending; no
+commit/push/merge performed. Checkpoint 1B remains open until all rows and I00B
+exit evidence pass; full proposal and approved additions remain required.
+Next handoff I00B awaits remaining UI dependencies; later M1 F08B depends on
+A05 and a separate assignment. No later task started.
 
 ## P01 current handoff — 2026-11-01
 

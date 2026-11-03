@@ -2,6 +2,19 @@
 
 Coordination-branch draft 0.3.0, not a running app. Four people each work on one module; confirmed GitHub-handle assignments and integration coordination are in [ROADMAP.md](ROADMAP.md#module-assignment-and-live-task-state). Full initial proposal scope is fixed. Use the canonical phase/checkpoint ledger in [ROADMAP.md](ROADMAP.md). Assign one catalog row, not an entire module, milestone or full dashboard. Codex fills the task card from recorded repository decisions before editing. Missing common-base/allowed-path choices or a shared G/I assignee need a short clarification, not a guessed assignment.
 
+### F08 assignment — 2026-11-02
+
+| Field | Recorded assignment |
+|---|---|
+| Task/checkpoint/module/owner | F08 / 1B / M1 Evidence Foundation / sharmelas-925, per confirmed ROADMAP module table and explicit user assignment |
+| Branch/reviewed common contract base | `feat/f08-processing-audit`, clean starting HEAD **6980b4d0b2fd14a6bf372ae84cb7ab8e78b38d93** on the local coordination history; unchanged OpenAPI draft 0.3.0 and CONTRACTS.md. User-supplied full hash `6980b4df3ea582d909ca3a628a55dbb8214309a4` is unavailable locally; exact actual HEAD recorded rather than claiming that object |
+| Allowed paths | `backend/audit.py`, `backend/processing.py`, `backend/tests/test_processing_audit.py` (or test_audit.py), `backend/README.md`, `docs/AGENT_TASKS.md`, `docs/ROADMAP.md`, `docs/PREIMPLEMENTATION_REVIEW.md`. No spec/frontend/dependency edits; no staging/commit/push/merge authorization |
+| Real dependencies | F06 merge **1b5166d91e0f3b86b85585d714a917a3efc82d44**; P04 merge **f851dd11fd8f7e11140317cf44d022a9999044dd**; P14 merge **c03361b8171e6506d2c160a85cc1e89e76315fb3**. P14C verified publication merge **920331d95fdd359f1e20cfbcfba48fc6e2afb292** and F07 list API also present in actual base |
+| Producer/consumer handoff | M2 terminal processing/recovery -> M1 safe append-only AuditEvent -> existing authorized F07 list API and I00B. Run/version reference joins to private frozen configuration and successful versioned provenance; failed runs have no fabricated completed provenance |
+| Acceptance | Exactly one terminal event with original actor/case/Evidence/run/version/state/time, safe diagnostic only; no sensitive audit/log contents; atomic status/output/provenance/audit rollback, replay/concurrency/recovery deduplication, case isolation and UTC listing, SQL append-only guards |
+| Tests/doubles | 13 focused tests and full 420 backend tests PASS, 122 coordination and 48 frontend PASS; real HTTP intake regression and contract/types/build/DESIGN checks PASS. Real ASGI/SQLite/original/parser/provenance producers; synthetic identities/fixtures, explicit scheduler/registry/SQL/commit failure injections only. Exact commands and environment caveats in PREIMPLEMENTATION_REVIEW |
+| State/next | In Progress pending review/integration; no checkpoint/module completion. Next handoff is I00B after its remaining real UI dependencies; later M1 F08B requires A05 and its own assignment. No next task started |
+
 ### I00 assignment — 2026-11-01
 
 | Field | Recorded assignment |
@@ -661,3 +674,20 @@ retain existing415/replay/no-publication assertions unchanged.
 | History/provenance | Old processor4 document records stay immutable/readable/replayable; new version freezes actual model/digest/versions/limits privately, verified atomic output/provenance/completion unchanged |
 | Acceptance/tests | Real model/source/API/SQL/history/replay/rollback/resource/model-unavailable/timeout/case controls, actual labeled precision/recall/FP/misses, regressions and Windows/Ubuntu CI. No invented accuracy or model results |
 | Handoff | In Progress; user authorizes install/implement/test/commit/push/merge into docs/coordination-foundation after acceptance. Full FEATURE_SCOPE/additions and earlier checkpoint gates preserved; no later task started |
+
+### U05C assignment — 2026-11-03
+
+| Field | Scoped assignment |
+|---|---|
+| Task/checkpoint/owner | **U05C / 1B / M4 / JebasJ**; explicit user handoff includes these bounded shared documentation edits; whale2186 retains integration coordination |
+| Branch/common contract | `feat/u05c-start-processing-ui`; clean actual HEAD/base **747d223b1b04d134edaea6384e0c3cfcb1b40c5e**, matching local `docs/coordination-foundation`; unchanged `specs/openapi.yaml` draft 0.3.0. The prompt's full hash beginning 747d223 differs from actual Git; this record uses the verified commit |
+| Allowed paths | `frontend/src/cases/`, `frontend/test/`, `frontend/README.md`, `docs/AGENT_TASKS.md`, `docs/ROADMAP.md`, `docs/PREIMPLEMENTATION_REVIEW.md`; no backend/spec/package dependency edits |
+| Dependencies | Real U03 **c5c9b5a5aefff113db6592996da4af1c780d88df** and P04 merge **f851dd11fd8f7e11140317cf44d022a9999044dd** are committed ancestors, along with subsequent processing publication/provenance/audit producers. No substitute producer in HTTP acceptance |
+| Acceptance | Explicit bodyless generated-client start with unique UUID key per action; busy duplicate guard; retain accepted run ID and actual status; safe 400/401/404 alerts and retry; abort/ignore stale selection/unmount/session responses; real synthetic network CSV HTTP 202/read-back |
+| Interface | Existing typed client uses singular `header` with generated `Idempotency-Key` spelling. Accepted ProcessingRun is retained in the exported controller state for U05; this bounded action displays status at acceptance only |
+| Verification/state | **In Progress**, local verification results recorded in U05C verification in PREIMPLEMENTATION_REVIEW; no commit/push/merge authorized. Checkpoint 1B/I00B stays open; next bounded M4 task U05 polling requires its own handoff |
+
+No unresolved contract choice is needed for this action: it consumes the existing
+bodyless start and declared error/status contract. Network/protocol failure is
+explicitly uncertain; another user action uses a new key and may start another
+run. Fetch/static-render unit doubles are separate from real FastAPI acceptance.

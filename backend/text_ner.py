@@ -48,7 +48,8 @@ class LocalWorker:
             env.update(OMP_NUM_THREADS='1',OPENBLAS_NUM_THREADS='1',MKL_NUM_THREADS='1',PYTHONUTF8='1')
             self.process=subprocess.Popen([sys.executable,'-m','backend.text_ner_worker',str(self.manifest_path)],
                 cwd=Path(__file__).resolve().parents[1],stdin=subprocess.PIPE,stdout=subprocess.PIPE,
-                stderr=subprocess.DEVNULL,env=env)
+                stderr=subprocess.DEVNULL,env=env,
+                creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0))
 
     def request(self,lines):
         deadline=time.monotonic()+self.timeout
@@ -66,6 +67,8 @@ class LocalWorker:
             thread=threading.Thread(target=exchange,daemon=True);thread.start()
             try:response=results.get(timeout=max(0,deadline-time.monotonic()))
             except Empty:raise TextNERError('TIMEOUT') from None
+            if time.monotonic() > deadline:
+                raise TextNERError('TIMEOUT')
             if not response or len(response)>32*1024*1024:raise TextNERError('WORKER_FAILED')
             try:data=json.loads(response)
             except (ValueError,UnicodeError):raise TextNERError('WORKER_FAILED') from None

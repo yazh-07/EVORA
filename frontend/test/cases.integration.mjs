@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { execFileSync, spawn } from 'node:child_process';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { once } from 'node:events';
@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 import { createApiClient } from '../.test-build/src/api/client.mjs';
 import { createOriginalDownload } from '../.test-build/src/cases/downloadController.mjs';
 import { createCaseStore } from '../.test-build/src/cases/store.mjs';
-import { createEvidenceStore } from '../.test-build/src/cases/CaseWorkspace.mjs';
+import { createEvidenceStore, createProcessingController } from '../.test-build/src/cases/CaseWorkspace.mjs';
 
 // Run explicitly after npm test + build. Real HTTP, FastAPI and SQLite; synthetic identities/data only.
 const temporary = await mkdtemp(join(tmpdir(), 'evora-u02-'));
@@ -180,9 +180,42 @@ try {
     previousTimestamp = timestamp;
   }
   console.log('PASS U04 real F05: original byte/hash/size read-back through download controller and empty original.');
+  // U05C: real merged P04 producer, committed permitted CSV and generated client.
+  const network = await readFile(new URL('../../fixtures/synthetic-case/network.csv', import.meta.url));
+  assert.equal(await evidenceStore.upload(new File([network], 'network.csv', { type: 'text/csv' }), 'network_log', 'Synthetic U05C network', ''), true);
+  const processingEvidence = evidenceStore.getSnapshot().detail;
+  const processing = createProcessingController(client, created.id, processingEvidence.id);
+  statuses.length = 0;
+  await processing.submit();
+  assert.equal(processing.getSnapshot().status, 'accepted');
+  const acceptedRun = processing.getSnapshot().run;
+  assert.equal(acceptedRun.case_id, created.id);
+  assert.equal(acceptedRun.evidence_id, processingEvidence.id);
+  assert.equal(acceptedRun.status, 'queued');
+  assert.ok(statuses.some(item => item.method === 'POST' && item.status === 202));
+  const runPath = { caseId: created.id, evidenceId: processingEvidence.id, runId: acceptedRun.id };
+  let readBack;
+  // Harness-only bounded polling: background completion need not precede 202 delivery.
+  for (let attempt = 0; attempt < 100; attempt++) {
+    readBack = await client.request('get', '/api/v1/cases/{caseId}/evidence/{evidenceId}/processing-runs/{runId}', { path: runPath });
+    if (readBack.status === 'completed' || readBack.status === 'failed') break;
+    await new Promise(resolveDelay => setTimeout(resolveDelay, 50));
+  }
+  assert.equal(readBack.id, acceptedRun.id);
+  assert.equal(readBack.status, 'completed');
+  await processing.submit();
+  assert.notEqual(processing.getSnapshot().run.id, acceptedRun.id, 'new explicit action uses a new key/run');
+  const path = { caseId: created.id, evidenceId: processingEvidence.id };
+  await assert.rejects(client.request('post', '/api/v1/cases/{caseId}/evidence/{evidenceId}/processing-runs', { path, header: { 'Idempotency-Key': '' } }), { status: 400 });
+  await assert.rejects(client.request('post', '/api/v1/cases/{caseId}/evidence/{evidenceId}/processing-runs', { path: { ...path, evidenceId: '00000000-0000-4000-8000-000000000000' }, header: { 'Idempotency-Key': crypto.randomUUID() } }), { status: 404 });
+  processing.dispose();
+  console.log('PASS U05C real P04 HTTP: synthetic network.csv upload, explicit keyed start 202/queued, exact completed run read-back, new-action/new-run and 400/404.');
   evidenceStore.dispose();
   const beforeDeniedAudit = intakeSnapshot();
   client.setToken('u02-synthetic-one'); await store.load();
+  const foreignProcessing = createProcessingController(client, created.id, processingEvidence.id);
+  await foreignProcessing.submit(); assert.equal(foreignProcessing.getSnapshot().status, 'error');
+  assert.match(foreignProcessing.getSnapshot().message, /unavailable/); foreignProcessing.dispose();
   const deniedAudit = async caseId => {
     await assert.rejects(listAuditEvents(caseId), error => {
       assert.equal(error.status, 404);
@@ -203,7 +236,12 @@ try {
   await forbiddenOriginal.download(); assert.equal(forbiddenOriginal.getSnapshot().status, 'error'); assert.match(forbiddenOriginal.getSnapshot().message, /unavailable/); forbiddenOriginal.dispose();
   await assert.rejects(client.request('get','/api/v1/cases/{caseId}/evidence/{evidenceId}/content',{path:{caseId:created.id,evidenceId:evidence.id},responseType:'blob'}),{status:404});
   console.log('PASS U03 real HTTP/FastAPI/SQLite: multipart 201, exact SHA-256/size/list/detail/acquired UTC, local validation, server blank-label/invalid-kind 400, oversize 413, case/actor isolation 404.');
-  client.setToken('invalid-synthetic-token'); await store.load();
+  client.setToken('invalid-synthetic-token');
+  const unauthorizedProcessing = createProcessingController(client, created.id, processingEvidence.id);
+  await unauthorizedProcessing.submit(); assert.equal(unauthorizedProcessing.getSnapshot().status, 'error');
+  assert.match(unauthorizedProcessing.getSnapshot().message, /Authentication required/); unauthorizedProcessing.dispose();
+  client.setToken('invalid-synthetic-token');
+  await store.load();
   assert.equal(client.hasToken(), false); await store.load(); assert.equal(store.getSnapshot().status, 'signed-out');
   store.dispose();
   console.log('PASS U02/U02B creation 201, immediate listing, whitespace 400, actor isolation; real HTTP/SQLite: empty, 21-case pagination/detail, two-actor isolation, foreign/missing 404, invalid limit 400, invalid token 401, same-origin UI HTTP 200.');
