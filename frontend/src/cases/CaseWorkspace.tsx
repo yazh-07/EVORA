@@ -1,3 +1,6 @@
+export { createCaseOverviewController } from './caseOverviewController';
+export { CaseOverviewPanel } from './CaseOverview';
+import { CaseOverview } from './CaseOverview';
 export { createObservationController } from './observationController';
 export { ObservationPanel } from './ObservationInspector';
 export { createProcessingStatusController } from './processingStatusController';
@@ -39,7 +42,7 @@ export function CaseWorkspace() {
     </section>
     {client.hasToken() && <CaseCreation state={state} create={(title, description) => store.create(title, description)} />}
     <CasePanels state={state} load={offset => { void store.load(offset); }} select={id => { void store.select(id); }} />
-    {state.detailStatus === 'ready' && state.detail && <EvidenceWorkspace key={state.detail.id} caseId={state.detail.id} />}
+    {state.detailStatus === 'ready' && state.detail && <div key={state.detail.id}><CaseOverview caseId={state.detail.id} /><EvidenceWorkspace caseId={state.detail.id} /></div>}
   </>;
 }
 

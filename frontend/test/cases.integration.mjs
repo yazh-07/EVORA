@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 import { createApiClient } from '../.test-build/src/api/client.mjs';
 import { createOriginalDownload } from '../.test-build/src/cases/downloadController.mjs';
 import { createCaseStore } from '../.test-build/src/cases/store.mjs';
-import { createEvidenceStore, createProcessingController, createProcessingStatusController, createObservationController } from '../.test-build/src/cases/CaseWorkspace.mjs';
+import { createEvidenceStore, createProcessingController, createProcessingStatusController, createObservationController, createCaseOverviewController } from '../.test-build/src/cases/CaseWorkspace.mjs';
 
 // Run explicitly after npm test + build. Real HTTP, FastAPI and SQLite; synthetic identities/data only.
 const temporary = await mkdtemp(join(tmpdir(), 'evora-u02-'));
@@ -296,6 +296,21 @@ try {
   await assert.rejects(client.request('post', '/api/v1/cases/{caseId}/evidence/{evidenceId}/processing-runs', { path: { ...path, evidenceId: '00000000-0000-4000-8000-000000000000' }, header: { 'Idempotency-Key': crypto.randomUUID() } }), { status: 404 });
   processing.dispose();
   console.log('PASS U05C real P04 HTTP: synthetic network.csv upload, explicit keyed start 202/queued, exact completed run read-back, new-action/new-run and 400/404.');
+  // U13: all-page overview with real uploads and processing history, no SQL doubles.
+  for (let index = 0; index < 20; index++) {
+    assert.equal(await evidenceStore.upload(new File([bytes], `overview-${index}.bin`), 'image', 'Synthetic U13 image'), true);
+  }
+  const overview = createCaseOverviewController(client, created.id);
+  overview.start(); await overview.load();
+  assert.equal(overview.getSnapshot().status, 'ready');
+  const summary = overview.getSnapshot().summary;
+  assert.equal(summary.total, 23);
+  assert.deepEqual(summary.kinds, { document: 1, image: 20, video: 0, audio: 0, message: 0, network_log: 2, mobile_log: 0, transaction: 0, gps: 0 });
+  assert.deepEqual(summary.statuses, { completed: 1, running: 0, queued: 0, failed: 0, unprocessed: 22 });
+  overview.dispose();
+  const emptyOverview = createCaseOverviewController(client, unicodeCase.id);
+  emptyOverview.start(); await emptyOverview.load(); assert.equal(emptyOverview.getSnapshot().summary.total, 0); emptyOverview.dispose();
+  console.log('PASS U13 real HTTP/FastAPI: 23 evidence across two pages, exact kind/latest-status counts, 22 unprocessed and honest empty case.');
   evidenceStore.dispose();
   const beforeDeniedAudit = intakeSnapshot();
   client.setToken('u02-synthetic-one'); await store.load();

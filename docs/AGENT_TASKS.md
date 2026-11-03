@@ -722,3 +722,29 @@ by client disposal. Full proposal and approved speech addition remain required.
 | Acceptance | Latest completed evidence observations, optional historical completed run pin, exact kind/locator/raw/normalized/raw time/UTC/confidence, authoritative pagination/empty state, fixed safe 400/401/404/500/network alerts, abort/stale/session disposal and completion refresh. Real six-observation network fixture, pinned history after newer completion, pagination and foreign-case rejection |
 | Verification/state | In Progress pending review/publication. Exact commands/results and Fetch-double/static-render limits recorded in U05B verification in PREIMPLEMENTATION_REVIEW.md. No stage/commit/push/merge authorized |
 | Next handoff | U13 / I00B remain separate bounded assignments; Checkpoint 1B remains open. No module/phase closure |
+
+### U13 assignment — 2026-11-03
+
+- Task/checkpoint: **U13 / 1B**, case evidence counts/types/processing status.
+- Accountable interface owner: **JebasJ / M4 Investigator Application**, per
+  ROADMAP.md module assignment; explicit user-scoped handoff in this session.
+- Branch: `feat/u13-case-evidence-overview`, clean initial worktree. Actual
+  reviewed common contract/base: **138fd791808571c60ee7dc5ef831684c84d09d67**,
+  matching local `docs/coordination-foundation`. The prompt's supplied full hash
+  differs; the actual checked-out base contains the required merged producers.
+- Dependencies: U02 merge **9f2cc8ac64426ef2b0bb9d917fd7afdb777b606f**,
+  U05 merge **32b8adeecec8903edc1dde5ae56ad8a175a61607**,
+  F04 **69f2e8269b6e6d639889941926bc604a415e3f05**,
+  P04 merge **f851dd11fd8f7e11140317cf44d022a9999044dd**;
+  U05B is present at the reviewed base. Real producers are used for acceptance.
+- Allowed paths: `frontend/src/cases/`, `frontend/test/`,
+  `frontend/README.md`, `docs/AGENT_TASKS.md`, `docs/ROADMAP.md`,
+  `docs/PREIMPLEMENTATION_REVIEW.md`. This authorizes the bounded shared-doc
+  updates; no spec/backend/dependency edit or stage/commit/push/merge handoff.
+- Acceptance: all-page totals, per-item latest run breakdown and evidence kinds,
+  honest empty state, safe 401/404/network retry, selection/unmount cancellation,
+  and real HTTP synthetic aggregation. Unit doubles are explicitly separate
+  from real acceptance. Results: U13 verification in PREIMPLEMENTATION_REVIEW.md.
+- State: implemented locally, **In Progress pending review/publication**.
+  No unresolved producer/consumer contract choice; oldest-first processing
+  history is already specified. Next gate is joint I00B, not checkpoint closure.

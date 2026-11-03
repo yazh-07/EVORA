@@ -722,3 +722,31 @@ identities and permitted `network.csv`, verifies all six exact source values,
 completed-run selection/pagination/history and foreign-case 404 ApiError, and
 reruns the earlier intake/download/start/status smoke. It is not a browser mount
 or visual/accessibility certification. Full checkpoint 1B exit remains I00B.
+
+## U13 case evidence overview
+
+U13 / Checkpoint 1B / M4 JebasJ, branch `feat/u13-case-evidence-overview`.
+Selected cases display `CaseOverview` using the generated typed client for
+`getCase`, every `listEvidence` page (limit 20, offset advanced by collected
+items, total checked), and each item's `listProcessingRuns` history. Histories
+are oldest first by contract; the final attempt determines completed, running,
+queued or failed. No history means unprocessed. All nine evidence kinds and all
+five status counts are shown, including zero values. Empty cases say
+“No evidence uploaded yet.” No summary endpoint or analysis score is invented.
+
+Counts are live reads at initial selection or explicit **Refresh overview**;
+they do not automatically track uploads or processing changes. Changing totals,
+duplicate IDs, empty incomplete pages, foreign records and invalid histories
+fail safely without publishing partial totals. Reads are serial to bound request
+fan-out. Session changes clear counts; 401 clears the shared session, 404 uses a
+safe alert, and transport failures permit refresh. Case changes/unmount abort
+requests and discard late responses. Existing DESIGN tokens style the panel and
+count breakdowns; status meanings always have text.
+
+Run `npm --prefix frontend run test`, `npm --prefix frontend run build`, then
+`node frontend/test/cases.integration.mjs` from the repository root. The
+`case-overview.test.mjs` tests use synthetic Fetch responses and static React
+rendering. Real HTTP/FastAPI/SQLite acceptance uploads 23 synthetic items across
+two pages and verifies exact kind/status counts, real completed processing
+history, unprocessed items and an empty case. No browser-mounted layout or
+Windows execution is claimed.
