@@ -11,7 +11,7 @@ import { fileURLToPath } from 'node:url';
 import { createApiClient } from '../.test-build/src/api/client.mjs';
 import { createOriginalDownload } from '../.test-build/src/cases/downloadController.mjs';
 import { createCaseStore } from '../.test-build/src/cases/store.mjs';
-import { createTriageController, PriorityListPanel, createAnalysisController, createEvidenceStore, createProcessingController, createProcessingStatusController, createObservationController, createCaseOverviewController } from '../.test-build/src/cases/CaseWorkspace.mjs';
+import { createGraphController, GraphPanel, createTriageController, PriorityListPanel, createAnalysisController, createEvidenceStore, createProcessingController, createProcessingStatusController, createObservationController, createCaseOverviewController } from '../.test-build/src/cases/CaseWorkspace.mjs';
 
 // Run explicitly after npm test + build. Real HTTP, FastAPI and SQLite; synthetic identities/data only.
 const temporary = await mkdtemp(join(tmpdir(), 'evora-u02-'));
@@ -505,11 +505,109 @@ try {
   }
   console.log('PASS U05D real HTTP/FastAPI/SQLite analysis: network/GPS frozen snapshots and SHA-256, completed pins, terminal stop, pinned graph/findings/triage. Neo4j is an explicit double.');
   console.log('PASS U06 real HTTP priority controller: exact 55.56/P3/factors, history, pinned all-page membership/order across upload and newer completed analysis; unscored evidence stays unscored.');
+  // U07 real graph, including nonempty cross-source candidate links and historical locators.
+  const graphCase = await client.request('post', '/api/v1/cases', { body: { title: 'Synthetic U07 graph case' } });
+  const graphCaseId = graphCase.id;
+  const graphStore = createEvidenceStore(client, graphCaseId);
+  const graphSources = [];
+  const networkBytes = await readFile(new URL('../../fixtures/synthetic-case/network.csv', import.meta.url));
+  const settle = async (predicate, label) => {
+    for (let attempt = 0; !predicate(); attempt++) {
+      assert.ok(attempt < 500, label); await new Promise(resolve => setTimeout(resolve, 5));
+    }
+  };
+  for (let index = 0; index < 2; index++) {
+    assert.equal(await graphStore.upload(new File([networkBytes], `graph-${index}.csv`, { type: 'text/csv' }), 'network_log', 'Synthetic duplicate source; not independent corroboration'), true);
+    const evidence = graphStore.getSnapshot().detail;
+    const processing = createProcessingController(client, graphCaseId, evidence.id);
+    try {
+      await processing.submit(); const run = processing.getSnapshot().run;
+      assert.ok(run);
+      const status = createProcessingStatusController(client, run, 10);
+      try {
+        status.start(); await settle(() => ['completed', 'failed'].includes(status.getSnapshot().run?.status), 'graph processing completes');
+        assert.equal(status.getSnapshot().run.status, 'completed');
+      } finally { status.dispose(); }
+      graphSources.push({ evidence, runId: run.id });
+    } finally { processing.dispose(); }
+  }
+  const graphAnalysis = createAnalysisController(client, graphCaseId, 10);
+  graphAnalysis.start();
+  try {
+    await graphAnalysis.submit();
+    await settle(() => graphAnalysis.getSnapshot().status === 'terminal', 'graph analysis completes');
+    const completed = graphAnalysis.getSnapshot().run;
+    assert.equal(completed.status, 'completed');
+    const graphUI = createGraphController(client, graphCaseId, completed.id);
+    try {
+      graphUI.start(); await settle(() => graphUI.getSnapshot().status !== 'loading', 'graph loads');
+      assert.equal(graphUI.getSnapshot().status, 'ready', graphUI.getSnapshot().message);
+      const displayed = graphUI.getSnapshot().graph;
+      assert.equal(displayed.analysis_run_id, completed.id);
+      const evidenceIds = graphSources.map(source => source.evidence.id).sort();
+      assert.deepEqual(displayed.nodes.filter(n => n.kind === 'evidence').map(n => n.id).sort(), evidenceIds);
+      const candidatePages = await Promise.all(['/api/v1/cases/{caseId}/entities', '/api/v1/cases/{caseId}/events'].map(route =>
+        client.request('get', route, { path: { caseId: graphCaseId }, query: { limit: 100, offset: 0 } })));
+      const candidates = candidatePages.flatMap(p => p.items);
+      assert.deepEqual(displayed.nodes.map(n => n.id).sort(), [...evidenceIds, ...candidates.map(c => c.id)].sort());
+      for (const candidate of candidates) {
+        const n = displayed.nodes.find(n => n.id === candidate.id);
+        assert.equal(n.kind, candidate.kind); assert.equal(n.label, candidate.canonical_label ?? candidate.summary);
+        assert.deepEqual(n.evidence_ids, candidate.evidence_ids);
+      }
+      assert.equal(displayed.nodes.filter(n => n.label === 'D-7').length, 2);
+      assert.equal(displayed.nodes.filter(n => n.label === 'D-9').length, 2);
+      const expectedPairs = [];
+      const entities = candidatePages[0].items;
+      for (let i = 0; i < entities.length; i++) for (let j = i + 1; j < entities.length; j++) {
+        if (entities[i].candidate_key === entities[j].candidate_key) expectedPairs.push([entities[i].id, entities[j].id].sort().join(':'));
+      }
+      assert.ok(expectedPairs.length > 0);
+      assert.deepEqual(displayed.edges.map(e => [e.from_id, e.to_id].sort().join(':')).sort(), expectedPairs.sort());
+      const observations = new Map();
+      for (const { runId } of graphSources) {
+        const page = await client.request('get', '/api/v1/cases/{caseId}/observations', { path: { caseId: graphCaseId }, query: { processing_run_id: runId, limit: 100, offset: 0 } });
+        for (const item of page.items) observations.set(item.id, item);
+      }
+      for (const edge of displayed.edges) {
+        assert.equal(edge.kind, 'shared_identifier'); assert.equal(edge.confidence, 0, 'producer reports unavailable confidence as zero; do not invent certainty');
+        assert.deepEqual(edge.evidence_ids, evidenceIds);
+        assert.ok(edge.observation_ids.length > 0);
+        assert.ok(edge.observation_ids.every(id => completed.input_snapshot.observation_ids.includes(id)));
+        await graphUI.select({ kind: 'edge', id: edge.id });
+        assert.equal(graphUI.getSnapshot().citationStatus, 'ready', graphUI.getSnapshot().citationMessage);
+        assert.deepEqual(graphUI.getSnapshot().citations, edge.observation_ids.map(id => observations.get(id)));
+        const html = renderToStaticMarkup(createElement(GraphPanel, { state: graphUI.getSnapshot(), load: graphUI.load, select: graphUI.select }));
+        for (const citation of graphUI.getSnapshot().citations) assert.ok(html.includes(citation.source_locator));
+      }
+      const originalEdge = displayed.edges[0];
+      // New processing/analysis cannot replace this displayed graph or its frozen citations.
+      const newerProcessing = createProcessingController(client, graphCaseId, graphSources[0].evidence.id);
+      try {
+        await newerProcessing.submit(); const status = createProcessingStatusController(client, newerProcessing.getSnapshot().run, 10);
+        try { status.start(); await settle(() => ['completed', 'failed'].includes(status.getSnapshot().run?.status), 'new processing completes'); assert.equal(status.getSnapshot().run.status, 'completed'); }
+        finally { status.dispose(); }
+      } finally { newerProcessing.dispose(); }
+      await graphAnalysis.submit(); await settle(() => graphAnalysis.getSnapshot().status === 'terminal', 'new graph analysis completes');
+      assert.equal(graphAnalysis.getSnapshot().run.status, 'completed');
+      assert.notEqual(graphAnalysis.getSnapshot().pinnedAnalysisRunId, completed.id);
+      await graphUI.load(); assert.deepEqual(graphUI.getSnapshot().graph, displayed);
+      await graphUI.select({ kind: 'edge', id: originalEdge.id });
+      assert.equal(graphUI.getSnapshot().citationStatus, 'ready');
+      assert.deepEqual(graphUI.getSnapshot().citations, originalEdge.observation_ids.map(id => observations.get(id)));
+      let originalBlob;
+      const original = createOriginalDownload(client, graphSources[0].evidence, blob => { originalBlob = blob; return () => {}; });
+      try { await original.download(); assert.deepEqual(Buffer.from(await originalBlob.arrayBuffer()), networkBytes); } finally { original.dispose(); }
+      analysisRuns.push({ caseId: graphCaseId, runId: completed.id });
+    } finally { graphUI.dispose(); }
+  } finally { graphAnalysis.dispose(); graphStore.dispose(); }
+  console.log('PASS U07 real HTTP graph UI controller: exact source UUID nodes/D-7/D-9 and shared-identifier edges, historical citations after reprocessing/new analysis, original byte roundtrip. Neo4j remains an explicit double.');
   evidenceStore.dispose();
   const beforeDeniedAudit = intakeSnapshot();
   client.setToken('u02-synthetic-one'); await store.load();
   for (const path of analysisRuns) {
     await assert.rejects(client.request('get', '/api/v1/cases/{caseId}/analysis-runs/{runId}', { path }), { status: 404 });
+    await assert.rejects(client.request('get', '/api/v1/cases/{caseId}/graph', { path: { caseId: path.caseId }, query: { analysis_run_id: path.runId } }), { status: 404 });
   }
   await assert.rejects(client.request('get', '/api/v1/cases/{caseId}/evidence/{evidenceId}/processing-runs/{runId}', { path: runPath }), { status: 404 });
   for (const route of ['/api/v1/cases/{caseId}/entities', '/api/v1/cases/{caseId}/events']) {

@@ -5146,3 +5146,96 @@ paths and whitespace check passes. Task remains In Progress pending review/
 publication; Checkpoint 1C/I01 and M4 remain open. Next bounded handoffs U07/U07B
 and I01 after remaining prerequisites/runbook exits. Nothing staged, committed,
 pushed or merged.
+
+### U07 verification — 2026-11-03
+
+Executed 2026-11-04. **U07 / 1C / M4 JebasJ**, clean starting branch
+`feat/u07-graph-visualization-ui`, actual HEAD/common coordination base
+**955ccf447065a658669d87cec6dc5c39a24df060**. Supplied full base SHA was absent;
+actual base and merged dependency ancestry were read back, not inferred from
+planned tickets. Assignment/dependencies/producer-consumer resolution are in
+AGENT_TASKS.md. Draft 0.3.0, backend and package dependencies are unchanged.
+Only the assigned frontend and three shared documentation files were edited.
+
+Required commands executed:
+
+```sh
+npx @redocly/cli bundle specs/openapi.yaml --output /tmp/evora-openapi.json
+python scripts/verify_coordination.py /tmp/evora-openapi.json
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -m unittest discover -s scripts -p 'test_*.py'
+npm --prefix frontend run test
+npm --prefix frontend run build
+node frontend/test/cases.integration.mjs
+git diff --check
+```
+
+Bundle/verifier pass: 27 operations, 126 tasks, 18 checkpoints and all 40 proposal
+sections. Default scripts suite: **122 pass**, but system jsonschema is 4.26.0.
+Repeated with the required **jsonschema 4.25.1** environment: **122 pass**.
+Frontend: **149 pass**, no skips. Build passes API freshness, strict TypeScript
+and bundling. Default HTTP command fails at startup because system Python lacks
+`neo4j`; the existing repository backend test environment passes:
+
+```sh
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json /home/whale2186/.hermes/cache/scratch/test_neo4j_venv/bin/python -m unittest discover -s scripts -p 'test_*.py'
+EVORA_TEST_PYTHON=/home/whale2186/.hermes/cache/scratch/test_neo4j_venv/bin/python node frontend/test/cases.integration.mjs
+```
+
+`frontend/test/graph-view.test.mjs` uses schema-derived synthetic Fetch responses,
+static React rendering, actual diagram/button handlers and controller lifecycles.
+Coverage includes typed pinned URL/query, SVG kinds including merged source
+subkinds, node click and edge keyboard selection, source evidence and locator
+actions, escaped labels, actual confidence, no-run versus selected-empty state,
+latest discovery/pinned retry, mixed/missing/foreign runs, foreign nodes/edges,
+duplicate IDs/dangling endpoints/malformed provenance/confidence, graph and
+citation 401/404/network failures and retry, snapshot/evidence/observation/output
+joins, later-page citations, session/unmount/case/run disposal, overlapping graph
+loads and edge-to-node selection with late success/error. No source is resolved
+through an unpinned latest read.
+
+Real localhost integration preserves earlier I00/I00B and U05D/U06 smoke checks.
+A separate synthetic U07 case uploads/processes two permitted network fixtures
+and completes real analysis. The controller's graph equals the source UUID set
+from actual Evidence/Entity/Event producers, including D-7/D-9 and exact source
+labels/kinds/evidence references. Candidate edge pairs equal the real matching
+entity keys across sources. Edges report `shared_identifier` and the producer's
+confidence **0**, not invented certainty or independent corroboration. Every
+observation ID joins the frozen analysis and exact historical output/locator.
+After reprocessing and completing a newer analysis, the old controller refreshes
+the identical old graph and old citations. Original download bytes equal the
+uploaded CSV after size/hash verification. FastAPI, SQLite, adapters, analysis
+and HTTP reads are real; only Neo4j uses the existing explicit transactional
+GraphDouble. No live Neo4j or full I01 completion claim follows.
+
+Additional shared workflow checks pass:
+
+```sh
+npx --yes @redocly/cli@2.57.0 lint specs/openapi.yaml
+npx --yes openapi-typescript@7.10.1 specs/openapi.yaml -o /tmp/evora-u07-api.d.ts
+frontend/node_modules/.bin/tsc --noEmit --strict /tmp/evora-u07-api.d.ts
+npx --yes @google/design.md@0.4.0 lint DESIGN.md
+```
+
+OpenAPI retains its existing missing-license warning; DESIGN has zero errors/
+warnings. Prior completed-checkpoint backend regressions plus U07 producer
+negatives: **368 tests run, 367 pass, 1 opt-in live Neo4j test skipped**:
+
+```sh
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json /home/whale2186/.hermes/cache/scratch/test_neo4j_venv/bin/python -W error::ResourceWarning -m unittest backend.tests.test_skeleton backend.tests.test_validation backend.tests.test_auth backend.tests.test_cases backend.tests.test_evidence backend.tests.test_audit backend.tests.test_audit_list backend.tests.test_m1_access backend.tests.test_network_csv backend.tests.test_gps_csv backend.tests.test_normalization backend.tests.test_candidate_entities backend.tests.test_source_events backend.tests.test_processing backend.tests.test_observations backend.tests.test_entities backend.tests.test_events backend.tests.test_processing_provenance backend.tests.test_processing_dispatch backend.tests.test_processing_publication backend.tests.test_processing_audit backend.tests.test_graph_findings backend.tests.test_graph_nodes backend.tests.test_graph_links
+```
+
+Observed environment: Python **3.14.9**, Node **22.23.4**, npm **12.2.1**,
+Neo4j driver **6.4.1**, required test-environment jsonschema **4.25.1**.
+These differ from the workflow runtime pins; no clean pinned installation,
+Windows/hosted CI, benchmark or live graph service claim. Chrome **156.0.8078.79**
+headless screenshots of a synthetic static-rendered panel were inspected at
+1200px and 390px widths. The review prompted moving edge labels below shapes
+and reducing unused diagram height. Temporary screenshots live outside Git;
+this is a static visual check, not mounted application interaction/accessibility
+certification. Complete record buttons provide full labels and a narrow-screen
+alternative to the internally scrolling SVG. The layout is deterministic rather
+than a force-layout engine; dense graphs may require using the record list.
+
+Final scoped diff and whitespace checks pass. No stage/commit/push/merge;
+U07 remains In Progress pending review/publication. Checkpoint 1C/I01 and M4
+remain open. Next bounded task U07B, then remaining I01 producer/runbook exits.

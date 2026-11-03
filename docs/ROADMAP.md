@@ -52,6 +52,34 @@ Comma-separated IDs below are **exhaustive assignments**, not ranges. Each catal
 | 6C | I06 | I06 | I06 reports measured threats/provenance/resource/privacy/competitor limitations after the full-scope gates; no invented metrics/originality/admissibility claims. | Backlog |
 
 
+### U07 live record — 2026-11-03
+
+**U07 / Checkpoint 1C / M4 JebasJ / In Progress pending review/publication.**
+Executed 2026-11-04 on clean `feat/u07-graph-visualization-ui`, actual common
+contract/base **955ccf447065a658669d87cec6dc5c39a24df060**. Supplied full SHA
+is absent locally; exact dependencies and allowed paths are in AGENT_TASKS.md.
+
+GraphView and graphController integrate getGraph into CaseWorkspace with the
+shared completed analysis pin. Initial latest discovery adopts the shared pin
+before graph display; all subsequent refreshes retain it. SVG shapes preserve
+producer subkinds; labeled candidate edges show actual confidence. Diagram and
+ordinary buttons support record selection, keyboard access and source inspection.
+Run/case mismatches, dangling endpoints and malformed responses fail closed.
+Historical edge observation locators resolve through the selected AnalysisRun's
+frozen processing/observation membership, with all-page reads and no latest-output
+substitution. Source actions reach the existing inspector/original download.
+Empty completed graphs are distinguished from no completed analysis; fixed safe
+errors/retries and request abort/stale-delivery controls cover both graph/sources.
+
+Frontend tests/build, contract checks, required-version coordination tests and
+real HTTP read-back pass. Backend regression run includes one opt-in live Neo4j
+skip. Real HTTP uses merged FastAPI/SQLite/processing/analysis producers with an
+explicit Neo4j projection double; source UUID nodes, shared-identifier edges,
+historical citations after newer processing/analysis, and original bytes are
+read back. PREIMPLEMENTATION_REVIEW.md records commands, counts and environment
+limits. Checkpoint 1C/I01 and M4 remain open; next bounded U07B handoff and I01
+runbook exits are still required. No stage, commit, push or merge performed.
+
 ### U06 live record — 2026-11-03
 
 **U06 / Checkpoint 1C / M4 JebasJ / In Progress pending review/publication.**
