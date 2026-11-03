@@ -51,6 +51,31 @@ Comma-separated IDs below are **exhaustive assignments**, not ranges. Each catal
 | 6B | I09, I09B | I09, I09B | I09 exercises every feature/operation with real producers; I09B proves clean full-scope Windows and CI setup/build/run and distinguishes test adapters from actual provider runs. | Backlog |
 | 6C | I06 | I06 | I06 reports measured threats/provenance/resource/privacy/competitor limitations after the full-scope gates; no invented metrics/originality/admissibility claims. | Backlog |
 
+### A04 live record — 2026-11-03
+
+**A04 / Checkpoint 1C / M3 whale2186 / In Progress pending review/publication.**
+User-assigned `feat/a04-factor-aggregation-triage` starts clean at actual common
+contract/base **2eca04b5634302b3c85e7e05e0ac7c48bc37e742**, also the local
+coordination ref; the supplied full hash differs. A03B/A03/G02 and A01/A02
+are real merged producers. Exact assignment, dependency versions and shared-path
+handoff are in AGENT_TASKS.md. Execution occurred 2026-11-04.
+
+`backend/triage/aggregation.py` builds strict versioned-policy TriageResults
+through G02: available values only, normalized weights, rounded contributions,
+100.00 cap and P1–P4 bands. No observations or no factors is unscored. Canonical
+sorting returns full frozen membership as TriageEntry dictionaries, computed
+score descending/UUID ascending and unscored last by UUID. Foreign sources,
+duplicate results and mixed cases/runs fail closed. FactorValue names require
+an explicit mapping; actual A03/A03B dictionaries work directly.
+
+Real FastAPI/SQLite network/GPS processing, source read-back, A01/A02 and both
+factor producers feed A04; a labeled synthetic shared-device variant covers the
+positive link. Actual commands/results are in PREIMPLEMENTATION_REVIEW.md.
+No completed analysis, Neo4j publication, I01 or module closure is claimed.
+Checkpoint 1C remains In Progress. Next dependency-ready bounded M3 task is
+A01B (requires G01D), then A05/A06; no later row started. Changes remain local,
+with no stage/commit/push/merge authorization.
+
 ### I00 live record — 2026-11-01
 
 **I00 / Checkpoint 1A / whale2186 / joint integration coordination / Complete.**

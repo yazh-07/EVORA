@@ -891,3 +891,35 @@ by client disposal. Full proposal and approved speech addition remain required.
 - Actual verification and limits are in A03B verification in
   PREIMPLEMENTATION_REVIEW.md. Checkpoint 1C/I01 and M3 remain open; next bounded
   dependency-ready handoff is A04. No later task started.
+
+### A04 assignment — 2026-11-03
+
+- **A04 / Checkpoint 1C / M3 Evidence Fusion and Adaptive Triage / whale2186**.
+  User-assigned clean branch `feat/a04-factor-aggregation-triage`; initially
+  Backlog, now In Progress pending review/publication. M1 sharmelas-925,
+  M2 yazh-07 and M4 JebasJ retain their accountable boundaries.
+- Exact actual reviewed common contract/base and local coordination ref:
+  **2eca04b5634302b3c85e7e05e0ac7c48bc37e742**. Supplied full hash
+  `2eca04bb97973ebfef4bcfb42e7616644f80998f` differs. Draft 0.3.0 remains
+  unchanged. Requested record date retained; execution occurred 2026-11-04.
+- Real dependency versions: A03B task **bdba306** at the common-base merge,
+  A03 task **c9a36eaf5f59e15c577ae69a33b2875208e85848**, G02 task
+  **01daaed0cf1c2a95d443c01d6f459ce0d76f2fac**; A01/A02 and completed
+  1B/I00B are merged ancestors. Real API acceptance uses no producer doubles.
+- Allowed paths: `backend/triage/`, `backend/tests/test_triage_aggregation.py`,
+  `backend/README.md`, `docs/AGENT_TASKS.md`, `docs/ROADMAP.md`,
+  `docs/PREIMPLEMENTATION_REVIEW.md`. Explicit shared-document handoff only;
+  no spec/frontend/package edits or stage/commit/push/merge authorization.
+- Acceptance: G02 available-factor normalization, per-factor rounding/cap/bands,
+  unscored missing/zero-observation items, canonical full membership ordering,
+  strict actual-bundle results, invalid/source-isolation controls and real
+  network/GPS processing -> A01 -> A02 -> A03/A03B -> A04/source read-back.
+- Resolved internal handoff: FactorValue has no name. A03/A03B dictionaries or
+  an explicit name-to-FactorValue mapping supply it; unnamed values fail closed.
+  Sorting returns TriageEntry wrappers to retain unscored items without creating
+  invalid TriageResults. Producer weights are recomputed by G02. No wire change
+  or unresolved A04 gate. A05 supplies authorized frozen membership/count/time
+  and records policy version; A06 consumes sorted entries before pagination.
+- Actual verification/limitations are recorded in A04 verification in
+  PREIMPLEMENTATION_REVIEW.md. Checkpoint 1C/I01 stays open; next bounded
+  dependency-ready M3 handoff is A01B (also requires G01D), then A05.

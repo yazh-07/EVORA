@@ -4208,3 +4208,107 @@ snapshot selection, SQL/Neo4j persistence and coherent publication. No unresolve
 A03B wire/policy gate. Checkpoint 1C/I01 and M3 stay open; next bounded handoff is
 A04 when dependency-ready. Changes remain unstaged/uncommitted; no commit, push
 or merge was authorized or performed.
+
+### A04 verification — 2026-11-03
+
+**A04 / Checkpoint 1C / M3 whale2186 / local acceptance verified, pending review
+and publication.** Execution date 2026-11-04. Clean starting branch
+`feat/a04-factor-aggregation-triage`; actual reviewed common contract/base
+**2eca04b5634302b3c85e7e05e0ac7c48bc37e742** matches the local coordination
+ref. The supplied full hash differs. Real A03B task
+**bdba3065dda83f1d801c63af92da8966952fe6e6**, A03 task
+**c9a36eaf5f59e15c577ae69a33b2875208e85848** and G02 task
+**01daaed0cf1c2a95d443c01d6f459ce0d76f2fac**, plus A01/A02 and completed
+1B/I00B, are ancestors. Unchanged OpenAPI draft 0.3.0 remains authoritative.
+Assignment and explicit shared-document handoff are in AGENT_TASKS.md.
+
+Implementation delegates all scoring to G02, recomputes producer weights and
+contributions, preserves evaluated zero, and returns None for zero observations
+or no available factors. Target/source evidence is checked against the authorized
+same-case set even when unscored. Results have deterministic policy/case/run/
+evidence UUIDv5 identity and UTC timestamp, without adding wire fields. A05 must
+record the policy version and preserve accepted timestamps/results on replay.
+Sorting emits complete frozen TriageEntry membership before pagination, ordered
+by computed score descending then UUID, with unscored UUIDs last. It rejects
+mixed case/run, duplicate and out-of-membership results without altering inputs.
+
+Internal handoffs resolved in code and `backend/README.md`: unnamed FactorValue
+objects cannot identify their factor. Use real producer dictionaries or a named
+FactorValue/None mapping. Sorting uses TriageEntry wrappers so missing results
+stay absent. These are internal interfaces, not HTTP contract changes. No
+unresolved A04 gate; A05/A06 retain authorization, snapshot selection, persistence,
+publication, history, override and pagination responsibilities.
+
+All requested commands pass. Python commands below ran with
+`PYTHONPATH=/tmp/evora-u13-validation`, the existing isolated jsonschema **4.25.1**
+installation (system is 4.26.0); no dependency files changed.
+
+```sh
+npx @redocly/cli bundle specs/openapi.yaml --output /tmp/evora-openapi.json
+python scripts/verify_coordination.py /tmp/evora-openapi.json
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -m unittest discover -s scripts -p 'test_*.py'
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -W error::ResourceWarning -m unittest discover -s backend/tests -p 'test_triage_aggregation.py' -v
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -W error::ResourceWarning -m unittest discover -s backend/tests -p 'test_connectivity_factor.py' -v
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -W error::ResourceWarning -m unittest discover -s backend/tests -p 'test_relevance_factor.py' -v
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -W error::ResourceWarning -m unittest discover -s backend/tests -p 'test_graph_links.py' -v
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -W error::ResourceWarning -m unittest discover -s backend/tests -p 'test_graph_nodes.py' -v
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -W error::ResourceWarning -m unittest discover -s backend/tests -p 'test_triage_policy.py' -v
+npm --prefix frontend run test
+git diff --check
+```
+
+Results: **122 coordination tests**, **12 A04 tests**, **14 connectivity**,
+**14 relevance**, **13 links**, **19 nodes**, **33 G02 policy** and **101 frontend
+tests** pass, no skips. Unit controls cover normalization, every priority band
+boundary, rounding crossing a band, evaluated zero versus absent, explicit
+additional available factors and the preserved 100.01 contribution sum capped
+to 100.00. They cover deterministic identity/time, generators/input immutability,
+invalid counts/UUIDs/factors/timestamps, foreign target/source on unscored paths,
+canonical G02 golden order, complete unscored membership and mixed-run rejection.
+Actual bundled TriageResult and TriageEntry schemas are used, including unknown
+field/missing field negatives. First run exposed jsonschema silently skipping
+`date-time` without its optional RFC3339 dependency. The A04 tests now explicitly
+register a standard-library UTC timestamp format check alongside UUID checking;
+all tests pass with no new packages.
+
+Real producer acceptance uses temporary SQLite/private originals and FastAPI
+ASGITransport with synthetic auth identities; no processing/graph/factor doubles.
+Both committed network.csv and gps.csv upload, start/poll completed processing,
+and read complete Evidence/Entity/Event/Observation pages. A01 builds nodes;
+A02 correctly yields no initial cross-device link; relevance values .8/.2 and
+evaluated connectivity zero aggregate to **44.44/P3** and **11.11/P4**. A separate
+labeled synthetic GPS variant adds D-7 without modifying fixture files, derives
+one real candidate edge/finding, gives relevance .8/.4 and connectivity .1/.1,
+and aggregates to **48.88/P3** and **26.66/P4**. Every Observation locator resolves
+to its original row/raw value, original bytes download unchanged, foreign actor
+reads return 404, repeated aggregation agrees and producer inputs stay unchanged.
+Analysis UUIDs here are deliberately unpersisted, not published completed runs.
+
+Additional shared workflow checks pass:
+
+```sh
+npx --yes @redocly/cli@2.57.0 lint specs/openapi.yaml
+npx --yes openapi-typescript@7.10.1 specs/openapi.yaml -o /tmp/evora-a04-api.d.ts
+frontend/node_modules/.bin/tsc --noEmit --strict /tmp/evora-a04-api.d.ts
+npm --prefix frontend run build
+node frontend/test/cases.integration.mjs
+npx --yes @google/design.md@0.4.0 lint DESIGN.md
+```
+
+OpenAPI has only the existing missing-license warning; DESIGN has zero errors
+or warnings. Generated declarations compile; frontend build checks declaration
+freshness and TypeScript. Real localhost I00/I00B smoke passes authorized intake,
+original/hash/download/audit, network/GPS processing/source inspection, paginated
+overview and actor isolation. No Windows/clean-install/hosted-CI/browser/benchmark
+claim. No completed analysis or Neo4j publication proof: A01B/A05/I01 and
+Checkpoint 1C remain open. The later NLP/full-modality suite was not rerun;
+previously documented model limitations are outside this ticket. Next bounded
+M3 handoff is A01B with G01D, then A05/A06. Changes remain unstaged/uncommitted;
+no commit, push or merge authorized or performed.
+
+Earlier completed-checkpoint backend regressions: **327 pass**, no skips, using
+real merged producers and ResourceWarning-as-error:
+
+```sh
+PYTHONPATH=/tmp/evora-u13-validation EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -W error::ResourceWarning -m unittest backend.tests.test_skeleton backend.tests.test_validation backend.tests.test_auth backend.tests.test_cases backend.tests.test_evidence backend.tests.test_audit backend.tests.test_audit_list backend.tests.test_m1_access backend.tests.test_network_csv backend.tests.test_gps_csv backend.tests.test_normalization backend.tests.test_candidate_entities backend.tests.test_source_events backend.tests.test_processing backend.tests.test_observations backend.tests.test_entities backend.tests.test_events backend.tests.test_processing_provenance backend.tests.test_processing_dispatch backend.tests.test_processing_publication backend.tests.test_processing_audit
+```
