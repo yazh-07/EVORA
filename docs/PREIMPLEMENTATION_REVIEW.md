@@ -3640,3 +3640,70 @@ No checkpoint completion is claimed. Full backend model-runtime verification
 remains unavailable locally; Checkpoint 1B still needs U13 and real joint I00B
 exit evidence under their own bounded handoffs. Full initial proposal/additions
 remain required; this session starts no next task.
+
+### U13 verification — 2026-11-03
+
+Task **U13 / Checkpoint 1B / M4 JebasJ**, local branch
+`feat/u13-case-evidence-overview`, actual clean initial common base
+**138fd791808571c60ee7dc5ef831684c84d09d67**. This is the actual local
+coordination head; the supplied full hash differs. Dependency hashes, allowed
+paths and explicit shared-doc handoff are in AGENT_TASKS.md. No contract,
+backend or package dependency changes; no staging/commit/push/merge.
+
+Implemented all-page evidence aggregation, same-case/unique-ID/page-total
+checks, serial per-item processing histories, latest attempt by the specified
+oldest-first list order, all kind/status counts and zero-item messaging.
+401 uses shared-client session clearing; 404 and network errors expose fixed
+safe alerts. Refresh retries all reads; no partial totals survive failure.
+Abort/generation/session guards discard late responses on replacement/disposal.
+
+Executed checks:
+
+- `npx @redocly/cli bundle specs/openapi.yaml --output /tmp/evora-openapi.json`: PASS.
+- `python scripts/verify_coordination.py /tmp/evora-openapi.json`: PASS,
+  27 operations / 126 tasks / 18 checkpoints / 39 capabilities / 40 mappings.
+- `EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -m unittest discover -s scripts -p 'test_*.py'`:
+  122 PASS (system jsonschema 4.26.0); pinned 4.25.1 rerun recorded below.
+- `npm --prefix frontend run test`: 101 PASS, including 22 new U13 tests.
+- `npm --prefix frontend run build`: PASS, generated client freshness,
+  TypeScript compilation and bundle.
+- `node frontend/test/cases.integration.mjs`: PASS through real FastAPI/SQLite
+  and generated client; prior I00/U02/U02B/U03/U04/U05C/U05/U05B checks pass.
+  U13 uploads 23 items across two evidence pages: document 1, image 20,
+  network_log 2, all other kinds 0; completed 1, unprocessed 22, other statuses
+  0. Completed state uses the real network parser and processing lifecycle;
+  empty case has total 0. No SQL processing/output doubles.
+- `npx --yes @redocly/cli@2.57.0 lint specs/openapi.yaml`: PASS with existing
+  missing-license warning. DESIGN 0.4.0 lint: PASS, zero errors/warnings.
+
+Unit tests use synthetic Fetch responses and static React rendering. They cover
+all status buckets, newer attempts superseding older completions, multi-page
+counts, zero evidence, invalid/foreign/duplicate/inconsistent responses,
+401/404/network failures at case/page/history stages, retries, session changes,
+request replacement and selection/unmount disposal at each request stage.
+No browser-mounted visual/accessibility or new Windows verification is claimed.
+Counts are live at selection/explicit refresh, not an atomic analysis snapshot;
+concurrent evidence total changes require retry. Sequential history reads can be
+slow for large cases. I00B runbook exit remains required; 1B stays open.
+
+Additional verification: installed jsonschema **4.25.1** into isolated
+`/tmp/evora-u13-validation` (no repository dependency change) and reran all
+122 coordination tests with `PYTHONPATH=/tmp/evora-u13-validation` and the same
+EVORA_CONTRACT_BUNDLE: PASS. Fresh openapi-typescript 7.10.1 declarations in
+`/tmp/evora-u13-api.d.ts` compile with TypeScript 5.9.3 `--strict --noEmit`.
+Final edited-doc coordination verifier and `git diff --check`: PASS.
+An extra backend regression attempt initially omitted EVORA_CONTRACT_BUNDLE;
+its missing-environment errors are not product verification. Corrected rerun
+results are recorded below.
+
+Corrected extra backend regression:
+`PYTHONPATH=/tmp/evora-u13-validation EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -W error::ResourceWarning -m unittest discover -s backend/tests`
+ran 428 tests: **7 failures, 8 errors** (413 passed). Failures/errors occur in
+unmodified document/text-entity and old adapter history tests; the explicit
+local model error is `MODEL_UNAVAILABLE` / `NLP_MODEL_UNAVAILABLE`, with expected
+completed outputs consequently absent and the corruption test seeing unavailable
+rather than invalid. Full backend regression is therefore **not green** in this
+environment; no model installation or baseline comparison was performed.
+This does not replace the passing requested U13/I00 real HTTP integration.
+No checkpoint/main promotion is claimed. Final frontend rerun: 101 PASS,
+build PASS, real HTTP integration PASS, whitespace PASS.

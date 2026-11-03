@@ -155,6 +155,29 @@ Spec/backend/dependencies remain unchanged; no stage/commit/push/merge authorize
 U13 and joint I00B need separate handoffs. Checkpoint 1B stays open; no module or
 full-scope completion claim.
 
+### U13 live record — 2026-11-03
+
+**U13 / Checkpoint 1B / M4 JebasJ / In Progress pending review/publication.**
+Explicit user assignment on `feat/u13-case-evidence-overview`; clean initial
+HEAD/common contract/base is **138fd791808571c60ee7dc5ef831684c84d09d67**,
+matching local `docs/coordination-foundation`. The supplied full hash differs;
+AGENT_TASKS.md records actual merged U02/U05/F04/P04 dependency versions and
+allowed shared paths. OpenAPI draft 0.3.0 remains the HTTP authority.
+
+Selected cases show complete evidence counts, all evidence kinds and each
+item's latest processing attempt status through getCase/listEvidence/
+listProcessingRuns. All pages must agree on total with unique same-case items;
+no partial aggregates are shown. Explicit refresh, zero-item state, safe
+401/404/network handling and session/selection/unmount disposal are implemented.
+Real HTTP acceptance verifies 23 items across two pages, exact kind counts,
+1 completed/22 unprocessed and an empty case. Other run states and late-response
+negatives use declared synthetic Fetch doubles. Exact commands and limitations
+are recorded in U13 verification in PREIMPLEMENTATION_REVIEW.md.
+
+No stage/commit/push/merge authorized. Next bounded gate is joint **I00B** with
+its own handoff and runbook exit evidence. Checkpoint 1B remains open; no module,
+Windows or full-scope completion claim.
+
 ## Work in parallel without breaking the sequence
 
 Four people keep their module responsibility and contribute the part needed for the active checkpoint. M2/M3 have heavier work; scoped help is allowed with one accountable interface. Nobody waits for an entire module to finish.
