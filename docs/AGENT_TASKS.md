@@ -674,3 +674,21 @@ No unresolved contract choice is needed for this action: it consumes the existin
 bodyless start and declared error/status contract. Network/protocol failure is
 explicitly uncertain; another user action uses a new key and may start another
 run. Fetch/static-render unit doubles are separate from real FastAPI acceptance.
+
+
+### U05 assignment — 2026-11-03
+
+| Field | Scoped assignment |
+|---|---|
+| Task/checkpoint/owner | **U05 / 1B / M4 / JebasJ**; user explicitly hands off the bounded shared documentation paths; whale2186 retains integration coordination |
+| Branch/common contract | `feat/u05-processing-status-ui`; clean starting HEAD and local `docs/coordination-foundation`: **f6d5c17f1f23d17048bd9b582e1f64d20ce27c1a**; unchanged `specs/openapi.yaml` draft 0.3.0. Prompt's full hash beginning f6d5c17 differs; this is the actual reviewed Git base |
+| Allowed paths | `frontend/src/cases/`, `frontend/test/`, `frontend/README.md`, `docs/AGENT_TASKS.md`, `docs/ROADMAP.md`, `docs/PREIMPLEMENTATION_REVIEW.md`; no spec/backend/package dependencies |
+| Dependencies | Real U05C merge **f6d5c17f1f23d17048bd9b582e1f64d20ce27c1a** (task **d7e9ecfed43f8a3f4f21fef219b1190560302c0d**) and P04 merge **f851dd11fd8f7e11140317cf44d022a9999044dd** are committed ancestors; current publication/private provenance/audit producers retained |
+| Acceptance | Generated-client getProcessingRun polling; real queued/running/completed/failed display, exact version/timestamps, escaped diagnostics; terminal stop, 401/404/network alerts, same-run retry, abort and stale-response suppression on unmount/evidence/session change |
+| Tests/integration | Schema-shaped Fetch doubles and deterministic timers plus real HTTP/FastAPI/SQLite status-controller poll of permitted network.csv; exact run/case/evidence/version/finished_at, missing-run/foreign-case 404; prior completed checkpoint regressions |
+| State/handoff | In Progress pending review/publication; actual verification in U05 verification in PREIMPLEMENTATION_REVIEW.md. No stage/commit/push/merge authorized. Next M4 dependency row U05B requires its own handoff; Checkpoint 1B/I00B remains open |
+
+No unresolved contract choice affects U05. Status fetch transport failures pause
+with an explicit same-run retry; only the separate start action creates a new run.
+No history endpoint or observation UI is added, and backend work is not cancelled
+by client disposal. Full proposal and approved speech addition remain required.

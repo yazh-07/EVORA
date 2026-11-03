@@ -112,6 +112,26 @@ U05 polling is a separate next task. Exact verification and doubles/limits are i
 U05C verification in PREIMPLEMENTATION_REVIEW.md. No stage/commit/push/merge is
 authorized. Checkpoint 1B and I00B remain open; no module completion claim.
 
+### U05 live record — 2026-11-03
+
+**U05 / Checkpoint 1B / M4 JebasJ / In Progress pending review/publication.**
+User-assigned branch `feat/u05-processing-status-ui` starts clean at verified
+common base **f6d5c17f1f23d17048bd9b582e1f64d20ce27c1a**, matching local
+`docs/coordination-foundation`; the supplied full hash differs. Real merged U05C
+at that commit and P04 merge **f851dd11fd8f7e11140317cf44d022a9999044dd**
+provide the accepted-run handoff and status producer. Shared-path authorization
+and exact dependency/task commits are recorded in AGENT_TASKS.md.
+
+The evidence inspector consumes `getProcessingRun` serially at 750 ms intervals,
+shows actual run states/timestamps/version and safely escaped failure diagnostics,
+and stops on terminal state, disposal or session change. Safe alerts distinguish
+401/404 and retryable transport failures; retries read the same run. Current
+verification results and test-double/browser limits are in U05 verification in
+PREIMPLEMENTATION_REVIEW.md. Spec/backend/dependencies remain unchanged;
+no stage/commit/push/merge authorized. This supersedes U05C's historical statement
+that its accepted-status view does not poll. Next bounded M4 row is U05B, with
+its own handoff; U13/I00B and Checkpoint 1B remain open. No module closure.
+
 ## Work in parallel without breaking the sequence
 
 Four people keep their module responsibility and contribute the part needed for the active checkpoint. M2/M3 have heavier work; scoped help is allowed with one accountable interface. Nobody waits for an entire module to finish.

@@ -18,7 +18,7 @@ function setup(fetch) {
   client.setToken('synthetic-processing');
   return { client, controller: createProcessingController(client, caseId, evidenceId) };
 }
-const render = controller => renderToStaticMarkup(createElement(StartProcessingPanel, { state: controller.getSnapshot(), submit: controller.submit }));
+const render = (controller, client) => renderToStaticMarkup(createElement(ApiProvider, { client: client ?? createApiClient({ baseUrl: 'http://127.0.0.1:8000' }) }, createElement(StartProcessingPanel, { state: controller.getSnapshot(), submit: controller.submit })));
 const click = controller => StartProcessingPanel({ state: controller.getSnapshot(), submit: controller.submit }).props.children[0].props.onClick();
 
 test('explicit button dispatches bodyless generated request with UUID key; busy blocks duplicate; 202 retains actual run', async () => {
@@ -40,7 +40,7 @@ test('explicit button dispatches bodyless generated request with UUID key; busy 
   wait.resolve(accepted()); await done;
   assert.deepEqual(controller.getSnapshot().run, run);
   assert.match(render(controller), new RegExp(run.id));
-  assert.match(render(controller), /Status at acceptance: queued/);
+  assert.match(render(controller), /Last reported status: queued/);
   assert.doesNotMatch(render(controller), /completed/);
   await controller.submit();
   assert.notEqual(calls[0].headers.get('Idempotency-Key'), calls[1].headers.get('Idempotency-Key'));
@@ -68,7 +68,7 @@ test('400/401/404/409/415/500 and network failures show safe alerts and permit e
     }
     await controller.submit();
     assert.equal(controller.getSnapshot().status, 'accepted');
-    assert.match(render(controller), /Status at acceptance: running/);
+    assert.match(render(controller), /Last reported status: running/);
     assert.notEqual(keys[0], keys[1]);
     controller.dispose();
   }

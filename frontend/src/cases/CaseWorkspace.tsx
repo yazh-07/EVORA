@@ -1,3 +1,5 @@
+export { createProcessingStatusController } from './processingStatusController';
+export { ProcessingStatusPanel } from './ProcessingStatus';
 import { EvidenceWorkspace } from './EvidenceWorkspace';
 export { EvidencePanels } from './EvidenceWorkspace';
 export { createEvidenceStore } from './evidenceStore';
