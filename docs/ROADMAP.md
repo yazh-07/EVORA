@@ -414,6 +414,32 @@ PREIMPLEMENTATION_REVIEW.md. Checkpoint 1C and M3 stay open: A01B/A05 publicatio
 and I01 exit remain required. Next bounded M3 handoff is A03 or A03B. No staging,
 commit, push, merge, Windows or hosted-CI result is claimed.
 
+### A03 live record — 2026-11-03
+
+**A03 / Checkpoint 1C / M3 / whale2186 / In Progress, locally implemented pending review/publication.**
+User-assigned `feat/a03-relevance-factor` starts clean at actual reviewed common
+contract/base **51ee2ed3432b8956cf3af9ebd410a04483e917d7**, matching local
+`docs/coordination-foundation`; the supplied full hash differs. A02, A01, G02
+and completed 1B are real committed ancestors. Exact versions, allowed paths
+and shared-document handoff are in A03 assignment in AGENT_TASKS.md.
+
+`backend/triage/factors.py` uses G02 relevance over unique exact namespaced
+candidate keys. Output cites the target Evidence and explains sorted matches
+and matched/known counts. Missing known entities or unevaluated/no-observation
+Evidence stays absent; evaluated no match stays zero. Foreign case/source IDs,
+broken observation joins, invalid UUIDs/weights and mixed processing runs fail
+closed. Internal source inputs and A04/A05 aggregation responsibilities are
+recorded in the assignment; unchanged draft 0.3.0 remains the HTTP authority.
+
+14 A03 tests pass, including strict bundled schema negatives and real
+FastAPI/SQLite upload/processing/source read-back plus A02. Network D-7/D-9/IP
+candidates give 4/5 relevance; the labeled in-test GPS D-7/D-8 variant gives 2/5.
+Original downloads, input records and repeated calculation stay unchanged.
+Full shared checks/regression results and limitations are in A03 verification
+in PREIMPLEMENTATION_REVIEW.md. Checkpoint 1C/I01 and M3 remain open; A01B/A05
+coherent publication is still required. Next bounded task is A03B, followed by
+A04 when dependency-ready. No staging, commit, push or merge is authorized.
+
 ## Checkpoint 1B processing audit
 
 ### G02 live record — 2026-11-03
