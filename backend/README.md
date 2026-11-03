@@ -2398,3 +2398,41 @@ FastAPI/SQLite upload/processing/source read-back with A02. The committed networ
 fixture produces four unique keys (including D-7/D-9); a labeled in-test GPS
 D-7/D-8 variant makes five unique case keys: network relevance 4/5, GPS 2/5.
 No fixture bytes change. This does not certify completed analysis/Neo4j or I01.
+
+### A03B connectivity factor
+
+`backend/triage/factors.py` provides `calculate_connectivity_factor` over the
+complete selected A01 graph nodes and A02 edges (producer values or wire
+mappings). Nodes whose `evidence_ids` contain the target form its node set.
+Count distinct adjacent nodes outside that set in either direction; self-links,
+internal links, duplicate edges and repeated observations add no degree.
+G02 `connectivity` returns `min(neighbor_count / 10, 1.0)`. This is topology only,
+independent of neighbor scores, extraction confidence or corroboration.
+
+Pass the target's selected `observation_count` explicitly. Unknown/zero count or
+`None` nodes/edges means absent (`None`); evaluated empty edges with positive
+observations means value 0.0. Default standalone weight is 0.20; explicit finite
+weights must be in [0,1]. Contribution is `round(value * weight * 100, 2)`.
+The explanation states the neighbor count and candidate/attention limits;
+unique sorted citations include the target and incident edge/neighbor Evidence.
+All supplied case IDs, UUIDs, source-reference arrays, edge confidence and
+endpoint membership are checked before an absent return. Conflicting UUIDs and
+incident edges lacking the target citation fail closed.
+
+Caller must authorize access and select coherent frozen source-validated A01/A02
+inputs: this signature has no Evidence/Observation allowlist and cannot prove
+source ownership from UUIDs alone or verify the supplied observation count.
+A04 feeds raw factors into G02 normalized aggregation; A05/A01B own snapshot,
+persistence and publication. This helper does not publish an analysis or imply
+verified identity, source truth, independent corroboration or guilt.
+
+```sh
+npx @redocly/cli bundle specs/openapi.yaml --output /tmp/evora-openapi.json
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -W error::ResourceWarning -m unittest discover -s backend/tests -p 'test_connectivity_factor.py' -v
+```
+
+Use jsonschema 4.25.1 for bundled Draft202012Validator/FormatChecker acceptance.
+Tests include synthetic topology/invalid-input controls and real merged
+FastAPI/SQLite upload, processing, A01 and A02 source read-back with synthetic
+network.csv and a labeled in-test GPS D-7/D-8 variant. No real evidence or
+persisted/completed analysis is used.

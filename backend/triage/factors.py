@@ -1,9 +1,100 @@
-"""A03 source-backed relevance; pure construction from authorized frozen inputs."""
+"""Source-backed relevance/connectivity from authorized frozen inputs."""
 from collections.abc import Iterable, Mapping
 import math
+from typing import Any
 
-from backend.graph_nodes import _records, _text, _uuid, build_graph_nodes
-from backend.triage.policy import ATTENTION_NOTICE, BASE_WEIGHTS, relevance
+from backend.graph_links import GraphEdge, _references, _same_case
+from backend.graph_nodes import GraphNode, _records, _text, _uuid, build_graph_nodes
+from backend.triage.policy import ATTENTION_NOTICE, BASE_WEIGHTS, connectivity, relevance
+
+
+def calculate_connectivity_factor(
+    *, evidence_id: str, case_id: str, target_nodes: Iterable[Any],
+    edges: Iterable[Any], weight: float | None = None,
+    observation_count: int | None = None,
+) -> dict | None:
+    """Bounded degree of the target evidence's node set, never neighbor scores.
+
+    Supply the complete selected A01 graph nodes and A02 edges, as immutable
+    values or wire mappings. Nodes citing evidence_id form the target set;
+    links within that set (including self-loops) add no neighbors. Each distinct
+    external endpoint counts once, in either direction, regardless of parallel
+    edges, confidence or source repetition. Citations union incident edge and
+    available neighbor-node evidence IDs plus the target Evidence.
+
+    None nodes/edges or unknown/zero target observation_count means absent;
+    evaluated empty edges with positive observations means zero. Validate all
+    supplied records before returning absent. Endpoints must resolve whenever
+    nodes are available. Caller must authorize and select coherent frozen inputs
+    and verify Evidence/Observation ownership/locators via A01/A02: this narrow
+    interface cannot independently join sources or prove observation_count.
+    A04 normalizes weights; A05 owns snapshot selection/publication.
+    """
+    _uuid(case_id, "case_id")
+    _uuid(evidence_id, "evidence_id")
+    weight = BASE_WEIGHTS["connectivity"] if weight is None else weight
+    if (isinstance(weight, bool) or not isinstance(weight, (int, float))
+            or not math.isfinite(weight) or not 0 <= weight <= 1):
+        raise ValueError("weight must be a finite number in [0,1]")
+    if observation_count is not None and (type(observation_count) is not int or observation_count < 0):
+        raise ValueError("observation_count must be a nonnegative integer or None")
+
+    def records(values, value_type, category):
+        try:
+            iterator = iter(() if values is None else values)
+        except TypeError:
+            raise ValueError(f"{category} records must be iterable") from None
+        for value in iterator:
+            record = value.to_wire() if isinstance(value, value_type) else value
+            if not isinstance(record, Mapping):
+                raise ValueError(f"{category} must be a wire mapping or producer value")
+            yield record
+
+    nodes, links = {}, {}
+    for record in records(target_nodes, GraphNode, "GraphNode"):
+        identifier = _same_case(record, case_id, "GraphNode")
+        _text(record.get("kind"), "GraphNode.kind")
+        _text(record.get("label"), "GraphNode.label")
+        _references(record, "evidence_ids")
+        if identifier in nodes and nodes[identifier] != record:
+            raise ValueError("Conflicting GraphNode UUID")
+        nodes[identifier] = record
+    targets = {identifier for identifier, node in nodes.items() if evidence_id in node["evidence_ids"]}
+    neighbors, citations = set(), {evidence_id}
+    for record in records(edges, GraphEdge, "GraphEdge"):
+        identifier = _same_case(record, case_id, "GraphEdge")
+        start = _uuid(record.get("from_id"), "GraphEdge.from_id")
+        end = _uuid(record.get("to_id"), "GraphEdge.to_id")
+        _text(record.get("kind"), "GraphEdge.kind")
+        evidence_ids = _references(record, "evidence_ids")
+        _references(record, "observation_ids")
+        confidence = record.get("confidence")
+        if (isinstance(confidence, bool) or not isinstance(confidence, (int, float))
+                or not math.isfinite(confidence) or not 0 <= confidence <= 1):
+            raise ValueError("GraphEdge.confidence must be finite in [0,1]")
+        if identifier in links and links[identifier] != record:
+            raise ValueError("Conflicting GraphEdge UUID")
+        links[identifier] = record
+        if target_nodes is not None and (start not in nodes or end not in nodes):
+            raise ValueError("GraphEdge endpoint is outside the selected graph")
+        for source, neighbor in ((start, end), (end, start)):
+            if source in targets and neighbor not in targets:
+                if evidence_id not in evidence_ids:
+                    raise ValueError("Incident edge must cite target evidence")
+                neighbors.add(neighbor)
+                citations.update(evidence_ids)
+                citations.update(nodes[neighbor]["evidence_ids"])
+    if target_nodes is None or edges is None or observation_count in (None, 0):
+        return None
+    value = connectivity(neighbors)
+    return {
+        "name": "connectivity", "value": value, "weight": float(weight),
+        "contribution": round(value * weight * 100, 2),
+        "explanation": (f"Connected to {len(neighbors)} distinct case graph "
+                        f"neighbor{'s' if len(neighbors) != 1 else ''} via candidate links. "
+                        f"{ATTENTION_NOTICE}"),
+        "evidence_ids": sorted(citations),
+    }
 
 
 def calculate_relevance_factor(
