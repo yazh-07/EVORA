@@ -3707,3 +3707,107 @@ environment; no model installation or baseline comparison was performed.
 This does not replace the passing requested U13/I00 real HTTP integration.
 No checkpoint/main promotion is claimed. Final frontend rerun: 101 PASS,
 build PASS, real HTTP integration PASS, whitespace PASS.
+
+
+### I00B verification — 2026-11-03
+
+**I00B / Checkpoint 1B / joint integration coordination / whale2186.** Clean
+initial branch `feat/i00b-processing-inspection-gate`; actual reviewed common
+contract/base **1517b4d9479e2062ce2c85cb380fe43d7b512aa6**, matching local
+`docs/coordination-foundation`. The supplied full hash differs from the Git
+object; no base was silently substituted. All 17 integration commits in the
+I00B live-record table were checked with `git merge-base --is-ancestor` and pass.
+I00/earlier foundations are inherited integrated producers. Sole HTTP authority
+remains unchanged draft 0.3.0; runbook is INTEGRATION.md. Assignment and exact
+five-path shared-file handoff are in AGENT_TASKS.md. No spec, backend, package
+dependency or implementation outside the smoke changed.
+
+Real HTTP/FastAPI/SQLite smoke now checks four network candidates including
+`device:D-7`/`device:D-9`, two row/time events, nonempty unique observation IDs,
+same-case Evidence links and source joins to the completed run. Event participant
+IDs resolve to returned entities. `listAuditEvents` returns exactly one first-run
+`startProcessing` event for investigator-2 and the source Evidence, with
+`created_at == finished_at` and exact safe `run:...;status:completed;version:...`
+reason. Repeat audit reads preserve SQL records/original hashes. Actor 1 gets
+the same 404 ApiError for foreign and missing entity/event cases. A separate GPS
+case exercises actual UI upload/start/status/observation controllers and real
+candidate APIs: D-8, three exact raw/normalized device/latitude/longitude values,
+row locators and source UTC. Both use committed permitted synthetic fixtures.
+Network historical pin remains unchanged after a new run; U13's network case
+retains 23-item/two-page kinds/latest-status counts and an honest empty case.
+The final success marker appears only after all prior I00 and current checks.
+
+Observed local runtime: Node **22.23.4**, npm **12.2.1**, Python **3.14.9**,
+SQLite **3.54.1**, FastAPI **0.162.0**, Starlette **1.10.0**, Pydantic
+**2.14.2**, Uvicorn **0.54.0**, HTTPX **0.28.1**. These installed versions
+were read back, not inferred from requirements. They differ from the pinned
+setup baseline; no clean pinned setup or new Windows compatibility claim is
+made. The required jsonschema **4.25.1** was read back from the existing scratch
+install and used for the pinned coordination and 327 checkpoint regressions.
+
+Executed required sequence (all PASS):
+
+```sh
+npx @redocly/cli bundle specs/openapi.yaml --output /tmp/evora-openapi.json
+python scripts/verify_coordination.py /tmp/evora-openapi.json
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -m unittest discover -s scripts -p 'test_*.py'
+npm --prefix frontend run test
+npm --prefix frontend run build
+node frontend/test/cases.integration.mjs
+git diff --check
+```
+
+- Verifier: 27 operations, 126 tasks, 18 checkpoints, 39 capabilities and all
+  40 proposal mappings; docs/links/membership/dependency checks pass.
+- Coordination suite: 122 pass with system jsonschema 4.26.0, then 122 pass
+  with required **4.25.1**, using existing isolated scratch install:
+  `PYTHONPATH=/tmp/evora-u13-validation EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -m unittest discover -s scripts -p 'test_*.py'`.
+- Frontend: 101 pass, zero skipped; build includes generated API freshness,
+  TypeScript typecheck and real UI assets. Real smoke exits zero and prints
+  `PASS I00B verified first network/GPS processing and source inspection gate.`
+- `npx --yes @redocly/cli@2.57.0 lint specs/openapi.yaml`: pass, existing
+  missing-license warning only. `npx --yes openapi-typescript@7.10.1 specs/openapi.yaml -o /tmp/evora-i00b-api.d.ts`
+  and `frontend/node_modules/.bin/tsc --noEmit --strict /tmp/evora-i00b-api.d.ts`:
+  pass. `npx --yes @google/design.md@0.4.0 lint DESIGN.md`: zero errors/warnings.
+
+Checkpoint regression command (all **327 pass**, no skips):
+
+```sh
+PYTHONPATH=/tmp/evora-u13-validation EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -W error::ResourceWarning -m unittest backend.tests.test_skeleton backend.tests.test_validation backend.tests.test_auth backend.tests.test_cases backend.tests.test_evidence backend.tests.test_audit backend.tests.test_audit_list backend.tests.test_m1_access backend.tests.test_network_csv backend.tests.test_gps_csv backend.tests.test_normalization backend.tests.test_candidate_entities backend.tests.test_source_events backend.tests.test_processing backend.tests.test_observations backend.tests.test_entities backend.tests.test_events backend.tests.test_processing_provenance backend.tests.test_processing_dispatch backend.tests.test_processing_publication backend.tests.test_processing_audit
+```
+
+These exercise earlier 0/1A capabilities and every 1B producer: network/GPS
+positive/negative source parsing, real localhost processing and candidate APIs,
+private SQL provenance versions/inputs/output manifests/digest/time, immutable
+history, selectors/pagination/case isolation, malformed/wrong-layout/unsupported
+and limits, same-key replay/conflict/new-key retry, failed-output isolation,
+verified atomic publication, concurrent keys, startup recovery and actual child
+process hard-exit rollback/durability. SQL corruption, deliberate write failures,
+held scheduling and synthetic historical selection records are labeled negative
+test fixtures; they are not claimed as unmodified production failures. Private
+provenance is verified internally, never exposed as a new HTTP field. Frontend
+unit Fetch doubles/static rendering prove failure/race behavior separately from
+the real HTTP controller smoke. No browser mount, native disk-save, new Windows,
+clean install, hosted CI, OS power-loss, graph or scoring proof is claimed.
+
+Additional full backend attempt:
+`EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -W error::ResourceWarning -m unittest discover -s backend/tests`
+ran **428: 413 passed, 7 failures, 8 errors**. Failures/errors are in
+`test_documents`, `test_text_entities`, and document-dependent upgrade-history
+checks in `test_mobile`/`test_transactions`; the local model reports
+`MODEL_UNAVAILABLE` / `NLP_MODEL_UNAVAILABLE`, causing expected completed outputs
+to be absent and the invalid-model test to see unavailable instead. This matches
+the earlier U13 result on the unchanged backend. No backend/model repair or
+installation was made within I00B. The full suite is explicitly **not green**;
+its later independent adapter acceptance/CI needs a separate environment/task
+handoff. These tests belong to later checkpoints; all 327 regressions covering
+0/1A/1B pass. Checkpoint completion is scoped to the runbook's 1B membership,
+not approval to promote a candidate with failing full CI.
+
+**Checkpoint 1B is Complete; Checkpoint 1C is unblocked and active**, with all
+18 exact member IDs preserved in ROADMAP.md. Next dependency-ready scopes are
+G01D and G02 under their own explicit handoffs; no implementation task was
+started by changing checkpoint state. No unresolved choice affects this gate;
+C-05 remains for G02/M3 factor policy and M4 explanations. All changes remain
+uncommitted; no staging/push/merge or merged-commit smoke is claimed. Full
+proposal and approved speech addition remain required; no module/phase closure.

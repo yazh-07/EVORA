@@ -1,3 +1,52 @@
+# I00B processing and source inspection gate — 2026-11-03
+
+Run the complete smoke from the repository root with the existing backend
+requirements and locked frontend dependencies installed:
+
+```sh
+npm --prefix frontend run test
+npm --prefix frontend run build
+node frontend/test/cases.integration.mjs
+```
+
+Set `EVORA_TEST_PYTHON` if the backend interpreter is outside PATH. The first
+command generates `.test-build`; the second builds the UI served by the real
+FastAPI loopback harness. Expect a zero exit and
+`PASS I00B verified first network/GPS processing and source inspection gate.`
+
+Coverage crosses M2 (yazh-07: actual network/GPS parsers, immutable completed
+observations and candidate entity/event APIs), M1 (sharmelas-925: authorized
+originals and safe processing audit), and M4 (JebasJ: generated client, upload,
+explicit start, status polling, source inspector and all-page overview).
+Joint integration owner: whale2186. Both committed CSV fixtures run through UI
+controllers against real HTTP/FastAPI/SQLite. Network D-7/D-9 and GPS D-8 retain
+source Evidence/observation IDs, row locators, raw/normalized values and source
+UTC. Entity/event references resolve to completed observations; the processing
+audit matches investigator-2, Evidence target, terminal timestamp and the exact
+safe run/status/version reason. Actor 1 receives identical foreign/missing
+404 ApiError for entity/event reads. Network observations remain readable under
+the original run pin after a newer completion. U13 checks 23 evidence items
+across two pages, exact type/latest-status counts and an empty case.
+
+Earlier I00 intake/hash/original-download/audit/400/401/404 checks still execute.
+The harness serves the built UI and invokes its actual controllers; it does not
+mount a browser. Synthetic identities and permitted evidence are test inputs;
+HTTP responses and persistence are real. Original-save callback and unit Fetch/
+static-render tests remain labeled boundaries. GPS uses a separate case so the
+network overview assertions retain their exact independent counts. Temporary
+server/database/files are removed after the run.
+
+Private provenance, malformed/unsupported input, same-key replay/new-key retry,
+failed-output isolation and crash recovery additionally require the backend
+checkpoint regressions recorded in `docs/PREIMPLEMENTATION_REVIEW.md`; the smoke
+alone does not establish those fault paths. No graph/scoring, browser visual,
+new Windows or hosted-CI verification is claimed. The broader backend suite has
+known local model failures in later document/NLP work; see that verification
+record for the exact scope and results. Earlier README entries below are
+historical and do not override this current I00B command/coverage record.
+
+---
+
 # I00 authorized intake integration gate — 2026-11-01
 
 Run from the repository root with the existing backend environment and locked
