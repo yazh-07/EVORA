@@ -1,5 +1,85 @@
 # EVORA scope/contract verification and implementation readiness
 
+
+### A05 verification — 2026-11-03
+
+A05 / Checkpoint 1C / M3 / whale2186; execution 2026-11-04 on clean initial
+`feat/a05-analysis-run-lifecycle`, exact common base
+**ba7db7faa449e62a3ee0e3a74ddd8ef8b4f58887**. Supplied full base hash is absent
+locally. Real merged processing/access/provenance and A01/A02/A03/A03B/A04/A01B
+producers are used; no source/spec/frontend/dependency changes outside the seven
+allowed files. No staging/commit/push/merge or checkpoint completion claimed.
+
+Implemented frozen transactional acceptance/replay, exact canonical snapshots,
+digest-derived contract triggers, real initial available-factor pipeline,
+authorized polling and recovery of queued/persisted running work. Only A01B
+publishes completed after projection verification. Empty/unprocessed evidence
+remains unscored; accepted snapshots and terminal outputs remain immutable.
+
+**Decision queue:** requested AnalysisRunPage/limit/offset conflicts with the sole
+OpenAPI listAnalysisRuns array and absence of pagination parameters/schema.
+Asked user to retain the existing contract or authorize coordinated spec/types/
+fixtures changes; only the list endpoint is pending. M3 A05 producer and M4
+run-history consumers must agree on one wire shape. Also requested the exact
+one-line table-list assertion update in `backend/tests/test_skeleton.py`, outside
+allowed paths, after startup correctly added analysis_runs/analysis_outputs.
+No unauthorized test or contract edits have been made.
+
+Actual verification so far:
+
+- OpenAPI bundle/lint pass; existing missing-license warning only.
+- Coordination verifier passes; 122 script tests pass with both system Python
+  and the pinned-jsonschema scratch environment.
+- A05 current default suite: 13 tests, 11 pass, one real-Neo4j opt-in skip,
+  one expected unresolved-list failure (GET list currently 405 while its
+  foreign-case test requires 404). Other lifecycle acceptance paths pass.
+- A01B default suite: 17 tests, 16 pass/one real-Neo4j opt-in skip.
+- A04 aggregation: requested system-Python command fails import because system
+  environment lacks neo4j. Same command using the existing scratch Neo4j venv:
+  12 pass. System Python is 3.14.9/jsonschema 4.26.0; scratch venv is
+  Python 3.14.9/jsonschema 4.25.1/neo4j 6.4.1. No dependencies modified.
+- Real disposable Neo4j 5.26.0 Community: 35 tests pass, no skips (A05 HTTP
+  upload/process/start/poll/read-back positive control, full 17 A01B and full
+  17 G01D). Private ephemeral credentials passed through environment only;
+  container stopped/removed after tests. This is actual Cypher/driver proof.
+- Earlier-checkpoint plus graph/factor/setup regression: 437 tests, 432 pass,
+  one stale skeleton table-list failure and four real-Neo4j opt-in skips.
+  The failure compares eight old startup tables with the ten actual tables;
+  analysis_runs and analysis_outputs are the only additions.
+- Frontend unit suite: 101 pass. API declaration freshness/typecheck/build pass.
+  Final coordination verifier and `git diff --check` pass.
+  DESIGN lint: zero errors/warnings. Real loopback I00/I00B smoke passes
+  upload/hash/download/audit, source processing/inspection, pagination/status
+  overview and case/actor/input controls.
+
+Commands run from repository root (scratch interpreter below is the existing
+`/home/whale2186/.hermes/cache/scratch/test_neo4j_venv/bin/python`):
+
+```sh
+npx @redocly/cli bundle specs/openapi.yaml --output /tmp/evora-openapi.json
+python scripts/verify_coordination.py /tmp/evora-openapi.json
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -m unittest discover -s scripts -p 'test_*.py'
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json /home/whale2186/.hermes/cache/scratch/test_neo4j_venv/bin/python -m unittest discover -s scripts -p 'test_*.py'
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json /home/whale2186/.hermes/cache/scratch/test_neo4j_venv/bin/python -W error::ResourceWarning -m unittest discover -s backend/tests -p 'test_analysis.py' -v
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json /home/whale2186/.hermes/cache/scratch/test_neo4j_venv/bin/python -W error::ResourceWarning -m unittest discover -s backend/tests -p 'test_graph_projection.py' -v
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -W error::ResourceWarning -m unittest discover -s backend/tests -p 'test_triage_aggregation.py' -v
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json /home/whale2186/.hermes/cache/scratch/test_neo4j_venv/bin/python -W error::ResourceWarning -m unittest discover -s backend/tests -p 'test_triage_aggregation.py' -v
+npm --prefix frontend run test
+npx @redocly/cli lint specs/openapi.yaml
+npm --prefix frontend run check:api
+npm --prefix frontend run typecheck
+npx --yes @google/design.md@0.4.0 lint DESIGN.md
+EVORA_TEST_PYTHON=/home/whale2186/.hermes/cache/scratch/test_neo4j_venv/bin/python node frontend/test/cases.integration.mjs
+```
+
+Default lifecycle tests explicitly double Neo4j transactions while using real
+HTTP/SQLite/processing. The real test uses original permitted network.csv and
+gps.csv plus one extra synthetic D-7 GPS row for the shared-identifier positive
+control. No checked-in fixture or original hash is modified. No final detector
+assembly, audit F08B, list pagination, I01 exit, model benchmarks, clean Windows,
+hosted CI or whole-module/full-phase completion is claimed. Existing later
+NLP/model/runtime limitations on the reviewed base remain outside A05.
+
 ### A01B verification — 2026-11-03
 
 **A01B / 1C / M3 / whale2186 — locally verified, In Progress pending

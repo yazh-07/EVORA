@@ -2693,3 +2693,64 @@ up its test partition. A05 acceptance remains an explicit fixture; no full
 analysis API, I01, Windows or hosted CI completion is claimed. Exact commands,
 versions and broader-suite limitations are in A01B verification in
 `docs/PREIMPLEMENTATION_REVIEW.md`.
+
+## A05 analysis lifecycle (Checkpoint 1C)
+
+`POST /api/v1/cases/{caseId}/analysis-runs` is bodyless and requires one UUID
+`Idempotency-Key` header and an authorized bearer actor. It returns HTTP 202
+with the accepted queued `AnalysisRun`. Use
+`GET /api/v1/cases/{caseId}/analysis-runs/{runId}` to poll the same run;
+completed/failed runs include `finished_at`, and failures include a safe error
+code. Responses use `Cache-Control: no-store`; foreign/missing runs are 404,
+invalid input is the shared 400 `ApiError`, and missing authentication is 401.
+The requested paginated list response is pending resolution against the existing
+OpenAPI array contract; it is not advertised as implemented here.
+
+SQLite acceptance serializes actor/case/key lookup and snapshot capture. A replay
+returns its original run before reading current inputs, including after failure.
+A new key captures all case evidence, each item's latest completed processing
+output by UTC finish time then UUID, and all observations in those outputs.
+The unique lexical UUID arrays and case ID are hashed as sorted-key compact JSON;
+the digest excludes `sha256` itself. Evidence with no observations stays in the
+manifest and has no automated triage result. CONTRACTS trigger rules compare the
+snapshot digest with the latest completed analysis: none → `initial`, changed →
+`new_observations`, unchanged → `manual`. Reprocessing with unchanged counts and
+uploading an unprocessed item can both change the digest.
+
+The worker calls real A01 nodes, A02 candidate links/findings, A03 relevance,
+A03B connectivity, A04 aggregation and A01B authoritative SQL/projection checks.
+`algorithm_version` freezes the assembly, relationship rule and scoring policy
+versions; triage timestamps use the acceptance timestamp. Later detector/factor
+assembly remains A17. Candidate associations and attention scores do not establish
+identity, independent corroboration, truth or guilt.
+
+Startup creates/migrates A01B SQL storage and immutable algorithm/trigger metadata.
+It resumes queued frozen inputs and running persisted outputs serially before
+serving requests. Persisted outputs are never recomputed after a projection crash.
+Changed algorithm versions fail closed rather than executing a different algorithm
+under the old version. Terminal runs stay immutable. A SQL outage can leave hidden
+pending history for recovery on restart. This follows the existing single-process
+background-worker model; throughput/multiple live server processes and Windows
+are not certified by this task. Neo4j is configured privately with the existing
+`NEO4J_*` environment (see G01D above), lazily owned by the app and closed on
+shutdown; missing configuration or projection failure cannot yield completion.
+F08B audit hooks and A05B/A06 read routes require separate bounded handoffs.
+
+Run with the existing environment containing pinned dependencies (especially
+`neo4j==6.4.1` and `jsonschema==4.25.1`):
+
+```sh
+npx @redocly/cli bundle specs/openapi.yaml --output /tmp/evora-openapi.json
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -W error::ResourceWarning -m unittest discover -s backend/tests -p 'test_analysis.py' -v
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -W error::ResourceWarning -m unittest discover -s backend/tests -p 'test_graph_projection.py' -v
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -W error::ResourceWarning -m unittest discover -s backend/tests -p 'test_triage_aggregation.py' -v
+EVORA_NEO4J_INTEGRATION=1 EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -W error::ResourceWarning -m unittest backend.tests.test_analysis.AnalysisTests.test_real_neo4j_http_processing_analysis_and_readback -v
+```
+
+Default lifecycle tests use real HTTP/SQLite, permitted synthetic network/GPS
+processing and a transactional Neo4j double. The opt-in test uses actual Neo4j,
+verifies published graph read-back and removes its case/run partitions. The GPS
+positive control appends one permitted synthetic D-7 row to the uploaded bytes;
+checked-in fixtures remain unchanged. Failed verification/retry, same-key
+concurrent SQLite writers, frozen queued recovery, post-graph-commit restart,
+UTC/UUID selection, algorithm immutability and actor/case negatives are covered.

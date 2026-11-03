@@ -9,6 +9,7 @@ from pathlib import Path
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 
+from backend.analysis import initialize_analysis, recover_analysis_runs, router as analysis_router
 from backend.auth import CaseAccess, RejectTokens, TokenVerifier
 from backend.audit import initialize_audit, router as audit_router
 from backend.database import SQLiteDatabase
@@ -44,7 +45,13 @@ def create_app(
         initialize_evidence(database)
         initialize_audit(database)
         initialize_processing(database)
-        yield
+        initialize_analysis(database)
+        try:
+            await recover_analysis_runs(_app)
+            yield
+        finally:
+            if _app.state.graph_database is not None:
+                _app.state.graph_database.close()
 
     app = FastAPI(
         title="EVORA backend skeleton",
@@ -56,6 +63,8 @@ def create_app(
     )
     app.state.database = database
     app.state.processing_lock = asyncio.Lock()
+    app.state.analysis_lock = asyncio.Lock()
+    app.state.graph_database = None
     app.state.storage_dir = Path(storage_dir if storage_dir is not None else
                                  os.environ.get("EVORA_STORAGE_DIR", "storage/evidence")).resolve()
     app.state.token_verifier = token_verifier if token_verifier is not None else RejectTokens()
@@ -69,6 +78,7 @@ def create_app(
     app.include_router(observations_router)
     app.include_router(entities_router)
     app.include_router(events_router)
+    app.include_router(analysis_router)
     return app
 
 

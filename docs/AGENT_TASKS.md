@@ -1,5 +1,20 @@
 # EVORA scoped agent assignment templates
 
+
+### A05 assignment — 2026-11-03
+
+| Field | Recorded assignment |
+|---|---|
+| Task/checkpoint/module/owner | A05 / 1C / M3 Evidence Fusion and Adaptive Triage / whale2186; explicit user assignment; execution 2026-11-04 |
+| Branch/common contract base | Clean `feat/a05-analysis-run-lifecycle`, actual HEAD **ba7db7faa449e62a3ee0e3a74ddd8ef8b4f58887**, matching the A01B merge; supplied full hash `ba7db7fa3c15eb18a2bc4b8686d1a166ad292ff2` does not exist locally. No fetch or publication claimed. Draft OpenAPI 0.3.0 unchanged |
+| Allowed paths | `backend/analysis.py`, `backend/app.py`, `backend/tests/test_analysis.py`, `backend/README.md`, `docs/AGENT_TASKS.md`, `docs/ROADMAP.md`, `docs/PREIMPLEMENTATION_REVIEW.md`; no spec/frontend/dependency edits; no stage/commit/push/merge |
+| Real dependencies | A01B ba7db7f, G01D b0fd1f9, A04 7858cce, A03B 2eca04b, A03 ec4ab3c, A02 51ee2ed, A01 11961c4, G02 d1f16ef and completed 0/1A/1B producers are integrated ancestors of the exact base above; F00/P14/P14C real authorization/provenance/publication paths consumed |
+| Acceptance | Bodyless UUID-key acceptance/replay before freeze; current new-key snapshot with exact sorted manifest hash; digest-based contract triggers; immutable pipeline outputs and verified A01B publication; polling, failure/restart/race/source/case negatives |
+| Interface | M2 completed immutable processing outputs → A05 frozen inputs → A01/A02/A03/A03B/A04/A01B → U05D polling and later A05B/A06 reads; backend owns SQLite/Neo4j |
+| Decision queue | User-requested AnalysisRunPage/pagination conflicts with the sole OpenAPI listAnalysisRuns array and no query parameters. Asked whether to retain the existing contract or authorize coordinated schema/types/fixtures scope. Producer A05 and M4 run-history consumers cannot use different response shapes. This gate affects the list endpoint only |
+| Regression handoff | Existing `backend/tests/test_skeleton.py` exact startup-table assertion omits the two required analysis tables. One-line expected-list update requested because that file is outside allowed paths; no unauthorized edit |
+| Verification/state | In Progress; actual commands/results and test doubles in `PREIMPLEMENTATION_REVIEW.md`. Checkpoint 1C/I01 stays open; next bounded tasks A05B/A06 and F08B/U05D integration after A05 review |
+
 ### A01B assignment — 2026-11-03
 
 | Field | Recorded assignment |
