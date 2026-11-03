@@ -51,6 +51,29 @@ Comma-separated IDs below are **exhaustive assignments**, not ranges. Each catal
 | 6B | I09, I09B | I09, I09B | I09 exercises every feature/operation with real producers; I09B proves clean full-scope Windows and CI setup/build/run and distinguishes test adapters from actual provider runs. | Backlog |
 | 6C | I06 | I06 | I06 reports measured threats/provenance/resource/privacy/competitor limitations after the full-scope gates; no invented metrics/originality/admissibility claims. | Backlog |
 
+
+### A05 live record — 2026-11-03
+
+**A05 / Checkpoint 1C / M3 whale2186 / In Progress.** Explicit user assignment
+on clean `feat/a05-analysis-run-lifecycle` at actual common contract/base
+**ba7db7faa449e62a3ee0e3a74ddd8ef8b4f58887**; supplied full hash is absent locally.
+Execution occurred 2026-11-04. AGENT_TASKS.md records seven allowed paths,
+real dependency versions and the list-contract/skeleton-test handoff queue.
+
+Bodyless authenticated UUID-key acceptance, transactionally frozen sorted inputs,
+canonical digest, original-key replay and contract digest-derived triggers feed
+real merged A01/A02/A03/A03B/A04/A01B producers. Queued recovery consumes frozen
+inputs; persisted running outputs resume projection without recomputation.
+Only A01B publishes completed after same-run SQL/source/Neo4j verification.
+Terminal history remains immutable; errors expose safe codes.
+
+The requested paginated list object conflicts with the unchanged OpenAPI array;
+that endpoint's response decision is pending. An existing skeleton regression
+expects the pre-analysis table list and needs a bounded out-of-scope test handoff.
+Actual read-back, verification and limitations are in PREIMPLEMENTATION_REVIEW.md.
+Checkpoint 1C/I01 and M3 remain open. Next bounded handoffs after review are
+A05B/A06 plus F08B/U05D; no later task or stage/commit/push/merge performed.
+
 ### A01B live record — 2026-11-03
 
 **A01B / Checkpoint 1C / M3 whale2186 / In Progress pending review/integration.**
