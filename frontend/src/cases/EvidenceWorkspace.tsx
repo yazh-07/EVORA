@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useSyncExternalStore } from 'react';
 import { OriginalDownload } from './OriginalDownload';
+import { StartProcessing } from './StartProcessing';
 import { useApiClient } from '../api/ApiProvider';
 import { createEvidenceStore, evidenceKinds } from './evidenceStore';
 import type { Evidence, EvidenceState } from './evidenceStore';
@@ -80,7 +81,8 @@ export function EvidencePanels({ state, load, select, upload }: {
         {state.detailStatus === 'idle' && <p>Select evidence to inspect its metadata.</p>}
         {state.detailStatus === 'loading' && <p role="status">Loading evidence metadata...</p>}
         {state.detailStatus === 'error' && <p role="alert">{state.detailMessage} Select evidence again to retry.</p>}
-        {state.detail && <><h3>{state.detail.source_label}</h3><Metadata item={state.detail} detailed /><OriginalDownload key={state.detail.id} item={state.detail} /></>}
+        {state.detail && <><h3>{state.detail.source_label}</h3><Metadata item={state.detail} detailed /><OriginalDownload key={state.detail.id} item={state.detail} />
+          <StartProcessing key={`${state.detail.case_id}:${state.detail.id}`} caseId={state.detail.case_id} evidenceId={state.detail.id} /></>}
       </aside>
     </div>
   </div>;

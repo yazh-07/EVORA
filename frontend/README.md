@@ -622,3 +622,31 @@ supersedes earlier reconciliation In Progress/no-publication statements;
 Checkpoint 1A remains open. Original dirty checkout and active U04 worktree
 are untouched. Next work is continuing the existing assigned U04 task, not
 starting a second U04 implementation. No U04 changes were merged here.
+
+## U05C: start processing selected evidence
+
+Inspect an evidence item and choose **Start processing**. This explicit action
+uses the generated typed API client and a fresh `crypto.randomUUID()`
+`Idempotency-Key`, with no request body. The button reads **Starting processing...**
+and is disabled while submitting; a controller guard also blocks duplicate clicks.
+The inspector retains the returned ProcessingRun and shows its ID and status at
+acceptance. This view does not refresh that status; U05 owns polling. A further
+explicit action requests a new run with a new key.
+
+400, 401, 404, 409 and 415 receive fixed safe alerts. The shared client clears the
+session on 401; reopen an authorized session to retry. Unknown transport/protocol
+failures do not claim processing failed or succeeded: inspect history before
+starting again. Selection changes, unmount and session replacement discard late
+responses and abort local requests; aborting delivery does not undo server work.
+No evidence or bearer token is persisted in browser storage.
+
+Run `npm --prefix frontend run test` for Fetch-double controller and React static
+render checks, including explicit button dispatch, key uniqueness, busy/error/retry,
+response context validation and stale-response disposal. These are not mounted
+browser interaction/accessibility tests. After `npm --prefix frontend run build`,
+run `node frontend/test/cases.integration.mjs`: the real local FastAPI/SQLite harness
+uploads committed `fixtures/synthetic-case/network.csv`, starts through the UI
+controller, asserts HTTP 202/queued, reads back the exact completed run, verifies a
+new action creates another run, and exercises 400/401/404 with real producers.
+The harness retains prior checkpoint intake/download/audit regressions and removes
+its own temporary synthetic database/files. Application code accesses only HTTP.

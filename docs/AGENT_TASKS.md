@@ -657,3 +657,20 @@ retain existing415/replay/no-publication assertions unchanged.
 | Approved outputs | Three Observations per row account/amount/currency, same-run exact account:<raw ID> candidate Entity grouping only, one transaction.record source-report Event per row citing all row Observation/Evidence IDs and actual same-case account Entity sharing its account Observation. Confidence0 unavailable; no owner/person/payment direction/verified transfer/fraud/criminality inference or live banking |
 | Acceptance/tests | Focused43 P12/dispatch PASS, P12 contributes29; full backend407 run:406 PASS/1 existing Windows symlink SKIP. Frontend48/coordination122 PASS; contract/types/build/DESIGN/verifier/real I00 smoke PASS. Actual source/API/SQL/limits/decimal/history/replay/rollback/upgrade/concurrency controls; doubles/limits in PREIMPLEMENTATION_REVIEW |
 | Handoff | Complete after authorized merge c1165793cb791fe0e7eccaded43e7c8daa6ee498; task commit e46a7a8361f971d9f27527e3516d7b3bfddfe590 pushed.29 P12/verifier/real I00 post-merge smoke PASS. Independent row only; full scope/additions/earlier gates preserved. Next M2 catalog P13(3A) has actual P06/P07 prerequisites but needs own extraction/evaluation/file handoff; automatic selection waits for earlier exits, or separately explicit independent assignment. No next task started |
+
+### U05C assignment — 2026-11-03
+
+| Field | Scoped assignment |
+|---|---|
+| Task/checkpoint/owner | **U05C / 1B / M4 / JebasJ**; explicit user handoff includes these bounded shared documentation edits; whale2186 retains integration coordination |
+| Branch/common contract | `feat/u05c-start-processing-ui`; clean actual HEAD/base **747d223b1b04d134edaea6384e0c3cfcb1b40c5e**, matching local `docs/coordination-foundation`; unchanged `specs/openapi.yaml` draft 0.3.0. The prompt's full hash beginning 747d223 differs from actual Git; this record uses the verified commit |
+| Allowed paths | `frontend/src/cases/`, `frontend/test/`, `frontend/README.md`, `docs/AGENT_TASKS.md`, `docs/ROADMAP.md`, `docs/PREIMPLEMENTATION_REVIEW.md`; no backend/spec/package dependency edits |
+| Dependencies | Real U03 **c5c9b5a5aefff113db6592996da4af1c780d88df** and P04 merge **f851dd11fd8f7e11140317cf44d022a9999044dd** are committed ancestors, along with subsequent processing publication/provenance/audit producers. No substitute producer in HTTP acceptance |
+| Acceptance | Explicit bodyless generated-client start with unique UUID key per action; busy duplicate guard; retain accepted run ID and actual status; safe 400/401/404 alerts and retry; abort/ignore stale selection/unmount/session responses; real synthetic network CSV HTTP 202/read-back |
+| Interface | Existing typed client uses singular `header` with generated `Idempotency-Key` spelling. Accepted ProcessingRun is retained in the exported controller state for U05; this bounded action displays status at acceptance only |
+| Verification/state | **In Progress**, local verification results recorded in U05C verification in PREIMPLEMENTATION_REVIEW; no commit/push/merge authorized. Checkpoint 1B/I00B stays open; next bounded M4 task U05 polling requires its own handoff |
+
+No unresolved contract choice is needed for this action: it consumes the existing
+bodyless start and declared error/status contract. Network/protocol failure is
+explicitly uncertain; another user action uses a new key and may start another
+run. Fetch/static-render unit doubles are separate from real FastAPI acceptance.
