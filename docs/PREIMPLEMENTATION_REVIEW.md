@@ -1,6 +1,84 @@
 # EVORA scope/contract verification and implementation readiness
 
 
+### A06 verification — 2026-11-03
+
+A06 / Checkpoint 1C / M3 Evidence Fusion and Adaptive Triage / whale2186;
+execution 2026-11-04 on clean initial `feat/a06-triage-history-endpoints`.
+Actual common contract/base **ca6e379ffd0c73332f47fdf6ce3132d1dfc39c99** differs
+from the supplied full SHA. Exact dependencies and seven allowed files are in
+AGENT_TASKS.md. No spec/frontend/dependency edits, staging, commit, push or merge.
+Locally implemented pending review/publication; Checkpoint 1C/I01 and M3 remain
+open and require their remaining task acceptance and runbook exit evidence.
+
+Both authorized no-store endpoints read real authoritative SQLite. listTriage
+uses A04 sorting over exactly the selected completed run's frozen manifest;
+new uploads cannot change membership/total/order. Default selection uses UTC
+creation time then UUID descending. Empty/unscored/out-of-range selected pages
+retain the ID. Only before completion are live uploads listed without an ID.
+History returns stored automated results across completed runs oldest first,
+without overrides. One read transaction covers all queries for each response.
+Pending/failed persisted outputs are hidden; missing completed output fails
+closed with standard 404. UUID/pagination/unknown/repeated input errors are 400;
+unauthenticated and inaccessible resources preserve safe 401/404 behavior.
+
+**Producer/consumer queue:** no override producer/table exists. Per the user's
+conditional-table instruction, A06 reads `priority_overrides` only when present,
+using PriorityOverride wire columns and latest same-case evidence UTC/UUID order.
+No production migration/write route was invented. A schema-derived storage
+double proves live overlay/effective priority with stable computed order and
+unchanged automated scores/history. M4 JebasJ U09 must coordinate its actual
+storage migration/reader with M3 whale2186, authorize/audit appends and exercise
+real override-between-pages acceptance in I02B. This later producer integration
+is not claimed by A06 tests and does not block the automated-read task gate.
+
+Actual commands/results (all successful unless noted):
+
+| Command | Result |
+|---|---|
+| `npx @redocly/cli bundle specs/openapi.yaml --output /tmp/evora-openapi.json` | PASS |
+| `python scripts/verify_coordination.py /tmp/evora-openapi.json` | PASS: 27 operations, 126 tasks, 18 checkpoints, 39 capabilities, 40 proposal mappings |
+| `EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -m unittest discover -s scripts -p 'test_*.py'` | PASS: 122 tests |
+| Same script suite with `/home/whale2186/.hermes/cache/scratch/test_neo4j_venv/bin/python` | PASS: 122 tests using required jsonschema 4.25.1 |
+| `EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json /home/whale2186/.hermes/cache/scratch/test_neo4j_venv/bin/python -W error::ResourceWarning -m unittest discover -s backend/tests -p 'test_triage_endpoints.py' -v` | PASS: 8 tests, no skips |
+| Same backend command with `-p 'test_graph_findings.py'` | PASS: 8 pass, one optional real-Neo4j skip |
+| Same backend command with `-p 'test_analysis.py'` | PASS: 13 pass, one optional real-Neo4j skip |
+| `npm --prefix frontend run test` | PASS: 101 tests |
+| `npx --yes @redocly/cli@2.57.0 lint specs/openapi.yaml` | PASS: existing missing-license warning |
+| `npx --yes openapi-typescript@7.10.1 specs/openapi.yaml -o /tmp/evora-api.d.ts` | PASS |
+| `npx --yes --package typescript@5.9.3 tsc --noEmit --strict /tmp/evora-api.d.ts` | PASS |
+| `npm --prefix frontend run build` | PASS: generated API freshness, frontend typecheck/build |
+| `npx --yes @google/design.md@0.4.0 lint DESIGN.md` | PASS: zero errors/warnings |
+| `git diff --check` | PASS |
+
+Earlier completed-checkpoint backend regressions: **327 pass, no skips**:
+
+```sh
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json /home/whale2186/.hermes/cache/scratch/test_neo4j_venv/bin/python -W error::ResourceWarning -m unittest backend.tests.test_skeleton backend.tests.test_validation backend.tests.test_auth backend.tests.test_cases backend.tests.test_evidence backend.tests.test_audit backend.tests.test_audit_list backend.tests.test_m1_access backend.tests.test_network_csv backend.tests.test_gps_csv backend.tests.test_normalization backend.tests.test_candidate_entities backend.tests.test_source_events backend.tests.test_processing backend.tests.test_observations backend.tests.test_entities backend.tests.test_events backend.tests.test_processing_provenance backend.tests.test_processing_dispatch backend.tests.test_processing_publication backend.tests.test_processing_audit
+```
+
+Read-back uses real HTTP guards, temporary SQLite/private original storage,
+merged synthetic network/GPS processing, actual A04 scores and A05/A01B SQL
+publication. Exact returned results equal persisted triage JSON and validate
+against the actual bundle. Real duplicate network content creates a score tie;
+GPS adds a different score and unprocessed uploads remain unscored. Uploading
+between pinned pages and publishing a newer run preserves original membership,
+total, order and result content. History appends only when an item is scored;
+empty/unscored snapshots and previous results persist. A crash after graph
+commit keeps stored output hidden until actual recovery publishes completion.
+Negative tests cover foreign/missing cases/evidence/runs, queued/running/failed
+selectors, auth, malformed input and safe errors. Synthetic fixture timestamp
+mutation proves UTC offsets and UUID ties for latest selection/history; overlay
+fixtures prove the same tie rules and filter foreign-case rows.
+
+Explicit doubles: synthetic bearer actors/permitted inputs, transactional Neo4j,
+scheduler/crash/property fault injection, fixture-only run timestamp mutation,
+and the absent U09 override storage schema. Actual local environment: Python
+3.14.9, jsonschema 4.25.1, neo4j 6.4.1. No real Neo4j/Windows/hosted CI/browser,
+full later-modality suite, performance or benchmark claim. Next bounded consumer
+handoff U06 and then I01 once its other producers are ready; M3 A07 retains its
+Checkpoint 2A/P06 prerequisites. Full proposal scope remains required.
+
 ### A05B verification — 2026-11-03
 
 A05B / Checkpoint 1C / M3 Evidence Fusion and Adaptive Triage / whale2186;

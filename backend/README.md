@@ -2793,3 +2793,60 @@ actors/data and an explicit transactional Neo4j double. The optional
 `EVORA_NEO4J_INTEGRATION=1` test requires a disposable configured Neo4j, verifies
 real partition publication/read-back and removes its own partitions. Default
 success does not certify actual Neo4j, Windows, hosted CI or I01 integration.
+
+## A06 triage and automated history (Checkpoint 1C)
+
+- `GET /api/v1/cases/{caseId}/triage` (`listTriage`) accepts optional
+  `analysis_run_id`, `limit` (default 20, range 1–100) and `offset` (default 0,
+  nonnegative). Pin the returned run ID across all graph/findings/triage pages.
+- `GET /api/v1/cases/{caseId}/evidence/{evidenceId}/triage-history`
+  (`getTriageHistory`) returns an array of immutable automated `TriageResult`
+  records across completed case runs, oldest first by UTC creation time then UUID.
+
+Both authorize case access and return `Cache-Control: no-store`. Missing/foreign
+cases, evidence or run selectors and noncompleted selectors return 404 `ApiError`
+with `Resource not found.` Malformed UUIDs/pagination and unknown/repeated query
+parameters return shared safe 400 errors; unauthenticated requests return 401.
+History takes no query parameters. Existing evidence without scored history
+returns an empty array.
+
+A selected completed run uses exactly its frozen `input_snapshot.evidence_ids`:
+subsequent uploads do not change membership or total. Automated results come from
+that run's authoritative immutable SQL output. Scored items sort by computed
+score descending then evidence UUID ascending, followed by unscored evidence in
+UUID order; pagination follows sorting. Missing results omit `latest_result`.
+Selection without a run ID uses completed `(created_at UTC DESC, id UUID DESC)`.
+The selected ID remains present even for empty/out-of-range or entirely unscored
+pages. Only before the first completion are live uploads listed unscored with
+no run ID. Missing completed output fails closed rather than substituting a run.
+Selection, output, membership and overlays share one SQL read transaction.
+
+`effective_priority` uses the selected automated priority unless a live override
+exists. An override supplies `override` and its priority becomes effective;
+neither field makes evidence scored or changes computed order, frozen results,
+history or total. Both fields are omitted when neither automated priority nor
+override exists. Priorities guide attention and do not establish truth or guilt.
+
+U09 storage is absent at this base. A06 conditionally reads a
+`priority_overrides` table with the `PriorityOverride` wire columns, scoped by
+case/evidence and latest `(created_at UTC, id UUID)`. No override schema or
+write API is created. This internal storage handoff needs coordination with
+M4 U09; its future producer must authorize/audit writes. Tests explicitly use a
+schema-derived storage double; real override integration remains U09/I02B.
+
+```sh
+npx @redocly/cli bundle specs/openapi.yaml --output /tmp/evora-openapi.json
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json /home/whale2186/.hermes/cache/scratch/test_neo4j_venv/bin/python -W error::ResourceWarning -m unittest discover -s backend/tests -p 'test_triage_endpoints.py' -v
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json /home/whale2186/.hermes/cache/scratch/test_neo4j_venv/bin/python -W error::ResourceWarning -m unittest discover -s backend/tests -p 'test_graph_findings.py' -v
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json /home/whale2186/.hermes/cache/scratch/test_neo4j_venv/bin/python -W error::ResourceWarning -m unittest discover -s backend/tests -p 'test_analysis.py' -v
+```
+
+Use your installed pinned Python environment on other machines. Tests validate
+responses against the real OpenAPI bundle using `jsonschema==4.25.1`. They use
+real temporary SQLite/private originals, HTTP guards, merged network/GPS
+processing, A04 scoring and A05/A01B publication with a transactional Neo4j double.
+They cover ties, UTC offsets, exact snapshot membership, uploads between pages,
+old pins after new publication, unscored history, failed/unpublished output,
+recovery read-back, auth/case/input negatives and live override changes without
+reordering or rewriting results. No real Neo4j, Windows, browser or I01 exit proof
+is claimed by default unit tests.
