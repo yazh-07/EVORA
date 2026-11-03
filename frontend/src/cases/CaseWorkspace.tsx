@@ -1,6 +1,8 @@
 import { EvidenceWorkspace } from './EvidenceWorkspace';
 export { EvidencePanels } from './EvidenceWorkspace';
 export { createEvidenceStore } from './evidenceStore';
+export { createProcessingController } from './processingController';
+export { StartProcessing, StartProcessingPanel } from './StartProcessing';
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { useApiClient } from '../api/ApiProvider';
 import { createCaseStore } from './store';

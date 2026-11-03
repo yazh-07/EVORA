@@ -3379,3 +3379,74 @@ its own agreed text extraction/evaluation/file handoff; automatic selection awai
 earlier exits, or earlier independent work must be separately explicitly assigned.
 P13B and every remaining modality/initial feature/approved addition stay required.
 No next task started; full scope preserved.
+
+### U05C verification — 2026-11-03
+
+**U05C / Checkpoint 1B / M4 JebasJ / In Progress pending review/publication.**
+Branch `feat/u05c-start-processing-ui`; initial tree clean. Actual HEAD and local
+`docs/coordination-foundation` base are **747d223b1b04d134edaea6384e0c3cfcb1b40c5e**.
+The supplied full hash beginning 747d223 does not equal actual Git; the verified
+commit is used throughout this assignment. Real U03
+**c5c9b5a5aefff113db6592996da4af1c780d88df** and P04 merge
+**f851dd11fd8f7e11140317cf44d022a9999044dd** are verified ancestors; current
+publication/provenance/audit producers are present. No spec/backend/dependency or
+out-of-scope file edits, and no stage/commit/push/merge.
+
+Implemented `frontend/src/cases/StartProcessing.tsx` and
+`frontend/src/cases/processingController.ts`, wired into the selected evidence
+inspector. The existing generated typed client requires singular `header` and
+`Idempotency-Key` spelling; this is used instead of the prompt's illustrative
+`headers` object. Each explicit bodyless action generates a fresh UUID key, busy
+state blocks repeated clicks, and accepted state retains the returned ProcessingRun
+for U05 consumption. Context/shape checks reject foreign/malformed responses;
+fixed safe errors never expose raw server messages. Abort/session guards suppress
+late responses, including dispose/reconnect. No optimistic run or completion state
+is invented; the UI labels the status as the value at acceptance.
+
+| Actual command/check | Result |
+|---|---|
+| `npx @redocly/cli bundle specs/openapi.yaml --output /tmp/evora-openapi.json` | PASS |
+| `npx --yes @redocly/cli@2.57.0 lint specs/openapi.yaml` | PASS; existing missing-license warning only |
+| `npx --yes openapi-typescript@7.10.1 specs/openapi.yaml -o /tmp/evora-u05c-api.d.ts` and `frontend/node_modules/.bin/tsc --noEmit --strict /tmp/evora-u05c-api.d.ts` | PASS generated declaration and strict compilation |
+| `python scripts/verify_coordination.py /tmp/evora-openapi.json` | PASS: 27 operations, 126 tasks and all coordination checks |
+| `EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -m unittest discover -s scripts -p 'test_*.py'` | PASS: 122 tests |
+| `EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -W error::ResourceWarning -m unittest discover -s backend/tests -v` | PASS: 420 tests, no skips |
+| `npm --prefix frontend run test` | PASS: 55 tests, including seven U05C tests; prior 48 preserved |
+| `npm --prefix frontend run build` | PASS: generated declaration freshness, TypeScript and production bundle |
+| `node frontend/test/cases.integration.mjs` | PASS: real local HTTP/FastAPI/SQLite; U05C start/read-back/repeat/errors and prior I00 create/list/upload/download/hash/audit/isolation regressions |
+| `npx --yes @google/design.md@0.4.0 lint DESIGN.md` | PASS: zero errors/warnings |
+| `git diff --check` | PASS |
+
+Python verification commands above used `PYTHONPATH=/tmp/evora-u05c-validation`:
+`python -m pip install --target /tmp/evora-u05c-validation jsonschema==4.25.1`
+installed the required validator outside the repository, without modifying package
+manifests or the global installation. The host has jsonschema 4.26.0; isolated
+4.25.1 was used for coordination/backend validation. pip printed host-package
+resolver notices; the target install exited successfully. Local runtime read-back:
+Python **3.14.9**, Node **22.23.4**, npm **12.2.1**, FastAPI **0.162.0**, Starlette
+**1.10.0**, uvicorn **0.54.0**. These differ from the setup baseline's Python
+3.14.8/Node 22.23.3/npm 12.2.0/FastAPI 0.143.1/Starlette 1.8.0. This is actual
+Linux candidate verification, not clean pinned setup, Windows or remote CI proof.
+
+Unit tests use explicit Fetch doubles and static React rendering. They invoke the
+button's dispatch handler and controller, check disabled/alert markup, keys,
+accepted run IDs/status, safe 400/401/404/409/415/server/network errors and retries,
+authentication reset, foreign/malformed response rejection, late success/error
+suppression on disposal/session change, and effect-style dispose/reconnect.
+They do not mount a browser or certify visual/keyboard/accessibility behavior.
+
+The real smoke uploads committed permitted `fixtures/synthetic-case/network.csv`
+through U03, starts through the actual U05C controller/generated client and asserts
+POST **202**, exact case/evidence association and initial **queued** status. It
+reads the same run back through the spec's `getProcessingRun` path with bounded
+harness-only polling and observes **completed** from the real producer. Another explicit action yields a different
+run ID. Empty key **400**, missing/foreign evidence **404** and invalid identity
+**401** are exercised; prior invalid-token case-list regression remains included.
+The test-only SQLite/file snapshots and synthetic identities are harness controls;
+application code remains API-only. Own temporary files are cleaned up.
+
+U05C is locally implemented and verified, awaiting authorized review/publication.
+U05 remains the next separately assigned task for polling; no polling/history UI
+is claimed here. Aborting client delivery does not cancel accepted server work;
+unknown transport failure is labeled uncertain and a new action can create a new
+run. Checkpoint 1B/I00B and the full proposal remain open.
