@@ -147,28 +147,31 @@ class DocumentProcessingTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_real_publication_wire_source_spans_private_versions_and_original(self):
         run = await self.start(); complete = await self.poll(run)
-        self.assertEqual((complete['status'],complete['processor_version']),('completed','processing-lifecycle/4'))
+        self.assertEqual((complete['status'],complete['processor_version']),('completed','processing-lifecycle/7'))
         self.validate('ProcessingRun',complete)
         page = await self.page('observations'); self.validate('ObservationPage',page)
-        self.assertEqual(page['total'],4)
-        self.assertEqual((await self.page('entities'))['total'],0)
+        self.assertEqual(page['total'],5)
+        self.assertEqual((await self.page('entities'))['total'],1)
         self.assertEqual((await self.page('events'))['total'],0)
         for row in page['items']:
-            self.assertFalse({'observed_at_raw','observed_at_utc','entity_key'} & row.keys())
-            self.assertEqual((row['kind'],row['evidence_id'],row['processing_run_id']),('text.line',self.evidence['id'],run['id']))
+            self.assertFalse({'observed_at_raw','observed_at_utc'} & row.keys())
+            self.assertIn(row['kind'],('text.line','text.mention.device'))
+            self.assertEqual((row['evidence_id'],row['processing_run_id']),(self.evidence['id'],run['id']))
             start,end = map(int,row['source_locator'].split('chars=')[1].split(':'))
             self.assertEqual(TEXT[start:end],row['raw_value'])
         private = self.private(run)
-        self.assertEqual(private['execution']['parameters'],{'max_source_bytes':52428800,'max_source_lines':100000})
-        self.assertEqual(private['execution']['versions'],dict(parser_version='document-text/1',normalizer_version='not-used',
-            entity_version='not-used',event_version='not-used',processor_version='processing-lifecycle/4'))
-        self.assertIsNone(private['execution']['model']); self.assertEqual(private['outputs']['entity_ids'],[])
+        from backend.text_ner import LIMITS, model_info
+        self.assertEqual(private['execution']['parameters'],{'max_source_bytes':52428800,'max_source_lines':100000,**LIMITS})
+        self.assertEqual(private['execution']['versions'],dict(parser_version='document-text/1',normalizer_version='text-identifiers/1',
+            entity_version='text-candidates/1',event_version='not-used',processor_version='processing-lifecycle/7'))
+        self.assertEqual(private['execution']['model'],model_info())
+        self.assertEqual(len(private['outputs']['entity_ids']),1)
         self.assertEqual(private['input']['sha256'],hashlib.sha256(SOURCE).hexdigest())
         self.assertEqual(set(private['outputs']['observation_ids']),{x['id'] for x in page['items']})
         original = await self.client.get(f"/api/v1/cases/{self.case}/evidence/{self.evidence['id']}/content")
         self.assertEqual(original.content,SOURCE)
         seen=[]
-        for offset in range(4):
+        for offset in range(5):
             seen.extend((await self.page('observations',limit=1,offset=offset))['items'])
         self.assertEqual(seen,page['items'])
 
@@ -251,14 +254,14 @@ class DocumentProcessingTests(unittest.IsolatedAsyncioTestCase):
             for name in ('processing_provenance_context','processing_completion_provenance'):
                 sql=connection.execute('SELECT sql FROM sqlite_master WHERE name=?',(name,)).fetchone()[0]
                 connection.execute('DROP TRIGGER '+name)
-                connection.execute(sql.replace(",'processing-lifecycle/4'",'').replace(",'processing-lifecycle/5'",'').replace(",'processing-lifecycle/6'",''))
+                connection.execute(sql.replace(",'processing-lifecycle/4'",'').replace(",'processing-lifecycle/5'",'').replace(",'processing-lifecycle/6'",'').replace(",'processing-lifecycle/7'",''))
         initialize_processing(self.app.state.database)
         run=await self.start('after-upgrade');self.assertEqual((await self.poll(run))['status'],'completed')
         for old,evidence,private in saved:self.assertEqual(self.private(old,evidence),private)
         self.assertTrue(all(x in self.rows('processing_outputs') for x in old_outputs))
         self.assertTrue(all(x in self.rows('processing_provenance') for x in old_private))
         self.assertEqual(((await self.page('observations'))['total'],(await self.page('entities'))['total'],
-                         (await self.page('events'))['total']),(18,7,3))
+                         (await self.page('events'))['total']),(19,8,3))
 
     async def test_document_version_requires_provenance_and_private_corruption_fails_closed(self):
         with patch('backend.processing.process_run'):queued=await self.start('no-private')
@@ -284,10 +287,10 @@ class DocumentProcessingTests(unittest.IsolatedAsyncioTestCase):
         try:run=await self.start('private-text',self.base(evidence))
         finally:logger.removeHandler(handler);handler.close()
         page=await self.page('observations',evidence_id=evidence['id'])
-        self.assertEqual(page['items'][0]['raw_value'],text)
+        self.assertEqual(next(x['raw_value'] for x in page['items'] if x['kind']=='text.line'),text)
         self.assertNotIn('observed_at_utc',page['items'][0]);self.assertNotIn('observed_at_raw',page['items'][0])
         self.assertNotIn('SECRET_P07',json.dumps(run)+log.getvalue())
-        self.assertEqual((await self.page('entities'))['total'],0)
+        self.assertIn('device:D-7',{x['candidate_key'] for x in (await self.page('entities'))['items']})
         self.assertEqual((await self.page('events'))['total'],0)
 
 
@@ -318,15 +321,24 @@ class DocumentLoopbackTests(unittest.TestCase):
                             files={'file':('text.bin',data,'application/octet-stream')}).json()
                         url=f"/api/v1/cases/{case}/evidence/{evidence['id']}/processing-runs"
                         accepted=client.post(url,headers={'Idempotency-Key':str(index)});self.assertEqual(accepted.status_code,202)
-                        for _ in range(100):
-                            run=client.get(url+'/'+accepted.json()['id']).json()
-                            if run['status'] in ('completed','failed'):break
-                            time.sleep(.05)
+                        deadline = time.monotonic() + 135
+                        while time.monotonic() < deadline:
+                            try:
+                                run=client.get(url+'/'+accepted.json()['id']).json()
+                            except httpx.RemoteProtocolError:
+                                if process.poll() is not None:
+                                    raise
+                            else:
+                                if run['status'] in ('completed','failed'):
+                                    break
+                            time.sleep(.1)
+                        else:
+                            self.fail('Document processing did not reach a terminal state')
                         self.assertEqual(run['status'],'completed' if index==0 else 'failed')
                         if index:self.assertEqual(run['error'],'TEXT_INVALID_UTF8')
                         self.assertEqual(client.post(url,headers={'Idempotency-Key':str(index)}).json(),run)
-                    page=client.get(f'/api/v1/cases/{case}/observations').json();self.assertEqual(page['total'],4)
-                    self.assertEqual(client.get(f'/api/v1/cases/{case}/entities').json()['total'],0)
+                    page=client.get(f'/api/v1/cases/{case}/observations').json();self.assertEqual(page['total'],5)
+                    self.assertEqual(client.get(f'/api/v1/cases/{case}/entities').json()['total'],1)
                     self.assertEqual(client.get(f'/api/v1/cases/{case}/events').json()['total'],0)
                     with closing(sqlite3.connect(Path(directory)/'db.sqlite3')) as connection:
                         self.assertEqual(connection.execute('SELECT count(*) FROM processing_outputs').fetchone()[0],1)

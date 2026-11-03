@@ -1,3 +1,24 @@
+# P13 local document entity extraction
+
+Document processing uses the pinned CPU spaCy 3.8.18 and en_core_web_sm 3.8.0 pipeline. Install the dependencies with Python 3.14.8 before starting the server. Model downloads occur during setup. Processing uses a local worker and sends no evidence to a service.
+
+The model detects candidate person, organization, location and date mentions. Exact device, account and phone literals and validated IP addresses take precedence over overlapping model spans. Mentions preserve source text and Unicode offsets and link to the original P07 line Observations. Entities cite the corresponding line and mention. Confidence is 0 (unavailable), and P13 creates zero Events. Processor 4 history remains readable and replayable.
+
+The worker uses a 120-second deadline including queue time. P07 byte and line bounds still apply. NLP also limits decoded source to 1,000,000 characters including separators, each line to 20,000 characters and mentions to 100,000. Model validation failures, timeouts and overflow fail the run without publishing outputs or success provenance.
+
+From the repository root on Windows, run the focused suite with a dedicated environment.
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install --only-binary=:all: -r requirements.txt
+.\.venv\Scripts\python.exe -m unittest backend.tests.test_text_entities -v
+```
+
+The real processing test uses the synthetic line `Alice Smith visited Paris. Device D-007 used AC-8.` with CRLF. Expect five Observations, four candidate Entities and zero Events. The corrupt manifest test expects `NLP_MODEL_INVALID` with no published output or success provenance and a successful real-model retry with a new key.
+
+On eight labeled synthetic documents, the real pipeline found 13 of 14 gold spans with two extra predictions (86.7% precision, 92.9% recall). It labeled `d-7` as a person and the button label `May` as a date, and missed the lowercase person mention `quinn sample`. This measures exact span/type matches on the included synthetic set.
+
+
 # P12 exported transaction CSV — 2026-11-02
 
 P12 / Checkpoint3A / M2 yazh-07, explicit independent assignment on

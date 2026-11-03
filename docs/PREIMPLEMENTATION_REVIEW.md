@@ -3524,3 +3524,30 @@ setup, Windows or remote CI certification.
 U05 remains local pending review/publication. Checkpoint 1B/I00B and full proposal/
 approved additions remain open. Next bounded M4 row U05B requires its own handoff;
 no next task started and no module-complete claim.
+### P13 independent verification — 2026-11-03
+
+The task started from verified shared base `6980b4d` and incorporated `f6d5c17`
+with F08 processing audit and U05C before acceptance. The combined frontend
+suite passed all 55 tests. API declaration freshness, typecheck, frontend
+build, real I00/U05C HTTP smoke and all 122 coordination verifier tests passed.
+Contract lint and bundling, fresh TypeScript declaration compilation and
+design lint passed on the original base.
+
+The eight focused tests use the actual pinned CPU model and a real local worker.
+The synthetic evaluation checks exact span and type on eight labeled documents.
+It found 13 true positives, two false positives and one miss, yielding 86.7%
+precision, 92.9% recall and 89.7% F1. The false positives were `d-7` as a person
+and the button label `May` as a date. The missed person mention was
+`quinn sample`. This small synthetic evaluation measures neither live evidence
+quality nor the separate I04 link and event criteria.
+
+The suite exercises actual processing, SQLite, private provenance and source
+reads. The failure controls inject a corrupt manifest and shortened deadline or
+held queue lock. The history control seeds processor 4 via the real P07 parser
+and publication code with version and scheduling overrides. The successful
+inference path uses the installed model. P13B remains the separate text Event
+task. Earlier checkpoint exits and the full agreed initial scope stay open.
+
+The combined Windows backend run discovered 428 tests. It passed 427 with the existing Windows symlink skip. Cross-platform GitHub Actions verification is tracked on the shared integration commit.
+
+P13 merged in c5647755b84a25fd4a976ee3207e0e32324de896 from task head 1d57842. All nine focused and document loopback tests passed on the merge, together with the coordination verifier and real I00/U05C smoke after rebuilding frontend test assets.

@@ -404,7 +404,7 @@ class TransactionProcessingTests(unittest.IsolatedAsyncioTestCase):
             for name in ('processing_provenance_context','processing_completion_provenance'):
                 sql=connection.execute('SELECT sql FROM sqlite_master WHERE name=?',(name,)).fetchone()[0]
                 connection.execute('DROP TRIGGER '+name)
-                connection.execute(sql.replace(",'processing-lifecycle/6'",''))
+                connection.execute(sql.replace(",'processing-lifecycle/6'",'').replace(",'processing-lifecycle/7'",''))
         initialize_processing(self.app.state.database)
         transaction=await self.start('after-upgrade');self.assertEqual((await self.poll(transaction))['status'],'completed')
         for run,evidence,private in saved:self.assertEqual(self.private(run,evidence),private)
