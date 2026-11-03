@@ -1,5 +1,86 @@
 # EVORA scope/contract verification and implementation readiness
 
+### F08 verification — 2026-11-02
+
+F08 / 1B / M1 / sharmelas-925, `feat/f08-processing-audit`, In Progress pending
+review/integration. Clean initial HEAD/common contract base:
+**6980b4d0b2fd14a6bf372ae84cb7ab8e78b38d93**. The supplied full hash
+`6980b4df3ea582d909ca3a628a55dbb8214309a4` does not resolve locally;
+`git rev-parse HEAD` and existing integrated producers establish the actual base.
+No fresh remote/hosted CI verification is claimed. Assignment/dependency commits
+are recorded in AGENT_TASKS. Only seven allowed files changed; contract, frontend
+and package manifests remain unchanged.
+
+Actual read-back: completed processing has exactly one UUID `startProcessing`
+event with matching actor/case/Evidence ID, terminal time, run ID and processor
+version; private versioned provenance joins on run/case/Evidence/time. Malformed
+CSV records `failed`/`CSV_INVALID_IP`, with no partial output/provenance. Startup
+recovery audits queued/running runs once with `PROCESSING_INTERRUPTED`. Repeated
+keys, duplicate/concurrent workers and repeated startup do not duplicate events.
+No historical terminal backfill is fabricated. Failure configuration stays in
+private frozen processing_runs; no completed provenance is invented for failure.
+
+Existing HTTP audit listing returns UTC chronological whole/fractional timestamps,
+coherent paginated totals, correct actors and safe fields. Two real synthetic
+actors/cases, foreign/missing/revoked-case 404 ApiError, UPDATE/DELETE/REPLACE/
+UPSERT denial, and absence of source/filename/path/token/parameter values from
+public audit/application logs pass. Unknown injected diagnostics are reduced to
+`PROCESSING_FAILED` in audit rather than copied as arbitrary strings.
+
+Publication failure after inserting audit, audit insertion failure, deferred
+commit failure and recovery audit failure all roll back terminal state/audit and
+completion outputs/provenance together. If failure accounting cannot persist,
+the run stays nonterminal until successful startup recovery; no false success is
+recorded. These are real SQLite trigger/foreign-key failures plus labeled test
+injections, not a hardware power-loss or production deployment claim.
+
+Commands executed from repository root (Python below selected via the clean
+temporary `/tmp/evora-f08-clean` venv, installed from unchanged requirements):
+
+```sh
+python -m pip install -r requirements.txt
+python -m pip check
+npx @redocly/cli bundle specs/openapi.yaml --output /tmp/evora-openapi.json
+npx --yes @redocly/cli@2.57.0 lint specs/openapi.yaml
+npx --yes openapi-typescript@7.10.1 specs/openapi.yaml -o /tmp/evora-f08-api.d.ts
+npx --yes --package typescript@5.9.3 tsc --noEmit --strict /tmp/evora-f08-api.d.ts
+python scripts/verify_coordination.py /tmp/evora-openapi.json
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -m unittest discover -s scripts -p 'test_*.py'
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -W error::ResourceWarning -m unittest backend.tests.test_processing_audit -v
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -W error::ResourceWarning -m unittest discover -s backend/tests -v
+npm --prefix frontend run test
+npm --prefix frontend run build
+EVORA_TEST_PYTHON=/tmp/evora-f08-clean/bin/python node frontend/test/cases.integration.mjs
+npx --yes @google/design.md@0.4.0 lint DESIGN.md
+git diff --check
+```
+
+Results: **13 focused F08 PASS; full backend 420 PASS with no skips;
+coordination 122 PASS; frontend 48 PASS.** Real I00 HTTP intake/hash/original/
+audit/actor/error smoke PASS. Bundle, lint, verifier (27 operations, 126 tasks,
+39 capabilities), generated strict type compilation, frontend API freshness/
+typecheck/build and DESIGN (0 errors/0 warnings) PASS. Lint retains the existing
+missing-license warning. Whitespace/scope review PASS.
+
+Environment: Linux CPython **3.14.9**, SQLite **3.54.1**, Node **22.23.4**, npm
+**12.2.1**; pinned requirements installed into a clean venv, including FastAPI
+0.143.1, Starlette 1.8.0, Pydantic 2.14.1, HTTPX 0.28.1 and jsonschema **4.25.1**;
+`pip check` PASS. Unversioned requested bundle used Redocly 2.72.1; lint used
+workflow-pinned 2.57.0. Earlier exploratory checks used host packages and a
+system-site-packages venv; authoritative full regression used the clean venv.
+Initial focused-test errors were fixture issues (registry patched during intake
+and timestamp string normalization); both fixed before final verification.
+This does not certify the documented 3.14.8/22.23.3/12.2.0 runtime, native Windows
+or hosted CI. Temporary tests clean their own databases/originals/servers.
+
+Tests use only synthetic evidence/authentication and real merged source/parser/
+publication/provenance/list producers. Scheduling holds, registry rejection,
+post-publication exceptions and SQLite failure triggers are explicit test-only
+controls. No real evidence, production identity provider, model, full processing
+UI/I00B, graph/analysis or new checkpoint exit is claimed. No staging/commit/
+push/merge. Next: review/integrate F08 and finish I00B prerequisites; F08B waits
+for A05 and a separate scoped assignment. Full initial scope remains required.
+
 ### I00 verification — 2026-11-01
 
 **I00 / Checkpoint 1A final exit gate / whale2186 / joint integration
