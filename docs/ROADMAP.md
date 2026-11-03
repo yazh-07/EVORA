@@ -570,6 +570,16 @@ Next M2 catalog P13(3A) has actual P06/P07 prerequisites but needs extraction/
 evaluation/path decisions and earlier exits for automatic selection, or a separate
 explicit independent assignment. No later task started.
 
+### P13 independent handoff — 2026-11-02
+
+**P13 / 3A / M2 yazh-07 / In Progress.** Explicit independent user assignment,
+feat/p13-text-entities from verified **6980b4d0b2fd14a6bf372ae84cb7ab8e78b38d93**.
+Actual P06/P07 prerequisites integrated; approved local English model/extraction/
+resource/dependency/file policy in AGENT_TASKS/COMMUNICATION. Real model/source/
+labeled evaluation/regression acceptance and integration pending before authorized
+push/merge. Earlier checkpoints and full FEATURE_SCOPE/additions stay preserved;
+no next task started.
+
 ## Module assignment and live task state
 
 | Module | Assigned GitHub handle | Accountable boundary | State |

@@ -3450,3 +3450,29 @@ U05 remains the next separately assigned task for polling; no polling/history UI
 is claimed here. Aborting client delivery does not cancel accepted server work;
 unknown transport failure is labeled uncertain and a new action can create a new
 run. Checkpoint 1B/I00B and the full proposal remain open.
+
+### P13 independent verification — 2026-11-03
+
+The task started from verified shared base `6980b4d` and incorporated `f6d5c17`
+with F08 processing audit and U05C before acceptance. The combined frontend
+suite passed all 55 tests. API declaration freshness, typecheck, frontend
+build, real I00/U05C HTTP smoke and all 122 coordination verifier tests passed.
+Contract lint and bundling, fresh TypeScript declaration compilation and
+design lint passed on the original base.
+
+The eight focused tests use the actual pinned CPU model and a real local worker.
+The synthetic evaluation checks exact span and type on eight labeled documents.
+It found 13 true positives, two false positives and one miss, yielding 86.7%
+precision, 92.9% recall and 89.7% F1. The false positives were `d-7` as a person
+and the button label `May` as a date. The missed person mention was
+`quinn sample`. This small synthetic evaluation measures neither live evidence
+quality nor the separate I04 link and event criteria.
+
+The suite exercises actual processing, SQLite, private provenance and source
+reads. The failure controls inject a corrupt manifest and shortened deadline or
+held queue lock. The history control seeds processor 4 via the real P07 parser
+and publication code with version and scheduling overrides. The successful
+inference path uses the installed model. P13B remains the separate text Event
+task. Earlier checkpoint exits and the full agreed initial scope stay open.
+
+The combined Windows backend run discovered 428 tests. It passed 427 with the existing Windows symlink skip. Cross-platform GitHub Actions verification is tracked on the shared integration commit.

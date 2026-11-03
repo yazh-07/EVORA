@@ -658,6 +658,23 @@ retain existing415/replay/no-publication assertions unchanged.
 | Acceptance/tests | Focused43 P12/dispatch PASS, P12 contributes29; full backend407 run:406 PASS/1 existing Windows symlink SKIP. Frontend48/coordination122 PASS; contract/types/build/DESIGN/verifier/real I00 smoke PASS. Actual source/API/SQL/limits/decimal/history/replay/rollback/upgrade/concurrency controls; doubles/limits in PREIMPLEMENTATION_REVIEW |
 | Handoff | Complete after authorized merge c1165793cb791fe0e7eccaded43e7c8daa6ee498; task commit e46a7a8361f971d9f27527e3516d7b3bfddfe590 pushed.29 P12/verifier/real I00 post-merge smoke PASS. Independent row only; full scope/additions/earlier gates preserved. Next M2 catalog P13(3A) has actual P06/P07 prerequisites but needs own extraction/evaluation/file handoff; automatic selection waits for earlier exits, or separately explicit independent assignment. No next task started |
 
+
+### P13 explicitly assigned independent local NLP work — 2026-11-02
+
+| Field | Recorded assignment |
+|---|---|
+| Task/checkpoint/owner | P13 / 3A / M2 yazh-07, explicitly user-assigned independent text candidate extraction; earlier checkpoint exits stay open |
+| Branch/base | feat/p13-text-entities / **6980b4d0b2fd14a6bf372ae84cb7ab8e78b38d93**, verified fetched shared docs/coordination-foundation, isolated worktree, no competing claim |
+| Allowed paths | Approved backend/text_ner.py, text_ner_worker.py, parsers/text_entities.py, models/text_ner.json; backend/tests/test_text_entities.py and labeled fixtures/text-entities; requirements.txt pins; processing.py, processing_dispatch.py, processing_provenance.py with processing-owned guards; bounded document-output/old-version/mixed-document expectations in test_documents.py/test_mobile.py/test_transactions.py; backend/README.md and AGENT_TASKS/COMMUNICATION/ROADMAP/PREIMPLEMENTATION_REVIEW. No public API/table/column/M1/frontend/other-producer change |
+| Dependencies | Actual P06 merge1b938d9 and P07 c8b5331, existing P04/source/access/private provenance/verified publication/read chain and P01/P02/P11/P12 history; completed0/1A regressions required |
+| Approved model/format | P07 UTF-8 plain-text document, local CPU spaCy3.8.18/en_core_web_sm3.8.0 English; official wheel SHA256 pinned, compatible dependencies locked. Public setup/CI downloads only, no evidence transfer or runtime downloads |
+| Approved extraction | Model PERSON/ORG/GPE/LOC/FAC/DATE -> candidate person/organization/location/date mentions; supplement standalone D-[0-9]+, AC-[0-9]+, +8–15 ASCII-digit phone literals, validated IPv4/IPv6. Identifier priority over overlapping model spans, exact dedup/source text/case/zeros; canonical IP normalization only |
+| Output/integrity | Preserve actual full-line Observations/IDs; add mention Observations with line/global half-open code-point spans and Entities citing real line/mention/Evidence IDs. Same-run identical kind/key grouping only, confidence0 unavailable; no identity/coreference/ownership/occurrence-UTC/truth/guilt inference. No Events; P13B remains required |
+| Approved resources | Existing50MiB/100000-line parser caps plus NLP1000000 decoded source characters including separators,20000 characters/line,100000 mentions, one local worker per app process and120-second queue/inference deadline. Missing/wrong/corrupt model/timeout/overflow fails atomically, no silent rules fallback; functioning empty/no-mention input honest success |
+| History/provenance | Old processor4 document records stay immutable/readable/replayable; new version freezes actual model/digest/versions/limits privately, verified atomic output/provenance/completion unchanged |
+| Acceptance/tests | Real model/source/API/SQL/history/replay/rollback/resource/model-unavailable/timeout/case controls, actual labeled precision/recall/FP/misses, regressions and Windows/Ubuntu CI. No invented accuracy or model results |
+| Handoff | In Progress; user authorizes install/implement/test/commit/push/merge into docs/coordination-foundation after acceptance. Full FEATURE_SCOPE/additions and earlier checkpoint gates preserved; no later task started |
+
 ### U05C assignment — 2026-11-03
 
 | Field | Scoped assignment |

@@ -18,6 +18,8 @@ from backend.parsers.network_csv import NetworkCSVError
 from backend.parsers.gps_csv import GPSCSVError
 from backend.parsers.messages_csv import MessageCSVError
 from backend.parsers.text_document import TextDocumentError
+from backend.parsers.text_entities import ENTITY_VERSION as TEXT_ENTITY_VERSION, NORMALIZER_VERSION as TEXT_NORMALIZER_VERSION, project_text_entities
+from backend.text_ner import LIMITS as NER_LIMITS, PROCESSOR_VERSION as NER_PROCESSOR_VERSION, TextNERError, extract_mentions, model_info
 from backend.parsers.mobile_csv import MobileCSVError
 from backend.parsers.transactions_csv import TransactionCSVError
 from backend.parsers.transaction_events import (ENTITY_VERSION as TRANSACTION_ENTITY_VERSION,
@@ -56,10 +58,11 @@ def _not_found():
 
 def _versions(adapter):
     if adapter.kind == 'document':
-        return dict(parser_version=adapter.parser_version, normalizer_version='not-used',
-                    entity_version='not-used', event_version='not-used',
-                    processor_version=DOCUMENT_PROCESSOR_VERSION, max_source_bytes=adapter.max_source_bytes,
-                    max_source_lines=adapter.max_source_lines, provenance_version=RECORD_VERSION)
+        return dict(parser_version=adapter.parser_version, normalizer_version=TEXT_NORMALIZER_VERSION,
+                    entity_version=TEXT_ENTITY_VERSION, event_version='not-used',
+                    processor_version=NER_PROCESSOR_VERSION, max_source_bytes=adapter.max_source_bytes,
+                    max_source_lines=adapter.max_source_lines, provenance_version=RECORD_VERSION,
+                    model=model_info(), **NER_LIMITS)
     if adapter.kind == 'transaction':
         return dict(parser_version=adapter.parser_version, normalizer_version=NORMALIZER_VERSION,
                     entity_version=TRANSACTION_ENTITY_VERSION, event_version=TRANSACTION_EVENT_VERSION,
@@ -194,8 +197,10 @@ def process_run(app, run_id):
             mobile = project_mobile_records(observations, case_id=case_id)
             normalized, entities, events = mobile.observations, mobile.entities, mobile.events
         elif adapter.kind == 'document':
-            normalized, entities = observations, ()
-            events = ()  # Text Entity/Event extraction remains P13/P13B.
+            mentions = extract_mentions(data, observations, case_id=case_id)
+            projection = project_text_entities(observations, mentions, case_id=case_id,
+                                               max_mentions=config['max_mentions'])
+            normalized, entities, events = projection.observations, projection.entities, ()
         elif adapter.kind == 'message':
             candidates = project_message_entities(observations, case_id=case_id)
             events = ()  # Required message/text event extraction belongs to P13B.
@@ -221,7 +226,8 @@ def process_run(app, run_id):
                 raise AccessError(404, 'SOURCE_UNAVAILABLE', 'Source unavailable.')
             publish_outputs(connection, run, output)
     except Exception as error:
-        code = ('TEXT_' + error.code if isinstance(error, TextDocumentError) else
+        code = ('NLP_' + error.code if isinstance(error, TextNERError) else
+                'TEXT_' + error.code if isinstance(error, TextDocumentError) else
                 'CSV_' + error.code if isinstance(error, (NetworkCSVError, GPSCSVError, MessageCSVError, MobileCSVError, TransactionCSVError)) else
                 'SOURCE_UNAVAILABLE' if isinstance(error, (AccessError, OSError)) else 'PROCESSING_FAILED')
         try:
