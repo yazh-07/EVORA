@@ -5047,3 +5047,102 @@ Windows/hosted-CI/browser/live-Neo4j/full-NLP/model/benchmark claim. Checkpoint
 1C/I01 and M4 remain open. Next bounded consumer task U06, followed by other
 remaining 1C task acceptances and I01 runbook exit evidence. Changes remain
 uncommitted/unpublished for review.
+
+### U06 verification — 2026-11-03
+
+Executed 2026-11-04 for **U06 / Checkpoint 1C / M4 JebasJ** on
+`feat/u06-priority-list-ui`. Initial status was clean; actual reviewed HEAD and
+coordination base **291ccfc364126ea678b4a0113494d0acaa4ec731** differs from the
+supplied full SHA. AGENT_TASKS.md records exact real dependency commits and
+allowed paths. Draft 0.3.0, backend and package dependencies are unchanged.
+
+Implemented PriorityList.tsx/triageController.ts and scoped DESIGN-token table
+styles in `frontend/src/cases/`, embedded in CaseWorkspace's analysis context.
+The optional completed-run adoption callback shares a first latest-read pin
+with the workspace; it cannot replace an existing pin. Confirmed analysis
+completion still switches the shared pin. The table separates automated score/
+band/factors/explanation from live effective overrides, leaves unscored score
+cells blank, and provides bounded server pagination, honest empty/loading states,
+safe retry and cancellation/session guards. Evidence/factor source actions pass
+the exact Evidence ID into the existing case-scoped inspector; that live
+metadata/processing view is explicitly separate from the analytical snapshot.
+No exact factor-to-observation attribution is claimed: the wire factors supply
+Evidence IDs only. No client scoring or effective-priority sorting occurs.
+
+Actual required command sequence:
+
+```sh
+npx @redocly/cli bundle specs/openapi.yaml --output /tmp/evora-openapi.json
+python scripts/verify_coordination.py /tmp/evora-openapi.json
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -m unittest discover -s scripts -p 'test_*.py'
+npm --prefix frontend run test
+npm --prefix frontend run build
+node frontend/test/cases.integration.mjs
+git diff --check
+```
+
+Bundle and coordination verifier pass: 27 operations, 126 tasks, 40 proposal
+sections. Scripts suite **122 pass** under default Python, but its jsonschema is
+4.26.0. Repeated using the existing backend environment with required
+**jsonschema 4.25.1**: **122 pass**. Default HTTP command fails at startup because
+system Python lacks `neo4j`. The existing supplied backend environment succeeds:
+
+```sh
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json /home/whale2186/.hermes/cache/scratch/test_neo4j_venv/bin/python -m unittest discover -s scripts -p 'test_*.py'
+EVORA_TEST_PYTHON=/home/whale2186/.hermes/cache/scratch/test_neo4j_venv/bin/python node frontend/test/cases.integration.mjs
+```
+
+Frontend **135 tests pass**, build passes generated API freshness and TypeScript
+compilation. New `frontend/test/priority-list.test.mjs` checks typed URL/query,
+two-decimal scores including genuine scored zero/P4, unscored pre-analysis and
+snapshot items, source actions, escaped explanations/reasons, available factor
+breakdown, separate live overrides without reordering, authoritative pagination,
+latest-read pin adoption, completed-during-pagination reset, safe 401/404/network
+errors/retry, empty selection, foreign/mixed-run/evidence rejection, malformed
+pages, changing totals/results/order/duplicates, aborted/superseded requests,
+case/session changes, late success/error, disposal and effect reconnect. These
+use schema-derived synthetic Fetch doubles, static React rendering and panel
+handlers/controller lifecycles; no browser-mounted behavior claim.
+
+Real localhost FastAPI/SQLite/processing/analysis/scoring acceptance passes with
+synthetic network/GPS fixtures. In each case the actual U06 controller reads the
+completed pin, verifies **55.56 / P3**, relevance value **1**, normalized weight
+**0.25/0.45**, contribution **55.56**, connectivity value **0**, weight
+**0.20/0.45**, contribution **0**, source Evidence IDs and nonempty producer
+explanations. Result equals real append-only history read-back; rendered table
+shows the actual score/factors. Limit-one pages cover the frozen membership in
+server order. Uploading between pages and completing a newer analysis leave the
+old controller's total/membership/automated results unchanged. Unprocessed items
+lack results; the new snapshot includes the upload. Earlier I00/I00B intake,
+original-byte/hash/audit/access and network/GPS source smoke remain green.
+The harness uses the existing explicit transactional Neo4j GraphDouble; no SQL,
+processing, score, explanation or HTTP producer is replaced. Override overlays
+are synthetic Fetch doubles because actual mutation belongs to U09/2B; I02B
+retains real override mutation/pinned-pagination acceptance.
+
+Additional shared workflow checks pass:
+
+```sh
+npx --yes @redocly/cli@2.57.0 lint specs/openapi.yaml
+npx --yes openapi-typescript@7.10.1 specs/openapi.yaml -o /tmp/evora-u06-api.d.ts
+frontend/node_modules/.bin/tsc --noEmit --strict /tmp/evora-u06-api.d.ts
+npx --yes @google/design.md@0.4.0 lint DESIGN.md
+```
+
+OpenAPI has the existing missing-license warning. DESIGN has zero errors or
+warnings. Combined previous-checkpoint backend regressions plus current triage
+and explanation producer negatives: **345 tests pass**, no skips:
+
+```sh
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json /home/whale2186/.hermes/cache/scratch/test_neo4j_venv/bin/python -W error::ResourceWarning -m unittest backend.tests.test_skeleton backend.tests.test_validation backend.tests.test_auth backend.tests.test_cases backend.tests.test_evidence backend.tests.test_audit backend.tests.test_audit_list backend.tests.test_m1_access backend.tests.test_network_csv backend.tests.test_gps_csv backend.tests.test_normalization backend.tests.test_candidate_entities backend.tests.test_source_events backend.tests.test_processing backend.tests.test_observations backend.tests.test_entities backend.tests.test_events backend.tests.test_processing_provenance backend.tests.test_processing_dispatch backend.tests.test_processing_publication backend.tests.test_processing_audit backend.tests.test_triage_endpoints backend.tests.test_explanations
+```
+
+Actual local versions: Python **3.14.9**, Node **22.23.4**, npm **12.2.1**;
+existing backend environment Neo4j driver **6.4.1**, jsonschema **4.25.1**. These
+differ from workflow runtime pins Python 3.14.8/Node 22.23.3/npm 12.2.0; no clean
+pinned-runtime setup, Windows/hosted CI, mounted browser/accessibility, live
+Neo4j, full I01 or benchmark claim. Final diff is reviewed within the assigned
+paths and whitespace check passes. Task remains In Progress pending review/
+publication; Checkpoint 1C/I01 and M4 remain open. Next bounded handoffs U07/U07B
+and I01 after remaining prerequisites/runbook exits. Nothing staged, committed,
+pushed or merged.

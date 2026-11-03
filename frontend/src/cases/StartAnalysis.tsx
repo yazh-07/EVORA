@@ -4,8 +4,8 @@ import { useApiClient } from '../api/ApiProvider';
 import { createAnalysisController } from './analysisController';
 import type { AnalysisState } from './analysisController';
 
-// Future analytical views consume this one case-scoped pin for all reads/pages.
-const AnalysisContext = createContext<{ caseId: string; analysis_run_id: string | null } | null>(null);
+// Analytical views consume this one case-scoped pin for all reads/pages.
+const AnalysisContext = createContext<{ caseId: string; analysis_run_id: string | null; selectCompletedRun: (id: string) => void } | null>(null);
 export function useAnalysisWorkspace() {
   const value = useContext(AnalysisContext);
   if (!value) throw new Error('Analysis views require a case analysis workspace.');
@@ -17,7 +17,7 @@ export function CaseAnalysisWorkspace({ caseId, children }: { caseId: string; ch
   const controller = useMemo(() => createAnalysisController(client, caseId), [client, caseId]);
   const state = useSyncExternalStore(controller.subscribe, controller.getSnapshot, controller.getSnapshot);
   useEffect(() => { controller.start(); return () => controller.dispose(); }, [controller]);
-  const value = useMemo(() => ({ caseId, analysis_run_id: state.pinnedAnalysisRunId }), [caseId, state.pinnedAnalysisRunId]);
+  const value = useMemo(() => ({ caseId, analysis_run_id: state.pinnedAnalysisRunId, selectCompletedRun: controller.selectCompletedRun }), [caseId, state.pinnedAnalysisRunId, controller]);
   return <AnalysisContext.Provider value={value}>
     <section className="panel" aria-labelledby="analysis-heading">
       <h2 id="analysis-heading">Case analysis</h2>

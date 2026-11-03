@@ -1,4 +1,6 @@
 import assert from 'node:assert/strict';
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
 import { createHash } from 'node:crypto';
 import { execFileSync, spawn } from 'node:child_process';
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
@@ -9,7 +11,7 @@ import { fileURLToPath } from 'node:url';
 import { createApiClient } from '../.test-build/src/api/client.mjs';
 import { createOriginalDownload } from '../.test-build/src/cases/downloadController.mjs';
 import { createCaseStore } from '../.test-build/src/cases/store.mjs';
-import { createAnalysisController, createEvidenceStore, createProcessingController, createProcessingStatusController, createObservationController, createCaseOverviewController } from '../.test-build/src/cases/CaseWorkspace.mjs';
+import { createTriageController, PriorityListPanel, createAnalysisController, createEvidenceStore, createProcessingController, createProcessingStatusController, createObservationController, createCaseOverviewController } from '../.test-build/src/cases/CaseWorkspace.mjs';
 
 // Run explicitly after npm test + build. Real HTTP, FastAPI and SQLite; synthetic identities/data only.
 const temporary = await mkdtemp(join(tmpdir(), 'evora-u02-'));
@@ -446,10 +448,63 @@ try {
         const page = await client.request('get', route, { path: { caseId }, query: { analysis_run_id: state.pinnedAnalysisRunId } });
         assert.equal(page.analysis_run_id, completed.id, 'real read agrees with workspace pin');
       }
+      // U06: consume the real merged A06/A15 API through the actual UI controller.
+      const triage = createTriageController(client, caseId, completed.id, undefined, 1);
+      const waitTriage = async () => {
+        for (let attempt = 0; triage.getSnapshot().status === 'loading'; attempt++) {
+          assert.ok(attempt < 300, 'triage HTTP request completes');
+          await new Promise(resolve => setTimeout(resolve, 5));
+        }
+        assert.equal(triage.getSnapshot().status, 'ready', triage.getSnapshot().message);
+        assert.equal(triage.getSnapshot().page.analysis_run_id, completed.id);
+        assert.equal(triage.getSnapshot().page.total, snapshot.evidence_ids.length);
+        return triage.getSnapshot().page;
+      };
+      try {
+        triage.start();
+        const first = await waitTriage();
+        const result = first.items[0].latest_result;
+        assert.equal(first.items[0].evidence_id, evidenceId);
+        // One processed source per case: all known keys match, no cross-source neighbors.
+        assert.equal(result.score, 55.56); assert.equal(result.priority, 'P3');
+        assert.deepEqual(result.factors.map(({ name, value, weight, contribution, evidence_ids }) =>
+          ({ name, value, weight, contribution, evidence_ids })), [
+          { name: 'relevance', value: 1, weight: .25 / .45, contribution: 55.56, evidence_ids: [evidenceId] },
+          { name: 'connectivity', value: 0, weight: .20 / .45, contribution: 0, evidence_ids: [evidenceId] },
+        ]);
+        assert.ok(result.factors.every(factor => factor.explanation.length > 0));
+        assert.match(result.explanation, /Rounded contribution sum 55\.56/);
+        const html = renderToStaticMarkup(createElement(PriorityListPanel, { state: triage.getSnapshot(), load: triage.load }));
+        assert.match(html, /55\.56/); assert.match(html, /relevance/); assert.match(html, /connectivity/);
+        const history = await client.request('get', '/api/v1/cases/{caseId}/evidence/{evidenceId}/triage-history', { path: { caseId, evidenceId } });
+        assert.deepEqual(history.find(item => item.analysis_run_id === completed.id), result);
+        const items = [...first.items];
+        const body = new FormData(); body.set('file', new File(['Synthetic U06 later upload'], 'later.txt'));
+        body.set('kind', 'document'); body.set('source_label', 'Synthetic U06 upload between pages');
+        const later = await client.request('post', '/api/v1/cases/{caseId}/evidence', { path: { caseId }, body });
+        for (let offset = 1; offset < first.total; offset++) {
+          await triage.load(offset); items.push(...(await waitTriage()).items);
+        }
+        assert.deepEqual(items.map(item => item.evidence_id), [evidenceId, ...snapshot.evidence_ids.filter(id => id !== evidenceId)]);
+        assert.ok(items.every(item => item.evidence_id !== later.id));
+        for (const item of items.slice(1)) assert.deepEqual(item, { evidence_id: item.evidence_id });
+        // A new completed run includes the upload; the existing list still reads the old run.
+        await analysis.submit();
+        for (let attempt = 0; analysis.getSnapshot().status !== 'terminal'; attempt++) {
+          assert.ok(attempt < 300); assert.equal(analysis.getSnapshot().message, '');
+          await new Promise(resolve => setTimeout(resolve, 10));
+        }
+        const newer = analysis.getSnapshot();
+        assert.notEqual(newer.pinnedAnalysisRunId, completed.id);
+        assert.ok(newer.run.input_snapshot.evidence_ids.includes(later.id));
+        await triage.load(0); assert.deepEqual((await waitTriage()).items, first.items);
+        analysisRuns.push({ caseId, runId: newer.run.id });
+      } finally { triage.dispose(); }
       analysisRuns.push(path);
     } finally { analysis.dispose(); }
   }
   console.log('PASS U05D real HTTP/FastAPI/SQLite analysis: network/GPS frozen snapshots and SHA-256, completed pins, terminal stop, pinned graph/findings/triage. Neo4j is an explicit double.');
+  console.log('PASS U06 real HTTP priority controller: exact 55.56/P3/factors, history, pinned all-page membership/order across upload and newer completed analysis; unscored evidence stays unscored.');
   evidenceStore.dispose();
   const beforeDeniedAudit = intakeSnapshot();
   client.setToken('u02-synthetic-one'); await store.load();

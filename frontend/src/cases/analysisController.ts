@@ -91,6 +91,10 @@ export function createAnalysisController(client: ApiClient, caseId: string, poll
           'Authentication required. Open a session again before retrying.' });
       });
     },
+    // A selected listTriage response identifies a completed same-case snapshot.
+    selectCompletedRun(id: string) {
+      if (enabled && !state.pinnedAnalysisRunId && uuid(id)) publish({ ...state, pinnedAnalysisRunId: id });
+    },
     async submit() {
       if (!enabled || request || state.status === 'polling') return;
       cancel();

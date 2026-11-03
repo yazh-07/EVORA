@@ -1,3 +1,6 @@
+export { createTriageController } from './triageController';
+export { PriorityList, PriorityListPanel } from './PriorityList';
+import { PriorityList } from './PriorityList';
 export { createAnalysisController } from './analysisController';
 export { StartAnalysis, CaseAnalysisWorkspace, useAnalysisWorkspace } from './StartAnalysis';
 import { CaseAnalysisWorkspace } from './StartAnalysis';
@@ -45,7 +48,15 @@ export function CaseWorkspace() {
     </section>
     {client.hasToken() && <CaseCreation state={state} create={(title, description) => store.create(title, description)} />}
     <CasePanels state={state} load={offset => { void store.load(offset); }} select={id => { void store.select(id); }} />
-    {state.detailStatus === 'ready' && state.detail && <CaseAnalysisWorkspace key={state.detail.id} caseId={state.detail.id}><CaseOverview caseId={state.detail.id} /><EvidenceWorkspace caseId={state.detail.id} /></CaseAnalysisWorkspace>}
+    {state.detailStatus === 'ready' && state.detail && <CaseAnalysisWorkspace key={state.detail.id} caseId={state.detail.id}><CaseOverview caseId={state.detail.id} /><CaseEvidenceWorkspace caseId={state.detail.id} /></CaseAnalysisWorkspace>}
+  </>;
+}
+
+function CaseEvidenceWorkspace({ caseId }: { caseId: string }) {
+  const [selection, setSelection] = useState<{ id: string }>();
+  return <>
+    <PriorityList inspectEvidence={id => setSelection({ id })} />
+    <EvidenceWorkspace caseId={caseId} sourceSelection={selection} />
   </>;
 }
 
