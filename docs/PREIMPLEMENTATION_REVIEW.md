@@ -4868,3 +4868,84 @@ No live Neo4j, Windows, hosted CI, browser visual/accessibility, full NLP/model
 suite, benchmark or complete checkpoint proof is claimed. Checkpoint 1C/I01 and
 M3 remain open; next bounded consumer handoffs U06/U07B, followed by I01 only
 after all prerequisites and runbook exit evidence. No later task started.
+
+### F08B verification — 2026-11-03
+
+Executed 2026-11-04 on `feat/f08b-analysis-audit`, initial clean common
+contract/base **9184bed7f5b0ff1ab265452f54392aa168fbe6cc**, matching the supplied
+base. M1 sharmelas-925 owns F08B / Checkpoint 1C. Exact dependency ancestors,
+shared hook paths and resolved producer/consumer queue are in AGENT_TASKS.md.
+Only the eight authorized paths changed; spec/frontend/dependencies unchanged.
+
+`record_analysis_event` appends actor/case/run and safe status/version/error at
+exactly the run's finished_at. Verified completion, projection failure and early
+analysis failure all share their terminal SQL transaction with audit. SQL write,
+audit insert and completion commit failure controls prove no completed event
+survives rollback. Unaccountable failures retain hidden queued/running history;
+recovery resumes and appends once. Replay/concurrent acceptance/terminal worker
+calls/rebuild preserve the single event. Existing audit SQL guards reject UPDATE,
+DELETE, REPLACE and UPSERT. Unknown error text maps to ANALYSIS_FAILED, never raw
+exception content. No historical event backfill or private wire fields added.
+
+Real read-back uses createCase -> upload synthetic network/GPS -> startProcessing
+-> bodyless startAnalysis -> getAnalysisRun and case-authorized listAuditEvents.
+SQL event target resolves the exact frozen analysis snapshot, algorithm and
+immutable output; failures before output generation have no output provenance.
+A separate API test reads every audit page, validates AuditPage, checks event IDs
+against stored events and proves whole/fractional UTC chronological ordering.
+Foreign actor and other/missing case controls prevent leakage. Neo4j is the
+existing explicit transactional GraphDouble; no live Neo4j acceptance claimed.
+
+Required commands completed successfully:
+
+```sh
+npx @redocly/cli bundle specs/openapi.yaml --output /tmp/evora-openapi.json
+python scripts/verify_coordination.py /tmp/evora-openapi.json
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -m unittest discover -s scripts -p 'test_*.py'
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json /home/whale2186/.hermes/cache/scratch/test_neo4j_venv/bin/python -W error::ResourceWarning -m unittest discover -s backend/tests -p 'test_analysis_audit.py' -v
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json /home/whale2186/.hermes/cache/scratch/test_neo4j_venv/bin/python -W error::ResourceWarning -m unittest discover -s backend/tests -p 'test_graph_projection.py' -v
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json /home/whale2186/.hermes/cache/scratch/test_neo4j_venv/bin/python -W error::ResourceWarning -m unittest discover -s backend/tests -p 'test_analysis.py' -v
+npm --prefix frontend run test
+git diff --check
+```
+
+Results: coordination passes (27 operations, 126 tasks); scripts **122 pass**;
+F08B **15 pass**; projection **17 run, 16 pass, 1 live Neo4j skip**; analysis
+**14 run, 13 pass, 1 live Neo4j skip**; frontend **101 pass**. All ResourceWarning
+checks pass. The default python scripts run uses jsonschema 4.26.0; the required
+pinned jsonschema 4.25.1 scripts run also passes in the supplied virtualenv:
+
+```sh
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json /home/whale2186/.hermes/cache/scratch/test_neo4j_venv/bin/python -m unittest discover -s scripts -p 'test_*.py'
+```
+
+Additional shared workflow checks pass:
+
+```sh
+npx --yes @redocly/cli@2.57.0 lint specs/openapi.yaml
+npx --yes openapi-typescript@7.10.1 specs/openapi.yaml -o /tmp/evora-f08b-api.d.ts
+frontend/node_modules/.bin/tsc --noEmit --strict /tmp/evora-f08b-api.d.ts
+npm --prefix frontend run build
+npx --yes @google/design.md@0.4.0 lint DESIGN.md
+```
+
+OpenAPI has its existing missing-license warning; DESIGN has zero errors or
+warnings. Build checks generated declaration freshness and frontend types.
+Versions read back locally: Python 3.14.9, SQLite 3.53.1, FastAPI 0.143.1,
+httpx 0.28.1, Neo4j driver 6.4.1, jsonschema 4.25.1 in the supplied environment;
+Node 22.23.4 and npm 12.2.1. These differ from workflow runtime pins
+Python 3.14.8 / Node 22.23.3 / npm 12.2.0; no clean pinned setup claim.
+
+Earlier completed-checkpoint backend regressions **327 pass**, no skips:
+
+```sh
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json /home/whale2186/.hermes/cache/scratch/test_neo4j_venv/bin/python -W error::ResourceWarning -m unittest backend.tests.test_skeleton backend.tests.test_validation backend.tests.test_auth backend.tests.test_cases backend.tests.test_evidence backend.tests.test_audit backend.tests.test_audit_list backend.tests.test_m1_access backend.tests.test_network_csv backend.tests.test_gps_csv backend.tests.test_normalization backend.tests.test_candidate_entities backend.tests.test_source_events backend.tests.test_processing backend.tests.test_observations backend.tests.test_entities backend.tests.test_events backend.tests.test_processing_provenance backend.tests.test_processing_dispatch backend.tests.test_processing_publication backend.tests.test_processing_audit
+EVORA_TEST_PYTHON=/home/whale2186/.hermes/cache/scratch/test_neo4j_venv/bin/python node frontend/test/cases.integration.mjs
+```
+
+The real HTTP smoke passes I00/I00B intake/hash/original download, authorized
+uploadEvidence audit, network/GPS processing/source inspection, all-page overview
+and access/error controls. No full NLP/model suite, live Neo4j, browser visual,
+Windows, hosted CI, benchmark, module or Checkpoint 1C completion is claimed.
+I01 remains open pending its remaining prerequisites and runbook exit evidence.
+Changes are uncommitted/unpublished; no later task started.

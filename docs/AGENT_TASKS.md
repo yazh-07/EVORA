@@ -1027,3 +1027,39 @@ by client disposal. Full proposal and approved speech addition remain required.
   diagnostic, not analysis publication. Actual tests/doubles/limits are in
   PREIMPLEMENTATION_REVIEW.md. Checkpoint 1C/I01 and M3 remain open; next bounded
   consumer handoffs are U06/U07B, then I01 after all its prerequisites/exit proof.
+
+### F08B assignment — 2026-11-03
+
+- **F08B / Checkpoint 1C / M1 Evidence Foundation / sharmelas-925**.
+  Explicit user handoff on clean `feat/f08b-analysis-audit`, Backlog ->
+  In Progress pending review/publication. Execution date 2026-11-04.
+- Exact reviewed common contract/base and initial HEAD:
+  **9184bed7f5b0ff1ab265452f54392aa168fbe6cc** on
+  `docs/coordination-foundation`; OpenAPI draft 0.3.0 unchanged.
+- Real dependency ancestors: F06
+  **1b5166d91e0f3b86b85585d714a917a3efc82d44**, A05
+  **266f39f4df18e261a156240ff4d828f74afafe2b**, A01B
+  **ba7db7faa449e62a3ee0e3a74ddd8ef8b4f58887**, F08
+  **747d223b1b04d134edaea6384e0c3cfcb1b40c5e**. All Checkpoint 1B
+  tasks and A05B/A06/A15 are merged; no missing producer substituted.
+- Allowed paths: `backend/audit.py`, `backend/graph_projection.py`,
+  `backend/analysis.py`, `backend/tests/test_analysis_audit.py`,
+  `backend/README.md`, `docs/AGENT_TASKS.md`, `docs/ROADMAP.md`,
+  `docs/PREIMPLEMENTATION_REVIEW.md`. Explicit M1-to-M3 hook/initializer and
+  shared-doc handoff; no spec/frontend/dependency changes or publication.
+- Acceptance: one append-only startAnalysis event per completed/failed run,
+  authenticated actor/case and run target, safe status/version/error summary,
+  atomic status/audit writes, authorized chronological paginated API read-back,
+  private frozen-input/output linkage, replay/recovery and SQL failure controls.
+- Producer/consumer communication queue, M1 F08B -> M3 A05/A01B and M4/I01:
+  resolved within the authorized hook paths. Run ID is the private provenance
+  reference to frozen algorithm/input snapshot and immutable output if produced;
+  early failures have no output. No extra wire field or public source dump.
+  Public errors allow only ANALYSIS_FAILED and GRAPH_PROJECTION_FAILED; unknown
+  codes map to ANALYSIS_FAILED. Standalone A01B initialization now ensures F06
+  audit storage and A05's existing legacy-a01b version default/freeze. Existing
+  history is not backfilled with invented audit events. No unresolved F08B gate.
+- Real HTTP/SQLite/processing/analysis acceptance uses an explicit transactional
+  Neo4j double; live Neo4j remains opt-in. Results/limits in
+  PREIMPLEMENTATION_REVIEW.md. Checkpoint 1C/I01 remains open; next consumer
+  handoff is I01 after its remaining UI prerequisites and runbook exit evidence.

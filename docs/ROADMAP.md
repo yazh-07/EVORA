@@ -52,6 +52,33 @@ Comma-separated IDs below are **exhaustive assignments**, not ranges. Each catal
 | 6C | I06 | I06 | I06 reports measured threats/provenance/resource/privacy/competitor limitations after the full-scope gates; no invented metrics/originality/admissibility claims. | Backlog |
 
 
+### F08B live record — 2026-11-03
+
+**F08B / Checkpoint 1C / M1 sharmelas-925 / In Progress pending review/publication.**
+Explicit bounded handoff on clean `feat/f08b-analysis-audit`; actual initial
+HEAD/common contract/base **9184bed7f5b0ff1ab265452f54392aa168fbe6cc** matches
+the supplied coordination base. Execution 2026-11-04. AGENT_TASKS.md records
+allowed shared paths, exact F06/A05/A01B/F08 dependencies and hook handoff.
+
+Terminal analysis status and one startAnalysis event commit together. Event
+actor/case/run target and safe algorithm/status/error summary link privately to
+frozen inputs and outputs when present. Pending/failed projection is never
+logged as completed. Unknown errors fail closed to ANALYSIS_FAILED. Existing
+append-only audit guards and case-scoped chronological paginated API are reused;
+replay/recovery/rebuild do not duplicate events or backfill historical actors.
+Standalone projection initialization ensures audit storage and legacy version.
+
+15 F08B tests pass, including real HTTP/SQLite/CSV processing/analysis read-back,
+rollback/commit failure, crash recovery, replay/concurrency, privacy and isolation.
+Projection/analysis regressions pass with two opt-in live Neo4j skips; 327 prior
+checkpoint backend tests, 101 frontend tests and real earlier-checkpoint HTTP
+smoke pass. Contract/type/build/DESIGN checks pass; details and local version
+limits are in PREIMPLEMENTATION_REVIEW.md. Neo4j is a transactional test double
+here, not a live service claim. Checkpoint 1C/I01 and M1 remain open. Next bounded
+consumer integration is I01 after its remaining UI dependencies/runbook evidence.
+No stage, commit, push, merge or later task started.
+
+
 ### A15 live record — 2026-11-03
 
 **A15 / Checkpoint 1C / M3 whale2186 / In Progress pending review/publication.**

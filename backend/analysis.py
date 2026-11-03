@@ -16,6 +16,7 @@ from fastapi.responses import JSONResponse
 from starlette.concurrency import run_in_threadpool
 
 from backend.auth import CaseAccessGrant, require_case_access
+from backend.audit import record_analysis_event
 from backend.errors import AccessError
 from backend.evidence import invalid_input
 from backend.graph_db import Neo4jGraphDatabase
@@ -166,8 +167,14 @@ def process_analysis_run(app, run_id):
         # A01B may already have recorded a sanitized terminal projection failure.
         try:
             with db.connect() as connection:
-                connection.execute("UPDATE analysis_runs SET status='failed',finished_at=?,error='ANALYSIS_FAILED' "
-                    "WHERE id=? AND status IN ('queued','running')", (_now(), run_id))
+                connection.execute('BEGIN IMMEDIATE')
+                run = connection.execute('SELECT * FROM analysis_runs WHERE id=?', (run_id,)).fetchone()
+                finished_at = _now()
+                changed = connection.execute("UPDATE analysis_runs SET status='failed',finished_at=?,error='ANALYSIS_FAILED' "
+                    "WHERE id=? AND status IN ('queued','running')", (finished_at, run_id)).rowcount
+                if changed:
+                    record_analysis_event(connection, run=run, status='failed',
+                        finished_at=finished_at, error='ANALYSIS_FAILED')
         except Exception:
             # Outage leaves pending history hidden for startup recovery.
             return

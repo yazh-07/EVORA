@@ -2899,3 +2899,37 @@ Tests validate against the actual bundled OpenAPI schemas, exercise source/case
 and arithmetic negatives, and read published triage/history/findings through real
 HTTP/SQLite/processing producers. The API integration uses an explicit Neo4j
 projection double; it does not certify a live Neo4j deployment.
+
+### F08B analysis audit
+
+Completed and failed analysis runs append one `startAnalysis` event in the same
+SQLite transaction as the terminal status. The authenticated actor, case and
+run ID are retained; `target_id` is the analysis run ID. `reason` is
+`run:{id};status:{status};version:{algorithm_version}`; failures append
+`;error:ANALYSIS_FAILED` or `;error:GRAPH_PROJECTION_FAILED`. Unknown error codes
+map to `ANALYSIS_FAILED`; exception messages never enter this event.
+
+The run reference joins privately to frozen inputs/algorithm and immutable SQL
+outputs when produced. Early failures have no output provenance. Source text,
+filenames, parameters and driver details are not copied into audit. The existing
+case-authorized audit endpoint returns chronological paginated events, protected
+by F06's UPDATE/DELETE/collision triggers. Replay, recovery, graph reads and
+rebuilds cannot append a second terminal event. Audit-write failure rolls back
+the terminal transition; unrecoverable SQL accounting leaves pending history
+hidden for recovery. Graph commit alone never produces a completed event.
+Standalone projection initialization ensures audit tables and the existing
+`legacy-a01b` version default/freeze; it does not fabricate historical events.
+
+Focused verification (real SQLite/HTTP and processing/analysis producers;
+transactional Neo4j test double, not a live deployment):
+
+```sh
+npx @redocly/cli bundle specs/openapi.yaml --output /tmp/evora-openapi.json
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json /home/whale2186/.hermes/cache/scratch/test_neo4j_venv/bin/python -W error::ResourceWarning -m unittest discover -s backend/tests -p 'test_analysis_audit.py' -v
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json /home/whale2186/.hermes/cache/scratch/test_neo4j_venv/bin/python -W error::ResourceWarning -m unittest discover -s backend/tests -p 'test_graph_projection.py' -v
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json /home/whale2186/.hermes/cache/scratch/test_neo4j_venv/bin/python -W error::ResourceWarning -m unittest discover -s backend/tests -p 'test_analysis.py' -v
+```
+
+The interpreter path above is the supplied local test environment. Shared
+contract/type/design checks and earlier checkpoint regressions are recorded in
+`docs/PREIMPLEMENTATION_REVIEW.md`. Checkpoint 1C/I01 is still open.
