@@ -1,6 +1,19 @@
 # EVORA scoped agent assignment templates
 
 
+### A06 assignment — 2026-11-03
+
+| Field | Recorded assignment |
+|---|---|
+| Task/checkpoint/module/owner | A06 / 1C / M3 Evidence Fusion and Adaptive Triage / whale2186; explicit bounded user handoff; execution 2026-11-04 |
+| Branch/common contract base | Clean initial `feat/a06-triage-history-endpoints`, actual HEAD **ca6e379ffd0c73332f47fdf6ce3132d1dfc39c99**. Supplied full SHA `ca6e37901ea2bdfad73bc87e9ecbf483015a6b0c` differs. Unchanged OpenAPI 0.3.0 |
+| Allowed paths | `backend/triage_endpoints.py` (chosen), `backend/app.py`, `backend/tests/test_triage_endpoints.py`, `backend/README.md`, `docs/AGENT_TASKS.md`, `docs/ROADMAP.md`, `docs/PREIMPLEMENTATION_REVIEW.md`; no spec/frontend/dependency edits or stage/commit/push/merge |
+| Real dependency versions | A04 7858cce3cc21dbf0efe680094b28c3182b72d336, A05 266f39f4df18e261a156240ff4d828f74afafe2b, A01B ba7db7faa449e62a3ee0e3a74ddd8ef8b4f58887, A05B ca6e379ffd0c73332f47fdf6ce3132d1dfc39c99; preceding G02/A01/A02/A03/A03B/G01D and completed checkpoint producers are integrated ancestors |
+| Interface/dependency handling | Real completed A05/A01B immutable SQL snapshots/results and A04 sorting -> listTriage/getTriageHistory -> M4 U06/U06B and I01. Real HTTP/SQLite/processing/analysis publication; explicit transactional Neo4j double |
+| Acceptance | Exact snapshot membership/total, selected ID even empty/unscored, UTC/UUID completed selection, pinned score order then UUID with unscored last, precompletion live uploads, stable upload-between-pages behavior, immutable automated history and 400/401/404 negatives; actual OpenAPI schema validation |
+| Communication queue: U09 storage handoff | No override table/producer exists at this base. Conditional `priority_overrides` reader uses PriorityOverride wire columns, same-case evidence and latest UTC/UUID; no migration/write API introduced. Test-only schema-derived storage double proves live overlay ordering/history behavior. M4 JebasJ U09 must coordinate its actual storage adapter/migration with M3 whale2186 A06 and prove authorized append/audit plus I02B override-between-pages. This future producer gate does not block completed automated reads or imply real U09 integration |
+| State/next | In Progress pending review/publication; exact verification/limitations in PREIMPLEMENTATION_REVIEW.md. Checkpoint 1C/I01 and M3 remain open. Next dependency-ready M4 handoff U06, followed by I01 integration when its other dependencies are ready; later M3 A07 retains its 2A/P06 gate |
+
 ### A05B assignment — 2026-11-03
 
 | Field | Recorded assignment |

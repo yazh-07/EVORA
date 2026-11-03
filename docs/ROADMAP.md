@@ -52,6 +52,29 @@ Comma-separated IDs below are **exhaustive assignments**, not ranges. Each catal
 | 6C | I06 | I06 | I06 reports measured threats/provenance/resource/privacy/competitor limitations after the full-scope gates; no invented metrics/originality/admissibility claims. | Backlog |
 
 
+### A06 live record — 2026-11-03
+
+**A06 / Checkpoint 1C / M3 whale2186 / In Progress pending review/publication.**
+Explicit bounded handoff on clean initial `feat/a06-triage-history-endpoints`,
+actual common contract/base **ca6e379ffd0c73332f47fdf6ce3132d1dfc39c99**;
+supplied full SHA differs. Execution 2026-11-04. AGENT_TASKS.md records the
+seven allowed paths, real dependency versions and future U09 storage queue.
+
+listTriage selects same-case completed immutable inputs/results by optional ID
+or latest UTC creation time then UUID. Frozen membership includes unscored
+items, preserves totals and score/UUID order across uploads/pages, and retains
+the selected ID even on empty/unscored pages. Only before completion are live
+uploads listed without a run ID. getTriageHistory returns stored automated
+results across completed runs oldest first; pending/failed outputs stay hidden.
+Case access and shared 400/401/404 errors apply to both no-store endpoints.
+Live overrides, if present, affect only overlay/effective priority fields.
+
+Real HTTP/SQLite/processing/A04/A05/A01B read-back and explicit Neo4j/override
+storage doubles are distinguished in PREIMPLEMENTATION_REVIEW.md. U09 is absent;
+real authorized override/audit integration remains U09/I02B work. Checkpoint
+1C/I01 and M3 remain open. Next bounded consumer handoff U06; I01 requires all
+its remaining producers and exit evidence. No later row or publication started.
+
 ### A05B live record — 2026-11-03
 
 **A05B / Checkpoint 1C / M3 whale2186 / In Progress pending review/publication.**
