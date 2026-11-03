@@ -30,6 +30,8 @@ _PROCESSING_ERRORS = frozenset({
     )),
 })
 
+_ANALYSIS_ERRORS = frozenset({"ANALYSIS_FAILED", "GRAPH_PROJECTION_FAILED"})
+
 # Intake producers store UTC with a Z suffix. Canonical fractional comparison
 # keeps whole-second and fractional timestamps in chronological order, retaining
 # microseconds (SQLite date functions would round them to milliseconds).
@@ -108,6 +110,30 @@ def record_processing_audit(
         "VALUES (?, ?, ?, ?, ?, ?, ?)",
         (str(uuid4()), run['case_id'], run['actor_id'], "startProcessing",
          run['evidence_id'], finished_at, reason),
+    )
+
+
+def record_analysis_event(
+    connection: sqlite3.Connection, *, run: dict | sqlite3.Row, status: str,
+    finished_at: str, error: str | None = None,
+) -> None:
+    """Append within the terminal status transaction, without committing.
+
+    The run ID joins to the private frozen inputs, algorithm and immutable SQL
+    outputs (when produced). No source content or driver diagnostics are public.
+    Callers serialize transitions and append only for a changed nonterminal run.
+    """
+    if status not in {"completed", "failed"}:
+        raise ValueError("Analysis audit requires a terminal state.")
+    reason = f"run:{run['id']};status:{status};version:{run['algorithm_version']}"
+    if status == "failed":
+        code = error if error in _ANALYSIS_ERRORS else "ANALYSIS_FAILED"
+        reason += f";error:{code}"
+    connection.execute(
+        "INSERT INTO audit_events (id, case_id, actor_id, action, target_id, created_at, reason) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?)",
+        (str(uuid4()), run['case_id'], run['actor_id'], "startAnalysis",
+         run['id'], finished_at, reason),
     )
 
 

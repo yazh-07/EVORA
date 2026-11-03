@@ -8,6 +8,7 @@ import hashlib
 import json
 import math
 
+from backend.audit import initialize_audit, record_analysis_event
 from backend.errors import AccessError
 from backend.graph_db import GraphDatabaseError
 from backend.graph_nodes import _uuid, build_graph_nodes
@@ -33,6 +34,7 @@ def initialize_graph_projection(db):
     A05 must insert authenticated acceptance metadata before invoking projection;
     it can extend analysis_runs with trigger/algorithm/request fingerprint fields.
     """
+    initialize_audit(db)
     with db.connect() as connection:
         connection.executescript("""
           BEGIN IMMEDIATE;
@@ -82,6 +84,14 @@ def initialize_graph_projection(db):
             BEGIN SELECT RAISE(ABORT,'Missing analysis output'); END;
           COMMIT;
         """)
+        # Standalone A01B callers also require a frozen version for audit.
+        # Preserve the existing A05 legacy default without rewriting history.
+        connection.execute('BEGIN IMMEDIATE')
+        columns = {row['name'] for row in connection.execute('PRAGMA table_info(analysis_runs)')}
+        if 'algorithm_version' not in columns:
+            connection.execute("ALTER TABLE analysis_runs ADD COLUMN algorithm_version TEXT NOT NULL DEFAULT 'legacy-a01b'")
+        connection.execute('CREATE TRIGGER IF NOT EXISTS analysis_version_frozen BEFORE UPDATE OF '
+            "algorithm_version ON analysis_runs BEGIN SELECT RAISE(ABORT,'Frozen analysis algorithm'); END")
 
 
 def _run(connection, case_id, run_id):
@@ -312,14 +322,22 @@ def project_analysis_run(db, neo4j_db, *, case_id: str, analysis_run_id: str,
                 raise ValueError("Analysis run is no longer projectable")
             _project(neo4j_db, graph, rewrite=run["status"] == "running")
             if run["status"] == "running":
+                finished_at = _now()
                 connection.execute("UPDATE analysis_runs SET status='completed',finished_at=? WHERE id=?",
-                                   (_now(), analysis_run_id))
+                                   (finished_at, analysis_run_id))
+                record_analysis_event(connection, run=run, status='completed', finished_at=finished_at)
     except Exception:
         try:
             with db.connect() as connection:
-                connection.execute("UPDATE analysis_runs SET status='failed',finished_at=?,error=? "
+                connection.execute('BEGIN IMMEDIATE')
+                run = _run(connection, case_id, analysis_run_id)
+                finished_at = _now()
+                changed = connection.execute("UPDATE analysis_runs SET status='failed',finished_at=?,error=? "
                     "WHERE id=? AND case_id=? AND status='running'",
-                    (_now(), "GRAPH_PROJECTION_FAILED", analysis_run_id, case_id))
+                    (finished_at, "GRAPH_PROJECTION_FAILED", analysis_run_id, case_id)).rowcount
+                if changed:
+                    record_analysis_event(connection, run=run, status='failed',
+                        finished_at=finished_at, error='GRAPH_PROJECTION_FAILED')
         except Exception:
             # A failed SQL failure-accounting write leaves running output hidden;
             # the original immutable output remains available for restart recovery.
