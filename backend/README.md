@@ -2436,3 +2436,46 @@ Tests include synthetic topology/invalid-input controls and real merged
 FastAPI/SQLite upload, processing, A01 and A02 source read-back with synthetic
 network.csv and a labeled in-test GPS D-7/D-8 variant. No real evidence or
 persisted/completed analysis is used.
+
+### A04 factor aggregation and snapshot ordering
+
+`backend/triage/aggregation.py` provides `aggregate_triage_result` over real
+A03/A03B producer dictionaries. Alternatively pass a mapping from factor names
+to G02 `FactorValue` objects (or `None` for unavailable). A bare `FactorValue`
+has no name and is rejected; names are never guessed from weight or position.
+Producer standalone weights/contributions are recomputed by `score_evidence`.
+Only supplied available factors participate; evaluated zero retains its weight.
+Observation count zero or no available factors returns `None`, never synthetic
+P4. Every target/source must belong to the supplied authorized evidence set,
+even on unscored paths. Callers must authorize the case, select coherent frozen
+inputs and establish the actual observation count/source ownership.
+
+G02 normalizes 0.25 relevance and 0.20 connectivity to 5/9 and 4/9. Round each
+contribution to two decimals, then round/cap the sum at 100.00; preserve rounded
+contributions even when their sum is 100.01. Bands are P1 >=80, P2 >=60, P3 >=40,
+P4 below 40, after rounding. Results contain only OpenAPI TriageResult fields,
+canonical lowercase UUIDs, a deterministic UUIDv5 for case/run/evidence/policy,
+and a UTC timestamp. Caller-supplied aware ISO timestamps normalize to UTC;
+omission uses current UTC. A05 must preserve the original timestamp/results on
+replay and persist `g02-triage-v1` in AnalysisRun.algorithm_version.
+
+`sort_triage_results` accepts computed TriageResults and frozen complete evidence
+membership, returning OpenAPI TriageEntry dictionaries: `evidence_id` plus
+`latest_result` when scored, only `evidence_id` when unscored. It sorts computed
+score descending, UUID ascending for ties, then unscored UUID ascending. Mixed
+case/run, duplicate and out-of-membership results fail closed. Sort complete
+membership before pagination; A06 adds live overrides without reordering.
+
+```sh
+npx @redocly/cli bundle specs/openapi.yaml --output /tmp/evora-openapi.json
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -W error::ResourceWarning -m unittest discover -s backend/tests -p 'test_triage_aggregation.py' -v
+```
+
+Use jsonschema 4.25.1. Tests validate the actual bundle with UUID format checks
+and an explicit UTC datetime checker (the pinned baseline lacks jsonschema's
+optional RFC3339 package). Synthetic policy controls include all bands, rounding,
+cap, unavailable inputs, case isolation and G02 canonical sort goldens. Real
+FastAPI/SQLite tests upload/process the committed network.csv and gps.csv and
+read original/source APIs through A01 -> A02 -> A03/A03B -> A04. A separately
+labeled GPS D-7 variant exercises a positive link. Neither test persists or
+publishes completed analysis/Neo4j; A01B/A05/I01 remain separate gates.
