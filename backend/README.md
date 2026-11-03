@@ -1,3 +1,117 @@
+# G01D private Neo4j setup
+
+`backend.graph_db` supplies the backend-only connection and projection-schema
+harness. Tested baseline: **Neo4j 5.26.0 Community**, Python driver
+**neo4j 6.4.1**, **pytz 2026.1**. Install the two exact pins from
+`requirements.txt`; no frontend package or HTTP operation is added. Imports and
+driver construction are lazy; connectivity requires a successful real query in
+the configured database. SQLite remains authoritative. A01B owns validated
+partition writes/rebuilds and A05 owns completed SQL publication; setup creates
+no analysis results or scores.
+
+| Backend environment variable | Default / validation |
+|---|---|
+| `NEO4J_URI` | `bolt://127.0.0.1:7687`; Bolt/Neo4j URI, optional `+s`/`+ssc`, host and valid port; no embedded credentials/path/query/fragment |
+| `NEO4J_USER` | `neo4j`; nonblank |
+| `NEO4J_PASSWORD` | Required, nonblank; never printed or included in config repr/errors |
+| `NEO4J_DATABASE` | `neo4j`; nonblank, passed as driver/session configuration, never Cypher text |
+| `NEO4J_CONNECTION_TIMEOUT` | `1.0` seconds, finite and `0 < value <= 2` |
+
+Keep credentials in the private backend environment; do not put them in frontend
+build variables, Git or logs. For a disposable local service, use the exact
+`neo4j:5.26.0-community` image (tested Linux image digest
+`sha256:5a015e53de1895e7eee1574ae0325cf8c4b89587222778108c594bdd45a474b5`).
+Only publish Bolt on loopback; the following service has no persistent volume
+and is removed on stop. Allow startup to finish before running the real tests.
+
+```sh
+python -m pip install neo4j==6.4.1 pytz==2026.1
+read -rs NEO4J_PASSWORD  # enter a disposable password of at least 8 characters
+export NEO4J_PASSWORD
+export NEO4J_URI=bolt://127.0.0.1:17687
+export NEO4J_AUTH="neo4j/$NEO4J_PASSWORD"
+docker run --detach --rm --name evora-g01d-local \
+  --publish 127.0.0.1:17687:7687 --env NEO4J_AUTH \
+  --env NEO4J_server_memory_heap_initial__size=256m \
+  --env NEO4J_server_memory_heap_max__size=256m \
+  --env NEO4J_server_memory_pagecache_size=128m neo4j:5.26.0-community
+unset NEO4J_AUTH
+```
+
+Use a backend-owned instance and always close it, including after failures:
+
+```python
+from backend.graph_db import Neo4jGraphDatabase
+
+db = Neo4jGraphDatabase()  # Neo4jConfig.from_env(), validates before any connection
+try:
+    assert db.verify_connectivity() is True
+    with db.get_driver().session(database=db.config.database) as session:
+        db.setup_schema(session)
+finally:
+    db.close()
+```
+
+`get_driver()` reuses one owned driver. `close()` is idempotent; the next access
+creates a fresh driver. Use lifecycle operations serially. Connectivity/auth/
+database-access failures raise fixed-message `Neo4jUnavailableError` (a
+`GraphDatabaseError`); invalid configuration and schema failures also expose
+safe typed errors without driver diagnostics. The harness emits no logs.
+Connect, acquisition (including Bolt handshake/auth) and write timeouts are all
+bounded; transaction/auto-commit retries are disabled. Queries carry server
+transaction timeouts. These are driver/server limits, not a hard OS deadline for
+arbitrary DNS resolution or a server stalling after acquisition. The local
+refused-port, stalled-handshake and invalid-auth tests assert failure within two
+seconds. An unreachable DB never reports connectivity/schema success.
+
+Internal **evora-graph/1** uses `:Node` nodes and `:Edge` relationships. Both have
+composite uniqueness on `(case_id, analysis_run_id, id)`, a case/run index and a
+case/source-ID index, with stable `evora_*_v1` names. DDL is static and uses
+`IF NOT EXISTS`; results are consumed before success. Statements auto-commit
+individually: after a partial failure rerun all six, without publishing a graph.
+Uniqueness does not enforce property presence or endpoint/source validity;
+A01B must validate those and scope every data query to the authorized case/run.
+No global source-ID constraint prevents the same UUID appearing in later runs.
+
+From the repository root, the default suite needs no Neo4j service:
+
+```sh
+npx @redocly/cli bundle specs/openapi.yaml --output /tmp/evora-openapi.json
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -W error::ResourceWarning -m unittest discover -s backend/tests -p 'test_neo4j_setup.py' -v
+EVORA_NEO4J_INTEGRATION=1 EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -W error::ResourceWarning -m unittest discover -s backend/tests -p 'test_neo4j_setup.py' -v
+docker stop evora-g01d-local
+unset NEO4J_PASSWORD
+```
+
+Expect 13 unit/socket tests passing and four real-service tests skipped by
+default; opt-in expects all 17 passing. Real tests create/reuse schema, read
+constraints/online indexes, reject invalid auth/missing databases and duplicate
+node/edge identities, and permit identical source IDs across distinct cases/runs.
+They clean up only their randomly identified synthetic nodes/relationships.
+Use a disposable database: schema persists for the database lifetime. A failure
+case is an unused loopback Bolt port: `verify_connectivity()` must raise the safe
+unavailable error, with no successful graph publication.
+
+PowerShell setup/test equivalent, using Docker Desktop Linux containers:
+
+```powershell
+python -m pip install neo4j==6.4.1 pytz==2026.1
+$env:NEO4J_PASSWORD = [System.Net.NetworkCredential]::new('', (Read-Host 'Disposable Neo4j password' -AsSecureString)).Password
+$env:NEO4J_URI = 'bolt://127.0.0.1:17687'
+$env:NEO4J_AUTH = 'neo4j/' + $env:NEO4J_PASSWORD
+docker run --detach --rm --name evora-g01d-local --publish 127.0.0.1:17687:7687 --env NEO4J_AUTH --env NEO4J_server_memory_heap_initial__size=256m --env NEO4J_server_memory_heap_max__size=256m --env NEO4J_server_memory_pagecache_size=128m neo4j:5.26.0-community
+Remove-Item Env:NEO4J_AUTH
+# Wait for service startup before enabling the real tests.
+$env:EVORA_NEO4J_INTEGRATION = '1'
+python -W error::ResourceWarning -m unittest discover -s backend/tests -p 'test_neo4j_setup.py' -v
+docker stop evora-g01d-local
+Remove-Item Env:NEO4J_PASSWORD, Env:EVORA_NEO4J_INTEGRATION
+```
+
+Actual verification used Linux/Python 3.14.9 and scratch-installed exact driver/
+pytz pins; Windows commands and hosted CI have not been executed for G01D.
+See `docs/PREIMPLEMENTATION_REVIEW.md` for exact results and environment limits.
+
 # A01 case-scoped graph nodes
 
 `backend.graph_nodes.build_graph_nodes(case_id, evidence_records, entity_records,

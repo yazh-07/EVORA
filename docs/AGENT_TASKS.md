@@ -1,5 +1,17 @@
 # EVORA scoped agent assignment templates
 
+### G01D assignment — 2026-11-03
+
+| Field | Recorded assignment |
+|---|---|
+| Task/checkpoint/module/owner | G01D / 1C / M3 Evidence Fusion and Adaptive Triage / whale2186, explicit user assignment and shared-file handoff |
+| Branch/common contract base | Clean `feat/g01d-neo4j-connection-setup` at **7858cce3cc21dbf0efe680094b28c3182b72d336**, matching local `docs/coordination-foundation`; supplied hash `7858ccefc692c89f5bc5cf935f111ba716a5a92a` is absent locally. Unchanged OpenAPI draft 0.3.0. Execution date 2026-11-04 |
+| Allowed paths | `requirements.txt`, `backend/graph_db.py`, `backend/tests/test_neo4j_setup.py`, `backend/README.md`, `docs/AGENT_TASKS.md`, `docs/ROADMAP.md`, `docs/PREIMPLEMENTATION_REVIEW.md`; only new dependency pins `neo4j==6.4.1`, `pytz==2026.1`. No spec/frontend edits or stage/commit/push/merge authorization |
+| Dependencies | G01 **e0257a6ad231105b93ae98a97f176ed233a25412**, real merged backend skeleton in the reviewed base; completed Checkpoints 0/1A/1B and merged A01/A02/A03/A03B/A04/G02 remain regression dependencies. G01D needs no processing/model/scoring/provider choice |
+| Internal producer/consumer | Private backend config/driver/schema harness -> A01B partition persistence/recovery, then A05 publication. Schema version 1 uses `Node` nodes and `Edge` relationships, each unique by `(case_id, analysis_run_id, id)`, with both case/run and case/source-ID indexes. Fixed DDL identifiers, no interpolated evidence/config values |
+| Acceptance/tests | Validated environment/defaults, required private password, bounded acquisition/connect/write and no automatic retries, typed sanitized connectivity/auth/schema failures, explicit lifecycle, idempotent constraints/indexes; mocked fault controls plus actual refused/stalled sockets and optional disposable real Neo4j integration. Exact results/versions/doubles/limitations in PREIMPLEMENTATION_REVIEW.md |
+| State/next | In Progress; no checkpoint/module completion. Next bounded M3 handoff is A01B after G01D review/integration; A05 follows. No later task started |
+
 Coordination-branch draft 0.3.0, not a running app. Four people each work on one module; confirmed GitHub-handle assignments and integration coordination are in [ROADMAP.md](ROADMAP.md#module-assignment-and-live-task-state). Full initial proposal scope is fixed. Use the canonical phase/checkpoint ledger in [ROADMAP.md](ROADMAP.md). Assign one catalog row, not an entire module, milestone or full dashboard. Codex fills the task card from recorded repository decisions before editing. Missing common-base/allowed-path choices or a shared G/I assignee need a short clarification, not a guessed assignment.
 
 ### A01 assignment — 2026-11-03
