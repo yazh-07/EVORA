@@ -2850,3 +2850,52 @@ old pins after new publication, unscored history, failed/unpublished output,
 recovery read-back, auth/case/input negatives and live override changes without
 reordering or rewriting results. No real Neo4j, Windows, browser or I01 exit proof
 is claimed by default unit tests.
+
+### A15 grounded explanations
+
+`backend/triage/explanations.py` provides plain-text explanations for selected,
+authorized frozen inputs:
+
+- `generate_triage_explanation(triage_result, observations_by_id=None)` checks
+  G02 arithmetic, priority and factor ordering before disclosing base weights,
+  full normalized weights, values, rounded contributions, their sum and the
+  100-point cap. It preserves the producer's reason and evidence references.
+  A04 calls it for newly constructed results, so A05/A06 publish/store/read the
+  detailed explanation through existing immutable result/history fields.
+- `generate_finding_explanation(finding, observations_by_id)` supports the
+  actual A02 `candidate_link_shared_identifier:v1` rule. Each finding observation
+  must resolve to its same-case evidence/locator and the same exact candidate
+  key across at least two evidence items. Unsupported rules and broken joins
+  raise `ValueError`. Confidence 0 means unassessed association, not probability.
+  Finding has no explanation field; this helper returns text without extending
+  or mutating that wire object. UI/API additions are outside A15.
+- `evaluate_counterfactual_sensitivity(evidence_id, case_id, entities,
+  observations, removed_entity_key, all_case_entities, edges)` returns baseline
+  and counterfactual TriageResults using real A01/A02/A03/A03B/A04 calculations.
+  `entities` is the target subset of the complete `all_case_entities`; `edges`
+  must agree with the full A02 baseline. Remove matching target entities and
+  rederive edges while holding known keys and source observations fixed. Results
+  use deterministic diagnostic run IDs and a fixed diagnostic timestamp, are
+  unpersisted, and do not represent completed analysis runs. Saturation/rounding
+  can yield unchanged scores for some inputs; the labeled D-7 control changes
+  relevance/connectivity, removes its candidate link and changes the explanation.
+
+TriageFactor contains evidence IDs, without factor-specific observation IDs.
+Optional triage locators are therefore labeled **evidence context only**, not
+claimed as exact factor attribution. Callers must provide the original frozen
+processing outputs; same-case checks alone cannot prove snapshot membership.
+Finding locators use its exact observation IDs. Producers/consumers must preserve
+this distinction. Inputs and historical results remain unchanged. Render output
+as text: source locators and producer text are untrusted content. No SHAP or
+learned feature-importance metric applies to the selected deterministic rule;
+no source reliability, independence, identity or guilt is inferred.
+
+```sh
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json /home/whale2186/.hermes/cache/scratch/test_neo4j_venv/bin/python -W error::ResourceWarning -m unittest discover -s backend/tests -p 'test_explanations.py' -v
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json /home/whale2186/.hermes/cache/scratch/test_neo4j_venv/bin/python -W error::ResourceWarning -m unittest discover -s backend/tests -p 'test_triage_endpoints.py' -v
+```
+
+Tests validate against the actual bundled OpenAPI schemas, exercise source/case
+and arithmetic negatives, and read published triage/history/findings through real
+HTTP/SQLite/processing producers. The API integration uses an explicit Neo4j
+projection double; it does not certify a live Neo4j deployment.

@@ -9,6 +9,7 @@ from datetime import datetime, timezone
 from uuid import NAMESPACE_URL, uuid5
 
 from backend.graph_nodes import _uuid
+from backend.triage.explanations import generate_triage_explanation
 from backend.triage.policy import FactorValue, POLICY_VERSION, score_evidence, triage_sort_key
 
 
@@ -81,15 +82,16 @@ def aggregate_triage_result(
                             factors=values, case_evidence_ids=allowed)
     if scored is None:
         return None
-    names = ", ".join(factor["name"] for factor in scored.factors)
-    return {
+    result = {
         "id": str(uuid5(NAMESPACE_URL, f"evora:{POLICY_VERSION}:{case_id}:{analysis_run_id}:{evidence_id}")),
         "case_id": case_id, "evidence_id": evidence_id, "analysis_run_id": analysis_run_id,
         "score": float(scored.score), "priority": scored.priority,
         "factors": list(scored.factors),
-        "explanation": f"{scored.explanation} Available factors: {names}.",
+        "explanation": scored.explanation,
         "created_at": timestamp,
     }
+    result["explanation"] = generate_triage_explanation(result)
+    return result
 
 
 def sort_triage_results(results: list[dict], all_case_evidence_ids: Iterable[str]) -> list[dict]:

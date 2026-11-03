@@ -988,3 +988,42 @@ by client disposal. Full proposal and approved speech addition remain required.
 - Actual verification/limitations are recorded in A04 verification in
   PREIMPLEMENTATION_REVIEW.md. Checkpoint 1C/I01 stays open; next bounded
   dependency-ready M3 handoff is A01B (also requires G01D), then A05.
+
+### A15 assignment — 2026-11-03
+
+- **A15 / Checkpoint 1C / M3 Evidence Fusion and Adaptive Triage / whale2186**.
+  User-assigned clean `feat/a15-explainable-triage-findings`; Backlog ->
+  In Progress pending review/publication. Execution date 2026-11-04.
+  M1 sharmelas-925, M2 yazh-07 and M4 JebasJ retain their accountable boundaries.
+- Exact actual reviewed common contract/base and local coordination ref:
+  **eb256aa8def4a3e7b453982e4b1413868db4a47c**. Supplied full SHA
+  `eb256aab8a141b711d95e8b39bbcd203ffcfae2e` differs. Draft 0.3.0 unchanged.
+- Real required dependency merges: A04
+  **7858cce3cc21dbf0efe680094b28c3182b72d336**, A02
+  **51ee2ed3432b8956cf3af9ebd410a04483e917d7**. G02
+  **d1f16ef02a62c2ce94bdd19539037a7b60cecabf**, A03/A03B/A01,
+  A05/A05B/A06 and completed Checkpoint 1B producers are merged ancestors.
+- Allowed paths: `backend/triage/`, `backend/tests/test_explanations.py`,
+  `backend/README.md`, `docs/AGENT_TASKS.md`, `docs/ROADMAP.md`,
+  `docs/PREIMPLEMENTATION_REVIEW.md`. Explicit shared-doc handoff; no
+  spec/frontend/dependency edits or stage/commit/push/merge authorization.
+- Acceptance: exact factor/base/normalized-weight/contribution/sum explanation,
+  actual A02 rule/source locators and uncertainty, D-7 removal changing actual
+  relevance/connectivity/link/score/explanation, strict bundled Finding and
+  TriageResult validation, source/case/arithmetic failure controls and published
+  real-producer API read-back. No fabricated SHAP/model-importance metric.
+- Producer/consumer communication queue, A15 -> M4 U06/U07B/U06B and A17:
+  TriageFactor has no observation IDs; evidence-to-observation joins cannot prove
+  exact factor attribution. Resolved for this scoped implementation by explicitly
+  labeling optional locator lists as evidence context only and preserving actual
+  producer bases. Finding resolves exact observation IDs. **Exact per-factor
+  observation attribution remains unavailable**; any future structured handoff
+  requires coordinated producer/consumer review, not an invented wire field.
+  Caller selects frozen observations; helpers cannot authorize case access or
+  infer completed snapshot membership. Finding text is a helper return value,
+  not an extra Finding field. No other future gate is pulled into this task.
+- A04 now uses the detailed triage generator for new outputs; old completed
+  outputs/history are never rewritten. Counterfactual helper is an unpersisted
+  diagnostic, not analysis publication. Actual tests/doubles/limits are in
+  PREIMPLEMENTATION_REVIEW.md. Checkpoint 1C/I01 and M3 remain open; next bounded
+  consumer handoffs are U06/U07B, then I01 after all its prerequisites/exit proof.

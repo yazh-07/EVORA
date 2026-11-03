@@ -52,6 +52,33 @@ Comma-separated IDs below are **exhaustive assignments**, not ranges. Each catal
 | 6C | I06 | I06 | I06 reports measured threats/provenance/resource/privacy/competitor limitations after the full-scope gates; no invented metrics/originality/admissibility claims. | Backlog |
 
 
+### A15 live record — 2026-11-03
+
+**A15 / Checkpoint 1C / M3 whale2186 / In Progress pending review/publication.**
+User-assigned clean `feat/a15-explainable-triage-findings`, actual common
+contract/base **eb256aa8def4a3e7b453982e4b1413868db4a47c**; supplied full SHA
+differs. Execution 2026-11-04. AGENT_TASKS.md records bounded paths, exact
+A04/A02/G02 dependencies and the producer/consumer communication queue.
+
+New A04 results explain actual base/normalized weights, factor values, rounded
+contributions, sum/cap, producer bases and uncertainty. A05/A06 persist/read
+these through the existing immutable result/history fields. A02 finding helper
+resolves exact same-case source observations/row-column locators and retains
+candidate/unassessed labels. No SHAP/learned importance metric is fabricated.
+Diagnostic D-7 target-key removal recomputes real producers with fixed known
+keys: relevance .8 -> .6, connectivity .1 -> 0, score 48.88 -> 33.33; its
+candidate link and explanation match disappear. No source output is mutated.
+
+Triage factors carry evidence IDs but no observation IDs: optional locator
+lists are explicitly evidence context only; exact per-factor observation
+attribution remains unavailable. Frozen-source selection belongs to callers.
+Strict schema, negatives and real HTTP/SQLite/processing/published-history
+read-back are recorded in PREIMPLEMENTATION_REVIEW.md; Neo4j is an explicit
+projection double in this API acceptance, not a live deployment proof.
+Checkpoint 1C/I01 and M3 remain open. Next bounded consumer handoffs U06/U07B;
+I01 still needs all prerequisites and runbook exit evidence. No publication or
+later task started.
+
 ### A06 live record — 2026-11-03
 
 **A06 / Checkpoint 1C / M3 whale2186 / In Progress pending review/publication.**
