@@ -51,6 +51,32 @@ Comma-separated IDs below are **exhaustive assignments**, not ranges. Each catal
 | 6B | I09, I09B | I09, I09B | I09 exercises every feature/operation with real producers; I09B proves clean full-scope Windows and CI setup/build/run and distinguishes test adapters from actual provider runs. | Backlog |
 | 6C | I06 | I06 | I06 reports measured threats/provenance/resource/privacy/competitor limitations after the full-scope gates; no invented metrics/originality/admissibility claims. | Backlog |
 
+### G01D live record — 2026-11-03
+
+**G01D / Checkpoint 1C / M3 whale2186 / In Progress pending review/integration.**
+Explicit user assignment on clean `feat/g01d-neo4j-connection-setup`, actual
+common contract/base **7858cce3cc21dbf0efe680094b28c3182b72d336**, matching local
+`docs/coordination-foundation`. The supplied full hash is absent locally;
+AGENT_TASKS.md records the verified base and seven allowed paths. Execution
+occurred 2026-11-04. Real G01 prerequisite
+**e0257a6ad231105b93ae98a97f176ed233a25412** is an integrated ancestor.
+
+Private backend configuration/lazy driver ownership, sanitized typed failures
+and bounded connection acquisition are implemented in `backend/graph_db.py`.
+Internal evora-graph/1 defines Node/Edge composite case/run/source-ID uniqueness
+and both case/run and case/source-ID indexes using consumed idempotent DDL.
+Exact pins are neo4j 6.4.1 and pytz 2026.1; real Neo4j 5.26.0 Community tests
+exercise connectivity/auth, schema read-back/repeated setup, duplicate rejection
+and independent case/run partitions. Default unit/socket tests need no service.
+Full commands/results/doubles and environment limitations are recorded in
+PREIMPLEMENTATION_REVIEW.md; setup/run commands are in `backend/README.md`.
+
+No analysis projection/publication, HTTP route, frontend access or scoring is
+introduced. A01B/A05/I01 retain persistence/recovery/coherent-publication exits;
+Checkpoint 1C and M3 remain open. Windows/hosted CI and clean full pinned-runtime
+setup are unverified. No stage/commit/push/merge authorized or performed. Next
+bounded M3 handoff is A01B after G01D review/integration; no later row started.
+
 ### A04 live record — 2026-11-03
 
 **A04 / Checkpoint 1C / M3 whale2186 / In Progress pending review/publication.**

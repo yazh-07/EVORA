@@ -1,5 +1,112 @@
 # EVORA scope/contract verification and implementation readiness
 
+### G01D verification — 2026-11-03
+
+G01D / Checkpoint 1C / M3 / whale2186, locally verified pending review/integration
+on `feat/g01d-neo4j-connection-setup`. Execution date 2026-11-04. Clean initial
+HEAD/common contract base **7858cce3cc21dbf0efe680094b28c3182b72d336**, matching
+local `docs/coordination-foundation`; supplied full hash
+`7858ccefc692c89f5bc5cf935f111ba716a5a92a` is absent locally. Direct dependency
+G01 **e0257a6ad231105b93ae98a97f176ed233a25412** is a verified merged ancestor.
+Seven authorized files only; no spec/frontend or other dependency changes.
+
+Implemented `backend/graph_db.py`: frozen validated backend environment config,
+required private password, lazy reusable explicitly closed driver, safe typed
+config/connectivity/auth/schema/cleanup failures, explicit configured database,
+bounded connect/acquisition/write settings and zero automatic retries/telemetry.
+Connectivity consumes a real query; schema consumes each static idempotent DDL
+result and never reports partial failure as success. Internal evora-graph/1
+has two composite uniqueness constraints and four indexes: Node nodes and Edge
+relationships each partition by case/run and index case/source ID. Schema setup
+does not write evidence, score anything or publish an analysis.
+
+Actual setup/read-back: installed **neo4j 6.4.1**, **pytz 2026.1** and
+**jsonschema 4.25.1** into `/tmp/evora-g01d-validation`; read back distribution
+versions and Neo4j's required `pytz` dependency. Ran a disposable private
+loopback-only **Neo4j 5.26.0 Community** Docker container, read actual version
+through `dbms.components()`, created schema twice, read both constraints and all
+four ONLINE indexes. Image digest:
+`sha256:5a015e53de1895e7eee1574ae0325cf8c4b89587222778108c594bdd45a474b5`.
+Ephemeral generated service credentials stayed in private `/tmp` configuration
+and process environment, with no credentials in Git/test output. No existing
+service/database was modified. The disposable container and credential file
+were removed after verification.
+
+Actual node/relationship writes use parameterized synthetic UUIDs: one source ID
+coexists in two cases and two runs, while duplicate Node and Edge identity in
+the same case/run is rejected by actual database constraints. Synthetic data is
+removed by case/source-scoped cleanup. Wrong password and nonexistent database
+fail with safe `Neo4jUnavailableError`. Real refused-port and accepted-but-stalled
+Bolt sockets use subprocess hard deadlines; acquisition is set to 0.35 seconds
+for these controls and both assert failure under two seconds. Invalid-auth also
+asserts under two seconds. No mock is substituted for these socket/auth/schema
+acceptances. Other failure/lifecycle/partial-DDL/consume-error tests use explicit
+driver/session doubles, with deferred failures consumed before success.
+
+Local runtime: Linux, **Python 3.14.9, Node 22.23.4, npm 12.2.1, FastAPI 0.162.0,
+Pydantic 2.14.2, HTTPX 0.28.1**. These preexisting application versions differ
+from several setup pins. Exact new graph/validation pins were tested in the
+scratch target; this does not certify a clean full `requirements.txt` install,
+Windows or new hosted CI. `backend/README.md` documents Linux and PowerShell
+configuration, disposable-service setup and focused testing; Windows commands
+were not executed here.
+
+Actual required verification sequence (the exported path selects the scratch
+driver and exact jsonschema rather than the host jsonschema 4.26.0):
+
+```sh
+export PYTHONPATH=/tmp/evora-g01d-validation
+npx @redocly/cli bundle specs/openapi.yaml --output /tmp/evora-openapi.json
+python scripts/verify_coordination.py /tmp/evora-openapi.json
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -m unittest discover -s scripts -p 'test_*.py'
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -W error::ResourceWarning -m unittest discover -s backend/tests -p 'test_neo4j_setup.py' -v
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -W error::ResourceWarning -m unittest discover -s backend/tests -p 'test_triage_aggregation.py' -v
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -W error::ResourceWarning -m unittest discover -s backend/tests -p 'test_graph_links.py' -v
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -W error::ResourceWarning -m unittest discover -s backend/tests -p 'test_graph_nodes.py' -v
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -W error::ResourceWarning -m unittest discover -s backend/tests -p 'test_triage_policy.py' -v
+npm --prefix frontend run test
+git diff --check
+```
+
+Results: default G01D **13 PASS / 4 opt-in skips**; with private `NEO4J_*`
+configuration and `EVORA_NEO4J_INTEGRATION=1`, **17 PASS / zero skips**.
+Requested A04 **12**, A02 **13**, A01 **19**, G02 **33**, coordination **122**
+and frontend **101** tests PASS. Coordination verifier passes 27 operations /
+126 tasks / 18 checkpoints / 39 capabilities / 40 proposal mappings.
+No ResourceWarning was observed. Additional completed-checkpoint and existing
+A03/A03B regression: **355 tests PASS**, zero skips/failures:
+
+```sh
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -W error::ResourceWarning -m unittest backend.tests.test_skeleton backend.tests.test_validation backend.tests.test_auth backend.tests.test_cases backend.tests.test_evidence backend.tests.test_audit backend.tests.test_audit_list backend.tests.test_m1_access backend.tests.test_network_csv backend.tests.test_gps_csv backend.tests.test_normalization backend.tests.test_candidate_entities backend.tests.test_source_events backend.tests.test_processing backend.tests.test_observations backend.tests.test_entities backend.tests.test_events backend.tests.test_processing_provenance backend.tests.test_processing_dispatch backend.tests.test_processing_publication backend.tests.test_processing_audit backend.tests.test_relevance_factor backend.tests.test_connectivity_factor
+npx --yes @redocly/cli@2.57.0 lint specs/openapi.yaml
+npx --yes openapi-typescript@7.10.1 specs/openapi.yaml -o /tmp/evora-g01d-api.d.ts
+frontend/node_modules/.bin/tsc --noEmit --strict /tmp/evora-g01d-api.d.ts
+npx --yes @google/design.md@0.4.0 lint DESIGN.md
+npm --prefix frontend run build
+node frontend/test/cases.integration.mjs
+```
+
+Contract lint/bundle, generated TypeScript 5.9.3 strict compilation, API-type
+freshness, frontend typecheck/build, DESIGN and whitespace checks PASS. Existing
+OpenAPI missing-license warning remains; DESIGN 0.4.0 has zero errors/warnings.
+Actual HTTP/SQLite/UI-controller smoke passes I00/I00B intake/processing/source
+inspection with original byte/hash roundtrip and two-actor/case negatives.
+Those real merged producers are used; unit UI Fetch/render fixtures remain
+labeled doubles, with no mounted-browser/accessibility certification. Later NLP
+model-suite limitations previously recorded under I00B were not resolved or
+retested by this bounded change.
+
+Limits/handoff: driver/server timeouts are not hard OS deadlines for arbitrary
+DNS or a server stalling after acquisition; only the specified local failure
+cases have measured two-second assertions. Schema statements auto-commit
+individually and must be rerun after partial failure. Uniqueness does not enforce
+nonnull fields, valid source UUIDs/observations or endpoints; A01B validates and
+persists/rebuilds case/run projections, and A05 controls SQL completion after
+verification. No cross-store transaction, completed graph, new endpoint, scoring,
+I01 exit or module closure is claimed. G01D stays In Progress pending review/
+integration; Checkpoint 1C remains open. No stage/commit/push/merge was authorized
+or performed. Next bounded M3 task is A01B after the G01D handoff; none started.
+
 ### A01 verification — 2026-11-03
 
 A01 / Checkpoint 1C / M3 / whale2186, `feat/a01-case-graph-nodes`, locally
