@@ -1,0 +1,16 @@
+.transcript-viewer { margin-top: var(--space-lg); min-width: 0; overflow-wrap: anywhere; }
+.transcript-viewer > input { box-sizing: border-box; width: 100%; margin-block: var(--space-sm); }
+.transcript-source { display: grid; gap: var(--space-sm); margin-bottom: var(--space-md); }
+.transcript-source audio, .transcript-source video { width: 100%; max-width: 100%; }
+.transcript-source button { justify-self: start; }
+.transcript-segments, .transcript-revisions { padding-left: var(--space-lg); }
+.transcript-segments > li { border-bottom: 1px solid var(--color-border); padding-block: var(--space-md); }
+.transcript-offset { font-variant-numeric: tabular-nums; }
+.transcript-text { white-space: pre-wrap; }
+.transcript-viewer mark { background: #ffe38a; color: #211b08; }
+.transcript-viewer summary { cursor: pointer; padding-block: var(--space-sm); }
+.transcript-viewer fieldset { display: grid; gap: var(--space-sm); min-width: 0; }
+.transcript-viewer textarea, .transcript-viewer fieldset input { box-sizing: border-box; width: 100%; min-width: 0; }
+.transcript-viewer textarea { resize: vertical; }
+.transcript-viewer fieldset button { justify-self: start; }
+.transcript-revisions > li { border-left: 2px solid var(--color-border); padding-left: var(--space-sm); }
