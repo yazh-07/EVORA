@@ -980,3 +980,58 @@ uses the existing explicit transactional double. If system Python lacks backend
 dependencies, set `EVORA_TEST_PYTHON` to an existing configured backend Python;
 no dependency installation is performed by the harness. Mounted-browser,
 Windows/hosted CI and live Neo4j acceptance are separate from these tests.
+
+
+## I01: Checkpoint 1C integrated smoke
+
+From the repository root, prepare the test controllers and built application,
+then run the complete smoke command:
+
+```sh
+npm --prefix frontend run test
+npm --prefix frontend run build
+node frontend/test/cases.integration.mjs
+```
+
+Python must contain the repository backend dependencies. If system Python lacks
+them, select an existing configured environment with `EVORA_TEST_PYTHON`:
+
+```sh
+EVORA_TEST_PYTHON=/path/to/backend-environment/bin/python node frontend/test/cases.integration.mjs
+```
+
+The default mode uses real HTTP, FastAPI, SQLite, private synthetic originals,
+processing, analysis and UI controllers, with an explicitly declared Neo4j double.
+For the live projection exit, configure a **disposable local Neo4j 5.26.0** using
+the setup in `backend/README.md`, supply private `NEO4J_*` environment variables,
+and run the same suite with the real application graph factory:
+
+```sh
+EVORA_NEO4J_INTEGRATION=1 node frontend/test/cases.integration.mjs
+```
+
+Both modes print their projection coverage. Live mode additionally verifies every
+completed SQL graph partition against Neo4j and its frozen source/result
+references. Use only synthetic data; the live suite leaves its generated graph
+partitions in the disposable service, which should be removed after testing.
+The harness removes its own temporary SQLite database and original files.
+
+Coverage crosses M3 (frozen snapshots/hash, real available-factor scores,
+source-backed graph/findings, historical results and completed run pins), M1
+(authorized original bytes/hash, `listAuditEvents` read-back of `startAnalysis`
+with investigator actor and analysis-run target, all audit pages, foreign-actor
+triage 404 ApiError), and M4 (explicit start/poll, priority/graph/finding controllers,
+server pagination, historical source locators and original download). Existing
+M2 network/GPS producers and I00/I00B regressions remain exercised. Uploads and
+newer completed analyses cannot change the pinned view or page membership/order;
+unprocessed evidence remains unscored. All checks must pass before the exact
+`PASS I01 verified first network/GPS triage tracer and graph projection gate.`
+marker appears.
+
+Checkpoint sealing also requires the backend crash/recovery, invalid selector,
+idempotency and authorization regressions recorded in `docs/INTEGRATION.md` and
+the I01 verification in `docs/PREIMPLEMENTATION_REVIEW.md`. A default doubled
+projection run alone cannot establish that exit. UI verification here uses real
+controllers and static React rendering, not mounted-browser/accessibility or
+native Windows certification. Live HTTP and backend exits passed on 2026-11-04;
+checkpoint status and all 18 task acceptances are in `docs/ROADMAP.md`.
