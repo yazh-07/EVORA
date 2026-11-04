@@ -1,3 +1,61 @@
+# U14B audited transcript corrections
+
+`backend/transcripts.py` implements `appendTranscriptRevision` and
+`listTranscriptRevisions` at
+`/api/v1/cases/{caseId}/observations/{observationId}/transcript-revisions`.
+The path and `processing_run_id` identify the original completed machine segment.
+POST requires one UUID `Idempotency-Key`, the latest completed same-evidence
+`base_processing_run_id`, explicit nullable `expected_latest_revision_id`, and
+nonblank `corrected_text` (1–20000 characters) / `reason` (1–2000 characters).
+Actor/time come from the server. Unknown body fields are rejected. GET returns
+an oldest-first UTC/UUID page with `limit` (default 20, maximum 100) and `offset`.
+Both operations require current case access and return `Cache-Control: no-store`.
+
+The revision table blocks UPDATE, DELETE and replacement, including hidden-rowid
+replacement. Keys are hashed and scoped to actor/case. Identical replay returns
+the original 201 result before stale checks; changed submissions under that key
+return 409. Missing/foreign/mismatched resources return 404, non-transcript
+observations return 400, and stale base/revision or lost machine lineage returns
+409. Derived observations cannot be used as the source path. Re-transcription
+never automatically rebases an older segment correction.
+
+Each append holds SQLite's writer transaction through preparation and a final
+precondition/access check. It commits the revision, complete new processing
+run/output and one `appendTranscriptRevision` audit reference together. Failure
+rolls everything back. The audit targets the revision UUID and contains neither
+transcript text nor correction reason. The new run finishes strictly after its
+base, so existing latest-completed selection and new analysis keys consume it.
+Earlier runs, revisions, source bytes/hash and analytical snapshots stay intact;
+analysis-key replay keeps its original input snapshot.
+
+`transcript-materializer/1` copies unaffected observations, entities, events and
+uncertainty with fresh IDs and remapped joins. Every copied transcript segment
+carries its original machine `source_observation_id`; earlier effective segment
+corrections survive. The corrected segment preserves machine raw text, media
+locator and extraction confidence. Frozen private run configuration records
+original/base/revision references, predecessor maps, mention-to-segment links
+and an output digest. This is correction-specific provenance, separate from the
+existing machine processor provenance format.
+
+This checkout has no P16/P16B speech adapter or semantic speech-event extractor.
+The materializer reuses deterministic text identifier rules for device, account,
+phone and IP candidates, gives new candidates confidence 0 (unassessed), and
+removes stale dependent mentions/candidates/events. It preserves unaffected
+visual and other output; it does not claim semantic speech-event re-extraction.
+The tests use explicitly labeled completed-machine fixtures, real HTTP/SQLite
+transactions, and a Neo4j double for analysis publication. They establish API,
+concurrency, audit, rollback and snapshot behavior, not ASR quality or a sealed
+Checkpoint 3C. P16/P16B integration remains necessary for the complete speech gate.
+
+Validation (using the pinned Python environment described below):
+
+```sh
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -m unittest backend.tests.test_transcripts
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -m unittest discover -s backend/tests
+npm --prefix frontend run test
+git diff --check
+```
+
 # I04 labeled extraction/link evaluation — 2026-11-04
 
 The available extraction/link evaluation passes its 0.80 precision and recall
