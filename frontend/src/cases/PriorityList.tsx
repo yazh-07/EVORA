@@ -12,13 +12,59 @@ export function PriorityList({ inspectEvidence }: { inspectEvidence?: (id: strin
     [client, caseId, analysis_run_id, selectCompletedRun]);
   const state = useSyncExternalStore(controller.subscribe, controller.getSnapshot, controller.getSnapshot);
   useEffect(() => { controller.start(); return () => controller.dispose(); }, [controller]);
-  return <PriorityListPanel state={state} load={controller.load} inspectEvidence={inspectEvidence} />;
+  return <PriorityListPanel state={state} load={controller.load} loadHistory={controller.loadHistory} inspectEvidence={inspectEvidence} />;
 }
 
-export function PriorityListPanel({ state, load, inspectEvidence }: { state: TriageState; load: (offset?: number) => Promise<void>; inspectEvidence?: (id: string) => void }) {
+export function PriorityListPanel({ state, load, loadHistory, inspectEvidence }: {
+  state: TriageState; load: (offset?: number) => Promise<void>; loadHistory?: (evidenceId: string) => Promise<void>;
+  inspectEvidence?: (id: string) => void;
+}) {
   const page = state.page;
   const source = (id: string) => inspectEvidence ?
     <button type="button" className="identifier" onClick={() => inspectEvidence(id)} aria-label={`Inspect source evidence ${id}`}>{id}</button> : id;
+  const historyDetails = (evidenceId: string) => {
+    const history = state.histories?.[evidenceId];
+    return loadHistory && <details className="triage-history-details" onToggle={event => {
+      if (event.currentTarget.open) void loadHistory(evidenceId);
+    }}>
+      <summary aria-label={`Priority history for evidence ${evidenceId}`}>Priority history</summary>
+      <div aria-busy={history?.status === 'loading'}>
+        {!history && <p>Open to load evaluation history.</p>}
+        {history?.status === 'loading' && <p role="status">Loading priority history...</p>}
+        {history?.status === 'error' && <>
+          <p role="alert">{history.message}</p>
+          <button type="button" onClick={() => { void loadHistory(evidenceId); }}>Retry priority history</button>
+        </>}
+        {history?.status === 'ready' && (history.items.length === 0 ?
+          <p>No historical evaluations for this evidence item.</p> : <>
+            <p>Automated evaluations, oldest first. Changes compare consecutive evaluations.</p>
+            <ol className="triage-history-list">{history.items.map((result, index) => {
+              const previous = history.items[index - 1];
+              return <li key={result.id}>
+                <h3>Evaluation {index + 1}{index === history.items.length - 1 && ' (latest evaluation)'}</h3>
+                <p className="identifier">Analysis Run UUID: {result.analysis_run_id}</p>
+                {result.analysis_run_id === page?.analysis_run_id && <p>Selected analysis run</p>}
+                <p>Timestamp: <time dateTime={result.created_at}>{result.created_at}</time></p>
+                <p>Score: {result.score.toFixed(2)} · Priority: <strong className={`priority-badge priority-${result.priority.toLowerCase()}`}>{result.priority}</strong></p>
+                {previous && <div className="triage-history-change">
+                  <p>{previous.priority === result.priority ? `Priority unchanged: ${result.priority}` :
+                    `${result.priority < previous.priority ? '↑' : '↓'} ${result.priority} from ${previous.priority}`}</p>
+                  <p>Score change: {previous.score.toFixed(2)} → {result.score.toFixed(2)}</p>
+                </div>}
+                <p>{result.explanation}</p>
+                <h4>Factor breakdown</h4>
+                {result.factors.length === 0 ? <p>No contributing factors for this evaluation.</p> :
+                  <ul>{result.factors.map(factor => <li key={factor.name}>
+                    <strong>{factor.name.replaceAll('_', ' ')}</strong>: {factor.contribution.toFixed(2)} points
+                    {' '}(value {factor.value}, weight {factor.weight}). {factor.explanation}
+                    {factor.evidence_ids.length > 0 && <p className="identifier">Supporting evidence: {factor.evidence_ids.map(id => <span key={id}>{source(id)}{' '}</span>)}</p>}
+                  </li>)}</ul>}
+              </li>;
+            })}</ol>
+          </>)}
+      </div>
+    </details>;
+  };
   return <section className="panel priority-list" aria-label="Triage & Priority" aria-busy={state.status === 'loading'}>
     <h2>Triage &amp; Priority</h2>
     <p>Priority guides investigative attention; it does not establish truth, identity or guilt. Order follows computed scores; live overrides do not reorder evidence.</p>
@@ -42,7 +88,9 @@ export function PriorityListPanel({ state, load, inspectEvidence }: { state: Tri
               {' '}(value {factor.value}, weight {factor.weight}). {factor.explanation}
               {factor.evidence_ids.length > 0 && <p className="identifier">Supporting evidence: {factor.evidence_ids.map(id => <span key={id}>{source(id)}{' '}</span>)}</p>}
             </li>)}</ul></details>}</td>
-            <td>{entry.latest_result && <details className="explanation-details"><summary>View explanation</summary><p>{entry.latest_result.explanation}</p></details>}</td>
+            <td>{entry.latest_result && <details className="explanation-details"><summary>View explanation</summary><p>{entry.latest_result.explanation}</p></details>}
+              {historyDetails(entry.evidence_id)}
+            </td>
             <td>{entry.override ? <><strong>{entry.effective_priority}</strong> (live override)<p>{entry.override.reason}</p></> : entry.effective_priority ?? 'Not assigned'}</td>
           </tr>)}</tbody>
         </table></div>}
