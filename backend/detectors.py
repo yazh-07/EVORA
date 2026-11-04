@@ -132,7 +132,7 @@ def _evidence(case_id, evidence, sources):
 
 
 def _finding(case_id, run_id, kind, rule, summary, sources, *, entities=(), contradicting=(),
-             missing=(), coverage_matches=()):
+             missing=(), coverage_matches=(), conflict_strength=None):
     _uuid(run_id, 'analysis_run_id')
     oids = tuple(sorted({source['id'] for source in sources}))
     eids = tuple(sorted({source['evidence_id'] for source in sources}))
@@ -142,7 +142,8 @@ def _finding(case_id, run_id, kind, rule, summary, sources, *, entities=(), cont
     return Finding(id=str(uuid5(UUID(case_id), identity)), case_id=case_id, analysis_run_id=run_id,
         kind=kind, rule=rule, summary=summary, evidence_ids=eids, observation_ids=oids,
         entity_ids=tuple(sorted(set(entities))), contradicting_evidence_ids=tuple(sorted(set(contradicting))),
-        missing_information=tuple(missing), coverage_matches=tuple(sorted(coverage_matches)), confidence=0.0)
+        missing_information=tuple(missing), coverage_matches=tuple(sorted(coverage_matches)),
+        conflict_strength=conflict_strength, confidence=0.0)
 
 
 def _context(case_id, run_id):
@@ -240,7 +241,7 @@ def detect_conflict_findings(case_id, analysis_run_id, observations, entities, e
                 f"Potential location contradiction for candidate {key!r} at {instant.isoformat()}: "
                 f"reported coordinates {first[1]} and {second[1]} differ.", cited,
                 entities=[e['id'] for e in candidates.values() if e['candidate_key'] == key],
-                contradicting=[second[0]],
+                contradicting=[second[0]], conflict_strength=0.8,
                 missing=('Candidate identity, clock alignment and coordinate precision require verification.',)))
     groups = defaultdict(list)
     for event in records.values():
@@ -263,7 +264,7 @@ def detect_conflict_findings(case_id, analysis_run_id, observations, entities, e
                 f"Potential temporal contradiction for reported event {claim!r}: "
                 f"{first['observed_at_utc']} versus {second['observed_at_utc']}.", cited,
                 entities=first.get('entity_ids', []) + second.get('entity_ids', []),
-                contradicting=second['evidence_ids'],
+                contradicting=second['evidence_ids'], conflict_strength=0.8,
                 missing=('Whether reports describe the same occurrence and comparable clocks is unverified.',)))
     return sorted({finding.id: finding for finding in output}.values(), key=lambda item: item.id)
 
