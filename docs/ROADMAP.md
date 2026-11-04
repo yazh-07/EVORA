@@ -52,6 +52,32 @@ Comma-separated IDs below are **exhaustive assignments**, not ranges. Each catal
 | 6C | I06 | I06 | I06 reports measured threats/provenance/resource/privacy/competitor limitations after the full-scope gates; no invented metrics/originality/admissibility claims. | Backlog |
 
 
+### U07B live record — 2026-11-03
+
+**U07B / Checkpoint 1C / M4 JebasJ / In Progress pending review/publication.**
+Executed 2026-11-04 on initially clean `feat/u07b-finding-detail-ui`.
+Actual common contract/base **33ab842e65d637c10dfc99520cd1c6dbbd600468** differs
+from the supplied full SHA. Exact assignment/paths/dependencies and resolved
+producer/consumer handoff are in AGENT_TASKS.md.
+
+FindingInspector/findingController integrate typed listFindings into
+CaseWorkspace with the shared completed analysis pin. Server totals bound pages;
+run/case/shape/membership mismatches fail closed and retry retains the pin.
+Exact kind/summary/rule/confidence, supporting evidence/observation IDs and
+optional contradictory evidence/missing information render safely. Finding
+detail locators resolve through the selected run's frozen processing outputs,
+including all observation pages; source actions reach original inspection.
+No-run and empty findings remain distinct. Fixed 401/404/network errors/retry
+and cancellation cover page/case/run/session/unmount transitions.
+
+Frontend tests/build, contract/type/DESIGN checks and real HTTP read-back pass.
+The HTTP harness exercises real merged FastAPI/SQLite/processing/analysis with
+an explicit Neo4j projection double, candidate relationship pages and historical
+citations after newer processing/analysis. PREIMPLEMENTATION_REVIEW.md records
+commands, counts, regression results and environment limitations. Checkpoint
+1C/I01 and M4 remain open; next bounded I01 integration still requires its full
+runbook exit evidence. No stage, commit, push or merge performed.
+
 ### U07 live record — 2026-11-03
 
 **U07 / Checkpoint 1C / M4 JebasJ / In Progress pending review/publication.**

@@ -11,7 +11,7 @@ import { fileURLToPath } from 'node:url';
 import { createApiClient } from '../.test-build/src/api/client.mjs';
 import { createOriginalDownload } from '../.test-build/src/cases/downloadController.mjs';
 import { createCaseStore } from '../.test-build/src/cases/store.mjs';
-import { createGraphController, GraphPanel, createTriageController, PriorityListPanel, createAnalysisController, createEvidenceStore, createProcessingController, createProcessingStatusController, createObservationController, createCaseOverviewController } from '../.test-build/src/cases/CaseWorkspace.mjs';
+import { createFindingController, FindingPanel, createGraphController, GraphPanel, createTriageController, PriorityListPanel, createAnalysisController, createEvidenceStore, createProcessingController, createProcessingStatusController, createObservationController, createCaseOverviewController } from '../.test-build/src/cases/CaseWorkspace.mjs';
 
 // Run explicitly after npm test + build. Real HTTP, FastAPI and SQLite; synthetic identities/data only.
 const temporary = await mkdtemp(join(tmpdir(), 'evora-u02-'));
@@ -580,6 +580,37 @@ try {
         const html = renderToStaticMarkup(createElement(GraphPanel, { state: graphUI.getSnapshot(), load: graphUI.load, select: graphUI.select }));
         for (const citation of graphUI.getSnapshot().citations) assert.ok(html.includes(citation.source_locator));
       }
+      // U07B: real merged listFindings and frozen citation resolution, one finding per page.
+      const findingsUI = createFindingController(client, graphCaseId, completed.id, undefined, 1);
+      let findingPages;
+      try {
+        findingsUI.start(); await settle(() => ['ready', 'error'].includes(findingsUI.getSnapshot().status), 'findings load');
+        assert.equal(findingsUI.getSnapshot().status, 'ready', findingsUI.getSnapshot().message);
+        const total = findingsUI.getSnapshot().page.total;
+        assert.equal(total, displayed.edges.length); assert.ok(total > 1);
+        findingPages = [];
+        for (let offset = 0; offset < total; offset++) {
+          await findingsUI.load(offset);
+          const page = findingsUI.getSnapshot().page;
+          assert.ok(page, findingsUI.getSnapshot().message);
+          assert.equal(page.analysis_run_id, completed.id); assert.equal(page.total, total);
+          assert.deepEqual([page.limit, page.offset, page.items.length], [1, offset, 1]);
+          const finding = page.items[0]; findingPages.push(finding);
+          assert.equal(finding.kind, 'relationship'); assert.equal(finding.rule, 'candidate_link_shared_identifier:v1');
+          assert.equal(finding.case_id, graphCaseId); assert.equal(finding.analysis_run_id, completed.id);
+          assert.equal(finding.confidence, 0); assert.deepEqual(finding.evidence_ids, evidenceIds);
+          assert.ok(finding.observation_ids.length > 0);
+          assert.ok(finding.observation_ids.every(id => completed.input_snapshot.observation_ids.includes(id)));
+          await findingsUI.select(finding.id);
+          assert.equal(findingsUI.getSnapshot().citationStatus, 'ready', findingsUI.getSnapshot().citationMessage);
+          assert.deepEqual(findingsUI.getSnapshot().citations, finding.observation_ids.map(id => observations.get(id)));
+          const html = renderToStaticMarkup(createElement(FindingPanel, { state: findingsUI.getSnapshot(), load: findingsUI.load, select: findingsUI.select }));
+          for (const citation of findingsUI.getSnapshot().citations) {
+            assert.ok(html.includes(citation.source_locator)); assert.ok(html.includes(citation.evidence_id)); assert.ok(html.includes(citation.id));
+          }
+        }
+        assert.equal(new Set(findingPages.map(f => f.id)).size, total);
+      } finally { findingsUI.dispose(); }
       const originalEdge = displayed.edges[0];
       // New processing/analysis cannot replace this displayed graph or its frozen citations.
       const newerProcessing = createProcessingController(client, graphCaseId, graphSources[0].evidence.id);
@@ -595,6 +626,18 @@ try {
       await graphUI.select({ kind: 'edge', id: originalEdge.id });
       assert.equal(graphUI.getSnapshot().citationStatus, 'ready');
       assert.deepEqual(graphUI.getSnapshot().citations, originalEdge.observation_ids.map(id => observations.get(id)));
+      const historicalFindings = createFindingController(client, graphCaseId, completed.id, undefined, 1);
+      try {
+        historicalFindings.start(); await settle(() => ['ready', 'error'].includes(historicalFindings.getSnapshot().status), 'historical findings');
+        for (let offset = 0; offset < findingPages.length; offset++) {
+          await historicalFindings.load(offset);
+          assert.deepEqual(historicalFindings.getSnapshot().page.items, [findingPages[offset]]);
+          await historicalFindings.select(findingPages[offset].id);
+          assert.equal(historicalFindings.getSnapshot().citationStatus, 'ready', historicalFindings.getSnapshot().citationMessage);
+          assert.deepEqual(historicalFindings.getSnapshot().citations, findingPages[offset].observation_ids.map(id => observations.get(id)));
+        }
+      } finally { historicalFindings.dispose(); }
+      console.log('PASS U07B real HTTP findings: candidate relationships, rule/confidence, authoritative pagination, same-run evidence/observation locators and frozen history after reprocessing/new analysis. Neo4j remains an explicit double.');
       let originalBlob;
       const original = createOriginalDownload(client, graphSources[0].evidence, blob => { originalBlob = blob; return () => {}; });
       try { await original.download(); assert.deepEqual(Buffer.from(await originalBlob.arrayBuffer()), networkBytes); } finally { original.dispose(); }
@@ -608,6 +651,7 @@ try {
   for (const path of analysisRuns) {
     await assert.rejects(client.request('get', '/api/v1/cases/{caseId}/analysis-runs/{runId}', { path }), { status: 404 });
     await assert.rejects(client.request('get', '/api/v1/cases/{caseId}/graph', { path: { caseId: path.caseId }, query: { analysis_run_id: path.runId } }), { status: 404 });
+    await assert.rejects(client.request('get', '/api/v1/cases/{caseId}/findings', { path: { caseId: path.caseId }, query: { analysis_run_id: path.runId } }), { status: 404 });
   }
   await assert.rejects(client.request('get', '/api/v1/cases/{caseId}/evidence/{evidenceId}/processing-runs/{runId}', { path: runPath }), { status: 404 });
   for (const route of ['/api/v1/cases/{caseId}/entities', '/api/v1/cases/{caseId}/events']) {

@@ -1150,3 +1150,41 @@ by client disposal. Full proposal and approved speech addition remain required.
 - Actual checks/doubles/limitations in PREIMPLEMENTATION_REVIEW.md. Checkpoint
   1C/I01 and M4 remain open; next bounded task U07B, then remaining I01
   prerequisites and runbook exits. No staging, commit, push or merge authorized.
+
+### U07B assignment — 2026-11-03
+
+- **U07B / Checkpoint 1C / M4 Investigator Application / JebasJ**; explicit
+  bounded user handoff, executed 2026-11-04. Backlog -> In Progress pending
+  review/publication on initially clean `feat/u07b-finding-detail-ui`.
+- Actual common contract/base, initial HEAD and local coordination ref:
+  **33ab842e65d637c10dfc99520cd1c6dbbd600468**. Supplied full SHA
+  `33ab842bbd924d5e75dafc82662fa9c6691456a0` differs. Real merged dependencies:
+  U07 at that actual base, A05B **ca6e379ffd0c73332f47fdf6ce3132d1dfc39c99**;
+  shared pin U05D **291ccfc364126ea678b4a0113494d0acaa4ec731** and U06
+  **955ccf447065a658669d87cec6dc5c39a24df060** are integrated ancestors.
+  OpenAPI draft 0.3.0 remains the sole HTTP authority.
+- Allowed paths: `frontend/src/cases/`, `frontend/test/`, `frontend/README.md`,
+  `docs/AGENT_TASKS.md`, `docs/ROADMAP.md`, `docs/PREIMPLEMENTATION_REVIEW.md`.
+  Explicit shared-document handoff; no spec/backend/dependency changes and no
+  stage/commit/push/merge authorization.
+- Interface: M3 whale2186 A05B immutable FindingPage/Finding -> M4 JebasJ U07B
+  via typed listFindings; shared completed analysis pin from U05D/U07. Every
+  page/retry retains that pin; mismatches fail closed and retry refetches it.
+  Detail sources resolve the completed AnalysisRun's frozen processing outputs
+  through paginated listObservations; no latest-output substitution.
+- Acceptance: list/detail integrated into CaseWorkspace, kind/summary/rule/score,
+  supporting evidence/observations and source locators, optional contradictory
+  evidence/missing information, authoritative server pagination, honest no-run
+  and empty states, safe 401/404/network errors/retry, case/run/session/unmount
+  abort and stale-response rejection. Synthetic Fetch negatives plus real
+  HTTP/SQLite/processing/analysis/source read-back required.
+- Resolved producer/consumer queue: the example `candidate_match` is not a
+  FindingKind in draft 0.3.0. A02/A05B produce kind `relationship` with rule
+  `candidate_link_shared_identifier:v1`; U07B renders those exact values and
+  preserves unassessed confidence zero. No schema or producer change needed.
+  Finding exposes contradicting evidence IDs, but no contradictory observation
+  IDs; display only supplied fields. No unresolved task gate.
+- State/next: locally verified pending review/publication; exact commands,
+  read-back, doubles and limitations in PREIMPLEMENTATION_REVIEW.md. Next bounded
+  integration is I01; later U08B retains U08 and checkpoint 2B dependencies.
+  Checkpoint 1C/I01 and M4 remain open. No publication performed.
