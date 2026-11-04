@@ -18,6 +18,9 @@ from starlette.concurrency import run_in_threadpool
 from backend.auth import CaseAccessGrant, require_case_access
 from backend.audit import record_analysis_event
 from backend.errors import AccessError
+from backend.detectors import (DETECTOR_VERSION, detect_corroboration_findings,
+    detect_conflict_findings, detect_gap_findings, detect_cluster_findings,
+    detect_anomaly_findings, detect_hypothesis_findings)
 from backend.evidence import invalid_input
 from backend.graph_db import Neo4jGraphDatabase
 from backend.graph_nodes import build_graph_nodes
@@ -25,11 +28,13 @@ from backend.graph_links import RULE, CO_MENTION_RULE, derive_candidate_links
 from backend.graph_projection import initialize_graph_projection, project_analysis_run
 from backend.observations import _utc_order
 from backend.triage.aggregation import aggregate_triage_result
-from backend.triage.factors import calculate_relevance_factor, calculate_connectivity_factor
+from backend.triage.factors import (calculate_relevance_factor, calculate_connectivity_factor,
+    calculate_temporal_proximity_factor, calculate_corroboration_factor,
+    calculate_source_quality_factor, calculate_conflict_relevance_factor, calculate_gap_relevance_factor)
 from backend.triage.policy import POLICY_VERSION
 
 router = APIRouter()
-ALGORITHM_VERSION = f'evora-analysis/1;{RULE};{CO_MENTION_RULE};{POLICY_VERSION}'
+ALGORITHM_VERSION = f'evora-analysis/2;{RULE};{CO_MENTION_RULE};{POLICY_VERSION};{DETECTOR_VERSION}'
 
 
 class AnalysisInputSnapshot(TypedDict):
@@ -122,6 +127,15 @@ def _outputs(connection, run):
         events.extend(json.loads(row['events_json']))
     nodes = build_graph_nodes(case, evidence, entities, events)
     edges, findings = derive_candidate_links(case, run_id, entities, observations)
+    conflicts = detect_conflict_findings(case, run_id, observations, entities, events)
+    gaps = detect_gap_findings(case, run_id, observations, evidence)
+    findings.extend(detect_corroboration_findings(case, run_id, observations, entities, events, evidence))
+    findings.extend(conflicts)
+    findings.extend(gaps)
+    findings.extend(detect_cluster_findings(case, run_id, nodes, edges))
+    findings.extend(detect_anomaly_findings(case, run_id, observations, evidence))
+    findings.extend(detect_hypothesis_findings(case, run_id, observations, findings))
+    findings.sort(key=lambda item: item.id)
     triage = []
     for eid in snapshot['evidence_ids']:
         count = sum(item['evidence_id'] == eid for item in observations)
@@ -130,8 +144,16 @@ def _outputs(connection, run):
             known_case_entities=entities, evidence_records=evidence, observations=observations)
         connectivity = calculate_connectivity_factor(case_id=case, evidence_id=eid,
             target_nodes=nodes, edges=edges, observation_count=count)
+        factors = [relevance, connectivity,
+            calculate_temporal_proximity_factor(case_id=case, evidence_id=eid, observations=observations),
+            calculate_corroboration_factor(case_id=case, evidence_id=eid, entities=entities,
+                events=events, evidence_records=evidence),
+            # Uploaded artifacts have no persisted source-reliability assessment.
+            calculate_source_quality_factor(case_id=case, evidence_id=eid),
+            calculate_conflict_relevance_factor(case_id=case, evidence_id=eid, conflict_findings=conflicts),
+            calculate_gap_relevance_factor(case_id=case, evidence_id=eid, gap_findings=gaps)]
         result = aggregate_triage_result(case_id=case, analysis_run_id=run_id, evidence_id=eid,
-            observation_count=count, factors=[factor for factor in (relevance, connectivity) if factor is not None],
+            observation_count=count, factors=[factor for factor in factors if factor is not None],
             case_evidence_ids=snapshot['evidence_ids'], created_at=run['created_at'])
         if result is not None:
             triage.append(result)

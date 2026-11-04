@@ -44,10 +44,21 @@ class Finding:
     missing_information: tuple[str, ...] = ("Real-world identity and source independence are unverified.",)
     rule: str = RULE
     confidence: float = 0.0
+    contradicting_evidence_ids: tuple[str, ...] = ()
+    # Private, documented coverage fractions; never an extra Finding wire field.
+    coverage_matches: tuple[tuple[str, float], ...] = ()
+    conflict_strength: float | None = None
 
     def to_wire(self) -> dict:
         wire = asdict(self)
-        for field in ("evidence_ids", "observation_ids", "entity_ids", "missing_information"):
+        wire.pop("coverage_matches")
+        wire.pop("conflict_strength")
+        if not self.contradicting_evidence_ids:
+            wire.pop("contradicting_evidence_ids")
+        for field in ("evidence_ids", "observation_ids", "entity_ids", "missing_information",
+                      "contradicting_evidence_ids"):
+            if field not in wire:
+                continue
             wire[field] = list(wire[field])
         return wire
 

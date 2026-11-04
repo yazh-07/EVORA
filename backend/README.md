@@ -2856,11 +2856,12 @@ snapshot digest with the latest completed analysis: none → `initial`, changed 
 `new_observations`, unchanged → `manual`. Reprocessing with unchanged counts and
 uploading an unprocessed item can both change the digest.
 
-The worker calls real A01 nodes, A02 candidate links/findings, A03 relevance,
-A03B connectivity, A04 aggregation and A01B authoritative SQL/projection checks.
+The worker calls real A01 nodes, A02 candidate links/findings, all seven G02
+factor calculators, the Checkpoint 4A detectors, A04 aggregation and A01B
+authoritative SQL/projection checks.
 `algorithm_version` freezes the assembly, relationship rule and scoring policy
-versions; triage timestamps use the acceptance timestamp. Later detector/factor
-assembly remains A17. Candidate associations and attention scores do not establish
+versions (including `multi-modal-detectors/1`); triage timestamps use the acceptance
+timestamp. Candidate associations and attention scores do not establish
 identity, independent corroboration, truth or guilt.
 
 Startup creates/migrates A01B SQL storage and immutable algorithm/trigger metadata.
@@ -3099,3 +3100,66 @@ rolls back the transaction and prevents a successful answer.
 the bundled `CaseAnswer`/`AnswerCitation` schemas and citation cardinality, case
 isolation, validation/authentication, deterministic latest-output selection,
 corrupt/missing outputs and audit rollback.
+
+## Checkpoint 4A factor engine and detectors
+
+`backend/detectors.py` consumes frozen, same-case source records and returns
+immutable `Finding` values. `_outputs` assembles relationship, corroboration,
+conflict, gap, cluster, anomaly and competing hypothesis findings, calculates
+all available G02 factors, and passes them through the existing normalized A04
+aggregation. Publication and crash recovery continue through A01B. The assembly
+version is `evora-analysis/2` with `multi-modal-detectors/1`; old completed outputs
+remain immutable, and pending runs with another algorithm version fail closed.
+
+Detector rules and boundaries are explicit:
+
+- Conflicts compare simultaneous GPS rows with different coordinates, or exact
+  event report summaries/kinds/candidate keys with different UTC times across
+  sources. Repeated event reports cannot identify one occurrence and are
+  excluded. Candidate identity, clock and precision uncertainty remain visible.
+- Gaps bound adjacent normalized times for the same candidate and log family
+  (GPS, network or mobile), across source files. Intervals strictly longer than
+  one hour request coverage; they do not assert that surveillance or events
+  were missing. Different candidate keys and log families never join.
+- Clusters are undirected connected components of actual graph edges. Isolated
+  nodes and self-loops do not create clusters; edge observations supply citations.
+- Amount anomalies require four peer transaction rows in the same account and
+  currency. Absolute amount must exceed both ten times the peer median and
+  median plus six median absolute deviations. Exact decimals are retained.
+  Off-hours candidates use the explicit UTC interval outside 06:00–22:00;
+  local schedules and relevance remain unknown. Anomalies do not automatically
+  alter scores without a supported relevance/conflict assessment.
+- Corroboration candidates disclose repeated exact reported identifiers/events;
+  unknown source independence is explicit. Hypotheses present both sides of a
+  cited conflict without assigning a truth probability.
+
+The five additional calculators live in `backend/triage/factors.py`. Temporal
+proximity uses nearest normalized target and reference UTC instants, defaults
+to other evidence's reported times, and never substitutes upload/acquisition
+time, naive raw dates or elapsed media offsets. Explicit reference timestamps
+are caller-established comparable case instants. Corroboration uses the strongest
+single exact reported claim with the existing transitive duplicate collapse and
+three-additional-origin saturation. Co-mentions never establish independence.
+
+Unknown assessments stay absent and evaluated zero retains its weight. Uploaded
+Evidence has no established origin, coverage or reliability assessment in its
+wire schema. Callers of the pure calculators can supply private `origin_id` and
+`record_sha256` evidence metadata, or an explicit assessed `reliability_score`
+whose basis/version they retain. Source labels, artifact type and extraction
+confidence never substitute for these assessments.
+
+`Finding.conflict_strength` is a private supported [0,1] assessment after clock,
+precision and identity controls pass. Candidate detectors leave it absent.
+`Finding.coverage_matches` contains private `(evidence_id, overlap_fraction)`
+assessments; the gap detector computes these only from explicit, caller-established
+case coverage bounds `coverage_start_utc` and `coverage_end_utc`. Merely bounding
+a gap does not provide coverage. These private fields are omitted by `to_wire`;
+public findings retain their rule, citations and missing-information explanation.
+Wire-only findings cannot reconstruct private assessments. The ordinary analysis
+pipeline omits unknown assessments rather than inventing values.
+
+`backend/tests/test_detectors_and_factors.py` checks positive/zero/absent/invalid
+factors, detector boundaries, source isolation, duplicate origins, determinism,
+schema conformance and real `process_analysis_run` publication of all seven
+finding kinds. The existing co-mention and explanation lifecycle tests now check
+the expanded assembly while preserving their relationship-specific assertions.
