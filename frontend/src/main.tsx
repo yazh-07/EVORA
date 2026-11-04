@@ -7,7 +7,11 @@ import './styles.css';
 
 const root = document.getElementById('root');
 if (!root) throw new Error('EVORA root element is missing.');
-const apiClient = createApiClient({ baseUrl: __EVORA_API_BASE_URL__ });
+const baseUrl =
+  typeof window !== 'undefined' && window.location && window.location.origin && window.location.origin !== 'null'
+    ? window.location.origin
+    : __EVORA_API_BASE_URL__;
+const apiClient = createApiClient({ baseUrl });
 
 createRoot(root).render(
   <StrictMode>
