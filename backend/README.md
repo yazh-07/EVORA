@@ -2933,3 +2933,30 @@ EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json /home/whale2186/.hermes/cache/scra
 The interpreter path above is the supplied local test environment. Shared
 contract/type/design checks and earlier checkpoint regressions are recorded in
 `docs/PREIMPLEMENTATION_REVIEW.md`. Checkpoint 1C/I01 is still open.
+
+### A16/U10 grounded case questions
+
+`POST /api/v1/cases/{caseId}/questions` (`askCaseQuestion`) accepts a nonblank
+`question` of 1–2000 characters. It requires current case membership and rejects
+extra body fields and all query parameters with the shared safe 400 response.
+
+Retrieval version `deterministic-grounded-retrieval/1` uses the same validated,
+latest completed output per evidence item as `listObservations`, including UTC
+completion ordering and UUID ties. It searches all selected observations using
+case-insensitive identifiers and keywords. Numeric identifiers take precedence
+over generic keywords; dotted numeric prefixes such as `203.0.113` are supported.
+This is lexical retrieval: answers report recorded values without inferring
+relationships, identity or guilt. Each reported value carries its exact
+observation ID, evidence ID and source locator. Identity/guilt questions and
+unmatched questions return the fixed insufficient-evidence answer with no
+citations. Missing or corrupt selected output fails closed without stale fallback.
+
+Every successful inquiry appends an `askCaseQuestion` audit event in the retrieval
+transaction, with the authenticated actor, case target and supported/unsupported
+reason. The question and source text are not copied into audit. Audit failure
+rolls back the transaction and prevents a successful answer.
+
+`backend/tests/test_questions.py` covers real HTTP/SQLite/processing retrieval,
+the bundled `CaseAnswer`/`AnswerCitation` schemas and citation cardinality, case
+isolation, validation/authentication, deterministic latest-output selection,
+corrupt/missing outputs and audit rollback.

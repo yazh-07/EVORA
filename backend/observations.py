@@ -110,6 +110,28 @@ def _page(connection, parameters, limit, offset):
         dict(parameters, limit=limit, offset=offset))]
 
 
+def _validated_count(connection, parameters):
+    """Validate selected outputs before any caller discloses their observations.
+
+    The caller owns the transaction and registers the UTC/record SQL functions.
+    Selection and validation are shared by listing and grounded retrieval.
+    """
+    invalid_time = connection.execute("SELECT 1 FROM processing_runs WHERE case_id=:case_id AND status='completed' "
+        "AND (:evidence_id IS NULL OR evidence_id=:evidence_id) AND (:run_id IS NULL OR id=:run_id) "
+        "AND evora_utc_order(finished_at) IS NULL LIMIT 1", parameters).fetchone()
+    invalid_output = connection.execute(_SELECTED + "SELECT 1 FROM selected WHERE output_case IS NULL "
+        "OR output_case!=case_id OR output_evidence!=evidence_id OR CASE WHEN json_valid(observations_json) "
+        "THEN json_type(observations_json)!='array' ELSE 1 END LIMIT 1", parameters).fetchone()
+    if invalid_time is not None or invalid_output is not None:
+        raise _not_found()
+    counts = connection.execute(_SELECTED + "SELECT COUNT(*) AS total,COALESCE(MIN(evora_observation_valid(value,"
+        "case_id,evidence_id,run_id)),1) AS valid,COUNT(DISTINCT lower(CASE WHEN type='object' "
+        "THEN json_extract(value,'$.id') END)) AS unique_ids FROM records", parameters).fetchone()
+    if not counts['valid'] or counts['total'] != counts['unique_ids']:
+        raise _not_found()
+    return counts['total']
+
+
 @router.get('/api/v1/cases/{caseId}/observations', operation_id='listObservations')
 def list_observations(caseId: UUID, request: Request,
                       grant: Annotated[CaseAccessGrant, Depends(require_case_access)],
@@ -133,20 +155,7 @@ def list_observations(caseId: UUID, request: Request,
                                      (str(processing_run_id), str(grant.case_id))).fetchone()
             if run is None or run['status'] != 'completed' or (evidence_id is not None and run['evidence_id'] != str(evidence_id)):
                 raise _not_found()
-        invalid_time = connection.execute("SELECT 1 FROM processing_runs WHERE case_id=:case_id AND status='completed' "
-            "AND (:evidence_id IS NULL OR evidence_id=:evidence_id) AND (:run_id IS NULL OR id=:run_id) "
-            "AND evora_utc_order(finished_at) IS NULL LIMIT 1", parameters).fetchone()
-        invalid_output = connection.execute(_SELECTED + "SELECT 1 FROM selected WHERE output_case IS NULL "
-            "OR output_case!=case_id OR output_evidence!=evidence_id OR CASE WHEN json_valid(observations_json) "
-            "THEN json_type(observations_json)!='array' ELSE 1 END LIMIT 1", parameters).fetchone()
-        if invalid_time is not None or invalid_output is not None:
-            raise _not_found()
-        counts = connection.execute(_SELECTED + "SELECT COUNT(*) AS total,COALESCE(MIN(evora_observation_valid(value,"
-            "case_id,evidence_id,run_id)),1) AS valid,COUNT(DISTINCT lower(CASE WHEN type='object' "
-            "THEN json_extract(value,'$.id') END)) AS unique_ids FROM records", parameters).fetchone()
-        if not counts['valid'] or counts['total'] != counts['unique_ids']:
-            raise _not_found()
-        total = counts['total']
+        total = _validated_count(connection, parameters)
         # offset has no upper bound in the contract; do not bind huge Python integers to SQLite.
         items = _page(connection, parameters, limit, offset) if offset < total else []
     return JSONResponse(dict(items=items, total=total, limit=limit, offset=offset), headers={'Cache-Control': 'no-store'})

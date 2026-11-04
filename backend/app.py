@@ -23,6 +23,7 @@ from backend.findings import router as findings_router
 from backend.reviews import initialize_reviews, router as reviews_router
 from backend.overrides import initialize_overrides, router as overrides_router
 from backend.triage_endpoints import router as triage_router
+from backend.questions import router as questions_router
 from backend.errors import AccessError, access_error, invalid_request
 
 
@@ -89,6 +90,7 @@ def create_app(
     app.include_router(reviews_router)
     app.include_router(overrides_router)
     app.include_router(triage_router)
+    app.include_router(questions_router)
     return app
 
 
