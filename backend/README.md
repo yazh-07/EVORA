@@ -56,6 +56,45 @@ npm --prefix frontend run test
 git diff --check
 ```
 
+# I05B detector evaluation protocol
+
+`backend.evaluation.evaluate_detector_findings(predicted_findings, expected_findings)`
+returns `EvaluationMetrics` separately for `conflict`, `gap`, `anomaly`, `cluster`,
+`corroboration` and `hypothesis`, including zero counts for absent kinds. Predictions
+may be `Finding` values or wire dictionaries. Filter out relationship findings.
+Gold labels use the layout returned by `detector_finding_label`:
+
+```python
+(kind, rule, tuple(sorted(evidence_ids)), tuple(sorted(observation_ids)),
+ tuple(sorted(entity_ids)), tuple(sorted(contradicting_evidence_ids)))
+```
+
+Author gold labels from independently labeled source rows and expected component
+membership/opposing sources, using references from one authorized, frozen input
+snapshot. Optional reference groups default to empty tuples. Generated finding and
+analysis-run UUIDs, confidence, prose and private relevance assessments do not
+participate in matching. Re-extraction requires mapping both sides to stable
+source/row/candidate labels first. Rule versions, citations, membership and
+opposition match exactly; ordering is ignored. The unit is a cited detector group,
+with multiplicity, so this protocol does not grade prose or identify which row is
+an outlier when multiple findings cite the same complete peer baseline.
+
+Each prediction consumes one gold occurrence: duplicates beyond the gold count
+are false positives, and missing occurrences are false negatives. Precision,
+recall and F1 use the formulas below, including 0.0 for zero denominators.
+
+`backend/tests/test_detector_evaluation.py` exercises real parsers and detectors
+against synthetic positives and negative controls, committed GPS/network fixtures,
+and deliberately duplicated, omitted or changed predictions. Feedback tests check
+that assessed conflict strengths and documented gap coverage populate the relevance
+factors and aggregate triage results; unassessed candidates remain unknown and
+evaluated empty controls yield zero. These fixture results do not establish
+population-level detector accuracy.
+
+```sh
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -m unittest discover -s backend/tests -p 'test_detector_evaluation.py'
+```
+
 # I04 labeled extraction/link evaluation — 2026-11-04
 
 The available extraction/link evaluation passes its 0.80 precision and recall
