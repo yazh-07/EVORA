@@ -1,3 +1,63 @@
+# I02B human review and override tracer — 2026-11-04
+
+Integration owner: whale2186 (Codex). From the repository root, with backend
+requirements and locked frontend dependencies installed:
+
+```sh
+node frontend/test/review-override.integration.mjs
+# Equivalent npm entry point:
+npm --prefix frontend run test:review-override
+```
+
+Activate the configured backend environment first, or set `EVORA_TEST_PYTHON`
+to its Python executable. The direct command rebuilds `.test-build`, then starts
+`test/serve-cases.py --api-only --database ...` on an ephemeral loopback port.
+The actual frontend HTTP client uses `u02-synthetic-two` (`investigator-2`)
+throughout. FastAPI, SQLite, file storage, parsers, analysis and audit are real;
+the shared harness uses its explicit transactional Neo4j double. No prior UI
+build is required. The owned server, temporary database and evidence files are
+cleaned on success and failure.
+
+Two unchanged committed network CSV uploads generate a real finding. The
+tracer accepts it with reason `Verified manual finding review`, reads back the
+decision/reason/actor/timestamp, and verifies its `reviewFinding` audit target
+and actor. A committed GPS CSV supplies a lower-scoring control, overridden to
+P1 with reason `Escalated by supervisor for incident response`. Triage read-back
+must expose the exact override reason, actor and UTC timestamp while preserving
+the entire computed result, including its original score and priority. The
+`setPriorityOverride` audit event must target that evidence as investigator-2;
+the earlier review and its audit event must survive unchanged.
+
+Pagination checks cover page sizes 1 and 2 before, during and after the override,
+including traversals whose first page was fetched before the write. Computed
+score ordering, equal-score evidence-ID ties, all page membership, totals and
+the empty terminal page stay stable, with no duplicated or skipped evidence.
+Pinned-run results, computed triage history and generated findings remain
+unchanged apart from the live priority overlay.
+
+Run the complete verification from the repository root:
+
+```sh
+npx --yes @redocly/cli@2.57.0 bundle specs/openapi.yaml --output /tmp/evora-openapi.json
+node frontend/test/review-override.integration.mjs
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -m unittest discover -s backend/tests
+npm --prefix frontend run test
+npm --prefix frontend run build
+git diff --check
+```
+
+**I02B verification: PASS. Checkpoint 2B is sealed.** Local verification used
+the existing `/tmp/evora-ui-venv` environment (Python 3.14.9), Node 22.23.4
+and npm 12.2.1. The direct HTTP tracer passed; backend **666 tests, OK (7
+opt-in live Neo4j tests skipped)**; frontend **222 tests passed**; API type
+freshness, typecheck, build and `git diff --check` passed. A separate spawn-failure
+check confirmed prompt failure and temporary-directory cleanup; no I02B
+temporary directories remained. This verifies the human review/override gate
+with the declared graph double; browser, live Neo4j and clean-install acceptance
+are outside this run.
+
+---
+
 # I02 adaptive tracer — 2026-11-04
 
 From the repository root, with the backend requirements and locked frontend
