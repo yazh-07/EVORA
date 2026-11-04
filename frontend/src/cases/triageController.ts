@@ -1,10 +1,16 @@
 import { ApiClientError, ApiHttpError } from '../api/client';
 import type { ApiClient } from '../api/client';
-import type { components } from '../api/schema';
+import type { components, operations } from '../api/schema';
 
 type TriagePage = components['schemas']['TriagePage'];
 type Entry = components['schemas']['TriageEntry'];
 type TriageResult = components['schemas']['TriageResult'];
+type CreateOverride = components['schemas']['CreateOverride'];
+type PriorityOverride = components['schemas']['PriorityOverride'];
+type OverrideState = CreateOverride & {
+  status: 'idle' | 'submitting' | 'error' | 'success';
+  message: string;
+};
 type TriageHistoryState = {
   status: 'loading' | 'ready' | 'error';
   items: TriageResult[];
@@ -15,10 +21,11 @@ export type TriageState = {
   page: TriagePage | null;
   message: string;
   histories: Record<string, TriageHistoryState | undefined>;
+  overrides: Record<string, OverrideState | undefined>;
 };
-const initial = (): TriageState => ({ status: 'idle', page: null, message: '', histories: {} });
+const initial = (): TriageState => ({ status: 'idle', page: null, message: '', histories: {}, overrides: {} });
 const uuid = (value: unknown): value is string => typeof value === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
-const priority = (value: unknown) => typeof value === 'string' && ['P1', 'P2', 'P3', 'P4'].includes(value);
+const priority = (value: unknown): value is CreateOverride['priority'] => typeof value === 'string' && ['P1', 'P2', 'P3', 'P4'].includes(value);
 const number = (value: number, max: number) => Number.isFinite(value) && value >= 0 && value <= max;
 const factorNames = ['relevance', 'connectivity', 'corroboration', 'gap_relevance', 'source_quality', 'conflict_relevance', 'temporal_proximity'];
 function validResult(result: TriageResult, caseId: string, evidenceId: string): boolean {
@@ -31,14 +38,19 @@ function validResult(result: TriageResult, caseId: string, evidenceId: string): 
       number(f.contribution, 100) && typeof f.explanation === 'string' && Array.isArray(f.evidence_ids) &&
       f.evidence_ids.every(uuid) && new Set(f.evidence_ids).size === f.evidence_ids.length);
 }
+function validOverride(override: PriorityOverride, caseId: string, evidenceId: string): boolean {
+  return !!override && override.case_id === caseId && override.evidence_id === evidenceId &&
+    uuid(override.id) && priority(override.priority) && typeof override.reason === 'string' && !!override.reason.trim() &&
+    typeof override.actor_id === 'string' && !!override.actor_id.trim() &&
+    typeof override.created_at === 'string' && Number.isFinite(Date.parse(override.created_at));
+}
 function validEntry(entry: Entry, caseId: string, runId?: string): boolean {
   if (!entry || !uuid(entry.evidence_id)) return false;
   const result = entry.latest_result;
   const override = entry.override;
   if (result !== undefined && (!result || !runId || result.analysis_run_id !== runId ||
       !validResult(result, caseId, entry.evidence_id))) return false;
-  if (override !== undefined && (!override || override.case_id !== caseId || override.evidence_id !== entry.evidence_id ||
-      !uuid(override.id) || !priority(override.priority) || typeof override.reason !== 'string')) return false;
+  if (override !== undefined && !validOverride(override, caseId, entry.evidence_id)) return false;
   return entry.effective_priority === (override?.priority ?? result?.priority);
 }
 // Compare immutable automated fields independently of JSON object-key order; overlays stay live.
@@ -55,8 +67,12 @@ function compare(a: Entry, b: Entry): number {
 }
 
 /** One case/session/selection. Snapshot results stay immutable; override fields may refresh. */
-export function createTriageController(client: ApiClient, caseId: string, analysisRunId?: string,
+export function createTriageController(apiClient: ApiClient, caseId: string, analysisRunId?: string,
   onSelectedRun?: (id: string) => void, limit = 20) {
+  // Adapt the generated operation to this repository's typed request-based client.
+  const client = { ...apiClient, setPriorityOverride: (options: {
+    path: operations['setPriorityOverride']['parameters']['path']; body: CreateOverride; signal?: AbortSignal;
+  }) => apiClient.request('post', '/api/v1/cases/{caseId}/evidence/{evidenceId}/priority-overrides', options) };
   let state = initial();
   let enabled = false;
   let session = client.getSessionVersion();
@@ -66,6 +82,7 @@ export function createTriageController(client: ApiClient, caseId: string, analys
   const seen = new Map<number, Entry>();
   let pending: AbortController | undefined;
   const pendingHistories = new Map<string, AbortController>();
+  const pendingOverrides = new Map<string, AbortController>();
   let unsubscribe: (() => void) | undefined;
   const listeners = new Set<() => void>();
   const publish = (next: TriageState) => { state = next; listeners.forEach(listener => listener()); };
@@ -73,6 +90,59 @@ export function createTriageController(client: ApiClient, caseId: string, analys
     pendingHistories.forEach(request => request.abort());
     pendingHistories.clear();
   };
+  const clearOverrides = () => {
+    pendingOverrides.forEach(request => request.abort());
+    pendingOverrides.clear();
+  };
+  const editableEntry = (evidenceId: string) => enabled && client.hasToken() && session === client.getSessionVersion() &&
+    state.status === 'ready' ? state.page?.items.find(item => item.evidence_id === evidenceId) : undefined;
+  const draftFor = (entry: Entry): OverrideState => state.overrides[entry.evidence_id] ?? {
+    priority: entry.effective_priority ?? 'P1', reason: '', status: 'idle', message: '',
+  };
+  const publishOverride = (evidenceId: string, draft: OverrideState) => publish({ ...state,
+    overrides: { ...state.overrides, [evidenceId]: draft },
+  });
+  function updateOverride(evidenceId: string, patch: Partial<CreateOverride>) {
+    const entry = editableEntry(evidenceId);
+    if (!entry || pendingOverrides.has(evidenceId)) return;
+    publishOverride(evidenceId, { ...draftFor(entry), ...patch, status: 'idle', message: '' });
+  }
+  async function submitOverride(evidenceId: string) {
+    const entry = editableEntry(evidenceId);
+    if (!entry || pendingOverrides.has(evidenceId)) return;
+    const draft = draftFor(entry);
+    const reason = draft.reason.trim();
+    if (!priority(draft.priority) || !reason) {
+      publishOverride(evidenceId, { ...draft, status: 'error', message: 'Choose a priority (P1–P4) and enter a non-empty reason.' });
+      return;
+    }
+    const request = new AbortController();
+    pendingOverrides.set(evidenceId, request);
+    const current = () => enabled && pendingOverrides.get(evidenceId) === request &&
+      !request.signal.aborted && session === client.getSessionVersion();
+    publishOverride(evidenceId, { ...draft, status: 'submitting', message: '' });
+    try {
+      const override = await client.setPriorityOverride({
+        path: { caseId, evidenceId: entry.evidence_id }, body: { priority: draft.priority, reason }, signal: request.signal,
+      });
+      if (!current()) return;
+      if (!validOverride(override, caseId, evidenceId) || override.priority !== draft.priority) {
+        throw Error('Invalid priority override response.');
+      }
+      publish({ ...state, page: state.page && { ...state.page, items: state.page.items.map(item =>
+        item.evidence_id === evidenceId ? { ...item, override, effective_priority: override.priority } : item) },
+        overrides: { ...state.overrides, [evidenceId]: { ...draft, reason: '', status: 'success', message: 'Priority override saved.' } },
+      });
+    } catch (error) {
+      if (!current()) return;
+      publishOverride(evidenceId, { ...draft, status: 'error', message:
+        error instanceof ApiHttpError && error.status === 400 ? 'Priority override was rejected. Check the priority and reason, then retry.' :
+        error instanceof ApiHttpError && error.status === 404 ? 'Evidence or case unavailable or no longer accessible.' :
+        (error instanceof ApiHttpError && error.status === 401) || (error instanceof ApiClientError && error.kind === 'authentication') ?
+          'Authentication required. Open a session again before retrying.' :
+          'Could not set priority override. Retry the request.' });
+    } finally { if (pendingOverrides.get(evidenceId) === request) pendingOverrides.delete(evidenceId); }
+  }
   async function loadHistory(evidenceId: string) {
     if (!enabled || !client.hasToken() || session !== client.getSessionVersion() ||
         !state.page?.items.some(item => item.evidence_id === evidenceId) || pendingHistories.has(evidenceId)) return;
@@ -110,10 +180,11 @@ export function createTriageController(client: ApiClient, caseId: string, analys
         !Number.isSafeInteger(nextOffset) || nextOffset < 0 ||
         (nextOffset !== 0 && total !== undefined && nextOffset >= total)) return;
     pending?.abort();
+    clearOverrides();
     const request = pending = new AbortController();
     offset = nextOffset;
     const current = () => enabled && pending === request && !request.signal.aborted && session === client.getSessionVersion();
-    publish({ ...state, status: 'loading', page: null, message: '' });
+    publish({ ...state, status: 'loading', page: null, message: '', overrides: {} });
     try {
       const page = await client.request('get', '/api/v1/cases/{caseId}/triage', {
         path: { caseId }, query: { analysis_run_id: selectedRun, limit, offset: nextOffset }, signal: request.signal,
@@ -170,6 +241,7 @@ export function createTriageController(client: ApiClient, caseId: string, analys
       unsubscribe = client.subscribeSession(() => {
         enabled = false; pending?.abort(); pending = undefined; seen.clear(); total = undefined; selectedRun = analysisRunId;
         clearHistories();
+        clearOverrides();
         publish({ ...initial(), status: 'error', message: client.hasToken() ?
           'Session changed. Select the case again.' : 'Authentication required. Open a session again before retrying.' });
       });
@@ -178,9 +250,12 @@ export function createTriageController(client: ApiClient, caseId: string, analys
     },
     load,
     loadHistory,
+    updateOverride,
+    submitOverride,
     dispose() {
       enabled = false; pending?.abort(); pending = undefined;
       clearHistories();
+      clearOverrides();
       unsubscribe?.(); unsubscribe = undefined; listeners.clear(); seen.clear();
       total = undefined; offset = 0; selectedRun = analysisRunId; state = initial();
     },
