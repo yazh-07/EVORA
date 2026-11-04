@@ -1,6 +1,6 @@
 # EVORA phased roadmap and execution ledger
 
-**Checkpoints 0, 1A and 1B are Complete.** All four foundation tasks (G00, G01, G01B, G01C) passed Ubuntu and Windows CI (Run 39102433077). All fifteen tasks of Checkpoint 1A (M1: F00, F01, F02, F03, F04, F05, F06, F07, F09; M4: U01, U02, U02B, U03, U04; Joint: I00) are merged and verified green. Real HTTP/SQLite smoke test exercises case creation, streaming upload of synthetic CSV, SHA-256 matching, original byte download roundtrip, audit event listing (`uploadEvidence`), actor isolation, and 400/401/404 error responses. Checkpoint 1B is **Complete** after I00B real network/GPS source inspection and checkpoint regressions; Checkpoint 1C is now **unblocked and active**, with its individual tasks awaiting bounded handoffs. See the I00B live record for all 18 task acceptances and the separate later NLP regression limitation. The original proposal, four modules and selected architecture remain unchanged. Draft OpenAPI 0.3.0 coordinates the explicit user-approved initial-scope addition: local audio/video speech transcription, timestamped source segments, playback/search/candidate extraction and audited human corrections. This is not retroactively an original proposal requirement; all five new tasks remain Backlog, with no domain implementation or model installation claimed.
+**Checkpoints 0, 1A, 1B and 1C are Complete.** All four foundation tasks (G00, G01, G01B, G01C) passed Ubuntu and Windows CI (Run 39102433077). All fifteen tasks of Checkpoint 1A (M1: F00, F01, F02, F03, F04, F05, F06, F07, F09; M4: U01, U02, U02B, U03, U04; Joint: I00) are merged and verified green. Real HTTP/SQLite smoke test exercises case creation, streaming upload of synthetic CSV, SHA-256 matching, original byte download roundtrip, audit event listing (`uploadEvidence`), actor isolation, and 400/401/404 error responses. Checkpoint 1B is **Complete** after I00B real network/GPS source inspection and checkpoint regressions; Checkpoint 1C is **Complete** after I01 real API/UI-controller and live Neo4j verification of all 18 tasks. **Phase 1 (Checkpoints 0, 1A, 1B, 1C) is now officially 100% Complete & Sealed!** Checkpoint 2A (`P06`, `A07`, `U06B`, `I02`) is now **unblocked and active**, with remaining work requiring bounded handoffs. See the I01 live record for current exit evidence and limitations. See the I00B live record for all 18 task acceptances and the separate later NLP regression limitation. The original proposal, four modules and selected architecture remain unchanged. Draft OpenAPI 0.3.0 coordinates the explicit user-approved initial-scope addition: local audio/video speech transcription, timestamped source segments, playback/search/candidate extraction and audited human corrections. This is not retroactively an original proposal requirement; all five new tasks remain Backlog, with no domain implementation or model installation claimed.
 
 ## Start here
 
@@ -35,8 +35,8 @@ Comma-separated IDs below are **exhaustive assignments**, not ranges. Each catal
 | 0 | G00, G01, G01B, G01C | G00, G01, G01B, G01C | G00 records the shared base; G01/G01B start and pass real skeleton tests/type checks; G01C proves clean skeleton Windows/CI setup. Verified green on both ubuntu-latest and windows-latest (Run 39102433077). | Complete |
 | 1A | F00, F01, F02, F03, F04, F05, F06, F07, F09, U01, U02, U02B, U03, U04, I00 | I00 | I00 proves real authorized create/list/upload/hash/metadata/download and safe intake audit, two actors/cases and negative access/input paths. Verified green with full smoke. | Complete |
 | 1B | P01, P02, P03, P03B, P03C, P04, P04B, P05, P05B, P14, P14B, P14C, F08, U05C, U05, U05B, U13, I00B | I00B | I00B proves UI start/poll and immutable network/GPS observations/entities/events, raw/normalized source values, private provenance, atomic retries/failures and all-page overview. | Complete |
-| 1C | G01D, G02, A01, A02, A03, A03B, A04, A01B, A05, A05B, A06, A15, F08B, U05D, U06, U07, U07B, I01 | I01 | I01 proves coherent SQL/Neo4j publication, source-backed graph/findings and initial relevance/connectivity scores, explanations, pinned reads/pagination and crash/recovery/auth negatives. | In Progress |
-| 2A | P06, A07, U06B, I02 | I02 | I02 proves the message creates a previously absent D-7/D-8 candidate link and changes an earlier priority/rank under recorded golden outputs; historical runs stay intact. | Backlog |
+| 1C | G01D, G02, A01, A02, A03, A03B, A04, A01B, A05, A05B, A06, A15, F08B, U05D, U06, U07, U07B, I01 | I01 | I01 proves coherent SQL/Neo4j publication, source-backed graph/findings and initial relevance/connectivity scores, explanations, pinned reads/pagination and crash/recovery/auth negatives. | Complete |
+| 2A | P06, A07, U06B, I02 | I02 | I02 proves the message creates a previously absent D-7/D-8 candidate link and changes an earlier priority/rank under recorded golden outputs; historical runs stay intact. | In Progress |
 | 2B | U08, U08B, U09, U09B, F08C, I02B | I02B | I02B proves audited reviews and overrides, live override overlay with stable pinned page membership/order and unchanged automated history. | Backlog |
 | 2C | A16, U10, U11, I02C, I03 | I02C, I03 | I02C proves claim/source-locator navigation and unsupported answers with safe retrieval audit; I03 proves clean tracer Windows/CI execution, not full LLM RAG. | Backlog |
 | 3A | P07, P11, P12, P13, P13B, I04 | I04 | Supported text/mobile/transaction adapters and text entities/events pass real source/failure tests; I04 executes labeled extraction/link evaluation with actual counts. | Backlog |
@@ -51,6 +51,75 @@ Comma-separated IDs below are **exhaustive assignments**, not ranges. Each catal
 | 6B | I09, I09B | I09, I09B | I09 exercises every feature/operation with real producers; I09B proves clean full-scope Windows and CI setup/build/run and distinguishes test adapters from actual provider runs. | Backlog |
 | 6C | I06 | I06 | I06 reports measured threats/provenance/resource/privacy/competitor limitations after the full-scope gates; no invented metrics/originality/admissibility claims. | Backlog |
 
+
+### I01 live record — 2026-11-04
+
+**I01 / Checkpoint 1C / Joint integration coordination / whale2186 / Complete.**
+Verified on initially clean `feat/i01-first-triage-tracer-gate`, actual reviewed
+common contract/base **d04a65eacbe6169d49c1527f632ff30f42c5ff17**, also the local
+`docs/coordination-foundation` ref. The supplied full SHA differs; the actual base
+contains all 17 prerequisite merges below. OpenAPI draft 0.3.0 and
+`docs/INTEGRATION.md` remain authoritative and unchanged. Assignment, allowed
+paths and interface owners are in AGENT_TASKS.md; exact commands/results are in
+PREIMPLEMENTATION_REVIEW.md. This record supersedes earlier pending task and
+open-1C statements for these merged dependencies.
+
+| Task | Verified dependency merge | Exit evidence on the combined I01 candidate | State |
+|---|---|---|---|
+| G01D | b0fd1f983c7369247cd915f6f94b68685a1d4629 | 17 setup tests including live 5.26.0 connectivity, schema/constraints and case/run isolation; safe unavailable/auth failures | Complete |
+| G02 | d1f16ef02a62c2ce94bdd19539037a7b60cecabf | 33 policy tests: versioned goldens, ranges, absent factors, experimental bands/ties and distinct uncertainty | Complete |
+| A01 | 11961c4ab4c1167e1d0ad8c83fe52440b2466a9a | 19 node tests and HTTP/UI exact source Evidence/Entity/Event UUID membership | Complete |
+| A02 | 51ee2ed3432b8956cf3af9ebd410a04483e917d7 | 13 link tests, initial unrelated D-7/D-8/D-9 controls; real shared-identifier findings/edges join same-case observations/locators | Complete |
+| A03 | ec4ab3c153961c416785348edd73eb5f6ed4bd68 | 14 relevance tests; actual network/GPS relevance value and source reasons read through UI | Complete |
+| A03B | 2eca04b5634302b3c85e7e05e0ac7c48bc37e742 | 14 connectivity tests; real source-backed graph input, bounded neighbors and missing controls | Complete |
+| A04 | 7858cce3cc21dbf0efe680094b28c3182b72d336 | 12 aggregation tests; exact 55.56/P3 available-factor output, normalized weights/contributions; unprocessed remains unscored | Complete |
+| A01B | ba7db7faa449e62a3ee0e3a74ddd8ef8b4f58887 | 17 projection tests including real Neo4j rebuild; SQL-first/publication-last, partial/corrupt partitions, crash/recovery and rollback controls | Complete |
+| A05 | 266f39f4df18e261a156240ff4d828f74afafe2b | 14 lifecycle tests including live Neo4j; bodyless starts, frozen sorted manifest/SHA-256, replay before resnapshot, triggers/restart/races | Complete |
+| A05B | ca6e379ffd0c73332f47fdf6ce3132d1dfc39c99 | 9 graph/finding API tests including live publication/read-back; exact historical pages, selected empty ID, invalid/pending/failed/foreign selector 404 | Complete |
+| A06 | eb256aa8def4a3e7b453982e4b1413868db4a47c | 8 endpoint tests; pinned manifest totals/order/history and live HTTP upload-between-pages; override double remains separate from I02B real writes | Complete |
+| A15 | 9184bed7f5b0ff1ab265452f54392aa168fbe6cc | 10 explanation tests with input-removal counterfactual; actual rule/factor reasons and frozen source locators in UI | Complete |
+| F08B | d49a6baa84a0a919131963efdd918634eb0e4856 | 15 audit tests plus all-page HTTP startAnalysis event actor/case/run-target read-back; failure/replay/recovery cannot log false or duplicate success | Complete |
+| U05D | 291ccfc364126ea678b4a0113494d0acaa4ec731 | Real UI controller bodyless start/poll/terminal stop and completed pin, immutable network/GPS inputs; lifecycle/error unit regressions | Complete |
+| U06 | 955ccf447065a658669d87cec6dc5c39a24df060 | Real controller/UI-rendered score/factors, source actions, history, one-item pagination stable across upload/newer completion | Complete |
+| U07 | 33ab842e65d637c10dfc99520cd1c6dbbd600468 | Real graph controller source UUID nodes/candidate edges; historical locator resolution and original byte read-back after reprocessing/new analysis | Complete |
+| U07B | d04a65eacbe6169d49c1527f632ff30f42c5ff17 | Real finding controller all-page candidate findings, exact rule/confidence/citations and immutable historical source inspection | Complete |
+| I01 | Working candidate on the exact base above | Both default and live-Neo4j HTTP smoke pass; all six completed partitions independently verified against real graph/source/result storage, startAnalysis audit actor/run target, foreign triage 404 ApiError and pinned graph/findings/triage | Complete |
+
+Verification: **522 backend tests PASS, zero skips**, comprising **327 earlier
+checkpoint regressions + 195 Checkpoint 1C tests**, with live Neo4j enabled.
+**163 frontend tests PASS**, **122 coordination tests PASS** under required
+jsonschema **4.25.1** (also 122 with system 4.26.0). OpenAPI lint/bundle,
+generated declaration compilation/freshness, frontend typecheck/build, DESIGN
+lint and whitespace checks pass. OpenAPI retains its existing missing-license
+warning. Real HTTP smoke preserves I00/I00B; UI controllers use generated API
+requests, while harness-only storage verification checks all completed SQL
+partitions against actual Neo4j 5.26.0. Default mode explicitly retains its
+transactional projection double and is not the live exit proof.
+
+Exit coverage includes exact snapshot hashes, faithful initial factors and
+not-scored behavior, source-backed candidate relationships, original byte/hash
+roundtrip, graph/finding/triage completed-run pins, all-page historical citations,
+upload-between-pages stable membership/order, newer-run isolation, terminal audit
+actor/target, and declared 400/401/404/auth/case failures. Backend failure controls
+exercise crash boundaries, idempotency/retry/rebuild, pending/failed visibility,
+SQL completion/commit rollback, audit rollback and coherent recovery. These
+injected failures use declared doubles; live projection and rebuild are tested
+separately on real storage. No fabricated benchmark or guilt/identity claim.
+
+**Checkpoint 1C is Complete. Phase 1 (Checkpoints 0, 1A, 1B, 1C) is now officially
+100% Complete & Sealed!** Checkpoint 0 remains the foundation in the canonical
+phase ledger; this seal includes that prerequisite. **Checkpoint 2A (`P06`,
+`A07`, `U06B`, `I02`) is now unblocked and active.** P06's earlier independent
+integration remains recorded; remaining tasks require individual dependency/path
+handoffs, not automatic work or a module-complete claim.
+
+Limits: Linux Python 3.14.9/Node 22.23.4/npm 12.2.1 differ from setup pins;
+no new clean pinned installation, Windows/hosted CI or mounted-browser/full
+accessibility certification. No later NLP/model, all-modality, feedback/detector,
+LLM RAG or full-system completion is implied. Live data is synthetic and local;
+the disposable service and temporary credentials are removed after verification.
+This seals the verified branch candidate only: no staging, commit, push or merge
+is authorized or performed; merged-commit smoke remains required on publication.
 
 ### U07B live record — 2026-11-03
 

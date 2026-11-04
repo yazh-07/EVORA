@@ -16,7 +16,39 @@ import { createFindingController, FindingPanel, createGraphController, GraphPane
 // Run explicitly after npm test + build. Real HTTP, FastAPI and SQLite; synthetic identities/data only.
 const temporary = await mkdtemp(join(tmpdir(), 'evora-u02-'));
 const python = process.env.EVORA_TEST_PYTHON ?? 'python';
-const child = spawn(python, ['test/serve-cases.py', '--database', join(temporary, 'cases.sqlite3')], { cwd: fileURLToPath(new URL('..', import.meta.url)), stdio: ['ignore', 'pipe', 'pipe'] });
+const liveNeo4j = process.env.EVORA_NEO4J_INTEGRATION === '1';
+// I01 live mode uses the production graph factory, with no projection double.
+// Only point NEO4J_* at a disposable local database containing synthetic data.
+const liveServer = `
+from pathlib import Path
+import socket, sys
+sys.path.insert(0, str(Path.cwd().parent))
+import uvicorn
+from starlette.staticfiles import StaticFiles
+from backend.app import create_app
+from backend.auth import SyntheticTokenVerifier
+app = create_app(sys.argv[1], storage_dir=Path(sys.argv[1]).parent / 'evidence',
+    token_verifier=SyntheticTokenVerifier({
+        'u02-synthetic-one': 'investigator-1',
+        'u02-synthetic-two': 'investigator-2',
+        'u02-synthetic-empty': 'investigator-2',
+    }))
+@app.middleware('http')
+async def no_store(request, call_next):
+    response = await call_next(request)
+    response.headers['Cache-Control'] = 'no-store'
+    return response
+app.mount('/', StaticFiles(directory=Path.cwd() / 'dist', html=True), name='i01-demo')
+sock = socket.socket()
+sock.bind(('127.0.0.1', 0))
+print(f'U02_URL=http://127.0.0.1:{sock.getsockname()[1]}', flush=True)
+uvicorn.Server(uvicorn.Config(app, log_level='error', access_log=False)).run(sockets=[sock])
+`;
+const child = spawn(python, liveNeo4j
+  ? ['-c', liveServer, join(temporary, 'cases.sqlite3')]
+  : ['test/serve-cases.py', '--database', join(temporary, 'cases.sqlite3')],
+{ cwd: fileURLToPath(new URL('..', import.meta.url)), stdio: ['ignore', 'pipe', 'pipe'] });
+const projectionDescription = liveNeo4j ? 'live Neo4j' : 'an explicit transactional Neo4j double';
 let errors = '';
 child.stderr.on('data', data => { errors += data; });
 const exited = once(child, 'exit');
@@ -68,7 +100,7 @@ try {
     return response;
   } });
   client.setToken('u02-synthetic-two');
-  const listAuditEvents = caseId => client.request('get', '/api/v1/cases/{caseId}/audit-events', { path: { caseId } });
+  const listAuditEvents = (caseId, query) => client.request('get', '/api/v1/cases/{caseId}/audit-events', { path: { caseId }, query });
   const store = createCaseStore(client);
   await store.load(); assert.equal(store.getSnapshot().page.total, 0);
   const foreign = await client.request('post', '/api/v1/cases', { body: { title: 'Synthetic actor-two private case' } });
@@ -408,8 +440,8 @@ try {
     } finally { gpsInspector.dispose(); }
   } finally { gpsStatus.dispose(); gpsProcessing.dispose(); gpsStore.dispose(); }
   console.log('PASS I00B real GPS: UI start/poll/inspection, D-8 source-backed candidates, exact row/raw/normalized coordinates and UTC.');
-  // U05D: real bodyless start + polling in both processed source cases.
-  // The server uses an explicit Neo4j double; all other producers are real.
+  // Checkpoint 1C / I01: bodyless start, terminal audit and a coherent completed pin.
+  // Real merged producers; projection mode is reported explicitly below.
   const analysisRuns = [];
   for (const [caseId, evidenceId, processingRunId, observationCount] of [
     [created.id, processingEvidence.id, newerRun.id, 6],
@@ -444,9 +476,20 @@ try {
       assert.equal(snapshot.sha256, createHash('sha256').update(canonical, 'utf8').digest('hex'));
       const requestCount = statuses.length; await new Promise(resolve => setTimeout(resolve, 40));
       assert.equal(statuses.length, requestCount, 'terminal analysis stops polling');
+      const analysisAudit = { items: [] };
+      for (let offset = 0; ; ) {
+        const page = await listAuditEvents(caseId, { limit: 20, offset });
+        analysisAudit.items.push(...page.items);
+        offset += page.items.length;
+        if (offset >= page.total) break;
+        assert.ok(page.items.length > 0, 'audit pagination must advance to the terminal analysis event');
+      }
+      expectAuditEvent(analysisAudit, 'startAnalysis', completed.id, caseId);
       for (const route of ['/api/v1/cases/{caseId}/graph', '/api/v1/cases/{caseId}/findings', '/api/v1/cases/{caseId}/triage']) {
         const page = await client.request('get', route, { path: { caseId }, query: { analysis_run_id: state.pinnedAnalysisRunId } });
         assert.equal(page.analysis_run_id, completed.id, 'real read agrees with workspace pin');
+        if (route.endsWith('/findings')) assert.ok(page.items.every(item => item.analysis_run_id === completed.id));
+        if (route.endsWith('/triage')) assert.ok(page.items.every(item => !item.latest_result || item.latest_result.analysis_run_id === completed.id));
       }
       // U06: consume the real merged A06/A15 API through the actual UI controller.
       const triage = createTriageController(client, caseId, completed.id, undefined, 1);
@@ -498,12 +541,16 @@ try {
         assert.notEqual(newer.pinnedAnalysisRunId, completed.id);
         assert.ok(newer.run.input_snapshot.evidence_ids.includes(later.id));
         await triage.load(0); assert.deepEqual((await waitTriage()).items, first.items);
+        for (const route of ['/api/v1/cases/{caseId}/graph', '/api/v1/cases/{caseId}/findings', '/api/v1/cases/{caseId}/triage']) {
+          const page = await client.request('get', route, { path: { caseId }, query: { analysis_run_id: completed.id } });
+          assert.equal(page.analysis_run_id, completed.id, 'newer completion cannot change any pinned view');
+        }
         analysisRuns.push({ caseId, runId: newer.run.id });
       } finally { triage.dispose(); }
       analysisRuns.push(path);
     } finally { analysis.dispose(); }
   }
-  console.log('PASS U05D real HTTP/FastAPI/SQLite analysis: network/GPS frozen snapshots and SHA-256, completed pins, terminal stop, pinned graph/findings/triage. Neo4j is an explicit double.');
+  console.log(`PASS U05D real HTTP/FastAPI/SQLite analysis: network/GPS frozen snapshots and SHA-256, completed pins, terminal stop, pinned graph/findings/triage; ${projectionDescription}.`);
   console.log('PASS U06 real HTTP priority controller: exact 55.56/P3/factors, history, pinned all-page membership/order across upload and newer completed analysis; unscored evidence stays unscored.');
   // U07 real graph, including nonempty cross-source candidate links and historical locators.
   const graphCase = await client.request('post', '/api/v1/cases', { body: { title: 'Synthetic U07 graph case' } });
@@ -637,14 +684,38 @@ try {
           assert.deepEqual(historicalFindings.getSnapshot().citations, findingPages[offset].observation_ids.map(id => observations.get(id)));
         }
       } finally { historicalFindings.dispose(); }
-      console.log('PASS U07B real HTTP findings: candidate relationships, rule/confidence, authoritative pagination, same-run evidence/observation locators and frozen history after reprocessing/new analysis. Neo4j remains an explicit double.');
+      console.log(`PASS U07B real HTTP findings: candidate relationships, rule/confidence, authoritative pagination, same-run evidence/observation locators and frozen history after reprocessing/new analysis; ${projectionDescription}.`);
       let originalBlob;
       const original = createOriginalDownload(client, graphSources[0].evidence, blob => { originalBlob = blob; return () => {}; });
       try { await original.download(); assert.deepEqual(Buffer.from(await originalBlob.arrayBuffer()), networkBytes); } finally { original.dispose(); }
       analysisRuns.push({ caseId: graphCaseId, runId: completed.id });
     } finally { graphUI.dispose(); }
   } finally { graphAnalysis.dispose(); graphStore.dispose(); }
-  console.log('PASS U07 real HTTP graph UI controller: exact source UUID nodes/D-7/D-9 and shared-identifier edges, historical citations after reprocessing/new analysis, original byte roundtrip. Neo4j remains an explicit double.');
+  console.log(`PASS U07 real HTTP graph UI controller: exact source UUID nodes/D-7/D-9 and shared-identifier edges, historical citations after reprocessing/new analysis, original byte roundtrip; ${projectionDescription}.`);
+  if (liveNeo4j) {
+    // Harness-only storage read-back; application UI still uses HTTP exclusively.
+    const verifiedRuns = JSON.parse(execFileSync(python, ['-c', `
+import json, sys
+from pathlib import Path
+sys.path.insert(0, str(Path.cwd().parent))
+from backend.database import SQLiteDatabase
+from backend.graph_db import Neo4jGraphDatabase
+from backend.graph_projection import get_projected_graph
+db = SQLiteDatabase(Path(sys.argv[1]))
+neo = Neo4jGraphDatabase()
+try:
+    with db.connect() as connection:
+        runs = connection.execute('SELECT id, case_id, status FROM analysis_runs').fetchall()
+    assert runs and all(run['status'] == 'completed' for run in runs)
+    for run in runs:
+        get_projected_graph(db, neo, case_id=run['case_id'], analysis_run_id=run['id'])
+    print(json.dumps(sorted(run['id'] for run in runs)))
+finally:
+    neo.close()
+`, join(temporary, 'cases.sqlite3')], { cwd: fileURLToPath(new URL('..', import.meta.url)), encoding: 'utf8' }));
+    assert.ok(analysisRuns.every(({ runId }) => verifiedRuns.includes(runId)));
+    console.log(`PASS I01 live Neo4j: all ${verifiedRuns.length} completed SQL partitions verified against real graph storage and frozen source/result references.`);
+  }
   evidenceStore.dispose();
   const beforeDeniedAudit = intakeSnapshot();
   client.setToken('u02-synthetic-one'); await store.load();
@@ -652,6 +723,11 @@ try {
     await assert.rejects(client.request('get', '/api/v1/cases/{caseId}/analysis-runs/{runId}', { path }), { status: 404 });
     await assert.rejects(client.request('get', '/api/v1/cases/{caseId}/graph', { path: { caseId: path.caseId }, query: { analysis_run_id: path.runId } }), { status: 404 });
     await assert.rejects(client.request('get', '/api/v1/cases/{caseId}/findings', { path: { caseId: path.caseId }, query: { analysis_run_id: path.runId } }), { status: 404 });
+    await assert.rejects(client.request('get', '/api/v1/cases/{caseId}/triage', { path: { caseId: path.caseId }, query: { analysis_run_id: path.runId } }), error => {
+      assert.equal(error.status, 404);
+      assert.deepEqual(error.apiError, { code: 'NOT_FOUND', message: 'Resource not found.' });
+      return true;
+    });
   }
   await assert.rejects(client.request('get', '/api/v1/cases/{caseId}/evidence/{evidenceId}/processing-runs/{runId}', { path: runPath }), { status: 404 });
   for (const route of ['/api/v1/cases/{caseId}/entities', '/api/v1/cases/{caseId}/events']) {
@@ -695,9 +771,11 @@ try {
   assert.equal(client.hasToken(), false); await store.load(); assert.equal(store.getSnapshot().status, 'signed-out');
   store.dispose();
   console.log('PASS U02/U02B creation 201, immediate listing, whitespace 400, actor isolation; real HTTP/SQLite: empty, 21-case pagination/detail, two-actor isolation, foreign/missing 404, invalid limit 400, invalid token 401, same-origin UI HTTP 200.');
-  if (auditFailures.length) throw new AggregateError(auditFailures, 'I00 audit producer acceptance failed; Checkpoint 1A cannot be sealed.');
+  if (auditFailures.length) throw new AggregateError(auditFailures, 'I00/I01 audit producer acceptance failed; affected checkpoints cannot be sealed.');
   console.log('PASS I00 authorized intake gate, including uploadEvidence audit target/actor read-back.');
   console.log('PASS I00B verified first network/GPS processing and source inspection gate.');
+  console.log(`I01 projection coverage: ${projectionDescription}; checkpoint sealing also requires the runbook regressions.`);
+  console.log('PASS I01 verified first network/GPS triage tracer and graph projection gate.');
 } finally {
   child.kill(); await exited;
   // mkdtemp created this exact directory; only the owned synthetic database is removed.

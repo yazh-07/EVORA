@@ -1,5 +1,19 @@
 # EVORA scoped agent assignment templates
 
+### I01 assignment — 2026-11-04
+
+| Field | Recorded assignment |
+|---|---|
+| Task/checkpoint/owner | I01 / 1C final exit gate / Joint integration coordination / whale2186; explicit user handoff alongside M3 ownership |
+| Branch/common contract base | Initially clean `feat/i01-first-triage-tracer-gate`; actual HEAD and local coordination base **d04a65eacbe6169d49c1527f632ff30f42c5ff17**. Supplied full SHA `d04a65e2363cf33887140f7b02660d5ddf0436bc` differs; use actual reviewed base. OpenAPI draft 0.3.0 and `docs/INTEGRATION.md` unchanged |
+| Allowed paths | `frontend/test/cases.integration.mjs`, `frontend/README.md`, `docs/AGENT_TASKS.md`, `docs/ROADMAP.md`, `docs/PREIMPLEMENTATION_REVIEW.md`; explicit shared-ledger handoff. No backend/spec/dependency edits; no stage/commit/push/merge authorization |
+| Real merged dependencies | G01D b0fd1f9; G02 d1f16ef; A01 11961c4; A02 51ee2ed; A03 ec4ab3c; A03B 2eca04b; A04 7858cce; A01B ba7db7f; A05 266f39f; A05B ca6e379; A06 eb256aa; A15 9184bed; F08B d49a6ba; U05D 291ccfc; U06 955ccf4; U07 33ab842; U07B d04a65e. Exact merge SHAs and acceptance evidence in I01 verification; earlier 0/1A/1B producers are ancestors |
+| Interface owners | M3 whale2186 publishes frozen coherent graph/findings/triage; M1 sharmelas-925 supplies authorized originals/audit; M2 yazh-07 supplies immutable source outputs; M4 JebasJ consumes API-only completed pins and citations. Joint I01 verifies their combined integration |
+| Acceptance | Real HTTP/UI-controller intake, processing, analysis and source/original read-back; startAnalysis audit actor/run target; foreign triage 404 ApiError; completed pins across all views/pages/newer runs; exact G02 scores, not-scored distinction; real Neo4j projection plus existing crash/recovery/idempotency/selector/auth negatives and prior checkpoint regressions |
+| Dependency handling/queue | Default HTTP harness retains its declared projection double. Opt-in `EVORA_NEO4J_INTEGRATION=1` starts the real application graph factory against disposable local Neo4j; no synthetic replacement of analysis outputs. Seal only after live mode and required regressions pass. No unresolved wire/policy choice; live versus doubled evidence must remain explicit |
+| State/next | Complete: 522 backend/163 frontend/122 coordination tests pass, default and live HTTP smoke pass, all six completed graph partitions verified. Checkpoint 1C/Phase 1 sealed on the verified branch candidate; 2A (`P06`, `A07`, `U06B`, `I02`) unblocked and active, each remaining task needs its own bounded handoff. No stage/commit/push/merge performed |
+
+
 
 ### U05D assignment — 2026-11-03
 

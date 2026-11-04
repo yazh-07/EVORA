@@ -5330,3 +5330,128 @@ claim is made. Resolved task handoff: candidate-match presentation preserves the
 contract `relationship` kind and actual rule; no invented enums or contradictory
 observation fields. Next bounded work: I01 full coherent-publication and pinned
 cross-view runbook exits; U08B remains gated by U08 and checkpoint 2B.
+
+### I01 verification — 2026-11-04
+
+**I01 / Checkpoint 1C / Joint integration coordination / whale2186 / Complete.**
+Initially clean `feat/i01-first-triage-tracer-gate`, actual HEAD/common contract
+and local coordination base **d04a65eacbe6169d49c1527f632ff30f42c5ff17**. Supplied
+`d04a65e2363cf33887140f7b02660d5ddf0436bc` differs. All 17 dependency merges
+were read back in Git ancestry; exact commits and all 18 task acceptances are in
+the I01 live record in ROADMAP.md. Allowed five files only; no backend, spec,
+generated type or package dependency edits. No staging/commit/push/merge.
+
+Required sequence actually executed from the repository root:
+
+```sh
+npx @redocly/cli bundle specs/openapi.yaml --output /tmp/evora-openapi.json
+python scripts/verify_coordination.py /tmp/evora-openapi.json
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -m unittest discover -s scripts -p 'test_*.py'
+npm --prefix frontend run test
+npm --prefix frontend run build
+node frontend/test/cases.integration.mjs
+git diff --check
+```
+
+Bundle/verifier pass: **27 operations, 126 tasks, 18 checkpoints, 39 capabilities,
+40 proposal sections**. System coordination suite: **122 PASS**, jsonschema
+4.26.0. Required-version repeat: **122 PASS**, jsonschema **4.25.1**. Frontend:
+**163 PASS**, zero skips/failures. Build passes generated declaration freshness,
+strict TypeScript and bundling. Default HTTP invocation cannot start because
+system Python lacks `neo4j`; it does not establish a successful smoke. The same
+suite passes with the existing configured backend environment, without installing
+or changing dependencies:
+
+```sh
+export EVORA_TEST_PYTHON=/home/whale2186/.hermes/cache/scratch/test_neo4j_venv/bin/python
+export EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json
+"$EVORA_TEST_PYTHON" -m unittest discover -s scripts -p 'test_*.py'
+node frontend/test/cases.integration.mjs
+EVORA_NEO4J_INTEGRATION=1 node frontend/test/cases.integration.mjs
+```
+
+The final command used private `NEO4J_*` environment configuration for a new
+loopback-only disposable Docker container from cached `neo4j:5.26.0-community`.
+A generated credential stayed in a mode-0600 temporary runtime file outside Git;
+no credential/content was printed. Real service version was read back as
+**5.26.0**; driver **6.4.1**. The container/credential are removed after testing.
+Reproduce with the disposable setup in `backend/README.md`; live mode leaves its
+synthetic graph partitions in that disposable database. Its server uses real
+`create_app` and the production graph factory, not GraphDouble. Default mode
+continues to declare its transactional graph double explicitly.
+
+Actual HTTP/UI-controller read-back in **both modes PASS**:
+
+- Network/GPS intake, explicit processing/analysis starts and polling, immutable
+  source outputs, sorted frozen snapshot arrays and canonical SHA-256; terminal
+  polling stops. Prior I00/I00B original byte/hash/audit/source/overview and
+  400/401/404/413 regressions remain green.
+- `listAuditEvents` is paged through all records before matching `startAnalysis`
+  to the completed run target, investigator-2 and exact case. An initial smoke
+  exposed the first-page-only test assumption after more than 20 audit events;
+  paging fixed the assertion without any producer change. Missing producer
+  events still fail the suite before its final PASS marker.
+- Exact initial **55.56/P3**, relevance 1 and connectivity 0, actual normalized
+  weights/contributions/explanations and immutable history. Uploaded evidence
+  without observations remains unscored. One-item triage pages preserve the
+  frozen total/membership/order across an intervening upload and newer analysis.
+- Completed `analysis_run_id` agrees across graph, findings and triage, including
+  each finding/result; older pins persist after newer completion. Graph/finding
+  controllers resolve exact historical source observation IDs and locators after
+  reprocessing/new analysis, and authorized original download returns exact bytes.
+  Duplicate network fixtures are candidate shared-identifier controls, never
+  independent corroboration or proof of identity.
+- Foreign investigator-1 receives **404** and exact ApiError
+  `{code: 'NOT_FOUND', message: 'Resource not found.'}` for pinned triage reads,
+  alongside existing foreign run/graph/findings/source/audit negatives. These
+  denied reads leave SQL and original bytes unchanged.
+- Live mode independently calls the real projection verifier on **all six
+  completed SQL analysis partitions**, checking Neo4j against immutable graph,
+  source and result references. Exact final marker printed in both modes:
+  `PASS I01 verified first network/GPS triage tracer and graph projection gate.`
+
+Combined completed-checkpoint and current-task backend regressions:
+**522 run, 522 PASS, zero skips/failures** (327 prior + 195 current). Exact final
+command, with the disposable service environment configured:
+
+```sh
+EVORA_NEO4J_INTEGRATION=1 "$EVORA_TEST_PYTHON" -W error::ResourceWarning -m unittest backend.tests.test_skeleton backend.tests.test_validation backend.tests.test_auth backend.tests.test_cases backend.tests.test_evidence backend.tests.test_audit backend.tests.test_audit_list backend.tests.test_m1_access backend.tests.test_network_csv backend.tests.test_gps_csv backend.tests.test_normalization backend.tests.test_candidate_entities backend.tests.test_source_events backend.tests.test_processing backend.tests.test_observations backend.tests.test_entities backend.tests.test_events backend.tests.test_processing_provenance backend.tests.test_processing_dispatch backend.tests.test_processing_publication backend.tests.test_processing_audit backend.tests.test_triage_policy backend.tests.test_graph_nodes backend.tests.test_graph_links backend.tests.test_relevance_factor backend.tests.test_connectivity_factor backend.tests.test_triage_aggregation backend.tests.test_neo4j_setup backend.tests.test_graph_projection backend.tests.test_analysis backend.tests.test_graph_findings backend.tests.test_triage_endpoints backend.tests.test_explanations backend.tests.test_analysis_audit
+```
+
+An earlier invocation mistyped three test module names and returned three loader
+errors; the corrected complete command above passed. The 195 current tests are
+G02 33, A01 19, A02 13, A03 14, A03B 14, A04 12, G01D 17, A01B 17, A05 14,
+A05B 9, A06 8, A15 10 and F08B 15. Seven opt-in live tests ran: four Neo4j setup
+controls and one each for projection/rebuild, analysis and graph/findings HTTP
+read-back. Crash/partial partition/count/property/endpoint corruption, SQL write/
+commit rollback, restart/recovery, same-key replay/new-key inputs, completed
+selection ordering, pending/failed/missing/foreign selectors, audit rollback and
+exactly-once concurrent terminal events are covered by the existing tests.
+Fault injection uses declared transaction/driver/storage doubles; live success,
+partition isolation and rebuild use real Neo4j. Override overlay uses the
+existing storage double; authorized real override writes remain I02B/2B.
+
+Additional shared workflow checks pass:
+
+```sh
+npx --yes @redocly/cli@2.57.0 lint specs/openapi.yaml
+npx --yes openapi-typescript@7.10.1 specs/openapi.yaml -o /tmp/evora-i01-api.d.ts
+npx --yes --package typescript@5.9.3 tsc --noEmit --strict /tmp/evora-i01-api.d.ts
+npx --yes @google/design.md@0.4.0 lint DESIGN.md
+```
+
+OpenAPI has its existing missing-license warning; DESIGN has zero errors and
+warnings. Final coordination and whitespace checks are repeated after ledger
+updates. Observed Linux Python **3.14.9**, SQLite **3.54.1**, Node **22.23.4**,
+npm **12.2.1** differ from setup pins. No new Windows/hosted CI, clean pinned
+install, mounted-browser/visual/accessibility certification, full NLP/model suite,
+benchmark, full modalities/detectors/feedback or final RAG claim is made.
+
+**Checkpoint 1C and Phase 1 are Complete and sealed on this verified branch
+candidate**, including the prerequisite Checkpoints 0/1A/1B. **Checkpoint 2A
+(`P06`, `A07`, `U06B`, `I02`) is unblocked and active.** P06 has an earlier
+independent integration record; remaining bounded assignments must still use
+actual dependencies. No later task started and no entire module is complete.
+Publication/merge is not authorized here; smoke on an eventual merged commit
+remains required. Full original proposal and approved speech addition remain
+required later scope.
