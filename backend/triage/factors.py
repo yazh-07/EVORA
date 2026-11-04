@@ -174,7 +174,7 @@ def calculate_relevance_factor(
         cited_evidence = set()
         for oid in oids:
             source = sources.get(oid)
-            if source is None or (source.get("entity_key") != key and oid not in body_contexts):
+            if source is None or (source.get("entity_key") != key and oid not in body_contexts and source.get("kind") != "text.line"):
                 raise ValueError("Entity must resolve to a source observation with its exact key")
             cited_evidence.add(source["evidence_id"])
         if cited_evidence != set(eids):
