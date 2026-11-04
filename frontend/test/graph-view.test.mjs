@@ -47,6 +47,14 @@ test('typed pinned graph, SVG kinds, escaped labels, diagram click/keyboard sele
     let html = render(c);
     for (const part of ['<svg', '<rect', '<ellipse', '<polygon', 'supported_by', '0.85', 'D-7 &lt;script&gt;']) assert.ok(html.includes(part), part);
     assert.doesNotMatch(html, /<script>/);
+    const particles = elements(tree(c)).filter(e => e.type === 'g' && e.props['data-node-id']);
+    assert.equal(particles.length, 3);
+    const shapes = particles.map(e => e.props.children[0]);
+    assert.equal(shapes.find(e => e.type === 'rect').props.width, '28');
+    assert.equal(shapes.find(e => e.type === 'ellipse').props.rx, '12');
+    const diamond = shapes.find(e => e.type === 'polygon').props.points.split(' ').map(p => p.split(',').map(Number));
+    assert.equal(diamond[1][0] - diamond[3][0], 24);
+    assert.equal(diamond[2][1] - diamond[0][1], 24);
     const node = elements(tree(c)).find(e => e.type === 'g' && e.props['aria-label']?.startsWith('Inspect node entity'));
     node.props.onClick(); assert.equal(c.getSnapshot().selection.id, id(11));
     html = render(c); assert.match(html, /Node details/); assert.match(html, new RegExp(evidenceId));
@@ -215,14 +223,14 @@ const panel = (g, props = {}) => GraphPanel({ state: panelState(g), load: async 
 const diagramNodes = value => elements(value).filter(e => e.type === 'g' && e.props.className?.startsWith('graph-node '));
 const nodePoint = element => {
   const shape = element.props.children[0];
-  if (shape.type === 'rect') return { x: shape.props.x + 124, y: shape.props.y + 38 };
+  if (shape.type === 'rect') return { x: shape.props.x + 14, y: shape.props.y + 14 };
   if (shape.type === 'ellipse') return { x: shape.props.cx, y: shape.props.cy };
   const [x, y] = shape.props.points.split(' ')[0].split(',').map(Number);
-  return { x, y: y + 54 };
+  return { x, y: y + 12 };
 };
 const pointsByLabel = value => new Map(diagramNodes(value).map(e => [e.props['aria-label'], nodePoint(e)]));
 
-test('unlinked provenance clusters anchor local rings and put a shared entity between evidence hubs', () => {
+test('unlinked provenance clusters seed compact particles and put a shared entity between evidence hubs', () => {
   const g = clusteredGraph(), value = panel(g), points = pointsByLabel(value);
   const point = label => points.get(`Inspect node ${label}`);
   const primary = point('evidence: Synthetic network · primary'), comparison = point('evidence: Synthetic network · comparison');
@@ -237,7 +245,7 @@ test('unlinked provenance clusters anchor local rings and put a shared entity be
   assert.deepEqual(pointsByLabel(panel({ ...g, nodes: [...g.nodes].reverse() })), points, 'wire order does not move nodes');
 });
 
-test('dense multi-ring source groups have distinct bounded positions and missing anchors stay explicit', () => {
+test('dense source groups have distinct bounded particle positions and missing anchors stay explicit', () => {
   const g = clusteredGraph();
   g.nodes.push(...Array.from({ length: 60 }, (_, i) => ({ ...g.nodes[1], id: id(1000 + i), label: `Device ${i}` })));
   g.nodes.push({ ...g.nodes[1], id: id(2000), label: 'No source anchor', evidence_ids: [id(2001)] });
@@ -246,11 +254,11 @@ test('dense multi-ring source groups have distinct bounded positions and missing
   const [left, top, width, height] = svg.props.viewBox.split(' ').map(Number);
   for (const p of points) {
     assert.ok(Number.isFinite(p.x) && Number.isFinite(p.y));
-    assert.ok(p.x - 150 >= left && p.x + 150 <= left + width);
-    assert.ok(p.y - 54 >= top && p.y + 54 <= top + height);
+    assert.ok(p.x - 14 >= left && p.x + 14 <= left + width);
+    assert.ok(p.y - 14 >= top && p.y + 14 <= top + height);
   }
   for (let i = 0; i < points.length; i++) for (let j = i + 1; j < points.length; j++) {
-    assert.ok(Math.abs(points[i].x - points[j].x) >= 248 || Math.abs(points[i].y - points[j].y) >= 108, `nodes ${i} and ${j} overlap`);
+    assert.ok(Math.hypot(points[i].x - points[j].x, points[i].y - points[j].y) >= 28, `nodes ${i} and ${j} overlap`);
   }
   assert.equal(elements(value).filter(e => e.props?.className === 'graph-cluster').length, 3);
   assert.ok(elements(value).some(e => e.type === 'title' && String(e.props.children).includes(id(2001))));
@@ -293,7 +301,8 @@ test('toolbar dispatches bounded zoom, reset, filter and search changes through 
   view = { ...view, zoom: 2.4 }; assert.equal(button('Zoom in').props.disabled, true);
   view = { ...view, zoom: .4 }; assert.equal(button('Zoom out').props.disabled, true);
   const svg = elements(value()).find(e => e.type === 'svg');
-  assert.equal(svg.props.style.width, '40%');
+  assert.equal(svg.props.style.width, '100%', 'zoom transforms the world within a fixed viewport');
+  assert.equal(svg.props.style.touchAction, 'none');
   assert.equal(svg.props['aria-label'], 'Candidate relationship diagram');
 });
 
@@ -301,6 +310,8 @@ test('parallel and reversed candidate relationships retain separate labels, conf
   const g = graph();
   g.edges.push({ ...g.edges[0], id: id(21), from_id: id(11), to_id: evidenceId, kind: 'shared_identifier', confidence: .93 });
   const edges = elements(panel(g)).filter(e => e.props?.className === 'graph-edge');
+  const captions = edges.map(e => elements(e).find(item => item.props?.className === 'graph-edge-caption'));
+  assert.notEqual(captions[0].props.transform, captions[1].props.transform, 'parallel relationship pills occupy separate positions');
   const labels = edges.map(e => elements(e).find(item => item.type === 'text'));
   assert.notDeepEqual([labels[0].props.x, labels[0].props.y], [labels[1].props.x, labels[1].props.y]);
   for (const edge of edges) {

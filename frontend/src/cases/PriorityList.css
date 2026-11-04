@@ -10,16 +10,16 @@
 .priority-list ul { margin: 0; padding-left: var(--space-md); }
 .priority-list li + li { margin-top: var(--space-md); }
 .priority-list button.identifier { padding: 5px 8px; text-align: left; justify-content: start; color: var(--color-accent); background: transparent; border-color: transparent; font-size: 0.75rem; }
-.priority-list button.identifier:hover { background: #eaf1fd; }
+.priority-list button.identifier:hover { background: var(--color-tab-active); }
 .priority-badge { display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--color-border); border-radius: 20px; padding: 4px 10px; font-size: 0.75rem; font-weight: 600; white-space: nowrap; }
-.priority-p1 { background: #fff0ef; color: #b42318; border-color: #ffc9c4; }
-.priority-p2 { background: #fff7e5; color: #8a4c00; border-color: #f3d291; }
-.priority-p3 { background: #edf4ff; color: var(--color-accent); border-color: #c4d8fb; }
-.priority-p4 { background: #edf1f5; color: #475569; border-color: #d5dce5; }
+.priority-p1 { background: #f8514914; color: #f85149; border-color: #f851494d; }
+.priority-p2 { background: #d2992214; color: #d29922; border-color: #d299224d; }
+.priority-p3 { background: #58a6ff14; color: #58a6ff; border-color: #58a6ff4d; }
+.priority-p4 { background: #8b949e14; color: #8b949e; border-color: #8b949e4d; }
 /* Keep the unscored cell text intact for integrations that inspect table markup. */
 .priority-list .unprocessed-cell { position: relative; isolation: isolate; min-width: 12rem; white-space: nowrap; font-size: 0.75rem; line-height: 22px; color: var(--color-secondary); }
-.priority-list .unprocessed-cell::before { content: ''; position: absolute; z-index: -1; top: 10px; left: 8px; right: 8px; height: 34px; background: #edf0f4; border-radius: 18px; }
-.priority-list thead th { white-space: nowrap; }
+.priority-list .unprocessed-cell::before { content: ''; position: absolute; z-index: -1; top: 10px; left: 8px; right: 8px; height: 34px; background: var(--color-table-header, #21262d); border-radius: 18px; }
+.priority-list thead th { white-space: nowrap; background: var(--color-table-header, #21262d); border-bottom: 1px solid var(--color-border); }
 .priority-list td:nth-child(2) { min-width: 5rem; }
 .priority-list details > summary { color: var(--color-accent); display: flex; align-items: center; gap: var(--space-sm); font-weight: 500; }
 .priority-list details > summary::before { content: '+'; }
