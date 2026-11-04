@@ -1,3 +1,6 @@
+export { createTranscriptController } from './transcriptController';
+export { TranscriptViewer, TranscriptPanel } from './TranscriptViewer';
+export { EvidenceProcessingInspection } from './EvidenceWorkspace';
 export { createFindingController } from './findingController';
 export { createEntityEventController } from './entityEventController';
 export { EntityEventInspector, EntityEventPanel } from './EntityEventInspector';
