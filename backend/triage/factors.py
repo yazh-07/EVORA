@@ -3,7 +3,7 @@ from collections.abc import Iterable, Mapping
 import math
 from typing import Any
 
-from backend.graph_links import GraphEdge, _references, _same_case
+from backend.graph_links import GraphEdge, _message_body_contexts, _references, _same_case
 from backend.graph_nodes import GraphNode, _records, _text, _uuid, build_graph_nodes
 from backend.triage.policy import ATTENTION_NOTICE, BASE_WEIGHTS, connectivity, relevance
 
@@ -111,6 +111,8 @@ def calculate_relevance_factor(
     ownership/lineage, even on absent paths. Caller authorizes the case, selects
     completed immutable outputs and supplies the full known entity set. A04/A05
     own snapshot selection, normalization of aggregate weights and publication.
+    Message body context must join a cited exact-key mention in that source row;
+    a shared body need not carry a single entity_key for all its candidates.
 
     None target means unevaluated; [] means evaluated with no candidates.
     No target observations or no known keys means absent. Exact namespaced keys
@@ -167,10 +169,12 @@ def calculate_relevance_factor(
             _uuid(oid, "Entity.observation_ids item")
         if len(set(oids)) != len(oids) or len(set(eids)) != len(eids):
             raise ValueError("Entity source IDs must be nonempty and unique")
+        cited_sources = [sources[oid] for oid in oids if oid in sources]
+        body_contexts = _message_body_contexts(cited_sources, key)
         cited_evidence = set()
         for oid in oids:
             source = sources.get(oid)
-            if source is None or source.get("entity_key") != key:
+            if source is None or (source.get("entity_key") != key and oid not in body_contexts):
                 raise ValueError("Entity must resolve to a source observation with its exact key")
             cited_evidence.add(source["evidence_id"])
         if cited_evidence != set(eids):
