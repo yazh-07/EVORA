@@ -47,6 +47,8 @@ export function QuestionAnswerPanel({ state, setQuestion, submit, inspectEvidenc
           onClick={() => inspectEvidence(citation.evidence_id)}>Inspect source evidence {citation.evidence_id}</button>
       </li>)}</ol> : <p>No factual claims or citations were made. The available evidence is insufficient to answer this question.</p>}
       <p className="identifier">Retrieval version: {answer.retrieval_version}</p>
+      {answer.provenance_id && <p className="identifier">Provenance: {answer.provenance_id}</p>}
+      {answer.model_version && <p className="identifier">Model: {answer.model_version}</p>}
     </div>}
   </section>;
 }
