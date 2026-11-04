@@ -1,3 +1,6 @@
+export { createFindingController } from './findingController';
+export { FindingInspector, FindingPanel } from './FindingInspector';
+import { FindingInspector } from './FindingInspector';
 export { createGraphController } from './graphController';
 export { GraphView, GraphPanel } from './GraphView';
 import { GraphView } from './GraphView';
@@ -59,6 +62,7 @@ function CaseEvidenceWorkspace({ caseId }: { caseId: string }) {
   const [selection, setSelection] = useState<{ id: string }>();
   return <>
     <GraphView inspectEvidence={id => setSelection({ id })} />
+    <FindingInspector inspectEvidence={id => setSelection({ id })} />
     <PriorityList inspectEvidence={id => setSelection({ id })} />
     <EvidenceWorkspace caseId={caseId} sourceSelection={selection} />
   </>;

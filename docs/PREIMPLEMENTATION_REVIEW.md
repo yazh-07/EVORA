@@ -5239,3 +5239,94 @@ than a force-layout engine; dense graphs may require using the record list.
 Final scoped diff and whitespace checks pass. No stage/commit/push/merge;
 U07 remains In Progress pending review/publication. Checkpoint 1C/I01 and M4
 remain open. Next bounded task U07B, then remaining I01 producer/runbook exits.
+
+### U07B verification — 2026-11-03
+
+Executed 2026-11-04. **U07B / Checkpoint 1C / M4 Investigator Application /
+JebasJ**, initially clean `feat/u07b-finding-detail-ui`. Actual HEAD/common
+coordination base **33ab842e65d637c10dfc99520cd1c6dbbd600468** differs from
+supplied `33ab842bbd924d5e75dafc82662fa9c6691456a0`. Real U07/A05B/U05D/U06
+ancestry and allowed paths are recorded in AGENT_TASKS.md. No contract, backend
+or package dependency edits; no stage/commit/push/merge performed. Locally
+implemented pending review/publication; Checkpoint 1C/I01 and M4 remain open.
+
+Required commands actually executed:
+
+```sh
+npx @redocly/cli bundle specs/openapi.yaml --output /tmp/evora-openapi.json
+python scripts/verify_coordination.py /tmp/evora-openapi.json
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -m unittest discover -s scripts -p 'test_*.py'
+npm --prefix frontend run test
+npm --prefix frontend run build
+node frontend/test/cases.integration.mjs
+git diff --check
+```
+
+- Bundle/verifier PASS: 27 operations, 126 tasks, 18 checkpoints, 39 capabilities
+  and 40 proposal sections. Default coordination tests: **122 PASS** with system
+  jsonschema 4.26.0. Repeated in required jsonschema **4.25.1** environment:
+  **122 PASS**.
+- Frontend **163 PASS**, including **14 U07B tests**. Build PASS: generated API
+  freshness, strict frontend TypeScript and bundling. Diff whitespace PASS.
+- Default HTTP command fails at backend startup: system Python lacks `neo4j`.
+  Same real HTTP suite **PASS** using the existing backend test environment:
+
+```sh
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json /home/whale2186/.hermes/cache/scratch/test_neo4j_venv/bin/python -m unittest discover -s scripts -p 'test_*.py'
+EVORA_TEST_PYTHON=/home/whale2186/.hermes/cache/scratch/test_neo4j_venv/bin/python node frontend/test/cases.integration.mjs
+```
+
+Unit tests use schema-derived synthetic Fetch doubles, static React rendering,
+panel button handlers and controller lifecycles. They cover exact typed pinned
+GET/query/bodylessness, kind/summary/rule/zero confidence and support/contradiction/
+missing data, safe text, source navigation, authoritative Previous/Next bounds,
+latest discovery adoption, no-run/empty distinction, safe 401/404/network alerts
+and retry, missing/mismatched page/item run IDs with pinned refetch, foreign or
+malformed findings, duplicate IDs, immutable totals/membership/content, all-page
+frozen locator reads, safe source failure/retry, missing/foreign/non-snapshot
+sources, unmount/case/page/session cancellation and late-response rejection.
+The component composes with the existing shared analysis context. These tests
+are not mounted browser interaction or complete accessibility acceptance.
+
+Real HTTP read-back uses merged FastAPI, SQLite, private original storage,
+processing, frozen analysis and A05B findings. Two permitted duplicate network
+fixtures yield candidate shared-identifier `relationship` findings under rule
+`candidate_link_shared_identifier:v1`, confidence **0** (unassessed), with exact
+same-case Evidence/Observation IDs. One-item pages retain authoritative total
+and run ID without duplicates/skips; each detail citation equals its historical
+observation and source locator. After reprocessing and completing a newer
+analysis, old selected findings and locator citations are unchanged. Foreign
+case finding reads return 404. Existing original-byte roundtrip and earlier
+I00/I00B/U05D/U06/U07 checks remain green. Neo4j uses the existing explicit
+transactional GraphDouble; this does not certify live Neo4j or close I01.
+
+Earlier completed-checkpoint and current producer regressions: **390 discovered,
+388 PASS, two optional real-Neo4j skips**, no failures. Actual command:
+
+```sh
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json /home/whale2186/.hermes/cache/scratch/test_neo4j_venv/bin/python -W error::ResourceWarning -m unittest backend.tests.test_skeleton backend.tests.test_validation backend.tests.test_auth backend.tests.test_cases backend.tests.test_evidence backend.tests.test_audit backend.tests.test_audit_list backend.tests.test_m1_access backend.tests.test_network_csv backend.tests.test_gps_csv backend.tests.test_normalization backend.tests.test_candidate_entities backend.tests.test_source_events backend.tests.test_processing backend.tests.test_observations backend.tests.test_entities backend.tests.test_events backend.tests.test_processing_provenance backend.tests.test_processing_dispatch backend.tests.test_processing_publication backend.tests.test_processing_audit backend.tests.test_graph_nodes backend.tests.test_graph_links backend.tests.test_graph_findings backend.tests.test_triage_endpoints backend.tests.test_analysis
+```
+
+Additional shared workflow commands PASS:
+
+```sh
+npx --yes @redocly/cli@2.57.0 lint specs/openapi.yaml
+npx --yes openapi-typescript@7.10.1 specs/openapi.yaml -o /tmp/evora-u07b-api.d.ts
+npx --yes --package typescript@5.9.3 tsc --noEmit --strict /tmp/evora-u07b-api.d.ts
+npx --yes @google/design.md@0.4.0 lint DESIGN.md
+```
+
+OpenAPI retains its existing missing-license warning; DESIGN has zero errors or
+warnings. A synthetic static React panel was rendered in local headless Chrome
+at 390x1600 and visually inspected: IDs wrap, sources and pagination fit the
+viewport. Preview files remain under `/tmp`, outside Git. This is a static
+layout check, not mounted workspace/accessibility acceptance.
+
+Local environment: Node **22.23.4**, npm **12.2.1**, Python **3.14.9**; existing
+backend test environment has jsonschema **4.25.1**, Neo4j driver **6.4.1**.
+These differ from pinned setup Node 22.23.3/npm 12.2.0/Python 3.14.8; no clean
+pinned setup, native Windows, hosted CI, real Neo4j or final detector/evaluation
+claim is made. Resolved task handoff: candidate-match presentation preserves the
+contract `relationship` kind and actual rule; no invented enums or contradictory
+observation fields. Next bounded work: I01 full coherent-publication and pinned
+cross-view runbook exits; U08B remains gated by U08 and checkpoint 2B.

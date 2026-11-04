@@ -940,3 +940,43 @@ Neo4j double. It verifies source UUID nodes, exact candidate edge membership,
 historical locators after reprocessing/new analysis, and original bytes.
 Set `EVORA_TEST_PYTHON` to an environment with repository backend dependencies.
 Full I01, live Neo4j, Windows and mounted browser acceptance remain separate gates.
+
+### U07B finding inspector
+
+CaseWorkspace includes Findings alongside the graph and priority list. Typed
+`listFindings` requests use the shared completed `analysis_run_id` with server
+`limit`/`offset` pagination (20 findings per page). Latest discovery becomes the
+workspace pin before results display. Every page, refresh and retry retains that
+pin; foreign/missing/mismatched runs or malformed responses clear visible results
+and show a safe retry alert. Server totals bound Previous/Next. No completed run
+and a completed run with zero findings have distinct, honest messages.
+
+Each finding shows its exact kind, summary, reported confidence, rule, supporting
+evidence/observation IDs, and supplied contradictory evidence and missing
+information. Candidate matches use contract kind `relationship`, not an invented
+`candidate_match` enum. Confidence is separate from source reliability or guilt.
+Inspect finding sources resolves locators from the selected AnalysisRun's frozen
+processing/observation manifest, paging historical observations as necessary.
+Evidence actions open the existing source inspector/original download. All
+producer text renders as escaped React text. Case/run/session changes, page
+changes and unmount abort obsolete requests and ignore late responses. A 401
+clears the session; reopen access and reselect the case before retrying.
+
+Run from repository root:
+
+```sh
+npm --prefix frontend run test
+node --test frontend/test/finding-inspector.test.mjs
+npm --prefix frontend run build
+node frontend/test/cases.integration.mjs
+```
+
+The focused test requires `.test-build` from `npm test`. Unit tests use synthetic
+Fetch doubles, static React rendering, button handlers and controller lifecycles.
+The real HTTP harness reads merged FastAPI/SQLite finding producers after actual
+processing/analysis, checks candidate relationships and all-page citation joins,
+and rechecks old findings/locators after newer processing and analysis. Neo4j
+uses the existing explicit transactional double. If system Python lacks backend
+dependencies, set `EVORA_TEST_PYTHON` to an existing configured backend Python;
+no dependency installation is performed by the harness. Mounted-browser,
+Windows/hosted CI and live Neo4j acceptance are separate from these tests.
