@@ -1,5 +1,36 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { CaseWorkspace, SessionStatus } from './cases/CaseWorkspace';
+
+export function ThemeToggle() {
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('evora-theme');
+        if (saved === 'light' || saved === 'dark') return saved;
+        if (window.matchMedia?.('(prefers-color-scheme: light)').matches) return 'light';
+      } catch {}
+    }
+    return 'dark';
+  });
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    document.body.setAttribute('data-theme', theme);
+    try { localStorage.setItem('evora-theme', theme); } catch {}
+  }, [theme]);
+
+  return (
+    <button
+      type="button"
+      className="theme-toggle-btn"
+      onClick={() => setTheme(curr => (curr === 'dark' ? 'light' : 'dark'))}
+      aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+      title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+    >
+      {theme === 'dark' ? '☀️ Light' : '🌙 Dark'}
+    </button>
+  );
+}
 
 export function App() {
   const [caseNavigation, setCaseNavigation] = useState(0);
@@ -19,7 +50,10 @@ export function App() {
           <nav className="navigation" aria-label="Workspace">
             <a href="#workspace" aria-current="page" onClick={event => { event.preventDefault(); setCaseNavigation(value => value + 1); }}>Cases</a>
           </nav>
-          <SessionStatus />
+          <div className="header-actions">
+            <ThemeToggle />
+            <SessionStatus />
+          </div>
         </header>
         <main id="workspace" tabIndex={-1}>
           <CaseWorkspace caseNavigation={caseNavigation} />
