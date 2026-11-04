@@ -1,13 +1,22 @@
-import { useEffect, useMemo, useSyncExternalStore } from 'react';
+import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import { useApiClient } from '../api/ApiProvider';
 import { useAnalysisWorkspace } from './StartAnalysis';
 import { createFindingController } from './findingController';
 import type { FindingState } from './findingController';
+import { FindingKindFilter } from './InvestigationTabs';
+import type { FindingKindFilterValue } from './InvestigationTabs';
+import { ConflictPanel } from './ConflictPanel';
+import { GapPanel } from './GapPanel';
+import { ClusterPanel } from './ClusterPanel';
+import { AnomalyPanel } from './AnomalyPanel';
+import { HypothesisPanel } from './HypothesisPanel';
+import { ReliabilityInspector } from './ReliabilityInspector';
 
 type ReviewActions = Partial<Pick<ReturnType<typeof createFindingController>, 'loadReviews' | 'updateReview' | 'submitReview'>>;
 
 export function FindingInspector({ inspectEvidence }: { inspectEvidence?: (id: string) => void }) {
   const client = useApiClient();
+  const [findingKind, setFindingKind] = useState<FindingKindFilterValue>('all');
   const { caseId, analysis_run_id, selectCompletedRun } = useAnalysisWorkspace();
   const controller = useMemo(() => createFindingController(client, caseId, analysis_run_id ?? undefined, selectCompletedRun),
     [client, caseId, analysis_run_id, selectCompletedRun]);
@@ -17,14 +26,18 @@ export function FindingInspector({ inspectEvidence }: { inspectEvidence?: (id: s
   const visible = state.page?.analysis_run_id && state.page.analysis_run_id !== analysis_run_id ?
     { ...state, status: 'loading' as const, page: null } : state;
   return <FindingPanel state={visible} load={controller.load} select={controller.select} inspectEvidence={inspectEvidence}
+    findingKind={findingKind} onKindChange={setFindingKind}
     loadReviews={controller.loadReviews} updateReview={controller.updateReview} submitReview={controller.submitReview} />;
 }
 
-export function FindingPanel({ state, load, select, inspectEvidence, loadReviews, updateReview, submitReview }: {
+export function FindingPanel({ state, load, select, inspectEvidence, loadReviews, updateReview, submitReview, findingKind = 'all', onKindChange }: {
   state: FindingState; load: (offset?: number) => Promise<void>; select: (id: string) => Promise<void>;
   inspectEvidence?: (id: string) => void;
+  findingKind?: FindingKindFilterValue; onKindChange?: (kind: FindingKindFilterValue) => void;
 } & ReviewActions) {
   const page = state.page;
+  const findings = page?.items.filter(f => findingKind === 'all' || f.kind === findingKind) ?? [];
+  const selectedFinding = findings.find(f => f.id === state.selectedId);
   const source = (id: string) => inspectEvidence ? <button type="button" className="identifier"
     onClick={() => inspectEvidence(id)} aria-label={`Inspect source evidence ${id}`}>{id}</button> : <span className="identifier">{id}</span>;
   const reviewDetails = (findingId: string) => {
@@ -80,6 +93,7 @@ export function FindingPanel({ state, load, select, inspectEvidence, loadReviews
   return <section className="panel findings-panel" aria-label="Findings" aria-busy={state.status === 'loading'}>
     <h2>Findings</h2>
     <p>Findings are investigative candidates requiring human verification. Confidence does not establish identity, source reliability or guilt. Missing information is unknown, not proof of non-occurrence.</p>
+    <FindingKindFilter value={findingKind} onSelect={onKindChange} />
     {state.status === 'loading' && <p role="status">Loading findings...</p>}
     {state.message && <p role="alert">{state.message}</p>}
     {state.status === 'error' && <button type="button" onClick={() => { void load(); }}>Retry findings</button>}
@@ -89,28 +103,43 @@ export function FindingPanel({ state, load, select, inspectEvidence, loadReviews
       <p role="status">{page.total} findings. {page.items.length ? `Showing ${page.offset + 1}–${page.offset + page.items.length}.` : 'Showing 0 findings on this page.'}</p>
       {page.analysis_run_id && page.items.length === 0 && <p>{page.total === 0 ?
         'No findings in this completed analysis. This does not establish absence of relevant relationships.' : 'No findings on this page. Return to the previous page.'}</p>}
-      <ul className="findings-list">{page.items.map(f => <li key={f.id}>
+      {findingKind !== 'all' && <p role="status">{findings.length} {findingKind} findings on this page.
+        {findings.length === 0 && ' No findings of this kind on this page.'}</p>}
+      <ul className="findings-list">{findings.map(f => <li key={f.id}>
         <strong className="finding-kind-badge">{f.kind}</strong>
         <h3>{f.summary}</h3>
         <p className="identifier">Finding ID: {f.id}</p>
         <p>Confidence: {f.confidence.toFixed(2)} (reported score, 0–1)</p>
         <p>Rule: {f.rule}</p>
+        {(f.kind === 'relationship' || f.kind === 'corroboration') && <>
         <p>Supporting evidence IDs:</p><ul>{f.evidence_ids.map(id => <li key={id}>{source(id)}</li>)}</ul>
         <p>Supporting observation IDs:</p><ul>{f.observation_ids.map(id => <li key={id} className="identifier">{id}</li>)}</ul>
         {!!f.contradicting_evidence_ids?.length && <><p>Contradicting evidence IDs:</p><ul>{f.contradicting_evidence_ids.map(id => <li key={id}>{source(id)}</li>)}</ul></>}
         {!!f.missing_information?.length && <><p>Missing information:</p><ul>{f.missing_information.map((text, i) => <li key={i}>{text}</li>)}</ul></>}
+        </>}
+        {f.kind === 'conflict' && <ConflictPanel finding={f} citations={state.selectedId === f.id ? state.citations : []} inspectEvidence={inspectEvidence} />}
+        {f.kind === 'gap' && <GapPanel finding={f} citations={state.selectedId === f.id ? state.citations : []} inspectEvidence={inspectEvidence} />}
+        {f.kind === 'cluster' && <ClusterPanel finding={f} citations={state.selectedId === f.id ? state.citations : []} inspectEvidence={inspectEvidence} />}
+        {f.kind === 'anomaly' && <AnomalyPanel finding={f} citations={state.selectedId === f.id ? state.citations : []} inspectEvidence={inspectEvidence} />}
+        {f.kind === 'hypothesis' && <HypothesisPanel finding={f} citations={state.selectedId === f.id ? state.citations : []} inspectEvidence={inspectEvidence} />}
         <button type="button" aria-pressed={state.selectedId === f.id} onClick={() => { void select(f.id); }}>Inspect finding sources {f.id}</button>
         {reviewDetails(f.id)}
       </li>)}</ul>
-      {state.selectedId && <aside aria-label="Finding source details" aria-busy={state.citationStatus === 'loading'}>
+      {selectedFinding && <aside aria-label="Finding source details" aria-busy={state.citationStatus === 'loading'}>
         <h3>Selected finding sources</h3>
         <p className="identifier">{state.selectedId}</p>
         {state.citationStatus === 'loading' && <p role="status">Loading frozen source citations...</p>}
         {state.citationMessage && <p role="alert">{state.citationMessage}</p>}
         {state.citationStatus === 'error' && <button type="button" onClick={() => { void select(state.selectedId!); }}>Retry finding sources</button>}
-        {state.citationStatus === 'ready' && <ul>{state.citations.map(c => <li key={c.id}>
+        {state.citationStatus === 'ready' && <><ul>{state.citations.map(c => <li key={c.id}>
           {source(c.evidence_id)}<p className="identifier">Observation: {c.id}; {c.source_locator}</p>
-        </li>)}</ul>}
+        </li>)}</ul>
+        {[...new Set([...selectedFinding.evidence_ids, ...(selectedFinding.contradicting_evidence_ids ?? [])])].map(id =>
+          <details className="finding-reliability" key={id}>
+            <summary>Reliability and uncertainty for evidence <span className="identifier">{id}</span></summary>
+            <ReliabilityInspector evidenceId={id} observations={state.citations} findings={page.items} inspectEvidence={inspectEvidence} />
+          </details>)}
+        </>}
       </aside>}
       <nav className="pagination" aria-label="Finding pages">
         <button type="button" disabled={page.offset === 0} onClick={() => { void load(Math.max(0, page.offset - page.limit)); }}>Previous</button>

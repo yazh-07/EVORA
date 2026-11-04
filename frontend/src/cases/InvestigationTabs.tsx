@@ -1,5 +1,24 @@
 import { useRef } from 'react';
 
+export const findingKinds = ['all', 'relationship', 'conflict', 'gap', 'cluster', 'anomaly', 'hypothesis'] as const;
+export type FindingKindFilterValue = typeof findingKinds[number];
+
+/** Results remain paginated by the API; this filter never implies a case-wide count. */
+export function FindingKindFilter({ value, onSelect }: {
+  value: FindingKindFilterValue; onSelect?: (kind: FindingKindFilterValue) => void;
+}) {
+  return <div className="finding-kind-filter">
+    <label>Finding kind <select value={value} disabled={!onSelect} aria-describedby="finding-filter-scope"
+      onChange={event => {
+        const kind = event.currentTarget.value;
+        if (findingKinds.some(option => option === kind)) onSelect?.(kind as FindingKindFilterValue);
+      }}>
+      {findingKinds.map(kind => <option key={kind} value={kind}>{kind === 'all' ? 'All kinds' : kind}</option>)}
+    </select></label>
+    <span id="finding-filter-scope">Filters the current page. Use Previous and Next to inspect other pages.</span>
+  </div>;
+}
+
 const tabs = [
   { id: 'evidence', label: 'Evidence & Intake', path: 'M3 7h7l2 2h9v11H3V7Zm0 0V4h7l2 3' },
   { id: 'triage', label: 'Triage & Priority', path: 'M4 5h16M4 12h11M4 19h6M18 10v10m-3-3 3 3 3-3' },

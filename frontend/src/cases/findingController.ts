@@ -216,6 +216,11 @@ export function createFindingController(apiClient: ApiClient, caseId: string, an
                 !snapshot.evidence_ids.includes(item.evidence_id) || !snapshot.observation_ids.includes(item.id) ||
                 typeof item.source_locator !== 'string' || !item.source_locator.trim()) throw Error('Invalid source.');
             if (finding.observation_ids.includes(item.id)) {
+              // Older producers may omit value fields; reject malformed values before detector rendering.
+              if (['kind', 'raw_value', 'normalized_value', 'observed_at_raw', 'observed_at_utc'].some(key =>
+                item[key as keyof Observation] !== undefined && typeof item[key as keyof Observation] !== 'string') ||
+                (item.extraction_confidence !== undefined && (!Number.isFinite(item.extraction_confidence) ||
+                  item.extraction_confidence < 0 || item.extraction_confidence > 1))) throw Error('Invalid citation values.');
               if (found.has(item.id) || !finding.evidence_ids.includes(item.evidence_id)) throw Error('Invalid citation.');
               found.set(item.id, item);
             }
