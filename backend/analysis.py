@@ -101,7 +101,11 @@ def _freeze(connection, case_id):
 
 
 def freeze_analysis_input_snapshot(db, case_id) -> AnalysisInputSnapshot:
-    """Use the caller's acceptance transaction, or a standalone consistent read."""
+    """Freeze latest completed outputs by (finished_at UTC DESC, id DESC).
+
+    Queued/failed deeper attempts leave the previous completed selection intact.
+    Use the caller's acceptance transaction, or a standalone consistent read.
+    """
     case_id = str(UUID(str(case_id)))
     if isinstance(db, sqlite3.Connection):
         return _freeze(db, case_id)

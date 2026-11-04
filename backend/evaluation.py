@@ -1,4 +1,4 @@
-"""Exact labeled extraction and detector evaluation, independent of storage.
+"""Exact labeled extraction, detector and triage evaluation, independent of storage.
 
 Callers supply hashable semantic labels from one authorized case/snapshot, with
 source identity included (and row/span for occurrence evaluation). Do not compare
@@ -9,6 +9,7 @@ neither select case data nor interpret candidate confidence as measured quality.
 from collections import Counter
 from collections.abc import Hashable, Iterable
 from dataclasses import dataclass
+import math
 
 from backend.graph_links import Finding
 
@@ -139,3 +140,88 @@ def evaluate_detector_findings(
         label = _detector_label(expected)
         labels[label[0]].append(label)
     return {kind: calculate_metrics(predictions[kind], labels[kind]) for kind in DETECTOR_KINDS}
+
+
+def _evidence_ids(values: Iterable[str], *, unique: bool = True) -> list[str]:
+    identifiers = list(values)
+    if any(not isinstance(value, str) or not value.strip() for value in identifiers):
+        raise ValueError('Evaluation evidence IDs must be nonblank strings')
+    if unique and len(set(identifiers)) != len(identifiers):
+        raise ValueError('Rankings must contain unique evidence IDs')
+    return identifiers
+
+
+def evaluate_triage_ranking(
+    ranked_evidence_ids: list[str], relevant_evidence_ids: set[str] | list[str], k: int = 5,
+) -> dict:
+    """Evaluate one caller-authorized ranking against independently authored gold.
+
+    Recall divides relevant hits in the first k positions by ALL gold items,
+    including missing predictions. Precision divides by k, even for short lists.
+    Reciprocal rank uses the first relevant position in the FULL ranking; average
+    it across cases/queries for MRR. Empty gold/predictions yield zero, never a
+    passing quality gate. Duplicate predictions fail; duplicate gold labels count
+    once. Unscored items should be omitted by the caller, not assigned scores.
+    No universal threshold is implied: gates require predeclared scenario gold,
+    k and targets, alongside unrelated/empty and feedback-path controls.
+    """
+    if type(k) is not int or k <= 0:
+        raise ValueError('k must be a positive integer')
+    ranked = _evidence_ids(ranked_evidence_ids)
+    relevant = set(_evidence_ids(relevant_evidence_ids, unique=False))
+    hits = len(set(ranked[:k]) & relevant)
+    return dict(top_k_recall=hits / len(relevant) if relevant else 0.0,
+                precision_at_k=hits / k,
+                reciprocal_rank=next((1 / rank for rank, eid in enumerate(ranked, 1)
+                                      if eid in relevant), 0.0))
+
+
+def rank_consistency_correlation(ranking_a: list[str], ranking_b: list[str]) -> float:
+    """Spearman rho on complete, unique rankings of the SAME evidence universe.
+
+    Callers resolve ties consistently before supplying ranks. Different item sets
+    fail rather than silently dropping missing evidence. For fewer than two
+    items rho is undefined and reported as 0.0, not evidence of consistency.
+    """
+    first, second = _evidence_ids(ranking_a), _evidence_ids(ranking_b)
+    if set(first) != set(second):
+        raise ValueError('Rank consistency requires identical evidence membership')
+    n = len(first)
+    if n < 2:
+        return 0.0
+    positions = {eid: rank for rank, eid in enumerate(second)}
+    squared_drift = sum((rank - positions[eid]) ** 2 for rank, eid in enumerate(first))
+    return 1.0 - 6 * squared_drift / (n * (n * n - 1))
+
+
+def evaluate_weight_sensitivity(
+    baseline_scores: dict[str, float], perturbed_scores: dict[str, float],
+) -> dict:
+    """Measure supplied experimental scores; never infer weights or absent scores.
+
+    Hold the scored evidence universe and frozen producer inputs fixed; callers
+    compute both score sets with their declared factor weights. Scores must be
+    finite. Rank by descending score then evidence ID ascending, matching triage
+    tie ordering for canonical UUIDs. Positive rank_changes mean demotion, and
+    score_changes are perturbed minus baseline. Report raw absolute drift and
+    score movement without claiming statistical significance or real-world truth.
+    Inputs are neither modified nor persisted; empty controls return zero metrics.
+    """
+    for scores in (baseline_scores, perturbed_scores):
+        _evidence_ids(scores)
+        if any(isinstance(value, bool) or not isinstance(value, (int, float))
+               or not math.isfinite(value) for value in scores.values()):
+            raise ValueError('Sensitivity scores must be finite numbers')
+    baseline = sorted(baseline_scores, key=lambda eid: (-baseline_scores[eid], eid))
+    perturbed = sorted(perturbed_scores, key=lambda eid: (-perturbed_scores[eid], eid))
+    correlation = rank_consistency_correlation(baseline, perturbed)
+    positions = {eid: rank for rank, eid in enumerate(perturbed)}
+    rank_changes = {eid: positions[eid] - rank for rank, eid in enumerate(baseline)}
+    score_changes = {eid: perturbed_scores[eid] - baseline_scores[eid] for eid in baseline}
+    n = len(baseline)
+    return dict(rank_correlation=correlation, rank_changes=rank_changes,
+                mean_absolute_rank_drift=sum(map(abs, rank_changes.values())) / n if n else 0.0,
+                max_rank_drift=max(map(abs, rank_changes.values()), default=0),
+                score_changes=score_changes,
+                mean_absolute_score_change=math.fsum(map(abs, score_changes.values())) / n if n else 0.0,
+                max_absolute_score_change=max(map(abs, score_changes.values()), default=0.0))

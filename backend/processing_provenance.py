@@ -5,6 +5,7 @@ import re
 from uuid import UUID
 
 from backend.auth import CaseAccessGrant
+from backend.deeper_processing import CONFIG_FIELDS as DEEPER_FIELDS, deeper_metadata
 from backend.entities import _valid_entity
 from backend.errors import AccessError
 from backend.events import _valid_event
@@ -74,6 +75,7 @@ def _payload(run, output, finished_at):
     """
     config = json.loads(run['config_json'])
     if not isinstance(config, dict): raise ValueError('Invalid frozen provenance configuration')
+    deeper = deeper_metadata(config)
     parameters = _PARAMETERS + (('max_device_mentions',) if config.get('kind') == 'message' else ())
     processor = MESSAGE_PROCESSOR_VERSION if config.get('kind') == 'message' else PROCESSOR_VERSION
     if config.get('kind') == 'document':
@@ -100,7 +102,8 @@ def _payload(run, output, finished_at):
             raise ValueError('Invalid frozen model provenance')
         method = 'local_cpu_ner_plus_rules'
     if (set(config) != set(_VERSIONS + parameters) |
-            {'kind', 'sha256', 'size_bytes', 'provenance_version'} | ({'model'} if model else set())):
+            {'kind', 'sha256', 'size_bytes', 'provenance_version'} | ({'model'} if model else set()) |
+            (DEEPER_FIELDS if deeper else set())):
         raise ValueError('Invalid frozen provenance configuration')
     if (config['provenance_version'] != RECORD_VERSION or run['processor_version'] != processor
             or config['processor_version'] != run['processor_version']
@@ -153,10 +156,13 @@ def _payload(run, output, finished_at):
         if any(not (entity_sources.get(_canonical(eid), set()) & refs) for eid in event['entity_ids']):
             raise ValueError('Invalid provenance participant references')
     digest = hashlib.sha256(_json(dict(zip(_OUTPUT_FIELDS, output))).encode('utf-8')).hexdigest()
+    execution = dict(versions={key: config[key] for key in _VERSIONS},
+                     parameters={key: config[key] for key in parameters}, method=method, model=model)
+    if deeper is not None:
+        execution['deeper_processing'] = deeper
     return dict(record_version=RECORD_VERSION, case_id=case_id, evidence_id=evidence_id,
         processing_run_id=run_id, input={key: config[key] for key in ('kind', 'sha256', 'size_bytes')},
-        execution=dict(versions={key: config[key] for key in _VERSIONS},
-                       parameters={key: config[key] for key in parameters}, method=method, model=model),
+        execution=execution,
         outputs=manifests, output_sha256=digest, accepted_at=run['created_at'], finished_at=finished_at)
 
 

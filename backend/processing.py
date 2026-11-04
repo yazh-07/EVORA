@@ -13,6 +13,8 @@ from starlette.concurrency import run_in_threadpool
 from backend.auth import Actor, CaseAccessGrant, require_case_access
 from backend.audit import record_processing_audit
 from backend.errors import AccessError
+from backend.deeper_processing import (ENTITY_VERSION as DEEPER_ENTITY_VERSION,
+    deeper_metadata, project_deeper_message_entities, select_deeper_processing)
 from backend.evidence import download_evidence, invalid_input
 from backend.parsers.network_csv import NetworkCSVError
 from backend.parsers.gps_csv import GPSCSVError
@@ -56,7 +58,7 @@ def _not_found():
     return AccessError(404, 'NOT_FOUND', 'Resource not found.')
 
 
-def _versions(adapter):
+def _versions(adapter, *, deeper=False):
     if adapter.kind == 'document':
         return dict(parser_version=adapter.parser_version, normalizer_version=TEXT_NORMALIZER_VERSION,
                     entity_version=TEXT_ENTITY_VERSION, event_version='not-used',
@@ -76,7 +78,7 @@ def _versions(adapter):
                     max_data_rows=adapter.max_data_rows, provenance_version=RECORD_VERSION)
     message = adapter.kind == 'message'
     versions = dict(parser_version=adapter.parser_version, normalizer_version=NORMALIZER_VERSION,
-                entity_version=MESSAGE_ENTITY_VERSION if message else ENTITY_VERSION,
+                entity_version=(DEEPER_ENTITY_VERSION if deeper else MESSAGE_ENTITY_VERSION) if message else ENTITY_VERSION,
                 event_version='not-used' if message else EVENT_VERSION,
                 processor_version=MESSAGE_PROCESSOR_VERSION if message else PROCESSOR_VERSION,
                 max_source_bytes=adapter.max_source_bytes, max_data_rows=adapter.max_data_rows, provenance_version=RECORD_VERSION)
@@ -179,8 +181,10 @@ def process_run(app, run_id):
         if not app.state.case_access.allows(run['actor_id'], case_id):
             raise AccessError(404, 'SOURCE_UNAVAILABLE', 'Source unavailable.')
         config = json.loads(run['config_json'])
+        policy = deeper_metadata(config)
         adapter = adapter_for(config['kind'])
-        if adapter is None or any(config.get(key) != value for key, value in _versions(adapter).items()):
+        if adapter is None or any(config.get(key) != value for key, value in
+                                  _versions(adapter, deeper=policy is not None).items()):
             # Never execute changed configuration under an older frozen version.
             raise ValueError('processing configuration changed')
         grant = CaseAccessGrant(Actor(run['actor_id']), case_id)
@@ -203,6 +207,8 @@ def process_run(app, run_id):
             normalized, entities, events = projection.observations, projection.entities, ()
         elif adapter.kind == 'message':
             candidates = project_message_entities(observations, case_id=case_id)
+            if policy is not None:
+                candidates = project_deeper_message_entities(candidates, max_mentions=config['max_device_mentions'])
             events = ()  # Required message/text event extraction belongs to P13B.
         else:
             candidates = project_candidate_entities(normalize_observations(observations), case_id=case_id)
@@ -274,7 +280,9 @@ async def start_processing(caseId: UUID, evidenceId: UUID, request: Request, bac
         if adapter is None:
             raise AccessError(415, 'UNSUPPORTED_MEDIA', 'File cannot be processed as declared.')
         config = {key: evidence[key] for key in ('kind', 'sha256', 'size_bytes')}
-        config.update(_versions(adapter))
+        policy = select_deeper_processing(connection, str(caseId), str(evidenceId), evidence['kind'])
+        config.update(_versions(adapter, deeper=bool(policy)))
+        config.update(policy)
         run_id = str(uuid4())
         connection.execute('INSERT INTO processing_runs (id,case_id,evidence_id,actor_id,key_digest,fingerprint,config_json,'
                            'processor_version,created_at,status) VALUES (?,?,?,?,?,?,?,?,?,?)',
