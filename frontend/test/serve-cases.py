@@ -42,6 +42,7 @@ async def no_store(request, call_next):
 if not args.api_only:
     app.mount('/', StaticFiles(directory=Path(__file__).resolve().parents[1] / 'dist', html=True), name='u02-demo')
 sock = socket.socket()
+sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 sock.bind(('127.0.0.1', args.port))
 print(f'U02_URL=http://127.0.0.1:{sock.getsockname()[1]}', flush=True)
 uvicorn.Server(uvicorn.Config(app, log_level='error', access_log=False)).run(sockets=[sock])
