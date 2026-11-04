@@ -15,13 +15,19 @@ export function EvidenceWorkspace({ caseId, sourceSelection }: { caseId: string;
   return <>{sourceSelection && <p role="status">Source evidence inspection shows live metadata and processing outputs, separately from the selected analysis snapshot.</p>}<EvidencePanels state={state} load={offset => { void store.load(offset); }} select={id => { void store.select(id); }} upload={store.upload} /></>;
 }
 function Metadata({ item, detailed = false }: { item: Evidence; detailed?: boolean }) {
-  return <dl className="evidence-metadata">
-    <dt>Kind</dt><dd>{item.kind}</dd><dt>Filename</dt><dd>{item.filename}</dd>
-    <dt>Size (bytes)</dt><dd>{item.size_bytes}</dd><dt>SHA-256</dt><dd className="identifier">{item.sha256}</dd>
-    {detailed && <><dt>Evidence ID</dt><dd className="identifier">{item.id}</dd>
-      <dt>Case ID</dt><dd className="identifier">{item.case_id}</dd><dt>Media type</dt><dd>{item.media_type}</dd>
-      <dt>Acquired at</dt><dd>{item.acquired_at ?? 'Not provided'}</dd><dt>Uploaded at</dt><dd>{item.created_at}</dd></>}
-  </dl>;
+  return <>
+    <dl className="evidence-metadata">
+      <dt>Kind</dt><dd>{item.kind}</dd><dt>Filename</dt><dd>{item.filename}</dd>
+      <dt>Size (bytes)</dt><dd>{item.size_bytes}</dd><dt>SHA-256</dt><dd className="identifier">{item.sha256}</dd>
+    </dl>
+    {detailed && <details className="metadata-details"><summary>Additional metadata</summary>
+      <dl className="evidence-metadata">
+        <dt>Evidence ID</dt><dd className="identifier">{item.id}</dd>
+        <dt>Case ID</dt><dd className="identifier">{item.case_id}</dd><dt>Media type</dt><dd>{item.media_type}</dd>
+        <dt>Acquired at</dt><dd>{item.acquired_at ?? 'Not provided'}</dd><dt>Uploaded at</dt><dd>{item.created_at}</dd>
+      </dl>
+    </details>}
+  </>;
 }
 export function EvidencePanels({ state, load, select, upload }: {
   state: EvidenceState; load: (offset: number) => void; select: (id: string) => void;
@@ -33,8 +39,9 @@ export function EvidencePanels({ state, load, select, upload }: {
   useEffect(() => { if (state.detailStatus === 'ready' || state.detailStatus === 'error') heading.current?.focus(); }, [state.detail, state.detailStatus]);
   const page = state.page;
   return <div className="evidence-workspace">
-    <section className="panel" aria-labelledby="upload-heading">
-      <h2 id="upload-heading">Upload evidence</h2>
+    <section className="panel intake-panel" aria-labelledby="upload-heading">
+      <details className="intake-disclosure">
+      <summary><h2 id="upload-heading">Upload evidence</h2><span>Add an original file to this case</span></summary>
       <p>Upload one original file. Intake stores its bytes and integrity metadata; content has not been verified.</p>
       <form className="upload-form" noValidate aria-busy={state.submitting} onSubmit={async event => {
         event.preventDefault();
@@ -58,6 +65,7 @@ export function EvidencePanels({ state, load, select, upload }: {
         {state.uploadMessage && <p role="alert" ref={error} tabIndex={-1}>{state.uploadMessage}</p>}
         {state.uploaded && <p role="status">Evidence uploaded. Its confirmed metadata is shown in the inspector.</p>}
       </form>
+      </details>
     </section>
     <div className="workspace-layout">
       <section className="panel" aria-labelledby="evidence-heading" aria-busy={state.status === 'loading'}>

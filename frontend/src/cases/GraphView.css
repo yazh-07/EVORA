@@ -1,16 +1,38 @@
-.knowledge-graph { margin-top: var(--space-md); }
-.graph-scroll { overflow: auto; border: 1px solid var(--color-border); max-height: 36rem; }
-.graph-scroll svg { background: var(--color-surface); font: inherit; }
-.graph-node rect, .graph-node ellipse, .graph-node polygon { fill: var(--color-neutral); stroke: var(--color-secondary); stroke-width: 2; }
-.graph-node-entity ellipse { stroke: var(--color-accent); }
-.graph-node-event polygon { stroke-dasharray: 5 3; }
-.graph-node text { fill: var(--color-primary); }
-.graph-edge line { stroke: var(--color-secondary); stroke-width: 2; }
-.graph-edge text { fill: var(--color-secondary); paint-order: stroke; stroke: var(--color-surface); stroke-width: 4px; stroke-linejoin: round; }
-.graph-records { display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: var(--space-md); }
-.graph-records button { display: block; margin-block: var(--space-sm); max-width: 100%; overflow-wrap: anywhere; }
-.graph-inspector { margin-block: var(--space-md); padding: var(--space-md); border: 1px solid var(--color-border); overflow-wrap: anywhere; }
+.graph-layout { display: grid; grid-template-columns: minmax(0, 1fr) 310px; align-items: start; gap: var(--space-lg); margin-block: var(--space-lg); }
+.graph-primary { min-width: 0; }
+.graph-primary > p { color: var(--color-secondary); font-size: 0.8125rem; margin-bottom: var(--space-md); }
+.graph-scroll { overflow: auto; border: 1px solid var(--color-border); border-radius: var(--radius-md); max-height: 36rem; background: #fafbfd; }
+.graph-scroll svg { display: block; min-width: 900px; font: inherit; background: #fafbfd; }
+.graph-node rect, .graph-node ellipse, .graph-node polygon { fill: var(--color-surface); stroke: #8494a7; stroke-width: 1.5; transition: fill 140ms, stroke 140ms; }
+.graph-node-evidence rect { fill: #edf4ff; stroke: var(--color-accent); }
+.graph-node-entity ellipse { fill: #eff8f3; stroke: var(--color-success); }
+.graph-node-event polygon { fill: #fff7e7; stroke: var(--color-warning); }
+.graph-node text { fill: var(--color-primary); font-size: 12px; font-weight: 500; }
+.graph-node:hover > :first-child { stroke-width: 3; }
+.graph-node[aria-pressed="true"] > :first-child { stroke: var(--color-accent); stroke-width: 3; fill: #dceaff; }
+.graph-edge line { stroke: #8998ab; stroke-width: 1.5; }
+.graph-edge text { fill: var(--color-secondary); font-size: 11px; paint-order: stroke; stroke: #fafbfd; stroke-width: 5px; stroke-linejoin: round; }
 .graph-edge .graph-edge-hit { stroke: transparent; stroke-width: 44; pointer-events: stroke; }
 .graph-node, .graph-edge { cursor: pointer; }
-.graph-node[aria-pressed="true"] > :first-child { stroke: var(--color-accent); stroke-width: 4; }
-.graph-edge[aria-pressed="true"] line:not(.graph-edge-hit) { stroke: var(--color-accent); stroke-width: 4; }
+.graph-edge:hover line:not(.graph-edge-hit), .graph-edge[aria-pressed="true"] line:not(.graph-edge-hit) { stroke: var(--color-accent); stroke-width: 3; }
+.graph-record-browser { margin-top: var(--space-md); border-bottom: 1px solid var(--color-border); }
+.graph-record-browser summary { display: flex; align-items: center; color: var(--color-secondary); font-size: 0.875rem; }
+.graph-record-browser summary::before { content: '+'; margin-right: var(--space-sm); }
+.graph-record-browser[open] summary::before { content: '−'; }
+.graph-records { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-md); padding-block: var(--space-md); }
+.graph-records h3 { font-size: 0.875rem; }
+.graph-records button { display: block; margin-block: var(--space-sm); width: 100%; text-align: left; overflow-wrap: anywhere; }
+.graph-records button[aria-pressed="true"] { border-color: var(--color-accent); color: var(--color-accent); background: #edf4ff; }
+.graph-inspector { position: sticky; top: var(--space-lg); min-width: 0; padding: var(--space-lg); border: 1px solid var(--color-border); border-radius: var(--radius-md); overflow-wrap: anywhere; background: var(--color-neutral); }
+.graph-inspector h3 { margin-bottom: var(--space-md); }
+.graph-inspector dl { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+.graph-inspector dd { margin-bottom: var(--space-sm); }
+.graph-inspector p { font-size: 0.8125rem; color: var(--color-secondary); }
+.graph-inspector ul { padding-left: var(--space-md); }
+.graph-inspector button.identifier { justify-content: start; text-align: left; font-size: 0.75rem; max-width: 100%; }
+@media (max-width: 1100px) {
+  .graph-layout { grid-template-columns: minmax(0, 1fr); }
+  .graph-inspector { position: static; }
+}
+@media (max-width: 560px) { .graph-records { grid-template-columns: minmax(0, 1fr); } }
+@media (prefers-reduced-motion: reduce) { .graph-node rect, .graph-node ellipse, .graph-node polygon { transition: none; } }
