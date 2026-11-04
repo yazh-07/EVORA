@@ -21,7 +21,7 @@ from backend.errors import AccessError
 from backend.evidence import invalid_input
 from backend.graph_db import Neo4jGraphDatabase
 from backend.graph_nodes import build_graph_nodes
-from backend.graph_links import RULE, derive_candidate_links
+from backend.graph_links import RULE, CO_MENTION_RULE, derive_candidate_links
 from backend.graph_projection import initialize_graph_projection, project_analysis_run
 from backend.observations import _utc_order
 from backend.triage.aggregation import aggregate_triage_result
@@ -29,7 +29,7 @@ from backend.triage.factors import calculate_relevance_factor, calculate_connect
 from backend.triage.policy import POLICY_VERSION
 
 router = APIRouter()
-ALGORITHM_VERSION = f'evora-analysis/1;{RULE};{POLICY_VERSION}'
+ALGORITHM_VERSION = f'evora-analysis/1;{RULE};{CO_MENTION_RULE};{POLICY_VERSION}'
 
 
 class AnalysisInputSnapshot(TypedDict):

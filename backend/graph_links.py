@@ -1,4 +1,4 @@
-"""A02 exact-key candidate relationships over caller-selected, source-backed inputs."""
+"""Source-backed shared-identifier and message co-mention candidate relationships."""
 from collections import defaultdict
 from collections.abc import Iterable, Mapping
 from dataclasses import asdict, dataclass
@@ -9,6 +9,7 @@ from uuid import UUID, uuid5
 from backend.graph_nodes import _records, _text, _uuid
 
 RULE = "candidate_link_shared_identifier:v1"
+CO_MENTION_RULE = "candidate_link_co_mention:v1"
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -69,20 +70,33 @@ def _references(record, field):
     return tuple(sorted(values))
 
 
+def _message_body_contexts(cited_sources, key):
+    """Join keyless bodies to the candidate's own cited spans in linear time."""
+    mentions = {(source["evidence_id"], source["processing_run_id"],
+                 source["source_locator"].partition("; chars=")[0])
+                for source in cited_sources if source.get("kind") == "message.device"
+                and source.get("entity_key") == key and "; chars=" in source["source_locator"]}
+    return {source["id"] for source in cited_sources
+            if source.get("kind") == "message.body" and "entity_key" not in source
+            and (source["evidence_id"], source["processing_run_id"], source["source_locator"]) in mentions}
+
+
 def derive_candidate_links(
     case_id: str,
     analysis_run_id: str,
     entities: Iterable[Mapping[str, object]],
     observations: Iterable[Mapping[str, object]] | None = None,
 ) -> tuple[list[GraphEdge], list[Finding]]:
-    """Derive one undirected edge/finding per matching pair of distinct Entity IDs.
+    """Derive candidate edges/findings between distinct source Entity IDs.
 
     Consume wire mappings from a coherent authorized input selection. Nonempty
     entities require observations: UUIDs alone cannot prove source/case joins.
     Evidence references must exactly equal each entity's cited observation sources.
     Keys retain P03B spelling, namespace, whitespace and case without normalization.
-    Same-evidence pairs and singleton candidates (including multi-source entities)
-    do not produce self-links. Duplicate identical entities are idempotent;
+    Shared identifiers require distinct evidence items. Co-mentions require a
+    shared message body with each candidate's own cited mention in that row.
+    Singleton candidates (including multi-source entities) never self-link.
+    Duplicate identical entities are idempotent;
     conflicting UUID reuse fails atomically. Outputs sort by UUID and stay frozen.
 
     confidence=0 means unassessed candidate association, never extraction quality,
@@ -158,4 +172,32 @@ def derive_candidate_links(
                                             + "; requires human verification and does not establish identity or guilt.",
                                     evidence_ids=evidence_ids, observation_ids=observation_ids,
                                     entity_ids=(from_id, to_id)))
+
+    # Index by message body: sharing a file or a generic observation is insufficient.
+    bodies = defaultdict(list)
+    for identifier, (key, evidence_ids, observation_ids, _) in sorted(seen.items()):
+        cited = [sources[oid] for oid in observation_ids]
+        for oid in _message_body_contexts(cited, key):
+            bodies[oid].append((identifier, key, evidence_ids, observation_ids))
+    pairs = {pair for members in bodies.values() for pair in combinations(members, 2)}
+    for first, second in sorted(pairs):
+        from_id, first_key, first_evidence, first_observations = first
+        to_id, second_key, second_evidence, second_observations = second
+        if first_key == second_key:
+            continue
+        evidence_ids = tuple(sorted(set(first_evidence) | set(second_evidence)))
+        observation_ids = tuple(sorted(set(first_observations) | set(second_observations)))
+        name = f"{analysis_run_id}:{CO_MENTION_RULE}:{from_id}:{to_id}"
+        edge_id = str(uuid5(UUID(case_id), "edge:" + name))
+        finding_id = str(uuid5(UUID(case_id), "finding:" + name))
+        edges.append(GraphEdge(id=edge_id, case_id=case_id, from_id=from_id, to_id=to_id,
+                               evidence_ids=evidence_ids, observation_ids=observation_ids,
+                               kind="co_mention", confidence=0.0))
+        findings.append(Finding(id=finding_id, case_id=case_id, analysis_run_id=analysis_run_id,
+                                summary=f"Candidate co-mention of {first_key!r} and {second_key!r} in evidence items "
+                                        + ", ".join(evidence_ids)
+                                        + "; requires human verification and does not establish identity or guilt.",
+                                evidence_ids=evidence_ids, observation_ids=observation_ids,
+                                entity_ids=(from_id, to_id), rule=CO_MENTION_RULE, confidence=0.0))
+
     return sorted(edges, key=lambda item: item.id), sorted(findings, key=lambda item: item.id)
