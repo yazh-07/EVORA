@@ -1,16 +1,16 @@
-name: Skeleton and coordination checks
+name: Build and contract checks
 
 on:
   pull_request:
   push:
-    branches: [main, docs/coordination-foundation]
+    branches: [main]
 
 permissions:
   contents: read
 
 jobs:
-  coordination:
-    name: Skeleton and coordination (${{ matrix.os }})
+  checks:
+    name: Build and contract (${{ matrix.os }})
     strategy:
       fail-fast: false
       matrix:
@@ -55,13 +55,11 @@ jobs:
         run: npx --yes openapi-typescript@7.10.1 specs/openapi.yaml -o "${{ runner.temp }}/evora-api.d.ts"
       - name: Compile generated TypeScript declarations
         run: npx --yes --package typescript@5.9.3 tsc --noEmit --strict "${{ runner.temp }}/evora-api.d.ts"
-      - name: Check phases, task dependencies, scope coverage, docs and fixtures
-        run: python scripts/verify_coordination.py "${{ runner.temp }}/evora-openapi.json"
-      - name: Run verifier negative tests and synthetic wire examples
+      - name: Test synthetic API contract examples
         env:
           EVORA_CONTRACT_BUNDLE: ${{ runner.temp }}/evora-openapi.json
-        run: python -m unittest discover -s scripts -p 'test_*.py' -v
-      - name: Test real backend skeleton and validation mapping
+        run: python -m unittest discover -s scripts -p 'test_contract_examples.py' -v
+      - name: Test backend and validation mapping
         env:
           EVORA_CONTRACT_BUNDLE: ${{ runner.temp }}/evora-openapi.json
         run: python -W error::ResourceWarning -m unittest discover -s backend/tests -v
@@ -69,9 +67,9 @@ jobs:
         run: npm --prefix frontend run check:api
       - name: Typecheck frontend
         run: npm --prefix frontend run typecheck
-      - name: Test frontend skeleton
+      - name: Test frontend
         run: npm --prefix frontend run test
-      - name: Build frontend skeleton
+      - name: Build frontend
         run: npm --prefix frontend run build
       - name: Validate design tokens and contrast
         run: npx --yes @google/design.md@0.4.0 lint DESIGN.md

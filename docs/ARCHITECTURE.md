@@ -17,7 +17,7 @@ A modular monolith preserves four ownership boundaries without four services or 
 
 Neo4j helps store/query relationships. Relevance/connectivity/corroboration/temporal/source-quality/conflict/gap calculations, anomaly mappings, weights and aggregation are versioned backend algorithm policy, not a database feature.
 
-Delivery sequence is owned by [ROADMAP.md](ROADMAP.md), not this architecture: phases span module boundaries. Exact task/checkpoint/dependency/acceptance is in the catalog; this rewrite changes sequencing, not topology or wire semantics.
+Delivery sequence is owned by , not this architecture: phases span module boundaries. Exact task/checkpoint/dependency/acceptance is in the catalog; this rewrite changes sequencing, not topology or wire semantics.
 
 4A tests remaining analytical producer components; 4B A17 assembles and coherently publishes them before U12A/U12B/U12C/U12D/U12E/U13B complete real-API panels/uncertainty inspection, followed by detector feedback/evaluation. Earlier fixture-based UI work is independent component work, not 4A real-API completion. No architecture or publication boundary changes are implied.
 
@@ -30,7 +30,7 @@ Delivery sequence is owned by [ROADMAP.md](ROADMAP.md), not this architecture: p
 | M3 Fusion and Adaptive Triage | Source-backed graph, relationships/detectors/factors, versioned coherent analysis and retriage, retrieval context | Completed pinned graph/findings/triage to M4; feedback to optional deeper processing policy |
 | M4 Investigator Application | One React dashboard, command/status/read views, audited review/override APIs, grounded generation and verification | API-only UI, same-case claim citations/private Q&A provenance and human decisions |
 
-Each person works on one module; confirmed GitHub-handle assignments and integration coordination are in [ROADMAP.md](ROADMAP.md#module-assignment-and-live-task-state). M2/M3 are the heaviest boundaries: loan bounded adapter/factor/test help rather than create competing implementations or a fifth person. A module is not an agent prompt.
+Each person works on one module; confirmed GitHub-handle assignments and integration coordination are in . M2/M3 are the heaviest boundaries: loan bounded adapter/factor/test help rather than create competing implementations or a fifth person. A module is not an agent prompt.
 
 ## Publish and recover without pretending SQL/Neo4j are one transaction
 

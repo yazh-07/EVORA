@@ -2,7 +2,7 @@
 
 The **entire initial proposal is the fixed build goal**, delivered through bounded tasks, not a reduced CSV product. [Preserved proposal](PROPOSAL.md) and [all 40 sections](PROPOSAL_TRACEABILITY.md) are local sources. This map is an inventory, not a module-wide prompt. No feature is implemented by appearing here. Coordination-branch draft 0.3.0; actual artifact verification is in PREIMPLEMENTATION_REVIEW.
 
-Canonical phase order/exact assignment is [ROADMAP.md](ROADMAP.md). Checkpoint coverage below is derived from the referenced catalog tasks; features can span phases. This is a feature inventory, not permission to implement all cells in one agent task.
+Canonical phase order/exact assignment is . Checkpoint coverage below is derived from the referenced catalog tasks; features can span phases. This is a feature inventory, not permission to implement all cells in one agent task.
 
 4A covers remaining analytical producer component tests; U12A/U12B/U12C/U12D/U12E/U13B real-API acceptance completes in 4B after additional prerequisite A17 assembles/coherently publishes their findings/factors, then detector feedback/evaluation. Earlier declared-fixture UI components do not certify 4A as real API. All existing analytical acceptance remains required alongside the approved addition below.
 
@@ -64,7 +64,7 @@ Full timeline reconstruction/chronological visualization is explicitly **future*
 
 ## Phased delivery and real completion
 
-Use [ROADMAP.md](ROADMAP.md) for Phase 0–6 outcomes, exact checkpoint membership, open gates and promotion. Source/feature coverage stays here; dependency and acceptance stays in [TASK_BREAKDOWN.md](TASK_BREAKDOWN.md). No unfinished initial feature becomes future merely because its phase has not completed.
+Use  for Phase 0–6 outcomes, exact checkpoint membership, open gates and promotion. Source/feature coverage stays here; dependency and acceptance stays in . No unfinished initial feature becomes future merely because its phase has not completed.
 
 The first deliveries prove authorized intake, immutable network/GPS processing and coherent initial analysis separately (I00/I00B/I01). I02 then proves new-upload adaptation; I07 proves detector feedback and I07B deeper processing of existing evidence after full modality handoff. Final RAG requires the actual approved generation/verification pipeline, not the deterministic tracer. I09/I09B and the final report retain full-scope closure.
 
