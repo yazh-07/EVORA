@@ -17,10 +17,12 @@ class SQLiteDatabase:
     def connect(self) -> Iterator[sqlite3.Connection]:
         """Commit on success, roll back on failure, and always close."""
         self.path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
-        connection = sqlite3.connect(self.path, timeout=5.0)
+        connection = sqlite3.connect(self.path, timeout=60.0)
         try:
             connection.row_factory = sqlite3.Row
             connection.execute("PRAGMA foreign_keys = ON")
+            connection.execute("PRAGMA busy_timeout = 60000")
+            connection.execute("PRAGMA journal_mode = WAL")
             with connection:
                 yield connection
         finally:
