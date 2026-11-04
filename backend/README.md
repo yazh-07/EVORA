@@ -1,3 +1,84 @@
+# I04 labeled extraction/link evaluation — 2026-11-04
+
+The available extraction/link evaluation passes its 0.80 precision and recall
+thresholds. **Checkpoint 3A seal is blocked by missing P13B message/text event
+extraction in this checkout.** It cannot yet be recorded as **100% Complete &
+Sealed!**: `backend/processing.py` publishes no events for documents/messages and
+explicitly defers message/text event extraction to P13B. No corresponding
+extractor or labeled event fixtures are present. Integrate that prerequisite,
+extend this evaluation with its independent event labels and rerun the exit
+checks before sealing. The results below cover the available producers only.
+
+`backend/evaluation.py` provides `calculate_metrics(predicted, expected)` and
+`metrics_from_counts(tp, fp, fn)`, returning immutable `EvaluationMetrics` with
+true positives, false positives, false negatives, precision, recall and F1:
+
+- Precision = TP / (TP + FP); recall = TP / (TP + FN).
+- F1 = 2 TP / (2 TP + FP + FN). A zero denominator produces 0.0, so empty
+  controls cannot pass the positive quality gate. Counts reject negative values,
+  booleans and nonintegers. Calculations retain full precision without smoothing.
+- Exact labels match one-to-one with multiplicity: extra duplicate predictions
+  count as FP, and missing occurrences count as FN. Aggregate micro scores by
+  summing counts before calculating metrics. The calculators do not authorize,
+  select, persist or modify case data; callers supply one case/snapshot.
+
+The gold labels in `backend/tests/test_extraction_evaluation.py` are independent
+of predictions. Real parsers, normalization, projections, the pinned local CPU
+NER worker and `derive_candidate_links` execute without extraction/model/link
+doubles. Committed CSV/JSON bytes remain unchanged. Mobile and transaction
+fixtures reuse the committed `SOURCE` literals in their existing test modules.
+
+| Evaluation unit | TP | FP | FN | Precision | Recall | F1 |
+|---|---:|---:|---:|---:|---:|---:|
+| Source-specific candidate entities, all fixtures | 23 | 2 | 1 | 0.9200 | 0.9583 | 0.9388 |
+| Exact text mention spans, 8 labeled documents | 13 | 2 | 1 | 0.8667 | 0.9286 | 0.8966 |
+| Network/GPS/mobile/transaction source events | 7 | 0 | 0 | 1.0000 | 1.0000 | 1.0000 |
+| Shared-identifier and co-mention links, all sources | 9 | 0 | 0 | 1.0000 | 1.0000 | 1.0000 |
+
+Entities match `(source, candidate_key)`, retaining namespace and leading zeros;
+text IPv6 spellings normalize to one candidate while remaining separate mention
+occurrences. Text mentions match document, kind and exact half-open Unicode
+span. Event labels include source, physical row, kind, summary, raw/UTC time and
+participant candidate keys, preserving unknown time and precise amounts. Link
+labels include rule kind and sorted source-specific endpoints; regenerated UUIDs
+are not semantic labels. The tests verify same-case inputs and source citations.
+
+On the unchanged network/GPS/message fixtures there are three true links:
+network D-7 ↔ message D-7, GPS D-8 ↔ message D-8, and the message D-7/D-8
+co-mention. D-9 stays isolated; network/GPS alone have no link. Adding the text,
+mobile and transaction fixtures yields eight shared-identifier links and one
+co-mention. Candidate confidence remains 0 (unassessed); measured quality is a
+separate diagnostic and establishes neither identity nor independent truth.
+
+The real text model incorrectly labels `d-7` as a person and `May` as a date,
+and misses the person `quinn sample`. These errors remain FP/FN in both entity
+and exact-span scores. Thresholds apply separately to the aggregate entity,
+event and link evaluations and to exact text spans, not to every entity subtype.
+This small synthetic sample does not establish generalization to other data.
+P07's committed BOM/Unicode/blank/duplicate-line fixture also matches all four
+physical line labels. Additional labeled call/SMS controls match both P11
+reports; P11 preserves them as `mobile.activity` with source text rather than
+inferring a specialized call/SMS classification or correspondent. Those two
+additional controls are separate from the seven committed-fixture events above.
+No P13B event quality is claimed by an empty prediction/gold comparison.
+
+Reproduce with the pinned requirements and installed NER model:
+
+```sh
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -m unittest backend.tests.test_extraction_evaluation -v
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -m unittest discover -s backend/tests
+npm --prefix frontend run test
+git diff --check
+```
+
+The local pinned interpreter is
+`/home/whale2186/.hermes/cache/scratch/test_neo4j_venv/bin/python`; put its `bin`
+directory first on `PATH` to run the commands above. The default system Python
+does not have the required Neo4j dependency. Verification on 2026-11-04:
+focused evaluation 16/16 pass; full backend 702 tests run, 695 pass and 7 skip;
+frontend 239/239 pass; `git diff --check` clean. Passing available-producer
+regressions does not supply the missing P13B exit proof.
+
 # G01D private Neo4j setup
 
 `backend.graph_db` supplies the backend-only connection and projection-schema
