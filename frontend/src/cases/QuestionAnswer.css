@@ -1,0 +1,11 @@
+.question-answer form { display: grid; gap: var(--space-md); }
+.question-answer form button { justify-self: start; }
+.question-answer textarea { box-sizing: border-box; width: 100%; min-width: 0; resize: vertical; }
+.question-result { margin-top: var(--space-lg); overflow-wrap: anywhere; }
+.question-text { white-space: pre-wrap; }
+.question-badge { display: inline-block; padding: 6px 12px; border: 1px solid currentColor; border-radius: 20px; font-size: 0.875rem; }
+.question-supported { color: var(--color-success); background: color-mix(in srgb, var(--color-success) 12%, transparent); }
+.question-unsupported { color: var(--color-warning); background: color-mix(in srgb, var(--color-warning) 12%, transparent); }
+.question-citations { padding-left: var(--space-lg); }
+.question-citations > li { padding-bottom: var(--space-md); margin-bottom: var(--space-md); border-bottom: 1px solid var(--color-border); }
+.question-citations button { max-width: 100%; overflow-wrap: anywhere; text-align: left; }
