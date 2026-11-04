@@ -329,7 +329,11 @@ class DetectorTests(Inputs):
         self.assertEqual(len(hypotheses), 2)
         self.assertEqual({h.contradicting_evidence_ids for h in hypotheses},
                          {(self.first['id'],), (self.second['id'],)})
-        self.assertIsNone(self.factor(f.calculate_conflict_relevance_factor, conflict_findings=conflicts))
+        factor = self.factor(f.calculate_conflict_relevance_factor, conflict_findings=conflicts)
+        self.assertEqual(factor['value'], .8)
+        self.assertEqual(set(factor['evidence_ids']), {self.first['id'], self.second['id']})
+        self.assertIsNone(self.factor(f.calculate_conflict_relevance_factor,
+            conflict_findings=[replace(conflicts[0], conflict_strength=None)]))
 
     def test_location_conflict_excludes_same_source_same_coordinates_and_different_times(self):
         self.gps(self.first, '2026-01-01T10:00:00Z', '12', '77')
@@ -612,7 +616,9 @@ class FullAnalysisTests(unittest.IsolatedAsyncioTestCase):
         for result in triage:
             validator('TriageResult').validate(result)
             self.assertEqual({factor['name'] for factor in result['factors']},
-                             {'relevance', 'connectivity', 'temporal_proximity'})
+                             {'relevance', 'connectivity', 'temporal_proximity', 'conflict_relevance'})
+            conflict = next(factor for factor in result['factors'] if factor['name'] == 'conflict_relevance')
+            self.assertEqual(conflict['value'], .8)
             self.assertAlmostEqual(sum(factor['weight'] for factor in result['factors']), 1.)
         analysis.process_analysis_run(self.app, accepted['id'])
         with self.app.state.database.connect() as connection:

@@ -348,15 +348,15 @@ class DetectorFixtureTests(unittest.TestCase):
         self.add_source('b', 'gps', '2026-01-01T10:00:00Z,D-7,13,77\n')
         conflicts, gaps = self.conflicts(events=False), self.gaps()
         before = deepcopy((conflicts, gaps))
+        # I07 supplies a bounded detector strength. An explicitly unassessed
+        # candidate remains absent; wire findings also omit private strengths.
         self.assertIsNone(calculate_conflict_relevance_factor(
-            case_id=self.case, evidence_id=eid, conflict_findings=conflicts))
+            case_id=self.case, evidence_id=eid,
+            conflict_findings=[replace(finding, conflict_strength=None) for finding in conflicts]))
         self.assertIsNone(calculate_gap_relevance_factor(
             case_id=self.case, evidence_id=eid, gap_findings=gaps))
-        # A supported strength is an explicit human assessment, never a score
-        # inferred from extraction confidence or the mere presence of a finding.
-        assessed = [replace(finding, conflict_strength=.8) for finding in conflicts]
         conflict_factor = calculate_conflict_relevance_factor(
-            case_id=self.case, evidence_id=eid, conflict_findings=assessed)
+            case_id=self.case, evidence_id=eid, conflict_findings=conflicts)
         self.assertEqual(conflict_factor['name'], 'conflict_relevance')
         self.assertEqual(conflict_factor['value'], .8)
         self.assertEqual(conflict_factor['contribution'], 8.)
