@@ -1,3 +1,58 @@
+# I02 adaptive tracer — 2026-11-04
+
+From the repository root, with the backend requirements and locked frontend
+dependencies installed:
+
+```sh
+node frontend/test/adaptive.integration.mjs
+# Equivalent npm entry point:
+npm --prefix frontend run test:adaptive
+```
+
+Set `EVORA_TEST_PYTHON` to the backend virtualenv's Python executable if needed,
+or activate that environment first. The direct command rebuilds `.test-build`
+before importing the client/controllers. It starts the shared FastAPI/SQLite
+harness in API-only mode on an ephemeral loopback port, with its explicit
+transactional Neo4j double; no prior UI build, live graph service or browser is
+required. Its owned temporary server, database and originals are cleaned on
+success and failure.
+
+The test uploads/processes the unchanged committed `network.csv`, `gps.csv` and
+`messages.csv`. Initial network/GPS analysis has zero edges. Processing MSG-1
+and analyzing with a new key produces exactly two shared-identifier edges and
+one message co-mention edge; network D-9 stays unlinked. Edge/finding citations
+resolve to the actual selected observations and source locators. It verifies
+snapshot manifests/digests, the `new_observations` trigger, same-key replay,
+unchanged historical SQL rows/stored JSON and graph/findings/triage API outputs,
+original bytes/hashes, both GPS history evaluations and U06B's real history
+controller/static rendering while its list remains pinned to Run 1.
+
+**Exit-gate verification:** merged `g02-triage-v1` gives GPS relevance 1/5 and
+connectivity 0.00 → 0.10. Its normalized weights are 5/9 and 4/9, producing
+11.11 → 15.55 (+4.44 points, connectivity jump 0.00 → 0.10). The test verifies
+links, D-9 isolation, immutable history, U06B history UI and originals, and passes
+all exit criteria. Checkpoint 2A is Complete.
+
+Run the broader regressions separately:
+
+```sh
+npx --yes @redocly/cli@2.57.0 bundle specs/openapi.yaml --output /tmp/evora-openapi.json
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -m unittest discover -s backend/tests
+npm --prefix frontend run test
+npm --prefix frontend run build
+git diff --check
+```
+
+Local verification used the existing backend virtualenv (Python 3.14.9),
+Node 22.23.4 and npm 12.2.1: backend **632 tests, OK (7 opt-in live Neo4j tests
+skipped)**; frontend **181 tests passed**; frontend build, existing
+`cases.integration.mjs` regression and whitespace check passed. Adaptive tracer
+checks pass through source/history/original verification; the final requested
+priority assertion fails as described above. This is not a clean-install,
+browser, Windows or live Neo4j verification claim.
+
+---
+
 # I00B processing and source inspection gate — 2026-11-03
 
 Run the complete smoke from the repository root with the existing backend
