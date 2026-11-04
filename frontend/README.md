@@ -895,3 +895,48 @@ set `EVORA_TEST_PYTHON` to an environment containing repository dependencies.
 Mounted browser/visual/accessibility, native Windows, live Neo4j and real override
 mutation acceptance are not established by these checks. Checkpoint 1C remains
 open for U07/U07B and I01 exit evidence.
+
+## U07: knowledge graph
+
+GraphView and graphController add a **Knowledge Graph** section to CaseWorkspace.
+Typed getGraph uses the same completed `analysis_run_id` as triage and future
+findings. A latest read first adopts the shared workspace pin; refresh retains
+that pin. Completing a newer analysis switches all consumers together. Invalid
+case/run IDs, malformed records and dangling endpoints fail without mixed data.
+
+The SVG and ordinary record buttons support selection by pointer or keyboard.
+Evidence nodes use rectangles, known entity subkinds use ellipses and known event
+subkinds use diamonds. Full labels and exact wire kinds remain visible in the
+record list/inspector; unknown kinds are explicit. Candidate relationships show
+kind, direction and actual confidence, including zero. Confidence does not mean
+verified identity, reliability or guilt. Source/model strings render as escaped
+React text. The diagram scrolls within a labeled region on narrow screens.
+
+Node inspection shows source Evidence IDs. Edge inspection also resolves
+observation IDs to locators by reading the selected completed AnalysisRun and
+paging its immutable historical processing outputs. Every citation must join
+that snapshot and edge's evidence set. New processing cannot replace old sources.
+Source/locator buttons open the case evidence inspector, where **Download
+original** retrieves authorized bytes with size/SHA-256 checking. The evidence
+panel labels its separate live processing view; graph citations stay historical.
+There is no invented per-observation route or automatic locator-to-byte seeking.
+
+No completed run and an empty completed graph have distinct honest messages.
+401 clears session access; reopen it and reselect the case. 404/network failures
+have safe retry controls for graph and citations. Case/run/session switches and
+unmount abort requests and discard late responses. There is no persistent cache.
+
+```sh
+npm --prefix frontend run test
+node --test frontend/test/graph-view.test.mjs
+npm --prefix frontend run build
+node frontend/test/cases.integration.mjs
+```
+
+Focused tests require `.test-build` from `npm test`. Unit tests use synthetic
+Fetch doubles, static rendering and actual panel handlers/controller lifecycles.
+The HTTP harness uses real FastAPI/SQLite/processing/analysis with an explicit
+Neo4j double. It verifies source UUID nodes, exact candidate edge membership,
+historical locators after reprocessing/new analysis, and original bytes.
+Set `EVORA_TEST_PYTHON` to an environment with repository backend dependencies.
+Full I01, live Neo4j, Windows and mounted browser acceptance remain separate gates.

@@ -1,3 +1,6 @@
+export { createGraphController } from './graphController';
+export { GraphView, GraphPanel } from './GraphView';
+import { GraphView } from './GraphView';
 export { createTriageController } from './triageController';
 export { PriorityList, PriorityListPanel } from './PriorityList';
 import { PriorityList } from './PriorityList';
@@ -55,6 +58,7 @@ export function CaseWorkspace() {
 function CaseEvidenceWorkspace({ caseId }: { caseId: string }) {
   const [selection, setSelection] = useState<{ id: string }>();
   return <>
+    <GraphView inspectEvidence={id => setSelection({ id })} />
     <PriorityList inspectEvidence={id => setSelection({ id })} />
     <EvidenceWorkspace caseId={caseId} sourceSelection={selection} />
   </>;

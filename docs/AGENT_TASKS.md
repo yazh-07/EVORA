@@ -1115,3 +1115,38 @@ by client disposal. Full proposal and approved speech addition remain required.
   responses. Actual verification/doubles/limits are in PREIMPLEMENTATION_REVIEW.md.
   Checkpoint 1C/I01 and M4 remain open; next bounded handoffs U07/U07B, then I01
   after all prerequisites and runbook exits. Other module owners unchanged.
+
+### U07 assignment — 2026-11-03
+
+- **U07 / Checkpoint 1C / M4 Investigator Application / JebasJ**.
+  Explicit user handoff on clean `feat/u07-graph-visualization-ui`, Backlog ->
+  In Progress pending review/publication. Executed 2026-11-04.
+- Exact actual common contract/base, initial HEAD and local coordination ref:
+  **955ccf447065a658669d87cec6dc5c39a24df060**. Supplied full SHA
+  `955ccf415309ebdb629f12d2b1f8efd38a0631d8` is absent locally.
+  Real merged dependencies: U01 **f8c5fe7b7abf62a02d8dd96fd89ad7bd6e57b029**,
+  A05B **ca6e379ffd0c73332f47fdf6ce3132d1dfc39c99**. Shared pin U05D
+  **291ccfc364126ea678b4a0113494d0acaa4ec731**, triage consumer U06 at
+  the actual base above; ancestry read back. OpenAPI draft 0.3.0 unchanged.
+- Allowed paths: `frontend/src/cases/`, `frontend/test/`, `frontend/README.md`,
+  `docs/AGENT_TASKS.md`, `docs/ROADMAP.md`, `docs/PREIMPLEMENTATION_REVIEW.md`.
+  Explicit shared-doc handoff; no backend/spec/dependency changes or publication.
+- Acceptance: typed getGraph in CaseWorkspace, shared completed-run pin,
+  fail-closed case/run/shape/reference checks, SVG node/edge selection and
+  inspector, source Evidence IDs and observation locators, honest empty states,
+  fixed 401/404/network errors and retries, abort/disposal/session controls.
+  Synthetic Fetch tests and real HTTP producer/source/original read-back required.
+- Producer/consumer queue A01/A05B/U05D -> U07/U07B: resolved within existing
+  routes. GraphNode.kind is free-form; merged A01 preserves source subkinds.
+  Evidence uses a rectangle; device/ip/entity use ellipses;
+  network.activity/gps.location/event use diamonds. Unknown kinds remain explicit
+  rectangles without invented category claims. No parallel wire enum is added.
+  Graph edges retain exact kind/confidence, including producer zero confidence.
+  Citation inspection reads the selected completed AnalysisRun snapshot, then
+  pages only its historical processing_run_ids and validates observation/evidence
+  membership. It never substitutes latest observations or live entity/event lists.
+  Source buttons open the existing evidence inspector and authorized original
+  download; its live processing view is separately labeled. No unresolved U07 gate.
+- Actual checks/doubles/limitations in PREIMPLEMENTATION_REVIEW.md. Checkpoint
+  1C/I01 and M4 remain open; next bounded task U07B, then remaining I01
+  prerequisites and runbook exits. No staging, commit, push or merge authorized.
