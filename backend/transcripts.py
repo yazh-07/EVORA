@@ -20,6 +20,7 @@ from backend.evidence import invalid_input
 from backend.observations import _not_found, _utc_order, _valid_record
 from backend.parsers.text_entities import canonical, identifier_spans
 from backend.processing import _json
+from backend.processing_provenance import RECORD_VERSION, TRANSCRIPT_PROCESSOR_VERSION
 
 router = APIRouter()
 VERSION = 'transcript-materializer/1'
@@ -294,7 +295,7 @@ def append_transcript_revision(observationId: UUID, body: CreateTranscriptRevisi
         connection.execute('INSERT INTO processing_runs (id,case_id,evidence_id,actor_id,key_digest,fingerprint,config_json,'
             'processor_version,created_at,status) VALUES (?,?,?,?,?,?,?,?,?,?)',
             (run_id, case_id, source['evidence_id'], grant.actor.id, hashlib.sha256(('revision:' + revision_id).encode()).hexdigest(),
-             hashlib.sha256(_json(revision).encode()).hexdigest(), _json(config), VERSION, timestamp, 'queued'))
+             hashlib.sha256(_json(revision).encode()).hexdigest(), _json(config), TRANSCRIPT_PROCESSOR_VERSION, timestamp, 'queued'))
         connection.execute("UPDATE processing_runs SET status='running' WHERE id=?", (run_id,))
         connection.execute('INSERT INTO processing_outputs VALUES (?,?,?,?,?,?,?)',
                            (run_id, case_id, source['evidence_id'], *[_json(items) for items in output]))
@@ -302,6 +303,20 @@ def append_transcript_revision(observationId: UUID, body: CreateTranscriptRevisi
         persisted = _output(connection, dict(id=run_id, case_id=case_id, evidence_id=source['evidence_id']))
         if _json(persisted) != _json(output):
             raise ValueError('Unverified transcript materialization.')
+        evidence = connection.execute('SELECT kind,sha256,size_bytes FROM evidence WHERE id=? AND case_id=?',
+                                      (source['evidence_id'], case_id)).fetchone()
+        # Publish provenance while the run is running, in the same transaction
+        # as its verified outputs, revision, completion and audit event.
+        payload = dict(record_version=RECORD_VERSION, case_id=case_id, evidence_id=source['evidence_id'],
+            processing_run_id=run_id, input=dict(evidence),
+            execution=dict(versions=dict(processor_version=TRANSCRIPT_PROCESSOR_VERSION, materializer_version=VERSION),
+                           parameters={}, method='human_transcript_correction', model=None),
+            outputs={name: sorted(item['id'] for item in records) for name, records in zip(
+                ('observation_ids', 'entity_ids', 'event_ids'), persisted[:3])},
+            output_sha256=hashlib.sha256(_json(dict(zip(_OUTPUTS, map(_json, persisted)))).encode()).hexdigest(),
+            accepted_at=timestamp, finished_at=timestamp)
+        connection.execute('INSERT INTO processing_provenance VALUES (?,?,?,?,?,?)',
+            (run_id, case_id, source['evidence_id'], RECORD_VERSION, timestamp, _json(payload)))
         if not request.app.state.case_access.allows(grant.actor.id, grant.case_id):
             raise _not_found()
         _preconditions(connection, case_id, source['evidence_id'], source_id, body)
