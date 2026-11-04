@@ -200,3 +200,112 @@ for (const status of [401, 404, 'network']) test(`citation ${status} stays safe 
     }
   } finally { c.dispose(); }
 });
+
+function clusteredGraph() {
+  const g = graph(), second = id(30);
+  g.nodes[0].label = 'Synthetic network · primary';
+  g.nodes.push({ ...g.nodes[0], id: second, label: 'Synthetic network · comparison', evidence_ids: [second] },
+    { ...g.nodes[1], id: id(31), label: 'Comparison device', evidence_ids: [second] },
+    { ...g.nodes[1], id: id(32), label: 'Shared D-7', evidence_ids: [evidenceId, second] });
+  g.edges = [];
+  return g;
+}
+const panelState = g => ({ status: 'ready', graph: g, selection: null, message: '', citations: [], citationStatus: 'idle', citationMessage: '' });
+const panel = (g, props = {}) => GraphPanel({ state: panelState(g), load: async () => {}, select: async () => {}, ...props });
+const diagramNodes = value => elements(value).filter(e => e.type === 'g' && e.props.className?.startsWith('graph-node '));
+const nodePoint = element => {
+  const shape = element.props.children[0];
+  if (shape.type === 'rect') return { x: shape.props.x + 124, y: shape.props.y + 38 };
+  if (shape.type === 'ellipse') return { x: shape.props.cx, y: shape.props.cy };
+  const [x, y] = shape.props.points.split(' ')[0].split(',').map(Number);
+  return { x, y: y + 54 };
+};
+const pointsByLabel = value => new Map(diagramNodes(value).map(e => [e.props['aria-label'], nodePoint(e)]));
+
+test('unlinked provenance clusters anchor local rings and put a shared entity between evidence hubs', () => {
+  const g = clusteredGraph(), value = panel(g), points = pointsByLabel(value);
+  const point = label => points.get(`Inspect node ${label}`);
+  const primary = point('evidence: Synthetic network · primary'), comparison = point('evidence: Synthetic network · comparison');
+  const shared = point('entity: Shared D-7');
+  assert.equal(elements(value).filter(e => e.props?.className === 'graph-cluster').length, 2);
+  assert.equal(shared.x, (primary.x + comparison.x) / 2);
+  assert.equal(shared.y, (primary.y + comparison.y) / 2);
+  assert.ok(Math.abs(point('entity: D-7 <script>untrusted</script>').x - primary.x) < Math.abs(primary.x - comparison.x) / 2);
+  const html = renderToStaticMarkup(createElement(GraphPanel, { state: panelState(g), load: async () => {}, select: async () => {} }));
+  for (const text of ['No candidate relationships in this snapshot', 'Source evidence', 'Cross-source correlation', 'Synthetic network · primary', 'Synthetic network · comparison']) assert.ok(html.includes(text), text);
+  assert.equal(elements(value).filter(e => e.props?.className === 'graph-edge').length, 0, 'provenance grouping never fabricates edges');
+  assert.deepEqual(pointsByLabel(panel({ ...g, nodes: [...g.nodes].reverse() })), points, 'wire order does not move nodes');
+});
+
+test('dense multi-ring source groups have distinct bounded positions and missing anchors stay explicit', () => {
+  const g = clusteredGraph();
+  g.nodes.push(...Array.from({ length: 60 }, (_, i) => ({ ...g.nodes[1], id: id(1000 + i), label: `Device ${i}` })));
+  g.nodes.push({ ...g.nodes[1], id: id(2000), label: 'No source anchor', evidence_ids: [id(2001)] });
+  const value = panel(g), points = [...pointsByLabel(value).values()];
+  const svg = elements(value).find(e => e.type === 'svg');
+  const [left, top, width, height] = svg.props.viewBox.split(' ').map(Number);
+  for (const p of points) {
+    assert.ok(Number.isFinite(p.x) && Number.isFinite(p.y));
+    assert.ok(p.x - 150 >= left && p.x + 150 <= left + width);
+    assert.ok(p.y - 54 >= top && p.y + 54 <= top + height);
+  }
+  for (let i = 0; i < points.length; i++) for (let j = i + 1; j < points.length; j++) {
+    assert.ok(Math.abs(points[i].x - points[j].x) >= 248 || Math.abs(points[i].y - points[j].y) >= 108, `nodes ${i} and ${j} overlap`);
+  }
+  assert.equal(elements(value).filter(e => e.props?.className === 'graph-cluster').length, 3);
+  assert.ok(elements(value).some(e => e.type === 'title' && String(e.props.children).includes(id(2001))));
+});
+
+test('filters preserve source positions, hide incident edges and retain inspection context', () => {
+  const g = graph(), original = pointsByLabel(panel(g));
+  for (const [filter, kind] of [['Evidence', 'evidence'], ['Entities', 'entity'], ['Events', 'event']]) {
+    const value = panel(g, { view: { filter, query: '', zoom: 1 }, state: { ...panelState(g), selection: { kind: 'node', id: evidenceId } } });
+    const nodes = diagramNodes(value);
+    assert.equal(nodes.length, 1);
+    assert.ok(nodes[0].props.className.endsWith(kind));
+    assert.deepEqual(nodePoint(nodes[0]), original.get(nodes[0].props['aria-label']));
+    assert.equal(elements(value).filter(e => e.props?.className === 'graph-edge').length, 0);
+    assert.ok(elements(value).some(e => e.type === 'h3' && e.props.children === 'Node details'));
+  }
+});
+
+test('search safely highlights matching labels, kinds and source IDs without removing nodes', () => {
+  const g = graph();
+  for (const [query, expected] of [['d-7 <SCRIPT>', 1], ['NETWORK', 0], [evidenceId, 3], ['  entity  ', 1], ['<img src=x onerror=alert(1)>', 0]]) {
+    const value = panel(g, { view: { filter: 'All', query, zoom: 1 } });
+    assert.equal(diagramNodes(value).length, 3);
+    assert.equal(diagramNodes(value).filter(e => e.props['data-search-match']).length, expected, query);
+  }
+});
+
+test('toolbar dispatches bounded zoom, reset, filter and search changes through controlled view state', () => {
+  let view = { filter: 'All', query: '', zoom: 1 };
+  const value = () => panel(graph(), { view, onViewChange: next => { view = next; } });
+  const button = label => elements(value()).find(e => e.type === 'button' && (e.props['aria-label'] === label || e.props.children === label));
+  button('Zoom in').props.onClick(); assert.ok(Math.abs(view.zoom - 1.2) < .0001);
+  button('Zoom out').props.onClick(); assert.equal(view.zoom, 1);
+  button('Events').props.onClick(); assert.equal(view.filter, 'Events');
+  elements(value()).find(e => e.type === 'input').props.onChange({ target: { value: 'D-7' } });
+  assert.equal(view.query, 'D-7');
+  let reset = false;
+  button('Reset view').props.onClick({ currentTarget: { closest: () => ({ querySelector: () => ({ scrollTo: (x, y) => { reset = x === 0 && y === 0; } }) }) } });
+  assert.ok(reset); assert.equal(view.zoom, 1); assert.equal(view.query, 'D-7');
+  view = { ...view, zoom: 2.4 }; assert.equal(button('Zoom in').props.disabled, true);
+  view = { ...view, zoom: .4 }; assert.equal(button('Zoom out').props.disabled, true);
+  const svg = elements(value()).find(e => e.type === 'svg');
+  assert.equal(svg.props.style.width, '40%');
+  assert.equal(svg.props['aria-label'], 'Candidate relationship diagram');
+});
+
+test('parallel and reversed candidate relationships retain separate labels, confidence and hit lines', () => {
+  const g = graph();
+  g.edges.push({ ...g.edges[0], id: id(21), from_id: id(11), to_id: evidenceId, kind: 'shared_identifier', confidence: .93 });
+  const edges = elements(panel(g)).filter(e => e.props?.className === 'graph-edge');
+  const labels = edges.map(e => elements(e).find(item => item.type === 'text'));
+  assert.notDeepEqual([labels[0].props.x, labels[0].props.y], [labels[1].props.x, labels[1].props.y]);
+  for (const edge of edges) {
+    assert.equal(edge.props.role, 'button'); assert.equal(edge.props.tabIndex, 0);
+    assert.ok(elements(edge).some(e => e.type === 'line' && e.props.className === 'graph-edge-hit'));
+    assert.ok(elements(edge).some(e => e.type === 'line' && e.props.markerEnd));
+  }
+});
