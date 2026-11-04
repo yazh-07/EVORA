@@ -1,4 +1,7 @@
 export { createFindingController } from './findingController';
+export { createQuestionController } from './questionController';
+export { QuestionAnswer, QuestionAnswerPanel } from './QuestionAnswer';
+import { QuestionAnswer } from './QuestionAnswer';
 export { FindingInspector, FindingPanel } from './FindingInspector';
 import { FindingInspector } from './FindingInspector';
 export { createGraphController } from './graphController';
@@ -124,6 +127,9 @@ export function CaseEvidenceWorkspace({ caseId }: { caseId: string }) {
     </div>
     <div id="panel-overview" role="tabpanel" aria-labelledby="tab-overview" tabIndex={0} style={{ display: activeTab === 'overview' ? 'block' : 'none' }}>
       <CaseOverview caseId={caseId} />
+    </div>
+    <div id="panel-questions" role="tabpanel" aria-labelledby="tab-questions" tabIndex={0} style={{ display: activeTab === 'questions' ? 'block' : 'none' }}>
+      <QuestionAnswer key={caseId} caseId={caseId} inspectEvidence={inspectEvidence} />
     </div>
   </>;
 }
