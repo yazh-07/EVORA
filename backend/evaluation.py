@@ -225,3 +225,40 @@ def evaluate_weight_sensitivity(
                 score_changes=score_changes,
                 mean_absolute_score_change=math.fsum(map(abs, score_changes.values())) / n if n else 0.0,
                 max_absolute_score_change=max(map(abs, score_changes.values()), default=0.0))
+
+
+def evaluate_rag_grounding(benchmark_results: Iterable[dict]) -> dict:
+    """Evaluate grounding rate, citation correctness, and unsupported rejection accuracy (I05C)."""
+    total = 0
+    supported_total = 0
+    grounded_supported = 0
+    correct_citations = 0
+    total_citations = 0
+    unsupported_total = 0
+    correct_unsupported = 0
+
+    for result in benchmark_results:
+        total += 1
+        is_expected_supported = result.get("expected_supported", True)
+        actual_supported = result.get("supported", False)
+        citations = result.get("citations", [])
+
+        if is_expected_supported:
+            supported_total += 1
+            if actual_supported and len(citations) > 0:
+                grounded_supported += 1
+                for cit in citations:
+                    total_citations += 1
+                    if cit.get("evidence_id") and cit.get("source_locator"):
+                        correct_citations += 1
+        else:
+            unsupported_total += 1
+            if not actual_supported and len(citations) == 0:
+                correct_unsupported += 1
+
+    return {
+        "total_evaluations": total,
+        "grounding_rate": grounded_supported / supported_total if supported_total else 1.0,
+        "citation_precision": correct_citations / total_citations if total_citations else 1.0,
+        "unsupported_rejection_rate": correct_unsupported / unsupported_total if unsupported_total else 1.0,
+    }
