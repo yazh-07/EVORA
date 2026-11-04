@@ -186,10 +186,11 @@ class PublishedExplanationTests(unittest.IsolatedAsyncioTestCase):
         observations = (await self.client.get(self.base + '/observations', params={'limit': 100})).json()['items']
         by_id = {o['id']: o for o in observations}
         findings = (await self.client.get(self.base + '/findings', params=params)).json()['items']
-        self.assertEqual(len(findings), 1)
+        self.assertEqual({finding['kind'] for finding in findings}, {'relationship', 'corroboration', 'cluster'})
         for finding in findings:
             validator('Finding').validate(finding)
-            self.assertIn('device:D-7', generate_finding_explanation(finding, by_id))
+            if finding['kind'] == 'relationship':
+                self.assertIn('device:D-7', generate_finding_explanation(finding, by_id))
         for entry in triage['items']:
             result = entry['latest_result']
             result_validator().validate(result)

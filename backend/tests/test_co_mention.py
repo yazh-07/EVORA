@@ -15,6 +15,7 @@ from httpx import ASGITransport, AsyncClient
 from backend import analysis
 from backend.app import create_app
 from backend.auth import SyntheticTokenVerifier
+from backend.detectors import DETECTOR_VERSION
 from backend.graph_links import CO_MENTION_RULE, RULE, derive_candidate_links
 from backend.parsers.candidate_entities import project_candidate_entities
 from backend.parsers.gps_csv import parse_gps_csv
@@ -224,7 +225,8 @@ class CoMentionAnalysisLifecycleTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(response.status_code, 202, response.text)
         run = await self.get('/analysis-runs/' + response.json()['id'])
         self.assertEqual(run['status'], 'completed', run)
-        self.assertEqual(run['algorithm_version'], f'evora-analysis/1;{RULE};{CO_MENTION_RULE};{POLICY_VERSION}')
+        self.assertEqual(run['algorithm_version'],
+                         f'evora-analysis/2;{RULE};{CO_MENTION_RULE};{POLICY_VERSION};{DETECTOR_VERSION}')
         validator('AnalysisRun').validate(run)
         return run
 
@@ -245,12 +247,14 @@ class CoMentionAnalysisLifecycleTests(unittest.IsolatedAsyncioTestCase):
         run = await self.start(str(uuid4()))
         outputs = await self.outputs(run)
         entities = (await self.get('/entities'))['items']
-        assert_links(self, outputs['graph']['edges'], outputs['findings']['items'], entities,
+        assert_links(self, outputs['graph']['edges'],
+                     [item for item in outputs['findings']['items'] if item['kind'] == 'relationship'], entities,
                      {('co_mention', frozenset(entity['id'] for entity in entities))})
         result = self.results(outputs)[eid]
         validator('TriageResult').validate(result)
         self.assertEqual({f['name']: f['value'] for f in result['factors']},
-                         {'relevance': 1.0, 'connectivity': 0.0})
+                         {'relevance': 1.0, 'connectivity': 0.0, 'conflict_relevance': 0.0, 'gap_relevance': 0.0})
+        self.assertEqual({item['kind'] for item in outputs['findings']['items']}, {'relationship', 'cluster'})
 
     async def test_three_modality_rerun_recalculates_factors_and_preserves_history(self):
         net_id = await self.upload('network.csv', 'network_log', NETWORK)
@@ -276,7 +280,9 @@ class CoMentionAnalysisLifecycleTests(unittest.IsolatedAsyncioTestCase):
         validator('Graph').validate(after['graph'])
         entities = (await self.get('/entities'))['items']
         groups = [[entity for entity in entities if eid in entity['evidence_ids']] for eid in (net_id, gps_id, msg_id)]
-        assert_links(self, after['graph']['edges'], after['findings']['items'], entities, three_pairs(*groups))
+        assert_links(self, after['graph']['edges'],
+                     [item for item in after['findings']['items'] if item['kind'] == 'relationship'],
+                     entities, three_pairs(*groups))
         d9 = next(entity['id'] for entity in entities if entity['canonical_label'] == 'D-9')
         self.assertTrue(all(d9 not in (edge['from_id'], edge['to_id']) for edge in after['graph']['edges']))
         self.assertTrue(all(d9 not in finding['entity_ids'] for finding in after['findings']['items']))
