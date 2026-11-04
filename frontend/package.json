@@ -11,6 +11,7 @@
     "check:api": "openapi-typescript ../specs/openapi.yaml -o src/api/schema.d.ts --check",
     "typecheck": "tsc --noEmit",
     "test": "node scripts/build-test.mjs && node --test test/*.test.mjs",
+    "test:adaptive": "node test/adaptive.integration.mjs",
     "build": "npm run check:api && npm run typecheck && node scripts/build.mjs"
   },
   "dependencies": {

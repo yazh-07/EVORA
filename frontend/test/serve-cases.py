@@ -25,6 +25,7 @@ analysis.Neo4jGraphDatabase = lambda: _graph
 parser = argparse.ArgumentParser()
 parser.add_argument('--database', required=True)
 parser.add_argument('--port', type=int, default=0)
+parser.add_argument('--api-only', action='store_true', help='Run without a prebuilt frontend dist directory')
 args = parser.parse_args()
 app = create_app(args.database, storage_dir=Path(args.database).resolve().parent / 'evidence', token_verifier=SyntheticTokenVerifier({
     'u02-synthetic-one': 'investigator-1',
@@ -38,7 +39,8 @@ async def no_store(request, call_next):
     response.headers['Cache-Control'] = 'no-store'
     return response
 
-app.mount('/', StaticFiles(directory=Path(__file__).resolve().parents[1] / 'dist', html=True), name='u02-demo')
+if not args.api_only:
+    app.mount('/', StaticFiles(directory=Path(__file__).resolve().parents[1] / 'dist', html=True), name='u02-demo')
 sock = socket.socket()
 sock.bind(('127.0.0.1', args.port))
 print(f'U02_URL=http://127.0.0.1:{sock.getsockname()[1]}', flush=True)
