@@ -4,6 +4,8 @@ import { useAnalysisWorkspace } from './StartAnalysis';
 import { createFindingController } from './findingController';
 import type { FindingState } from './findingController';
 
+type ReviewActions = Partial<Pick<ReturnType<typeof createFindingController>, 'loadReviews' | 'updateReview' | 'submitReview'>>;
+
 export function FindingInspector({ inspectEvidence }: { inspectEvidence?: (id: string) => void }) {
   const client = useApiClient();
   const { caseId, analysis_run_id, selectCompletedRun } = useAnalysisWorkspace();
@@ -14,16 +16,67 @@ export function FindingInspector({ inspectEvidence }: { inspectEvidence?: (id: s
   // Latest discovery must become the shared pin before any results are displayed.
   const visible = state.page?.analysis_run_id && state.page.analysis_run_id !== analysis_run_id ?
     { ...state, status: 'loading' as const, page: null } : state;
-  return <FindingPanel state={visible} load={controller.load} select={controller.select} inspectEvidence={inspectEvidence} />;
+  return <FindingPanel state={visible} load={controller.load} select={controller.select} inspectEvidence={inspectEvidence}
+    loadReviews={controller.loadReviews} updateReview={controller.updateReview} submitReview={controller.submitReview} />;
 }
 
-export function FindingPanel({ state, load, select, inspectEvidence }: {
+export function FindingPanel({ state, load, select, inspectEvidence, loadReviews, updateReview, submitReview }: {
   state: FindingState; load: (offset?: number) => Promise<void>; select: (id: string) => Promise<void>;
   inspectEvidence?: (id: string) => void;
-}) {
+} & ReviewActions) {
   const page = state.page;
   const source = (id: string) => inspectEvidence ? <button type="button" className="identifier"
     onClick={() => inspectEvidence(id)} aria-label={`Inspect source evidence ${id}`}>{id}</button> : <span className="identifier">{id}</span>;
+  const reviewDetails = (findingId: string) => {
+    if (!loadReviews || !updateReview || !submitReview) return null;
+    const review = state.reviews[findingId];
+    const busy = review?.status === 'loading' || review?.submitStatus === 'submitting';
+    const errorId = `review-error-${findingId}`;
+    return <details className="finding-review-details" onToggle={event => {
+      if (event.currentTarget.open) void loadReviews(findingId);
+    }}>
+      <summary aria-label={`Human reviews for finding ${findingId}`}>Human reviews</summary>
+      <div aria-busy={busy}>
+        {(!review || review.status === 'idle') && <p>Open to load human reviews.</p>}
+        {review?.status === 'loading' && <p role="status">Loading human reviews...</p>}
+        {review?.status === 'error' && <>
+          <p role="alert">{review.message}</p>
+          <button type="button" onClick={() => { void loadReviews(findingId); }}>Retry human reviews</button>
+        </>}
+        {review?.status === 'ready' && (review.items.length === 0 ? <p>No human reviews recorded yet.</p> : <>
+          <p>Human reviews, oldest first.</p>
+          <ol className="finding-review-list">{review.items.map(item => <li key={item.id}>
+            <strong className="finding-review-badge">{item.decision}</strong>
+            <p className="finding-review-reason">{item.reason}</p>
+            <p className="identifier">Reviewer: {item.actor_id}</p>
+            <p>Timestamp: <time dateTime={item.created_at}>{item.created_at}</time></p>
+          </li>)}</ol>
+        </>)}
+        <form noValidate aria-label={`Submit human review for finding ${findingId}`} onSubmit={event => {
+          event.preventDefault(); void submitReview(findingId);
+        }}>
+          <fieldset disabled={review?.status !== 'ready' || busy}>
+            <legend>Record a human review</legend>
+            <label htmlFor={`review-decision-${findingId}`}>Decision</label>
+            <select id={`review-decision-${findingId}`} name="decision" value={review?.decision ?? 'needs_investigation'}
+              onChange={event => updateReview(findingId, { decision: event.currentTarget.value as NonNullable<typeof review>['decision'] })}>
+              <option value="accepted">accepted</option>
+              <option value="rejected">rejected</option>
+              <option value="needs_investigation">needs_investigation</option>
+            </select>
+            <label htmlFor={`review-reason-${findingId}`}>Reason (required)</label>
+            <textarea id={`review-reason-${findingId}`} name="reason" required rows={3} value={review?.reason ?? ''}
+              aria-invalid={review?.submitStatus === 'error'} aria-describedby={review?.submitStatus === 'error' ? errorId : undefined}
+              onChange={event => updateReview(findingId, { reason: event.currentTarget.value })} />
+            <button type="submit">Submit review</button>
+          </fieldset>
+          {review?.submitStatus === 'submitting' && <p role="status">Submitting review...</p>}
+          {review?.submitStatus === 'error' && <p id={errorId} role="alert">{review.submitMessage}</p>}
+          {review?.submitStatus === 'success' && <p role="status">{review.submitMessage}</p>}
+        </form>
+      </div>
+    </details>;
+  };
   return <section className="panel findings-panel" aria-label="Findings" aria-busy={state.status === 'loading'}>
     <h2>Findings</h2>
     <p>Findings are investigative candidates requiring human verification. Confidence does not establish identity, source reliability or guilt. Missing information is unknown, not proof of non-occurrence.</p>
@@ -47,6 +100,7 @@ export function FindingPanel({ state, load, select, inspectEvidence }: {
         {!!f.contradicting_evidence_ids?.length && <><p>Contradicting evidence IDs:</p><ul>{f.contradicting_evidence_ids.map(id => <li key={id}>{source(id)}</li>)}</ul></>}
         {!!f.missing_information?.length && <><p>Missing information:</p><ul>{f.missing_information.map((text, i) => <li key={i}>{text}</li>)}</ul></>}
         <button type="button" aria-pressed={state.selectedId === f.id} onClick={() => { void select(f.id); }}>Inspect finding sources {f.id}</button>
+        {reviewDetails(f.id)}
       </li>)}</ul>
       {state.selectedId && <aside aria-label="Finding source details" aria-busy={state.citationStatus === 'loading'}>
         <h3>Selected finding sources</h3>

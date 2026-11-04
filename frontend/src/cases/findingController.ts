@@ -5,16 +5,40 @@ import type { components } from '../api/schema';
 type FindingPage = components['schemas']['FindingPage'];
 type Entry = components['schemas']['Finding'];
 type Observation = components['schemas']['Observation'];
+type ReviewDecision = components['schemas']['ReviewDecision'];
+type CreateReview = components['schemas']['CreateReview'];
+type ReviewState = {
+  status: 'idle' | 'loading' | 'ready' | 'error'; items: ReviewDecision[]; message: string;
+  decision: CreateReview['decision']; reason: string;
+  submitStatus: 'idle' | 'submitting' | 'success' | 'error'; submitMessage: string;
+};
+const initialReview = (): ReviewState => ({ status: 'idle', items: [], message: '',
+  decision: 'needs_investigation', reason: '', submitStatus: 'idle', submitMessage: '' });
+const validDecision = (value: unknown): value is CreateReview['decision'] =>
+  value === 'accepted' || value === 'rejected' || value === 'needs_investigation';
 export type FindingState = {
   status: 'idle' | 'loading' | 'ready' | 'error';
   page: FindingPage | null;
   message: string;
   selectedId: string | null; citations: Observation[];
   citationStatus: 'idle' | 'loading' | 'ready' | 'error'; citationMessage: string;
+  reviews: Record<string, ReviewState | undefined>;
 };
-const initial = (): FindingState => ({ status: 'idle', page: null, message: '', selectedId: null, citations: [], citationStatus: 'idle', citationMessage: '' });
+const initial = (): FindingState => ({ status: 'idle', page: null, message: '', selectedId: null, citations: [], citationStatus: 'idle', citationMessage: '', reviews: {} });
 const uuid = (value: unknown): value is string => typeof value === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
 const ids = (v: unknown, nonempty = true): v is string[] => Array.isArray(v) && (!nonempty || v.length > 0) && v.every(uuid) && new Set(v).size === v.length;
+function validReview(review: ReviewDecision, caseId: string, findingId: string): boolean {
+  return !!review && uuid(review.id) && review.case_id === caseId && review.finding_id === findingId &&
+    validDecision(review.decision) && typeof review.reason === 'string' && !!review.reason.trim() &&
+    typeof review.actor_id === 'string' && !!review.actor_id.trim() &&
+    typeof review.created_at === 'string' && Number.isFinite(Date.parse(review.created_at));
+}
+const reviewError = (error: unknown, submitting = false) =>
+  error instanceof ApiHttpError && error.status === 404 ? 'Finding or case unavailable or no longer accessible.' :
+  (error instanceof ApiHttpError && error.status === 401) || (error instanceof ApiClientError && error.kind === 'authentication') ?
+    'Authentication required. Open a session again before retrying.' :
+  error instanceof ApiHttpError && error.status === 400 ? 'Review request was not accepted. Check the decision and reason, then retry.' :
+  submitting ? 'Could not submit the review. Retry the request.' : 'Could not load human reviews. Retry the request.';
 function validEntry(f: Entry, caseId: string, runId?: string): boolean {
   return !!f && uuid(f.id) && f.case_id === caseId && !!runId && f.analysis_run_id === runId &&
     ['relationship', 'corroboration', 'conflict', 'gap', 'cluster', 'anomaly', 'hypothesis'].includes(f.kind) &&
@@ -33,8 +57,14 @@ const safeError = (error: unknown) => error instanceof ApiHttpError && error.sta
   'Could not load consistent findings or sources. Retry the request.';
 
 /** One case/session/selection; all pages and source reads retain the completed snapshot. */
-export function createFindingController(client: ApiClient, caseId: string, analysisRunId?: string,
+export function createFindingController(apiClient: ApiClient, caseId: string, analysisRunId?: string,
   onSelectedRun?: (id: string) => void, limit = 20) {
+  // Operation names over the shared, schema-typed transport; no API client changes required.
+  type ReviewOptions = { path: { caseId: string; findingId: string }; signal?: AbortSignal };
+  const client = { ...apiClient,
+    listFindingReviews: (options: ReviewOptions) => apiClient.request('get', '/api/v1/cases/{caseId}/findings/{findingId}/reviews', options),
+    reviewFinding: (options: ReviewOptions & { body: CreateReview }) => apiClient.request('post', '/api/v1/cases/{caseId}/findings/{findingId}/reviews', options),
+  };
   let state = initial();
   let enabled = false;
   let session = client.getSessionVersion();
@@ -43,14 +73,66 @@ export function createFindingController(client: ApiClient, caseId: string, analy
   let total: number | undefined;
   const seen = new Map<number, Entry>();
   let pending: AbortController | undefined, sources: AbortController | undefined;
+  const reviewRequests = new Map<string, AbortController>();
   let unsubscribe: (() => void) | undefined;
   const listeners = new Set<() => void>();
   const publish = (next: FindingState) => { state = next; listeners.forEach(listener => listener()); };
+  const clearReviews = () => { reviewRequests.forEach(request => request.abort()); reviewRequests.clear(); };
+  const reviewAvailable = (id: string) => enabled && client.hasToken() && session === client.getSessionVersion() &&
+    state.status === 'ready' && !!state.page?.items.some(item => item.id === id);
+  const publishReview = (id: string, review: ReviewState) => publish({ ...state, reviews: { ...state.reviews, [id]: review } });
+  async function loadReviews(findingId: string) {
+    if (!reviewAvailable(findingId) || reviewRequests.has(findingId) || state.reviews[findingId]?.status === 'ready') return;
+    const request = new AbortController();
+    reviewRequests.set(findingId, request);
+    const current = () => reviewAvailable(findingId) && reviewRequests.get(findingId) === request && !request.signal.aborted;
+    publishReview(findingId, { ...(state.reviews[findingId] ?? initialReview()), status: 'loading', items: [], message: '' });
+    try {
+      const items = await client.listFindingReviews({ path: { caseId, findingId }, signal: request.signal });
+      if (!current()) return;
+      if (!Array.isArray(items) || items.some(item => !validReview(item, caseId, findingId)) ||
+          new Set(items.map(item => item.id)).size !== items.length ||
+          items.some((item, i) => i > 0 && Date.parse(item.created_at) < Date.parse(items[i - 1]!.created_at))) {
+        throw Error('Invalid review response.');
+      }
+      publishReview(findingId, { ...state.reviews[findingId]!, status: 'ready', items, message: '' });
+    } catch (error) {
+      if (current()) publishReview(findingId, { ...state.reviews[findingId]!, status: 'error', items: [], message: reviewError(error) });
+    } finally { if (reviewRequests.get(findingId) === request) reviewRequests.delete(findingId); }
+  }
+  function updateReview(findingId: string, draft: Partial<CreateReview>) {
+    const review = state.reviews[findingId];
+    if (!reviewAvailable(findingId) || !review || review.status !== 'ready' || review.submitStatus === 'submitting') return;
+    publishReview(findingId, { ...review, ...draft, submitStatus: 'idle', submitMessage: '' });
+  }
+  async function submitReview(findingId: string) {
+    const review = state.reviews[findingId];
+    if (!reviewAvailable(findingId) || !review || review.status !== 'ready' || reviewRequests.has(findingId)) return;
+    const reason = review.reason.trim();
+    if (!reason || !validDecision(review.decision)) {
+      publishReview(findingId, { ...review, submitStatus: 'error', submitMessage: 'Choose a valid decision and enter a non-empty reason.' });
+      return;
+    }
+    const request = new AbortController();
+    reviewRequests.set(findingId, request);
+    const current = () => reviewAvailable(findingId) && reviewRequests.get(findingId) === request && !request.signal.aborted;
+    publishReview(findingId, { ...review, submitStatus: 'submitting', submitMessage: '' });
+    try {
+      const item = await client.reviewFinding({ path: { caseId, findingId },
+        body: { decision: review.decision, reason }, signal: request.signal });
+      if (!current()) return;
+      if (!validReview(item, caseId, findingId) || review.items.some(existing => existing.id === item.id)) throw Error('Invalid review response.');
+      publishReview(findingId, { ...initialReview(), status: 'ready', items: [...review.items, item],
+        submitStatus: 'success', submitMessage: 'Review submitted.' });
+    } catch (error) {
+      if (current()) publishReview(findingId, { ...review, submitStatus: 'error', submitMessage: reviewError(error, true) });
+    } finally { if (reviewRequests.get(findingId) === request) reviewRequests.delete(findingId); }
+  }
   async function load(nextOffset = offset) {
     if (!enabled || !client.hasToken() || session !== client.getSessionVersion() ||
         !Number.isSafeInteger(nextOffset) || nextOffset < 0 ||
         (nextOffset !== 0 && total !== undefined && nextOffset >= total)) return;
-    pending?.abort(); sources?.abort();
+    pending?.abort(); sources?.abort(); clearReviews();
     const request = pending = new AbortController();
     offset = nextOffset;
     const current = () => enabled && pending === request && !request.signal.aborted && session === client.getSessionVersion();
@@ -155,16 +237,17 @@ export function createFindingController(client: ApiClient, caseId: string, analy
       enabled = true; session = client.getSessionVersion();
       unsubscribe?.();
       unsubscribe = client.subscribeSession(() => {
-        enabled = false; pending?.abort(); sources?.abort(); pending = undefined; seen.clear(); total = undefined; selectedRun = analysisRunId;
+        enabled = false; pending?.abort(); sources?.abort(); clearReviews(); pending = undefined; seen.clear(); total = undefined; selectedRun = analysisRunId;
         publish({ ...initial(), status: 'error', message: client.hasToken() ?
           'Session changed. Select the case again.' : 'Authentication required. Open a session again before retrying.' });
       });
       if (!client.hasToken()) publish({ ...initial(), status: 'error', message: 'Authentication required. Open a session again before retrying.' });
       else void load(0);
     },
-    load, select,
+    load, select, loadReviews, updateReview, submitReview,
     dispose() {
       enabled = false; pending?.abort(); sources?.abort(); pending = sources = undefined;
+      clearReviews();
       unsubscribe?.(); unsubscribe = undefined; listeners.clear(); seen.clear();
       total = undefined; offset = 0; selectedRun = analysisRunId; state = initial();
     },
