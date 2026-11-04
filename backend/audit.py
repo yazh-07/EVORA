@@ -88,6 +88,18 @@ def initialize_audit(database: SQLiteDatabase) -> None:
             )
 
 
+def record_audit_event(
+    connection: sqlite3.Connection, *, case_id: str, actor_id: str, action: str,
+    target_id: str, created_at: str, reason: str | None = None,
+) -> None:
+    """Append within the caller's transaction; never commit separately."""
+    connection.execute(
+        "INSERT INTO audit_events (id, case_id, actor_id, action, target_id, created_at, reason) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?)",
+        (str(uuid4()), case_id, actor_id, action, target_id, created_at, reason),
+    )
+
+
 def record_processing_audit(
     connection: sqlite3.Connection, run, status: str, finished_at: str,
     error: str | None = None,
