@@ -2,6 +2,7 @@ import { useEffect, useMemo, useSyncExternalStore } from 'react';
 import { useApiClient } from '../api/ApiProvider';
 import { createObservationController } from './observationController';
 import type { ObservationState } from './observationController';
+import { ReliabilityInspector } from './ReliabilityInspector';
 
 export function ObservationInspector({ caseId, evidenceId, processingRunId, refreshKey }: {
   caseId: string; evidenceId: string; processingRunId?: string; refreshKey?: string;
@@ -11,11 +12,12 @@ export function ObservationInspector({ caseId, evidenceId, processingRunId, refr
     [client, caseId, evidenceId, processingRunId, refreshKey]);
   const state = useSyncExternalStore(controller.subscribe, controller.getSnapshot, controller.getSnapshot);
   useEffect(() => { controller.start(); return () => controller.dispose(); }, [controller]);
-  return <ObservationPanel state={state} load={controller.load} processingRunId={processingRunId} />;
+  return <ObservationPanel state={state} load={controller.load} processingRunId={processingRunId} evidenceId={evidenceId} />;
 }
 
-export function ObservationPanel({ state, load, processingRunId }: {
+export function ObservationPanel({ state, load, processingRunId, evidenceId }: {
   state: ObservationState; load: (offset?: number) => Promise<void>; processingRunId?: string;
+  evidenceId?: string;
 }) {
   const page = state.page;
   return <section aria-label="Extracted observations" aria-busy={state.status === 'loading'}>
@@ -26,6 +28,8 @@ export function ObservationPanel({ state, load, processingRunId }: {
     {state.message && <><p role="alert">{state.message}</p><button type="button" onClick={() => { void load(); }}>Retry observations</button></>}
     {state.status === 'ready' && page && <>
       <p role="status">{page.total} observations. Showing {page.items.length} on this page.</p>
+      {evidenceId && <ReliabilityInspector evidenceId={evidenceId} observations={page.items}
+        observationScope={`Extraction scores cover ${page.items.length} of ${page.total} observations on the current observations page. Corroboration findings are available through Findings & Citations.`} />}
       {page.total === 0 ? <p>No completed observations for this evidence. Start processing to extract observations.</p> : <>
         {page.items.length === 0 && <p>No observations on this page. Return to the previous page or refresh.</p>}
         <div role="region" aria-label="Observation table" tabIndex={0} style={{ overflowX: 'auto' }}>

@@ -1,0 +1,22 @@
+.detector-panel {
+  min-width: 0;
+  padding: var(--space-md);
+  border: 1px solid var(--border, var(--color-border));
+  border-radius: var(--radius-md);
+  background: var(--card, var(--color-surface));
+  color: var(--foreground, var(--color-primary));
+  overflow-wrap: anywhere;
+}
+.detector-panel h4:first-child { margin-top: 0; }
+.detector-panel p, .detector-panel td { white-space: pre-wrap; }
+.detector-comparison { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-md); }
+.detector-disclaimer { padding: var(--space-sm); border-left: 3px solid var(--accent, var(--color-accent)); }
+.detector-evidence-links { padding-left: var(--space-lg); }
+.detector-evidence-links button { max-width: 100%; text-align: left; white-space: normal; color: var(--accent, var(--color-accent)); }
+.detector-table { max-width: 100%; overflow-x: auto; margin-top: var(--space-md); }
+.detector-table table { min-width: 720px; }
+.finding-kind-filter { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-sm); margin-block: var(--space-md); }
+.finding-reliability { margin-top: var(--space-md); }
+@media (max-width: 640px) {
+  .detector-comparison { grid-template-columns: minmax(0, 1fr); }
+}
