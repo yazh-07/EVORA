@@ -36,7 +36,7 @@ def _results(connection, run):
 
 
 def _overlay(connection, case_id, entries):
-    # U09 has not landed. Do not create its schema or write synthetic overrides.
+    # Keep reads compatible with databases created before the U09 migration.
     has_overrides = connection.execute(
         "SELECT 1 FROM sqlite_master WHERE type='table' AND name='priority_overrides'"
     ).fetchone() is not None

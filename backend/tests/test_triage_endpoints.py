@@ -1,4 +1,4 @@
-"""A06 real HTTP/SQLite/processing/analysis; explicit Neo4j and override doubles."""
+"""A06 real HTTP/SQLite/processing/analysis with an explicit Neo4j double."""
 import json
 import unittest
 from unittest.mock import patch
@@ -185,16 +185,14 @@ class TriageEndpointTests(unittest.IsolatedAsyncioTestCase):
             self.assertEqual((await self.triage())['analysis_run_id'], ids[-1])
             self.assertEqual([r['analysis_run_id'] for r in await self.history(evidence['id'])], ids)
 
-    async def test_live_override_double_preserves_pinned_pages_scores_and_history(self):
+    async def test_live_overrides_preserve_pinned_pages_scores_and_history(self):
         scored, _ = await self.upload()
         unscored, _ = await self.upload(process=False)
         run = await self.start()
         original, history = await self.triage(), await self.history(scored['id'])
         other = (await self.client.post('/api/v1/cases', json={'title': 'Other owned case'})).json()['id']
         with self.app.state.database.connect() as connection:
-            # Schema-derived storage double: U09 producer/migration is not implemented.
-            connection.execute('CREATE TABLE priority_overrides (id TEXT, case_id TEXT, evidence_id TEXT, '
-                               'actor_id TEXT, priority TEXT, reason TEXT, created_at TEXT)')
+            # Controlled timestamps exercise chronological and UUID tie ordering.
             rows = [
                 (str(uuid4()), self.case, scored['id'], 'investigator-1', 'P1', 'Synthetic', '2026-11-03T23:00:00-02:00'),
                 (str(uuid4()), self.case, scored['id'], 'investigator-1', 'P4', 'Synthetic', '2026-11-04T00:00:00Z'),
