@@ -15,6 +15,7 @@
     "test:review-override": "node test/review-override.integration.mjs",
     "test:qa": "node test/qa-tracer.integration.mjs",
     "test:full-modality": "node test/full-modality.integration.mjs",
+    "test:detector-feedback": "node test/detector-feedback.integration.mjs",
     "build": "npm run check:api && npm run typecheck && node scripts/build.mjs"
   },
   "dependencies": {
