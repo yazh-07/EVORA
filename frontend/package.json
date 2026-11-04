@@ -13,6 +13,7 @@
     "test": "node scripts/build-test.mjs && node --test test/*.test.mjs",
     "test:adaptive": "node test/adaptive.integration.mjs",
     "test:review-override": "node test/review-override.integration.mjs",
+    "test:qa": "node test/qa-tracer.integration.mjs",
     "build": "npm run check:api && npm run typecheck && node scripts/build.mjs"
   },
   "dependencies": {

@@ -1,3 +1,65 @@
+# I02C grounded Q&A tracer and I03 Phase 2 seal — 2026-11-04
+
+Integration owner: whale2186 (Codex). From the repository root, with backend
+requirements and locked frontend dependencies installed, activate the backend
+environment first (locally `/tmp/evora-ui-venv/bin/activate`), then run:
+
+```sh
+node frontend/test/qa-tracer.integration.mjs
+# Equivalent npm entry point:
+npm --prefix frontend run test:qa
+```
+
+Alternatively, set `EVORA_TEST_PYTHON` to the backend Python executable for the
+tracer. The direct command rebuilds `.test-build` and starts the real server via
+`test/serve-cases.py --api-only --database ...` on an ephemeral loopback port.
+The actual frontend HTTP client uses `u02-synthetic-two` (`investigator-2`) to
+create a case, upload the unchanged committed `network.csv`, and poll its real
+processing run to completion. File size/hash and completed observations establish
+the D-7/D-9 source facts before asking either question.
+
+**I02C verification:** `What devices appear in the network log?` must return
+`supported: true`, an answer describing both devices, and at least one citation.
+Each citation has a nonempty claim, evidence ID and source locator, resolves to
+an actual observation from that case/evidence/run, and supplies a fact in the
+answer. Both devices must have source citations. `Who is the guilty person?`
+must return `supported: false`, insufficient-evidence messaging and exactly an
+empty citations array. The audit-events API must expose one `askCaseQuestion`
+event per question, both targeting the case as investigator-2, with the exact
+safe reasons `Grounded inquiry (supported)` and `Grounded inquiry (unsupported)`.
+Audit records must omit question text, answer text and the bearer token.
+
+FastAPI, SQLite, file storage, parsing, deterministic retrieval and audit are real;
+the shared harness retains its explicit transactional Neo4j double. The test
+shuts down its owned server and removes the temporary database and evidence
+directory on success or failure. Browser and live Neo4j acceptance are outside
+this tracer's scope.
+
+**I03 verification:** run the complete regression and build checks after I02C:
+
+```sh
+npx --yes @redocly/cli@2.57.0 bundle specs/openapi.yaml --output /tmp/evora-openapi.json
+node frontend/test/qa-tracer.integration.mjs
+EVORA_CONTRACT_BUNDLE=/tmp/evora-openapi.json python -m unittest discover -s backend/tests
+npm --prefix frontend run test
+npm --prefix frontend run build
+git diff --check
+```
+
+**I02C and I03 verification: PASS. Checkpoint 2C and Phase 2 are 100% Complete & Sealed!**
+Local verification used the existing `/tmp/evora-ui-venv` backend environment
+(Python 3.14.9), Node 22.23.4 and npm 12.2.1. The direct Q&A HTTP tracer passed;
+backend **686 tests, OK (7 opt-in live Neo4j tests skipped)**; frontend **239
+tests passed**; API type freshness, typecheck, build and `git diff --check`
+passed. A separate missing-Python spawn check failed promptly and verified
+temporary-directory cleanup; no I02C temporary directories remained. The system
+Python lacked `neo4j`, so successful backend/tracer verification used the
+activated environment above. This seal records the requested I02C/I03 exit
+checks with the declared graph double and the earlier Checkpoint 2A/2B records
+below. It makes no new browser, live Neo4j or clean-install verification claim.
+
+---
+
 # I02B human review and override tracer — 2026-11-04
 
 Integration owner: whale2186 (Codex). From the repository root, with backend
