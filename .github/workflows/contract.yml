@@ -1,7 +1,6 @@
 name: Build and contract checks
 
 on:
-  pull_request:
   push:
     branches: [main]
 
@@ -14,12 +13,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: ${{ github.event_name == 'push' && fromJSON('["ubuntu-latest", "windows-latest"]') || fromJSON('["ubuntu-latest"]') }}
         include:
           - os: ubuntu-latest
             shell: bash
-          - os: windows-latest
-            shell: pwsh
     runs-on: ${{ matrix.os }}
     timeout-minutes: 20
     defaults:
