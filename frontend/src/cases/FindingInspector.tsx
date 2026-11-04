@@ -24,7 +24,7 @@ export function FindingPanel({ state, load, select, inspectEvidence }: {
   const page = state.page;
   const source = (id: string) => inspectEvidence ? <button type="button" className="identifier"
     onClick={() => inspectEvidence(id)} aria-label={`Inspect source evidence ${id}`}>{id}</button> : <span className="identifier">{id}</span>;
-  return <section className="panel" aria-label="Findings" aria-busy={state.status === 'loading'}>
+  return <section className="panel findings-panel" aria-label="Findings" aria-busy={state.status === 'loading'}>
     <h2>Findings</h2>
     <p>Findings are investigative candidates requiring human verification. Confidence does not establish identity, source reliability or guilt. Missing information is unknown, not proof of non-occurrence.</p>
     {state.status === 'loading' && <p role="status">Loading findings...</p>}
@@ -36,8 +36,8 @@ export function FindingPanel({ state, load, select, inspectEvidence }: {
       <p role="status">{page.total} findings. {page.items.length ? `Showing ${page.offset + 1}–${page.offset + page.items.length}.` : 'Showing 0 findings on this page.'}</p>
       {page.analysis_run_id && page.items.length === 0 && <p>{page.total === 0 ?
         'No findings in this completed analysis. This does not establish absence of relevant relationships.' : 'No findings on this page. Return to the previous page.'}</p>}
-      <ul className="case-list">{page.items.map(f => <li key={f.id}>
-        <strong className="priority-badge">{f.kind}</strong>
+      <ul className="findings-list">{page.items.map(f => <li key={f.id}>
+        <strong className="finding-kind-badge">{f.kind}</strong>
         <h3>{f.summary}</h3>
         <p className="identifier">Finding ID: {f.id}</p>
         <p>Confidence: {f.confidence.toFixed(2)} (reported score, 0–1)</p>

@@ -35,14 +35,14 @@ export function PriorityListPanel({ state, load, inspectEvidence }: { state: Tri
           <thead><tr>{['Evidence ID', 'Priority', 'Score', 'Contributing Factors', 'Explanation', 'Effective Priority'].map(label => <th scope="col" key={label}>{label}</th>)}</tr></thead>
           <tbody>{page.items.map(entry => <tr key={entry.evidence_id}>
             <th scope="row" className="identifier">{source(entry.evidence_id)}</th>
-            <td>{entry.latest_result ? <strong className="priority-badge">{entry.latest_result.priority}</strong> : 'Unprocessed / Not Scored'}</td>
+            <td className={entry.latest_result ? undefined : 'unprocessed-cell'}>{entry.latest_result ? <strong className={`priority-badge priority-${entry.latest_result.priority.toLowerCase()}`}>{entry.latest_result.priority}</strong> : 'Unprocessed / Not Scored'}</td>
             <td>{entry.latest_result?.score.toFixed(2)}</td>
-            <td>{entry.latest_result && <ul>{entry.latest_result.factors.map(factor => <li key={factor.name}>
+            <td>{entry.latest_result && <details className="factor-details"><summary>{entry.latest_result.factors.length} contributing factors</summary><ul>{entry.latest_result.factors.map(factor => <li key={factor.name}>
               <strong>{factor.name.replaceAll('_', ' ')}</strong>: {factor.contribution.toFixed(2)} points
               {' '}(value {factor.value}, weight {factor.weight}). {factor.explanation}
               {factor.evidence_ids.length > 0 && <p className="identifier">Supporting evidence: {factor.evidence_ids.map(id => <span key={id}>{source(id)}{' '}</span>)}</p>}
-            </li>)}</ul>}</td>
-            <td>{entry.latest_result?.explanation}</td>
+            </li>)}</ul></details>}</td>
+            <td>{entry.latest_result && <details className="explanation-details"><summary>View explanation</summary><p>{entry.latest_result.explanation}</p></details>}</td>
             <td>{entry.override ? <><strong>{entry.effective_priority}</strong> (live override)<p>{entry.override.reason}</p></> : entry.effective_priority ?? 'Not assigned'}</td>
           </tr>)}</tbody>
         </table></div>}

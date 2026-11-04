@@ -43,6 +43,7 @@ export function GraphPanel({ state, load, select, inspectEvidence }: {
     {state.status === 'error' && <button type="button" onClick={() => { void load(); }}>Retry graph</button>}
     {state.status === 'ready' && graph && <>
       {graph.analysis_run_id && <p className="identifier">Selected completed analysis: {graph.analysis_run_id}</p>}
+      <div className="graph-layout"><div className="graph-primary">
       {!graph.analysis_run_id ? <p>No analysis run completed yet. Start analysis to generate graph.</p> :
         graph.nodes.length === 0 ? <p>No graph nodes in this completed analysis. Available inputs may not contain extracted relationships.</p> : <>
           <p>{graph.nodes.length} nodes; {graph.edges.length} candidate relationships. Evidence: rectangle; entities: ellipse; events: diamond. Exact source kinds appear below.</p>
@@ -73,14 +74,14 @@ export function GraphPanel({ state, load, select, inspectEvidence }: {
             </svg>
           </div>
           <p>Select a record below to inspect its complete label and sources. Edge direction is from → to.</p>
-          <div className="graph-records">
+          <details className="graph-record-browser"><summary>Browse graph records</summary><div className="graph-records">
             <div><h3>Nodes</h3>{graph.nodes.map(n => <button key={n.id} type="button" aria-pressed={node?.id === n.id}
               onClick={() => { void select({ kind: 'node', id: n.id }); }}>{n.kind}: {n.label}</button>)}</div>
             <div><h3>Candidate relationships</h3>{graph.edges.map(e => <button key={e.id} type="button" aria-pressed={edge?.id === e.id}
               onClick={() => { void select({ kind: 'edge', id: e.id }); }}>{graph.nodes.find(n => n.id === e.from_id)?.label} → {e.kind} → {graph.nodes.find(n => n.id === e.to_id)?.label} · confidence {e.confidence.toFixed(2)}</button>)}</div>
-          </div>
+          </div></details>
         </>}
-      <aside className="graph-inspector" aria-label="Graph record details" aria-live="polite">
+      </div><aside className="graph-inspector" aria-label="Graph record details" aria-live="polite">
         {!record ? <p>Select a node or relationship to inspect sources.</p> : <>
           <h3>{node ? 'Node details' : 'Candidate relationship details'}</h3>
           <dl><dt>ID</dt><dd className="identifier">{record.id}</dd><dt>Kind</dt><dd>{record.kind}</dd>
@@ -97,7 +98,7 @@ export function GraphPanel({ state, load, select, inspectEvidence }: {
             <p>Locators refer to this analysis snapshot. Source actions open evidence metadata and the authorized original download; the separate evidence panel labels its live processing view.</p>
           </>}
         </>}
-      </aside>
+      </aside></div>
       <button type="button" onClick={() => { void load(); }}>Refresh selected graph</button>
     </>}
   </section>;

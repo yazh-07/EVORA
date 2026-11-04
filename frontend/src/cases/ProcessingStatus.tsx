@@ -20,13 +20,13 @@ export function ProcessingStatusPanel({ state, retry }: { state: ProcessingStatu
     {state.retryable && <button type="button" onClick={() => { void retry(); }}>Retry status check</button>}
     {run && <div role="status">
       <p>Last reported status: {run.status}</p>
-      <dl>
+      <details className="processing-details"><summary>Processing run details</summary><dl>
         <dt>Run ID</dt><dd className="identifier">{run.id}</dd>
         <dt>Created time</dt><dd>{run.created_at}</dd>
         <dt>Processor version</dt><dd>{run.processor_version}</dd>
         {run.finished_at && <><dt>Finished time</dt><dd>{run.finished_at}</dd></>}
-        {run.status === 'failed' && <><dt>Processing diagnostic</dt><dd>{run.error}</dd></>}
-      </dl>
+      </dl></details>
+      {run.status === 'failed' && <dl><dt>Processing diagnostic</dt><dd>{run.error}</dd></dl>}
     </div>}
   </section>;
 }
