@@ -126,9 +126,31 @@ jobs:
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')
         with:
+          name: EVORA ${{ github.ref_name }} — Forensic Evidence Fusion Workstation
+          body: |
+            ## EVORA — Forensic Evidence Fusion & Adaptive Investigation Platform
+
+            ### Key Features in this Release
+            - **Revamped 5-Section Workspace:** Overview, Evidence, Timeline, Investigation, and Report.
+            - **Offline Local Workstation:** Local accounts, Argon2id encryption, RBAC roles, single-use recovery codes, and strict loopback AI execution.
+            - **Multimodal Evidence Pipeline:** Unified drag-and-drop batch intake, automatic format detection, and SHA-256 byte verification.
+            - **Interactive Forensic Knowledge Graph:** 40 nodes, 35 candidate relationships, entity filters, and neighbor isolation.
+            - **Chronological Timeline:** Normalized UTC ordering, undated evidence separation, and date range filters.
+            - **Grounded AI Copilot:** Evidence-grounded inquiries with verifiable source citations and local LLM execution.
+            - **Exportable Investigation Reports:** Plain-text and browser Print/PDF export from verified analysis snapshots.
+
+            ### Core Contributors
+            - **@yazh-07** (Repository Owner & Lead Contributor)
+            - **@whale2186**
+            - **@JebasJ**
+            - **@sharmelas-925**
+
+            ### Included Distribution Binaries
+            - **Linux:** `evora-linux-x86_64.tar.gz` (Extract and run `./evora`)
+            - **Windows:** `evora-windows-x64.zip` (Extract and run `evora.exe`)
           files: |
             release-assets/evora-linux-x86_64.tar.gz
             release-assets/evora-windows-x64.zip
           draft: false
           prerelease: false
-          generate_release_notes: true
+          generate_release_notes: false
