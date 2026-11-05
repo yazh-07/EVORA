@@ -5,10 +5,10 @@ export function detectEvidenceKind(file: File, detected: (kind: Evidence['kind']
   const extension = file.name.split('.').at(-1)?.toLowerCase() ?? '';
   const media = file.type.toLowerCase().split(';')[0] ?? '';
   const groups = {
-    video: ['mp4', 'webm', 'mov', 'avi', 'mkv'],
-    image: ['png', 'jpg', 'jpeg', 'webp', 'bmp'],
-    audio: ['wav', 'mp3', 'm4a', 'ogg', 'flac'],
-    document: ['pdf', 'txt', 'docx'],
+    video: ['mp4', 'webm', 'mov', 'avi', 'mkv', 'flv', 'wmv', 'm4v'],
+    image: ['png', 'jpg', 'jpeg', 'webp', 'bmp', 'tiff', 'svg', 'gif', 'ico'],
+    audio: ['wav', 'mp3', 'm4a', 'ogg', 'flac', 'aac', 'wma', 'opus'],
+    document: ['pdf', 'txt', 'docx', 'doc', 'json', 'jsonl', 'log', 'xml', 'md', 'yaml', 'yml', 'sql', 'ini', 'conf', 'html', 'csv', 'pcap', 'pcapng', 'bin', 'hex', 'raw', 'dump'],
   } as const;
   const kind = (Object.keys(groups) as (keyof typeof groups)[]).find(key =>
     (groups[key] as readonly string[]).includes(extension));

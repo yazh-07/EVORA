@@ -55,7 +55,7 @@ class ExecutiveBriefTests(unittest.TestCase):
             brief = analysis._executive_brief(self.app, self.run, self.context)
         self.assertTrue(brief['details']['ai_generated'])
         self.assertEqual(requests[0]['format']['required'], ['hypothesis', 'summary'])
-        self.assertEqual(options[0]['timeout'].read, 30)
+        self.assertEqual(options[0]['timeout'].read, 90)
 
     def test_context_sampling_keeps_multiple_sources_and_excludes_private_storage(self):
         original = self.context['observations'][0]

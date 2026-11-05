@@ -83,7 +83,7 @@ def _executive_brief(app, run, context):
             evidence=bounded(context['evidence'], ('id', 'source_label', 'filename', 'kind'), 5000),
             entities=bounded(context['entities'], ('id', 'kind', 'canonical_label', 'evidence_ids'), 5000),
             observations=bounded(ordered, ('id', 'evidence_id', 'kind', 'normalized_value', 'raw_value',
-                'observed_at_utc', 'observed_at_raw', 'source_locator'), 16000),
+                'observed_at_utc', 'observed_at_raw', 'source_locator'), 8000),
             totals={key: len(value) for key, value in context.items()})
         if not payload['observations']:
             return None
@@ -92,7 +92,7 @@ def _executive_brief(app, run, context):
             qa_provider=getattr(app.state, 'qa_provider', 'ollama'),
             openai_api_key=getattr(app.state, 'openai_api_key', None),
             openai_base_url=getattr(app.state, 'openai_base_url', 'https://api.openai.com/v1'),
-            timeout=30.0,
+            timeout=90.0,
             response_schema=dict(type='object', additionalProperties=False,
                 required=['hypothesis', 'summary'], properties={
                     'hypothesis': dict(type='string', minLength=1, maxLength=12000),

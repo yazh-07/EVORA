@@ -149,6 +149,7 @@ def synthesize(question, context, model, qa_url=None, *, qa_provider='ollama',
     by_evidence: dict[str, list[str]] = {}
     for item in context['observations']:
         by_evidence.setdefault(item['evidence_id'], []).append(item['id'])
+    findings = {f['id']: f for f in context.get('findings', [])}
     citations = []
     for claim in claims:
         if (not isinstance(claim, dict) or set(claim) != {'text', 'observation_ids'} or
@@ -163,6 +164,8 @@ def synthesize(question, context, model, qa_url=None, *, qa_provider='ollama',
                 resolved_oids.append(oid)
             elif oid in by_evidence:
                 resolved_oids.extend(by_evidence[oid])
+            elif oid in findings:
+                resolved_oids.extend(findings[oid].get('observation_ids', []))
         if not resolved_oids:
             raise SynthesisError('Ungrounded claim')
         claim['observation_ids'] = list(dict.fromkeys(resolved_oids))
