@@ -56,6 +56,11 @@ jobs:
         run: |
           choco install innosetup --no-progress
 
+      - name: Download Visual C++ Redistributable for Bundling
+        shell: pwsh
+        run: |
+          Invoke-WebRequest -Uri "https://aka.ms/vs/17/release/vc_redist.x64.exe" -OutFile "installer/vc_redist.x64.exe"
+
       - name: Compile Windows Installer
         run: |
           & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer\setup.iss

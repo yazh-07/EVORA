@@ -44,6 +44,12 @@ Source: "..\desktop\evora-workstation.exe"; DestDir: "{app}"; DestName: "{#MyApp
 Source: "..\desktop\icon.ico"; DestDir: "{app}"; Flags: ignoreversion
 ; The bundled PyInstaller Python + FastAPI backend & React frontend
 Source: "..\dist\evora\*"; DestDir: "{app}\backend"; Flags: ignoreversion recursesubdirs createallsubdirs
+; Copy core runtime DLLs directly into {app}\backend for immediate DLL search resolution
+Source: "..\dist\evora\_internal\python3*.dll"; DestDir: "{app}\backend"; Flags: ignoreversion skipifsourcedoesntexist
+Source: "..\dist\evora\_internal\vcruntime140*.dll"; DestDir: "{app}\backend"; Flags: ignoreversion skipifsourcedoesntexist
+Source: "..\dist\evora\_internal\msvcp140*.dll"; DestDir: "{app}\backend"; Flags: ignoreversion skipifsourcedoesntexist
+; Optional bundled Microsoft Visual C++ 2015-2022 Redistributable
+Source: "vc_redist.x64.exe"; DestDir: "{tmp}"; Flags: deleteafterinstall ignoreversion skipifsourcedoesntexist
 
 [Icons]
 Name: "{group}\{#MyAppFullName}"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "{app}\icon.ico"
@@ -52,9 +58,22 @@ Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; IconFilen
 Name: "{userstartup}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "{app}\icon.ico"; Tasks: startupicon
 
 [Run]
+Filename: "{tmp}\vc_redist.x64.exe"; Parameters: "/install /quiet /norestart"; Check: VCRedistNeedsInstall; StatusMsg: "Installing Microsoft Visual C++ Runtime..."; Flags: waituntilterminated skipifdoesntexist
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppFullName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
 
 [Code]
+function VCRedistNeedsInstall: Boolean;
+var
+  Installed: Cardinal;
+begin
+  Result := True;
+  if RegQueryDWordValue(HKLM, 'SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64', 'Installed', Installed) then
+  begin
+    if Installed = 1 then
+      Result := False;
+  end;
+end;
+
 var
   AIPage: TWizardPage;
   OllamaRadio: TRadioButton;

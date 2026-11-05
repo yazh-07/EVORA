@@ -131,6 +131,13 @@ func (b *BackendManager) Start(cfg Config) error {
 	}
 
 	cmd.Env = os.Environ()
+
+	// Prepend _internal and backend directory to PATH so Windows dynamic linker resolves python313.dll and vcruntime
+	binDir := filepath.Dir(binPath)
+	internalDir := filepath.Join(binDir, "_internal")
+	pathVal := internalDir + string(filepath.ListSeparator) + binDir + string(filepath.ListSeparator) + os.Getenv("PATH")
+	cmd.Env = append(cmd.Env, "PATH="+pathVal)
+
 	if cfg.AIProvider == "openai" {
 		cmd.Env = append(cmd.Env,
 			"EVORA_QA_PROVIDER=openai",
