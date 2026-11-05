@@ -13,33 +13,50 @@ The platform is built around a practical question: **what should an investigator
 
 EVORA supports professional judgment. Candidate relationships, extracted statements, and priority scores require human verification; they do not establish identity, guilt, or admissibility.
 
-## Current capabilities
+## Current capabilities & updated features
 
-The integrated workflow covers case management, private evidence intake and verified original downloads, network/GPS CSV processing, source observation inspection, candidate entities/events, versioned graph publication, findings, and explained initial triage. The React workspace pins graph, findings, and triage reads to one completed analysis so that historical results stay consistent.
+EVORA organizes each case into five primary sections:
 
-The full multimodal scope also includes documents, OCR, images, video, mobile and transaction records, local speech transcription, adaptive feedback, human review, and grounded question answering. Additional parsers and analytical helpers are present, but the complete multimodal pipeline and verified generative interface are still under development. See the [proposal](docs/PROPOSAL.md) and [feature scope](docs/FEATURE_SCOPE.md) for the intended system.
+| Section | Capabilities |
+| --- | --- |
+| **Overview** | Check case readiness across evidence sources, review suggested next steps, and inspect the AI Forensic Executive Brief. |
+| **Evidence** | Batch upload via drag-and-drop with auto type detection, SHA-256 verification, and UTF-8 plain text/media inspection. |
+| **Timeline** | Chronologically compare extracted events across sources with normalized UTC ordering and date range filters. |
+| **Investigation** | Human review of findings, interactive knowledge graph (40 nodes, 35 relationships), candidate entities, and grounded AI Copilot Q&A. |
+| **Report** | Assemble accepted findings, investigator notes, and source manifests into plain text or browser Print/PDF reports. |
+
+### Offline Workstation & Local Accounts
+- **Standalone execution:** Start with `python -m backend.run` on `127.0.0.1:8000` with zero internet required.
+- **Local credentials:** Argon2id password hashing, HttpOnly session cookies, role-based access (Administrator, Investigator, Reviewer), and single-use recovery code.
+- **Local AI assistance:** Direct Ollama integration (e.g. `llama3.1:8b`) with strict loopback isolation and grounded evidence citations.
+
+See [NEW_UPDATE_FEATURES.md](docs/NEW_UPDATE_FEATURES.md) and [docs/local-accounts.md](docs/local-accounts.md) for full implementation details.
 
 ## Screenshots
 
-### Investigation Workspace & Case Overview
-
+### 1. Case Overview & Forensic Executive Brief
 ![Investigation Workspace & Case Overview](docs/images/01-case-dashboard.png)
 
-### Forensic Knowledge Graph Visualization
-
+### 2. Forensic Knowledge Graph Visualization
 ![Forensic Knowledge Graph Visualization](docs/images/02-knowledge-graph.png)
 
-### Adaptive Triage & Priority Scoring
+### 3. Chronological Case Timeline
+![Chronological Case Timeline](docs/images/06-case-timeline.png)
 
-![Adaptive Triage & Priority Scoring](docs/images/03-triage-priority.png)
-
-### Finding Details & Source Citation Traceability
-
+### 4. Findings Review & Human Verification Controls
 ![Finding Details & Source Citation Traceability](docs/images/04-findings-inspector.png)
 
-### Multimodal Ingestion & Observation Inspector
-
+### 5. Evidence Intake & Source Verification
 ![Multimodal Ingestion & Observation Inspector](docs/images/05-evidence-intake.png)
+
+### 6. Adaptive Triage & Priority Scoring
+![Adaptive Triage & Priority Scoring](docs/images/03-triage-priority.png)
+
+### 7. AI Copilot Evidence Q&A
+![AI Copilot Evidence Q&A](docs/images/08-copilot-qa.png)
+
+### 8. Investigative Report Generator & PDF Export
+![Investigative Report Generator](docs/images/07-case-report.png)
 
 ## Core architecture & investigation pipeline
 
