@@ -46,13 +46,14 @@ def _compact_context(ctx):
 
 
 def _chat(model, system, payload, qa_url=None, *, qa_provider='ollama',
-          openai_api_key=None, openai_base_url='https://api.openai.com/v1'):
+          openai_api_key=None, openai_base_url='https://api.openai.com/v1',
+          response_schema=None, timeout=180.0):
     messages = [dict(role='system', content=system),
                 dict(role='user', content=json.dumps(payload, ensure_ascii=False))]
     if qa_provider == 'openai':
         if not openai_api_key:
             raise SynthesisError('OpenAI API key is required')
-        with httpx.Client(timeout=httpx.Timeout(180.0, connect=5.0), trust_env=False,
+        with httpx.Client(timeout=httpx.Timeout(timeout, connect=5.0), trust_env=False,
                           follow_redirects=False) as client:
             response = client.post(openai_base_url.rstrip('/') + '/chat/completions',
                 headers={'Authorization': f'Bearer {openai_api_key}'},
@@ -76,7 +77,7 @@ def _chat(model, system, payload, qa_url=None, *, qa_provider='ollama',
     if qa_provider != 'ollama':
         raise SynthesisError('Unknown Q&A provider')
     url = (qa_url if qa_url is not None else os.environ.get('EVORA_QA_URL', 'http://127.0.0.1:11434')).rstrip('/') + '/api/chat'
-    with httpx.Client(timeout=httpx.Timeout(180.0, connect=5.0), trust_env=False) as client:
+    with httpx.Client(timeout=httpx.Timeout(timeout, connect=5.0), trust_env=False) as client:
         schema: dict[str, object] = {
             'type': 'object',
             'additionalProperties': False,
@@ -101,20 +102,25 @@ def _chat(model, system, payload, qa_url=None, *, qa_provider='ollama',
                     }
                 }
             }
-        response = client.post(url, json=dict(model=model, stream=False, format=schema,
+        response = client.post(url, json=dict(model=model, stream=False, format=response_schema or schema,
             options=dict(temperature=0, num_predict=5000, num_ctx=8192),
             messages=messages))
         response.raise_for_status()
         body = response.json()
-        if (not body.get('done') or body.get('done_reason') == 'length' or
-                body.get('prompt_eval_count', 0) >= 29000):
+        if response_schema is not None and (not isinstance(body, dict) or not body.get('done')
+                or body.get('done_reason') == 'length'):
             raise SynthesisError('Incomplete model response')
         raw_text = body.get('message', {}).get('content', '').strip()
         cleaned = re.sub(r'<think>.*?</think>', '', raw_text, flags=re.DOTALL).strip()
         code_block = re.search(r'```(?:json)?\s*([\s\S]*?)\s*```', cleaned)
         if code_block:
             cleaned = code_block.group(1).strip()
-        return json.loads(cleaned), body.get('model', model)
+        try:
+            return json.loads(cleaned), body.get('model', model)
+        except Exception:
+            if not body.get('done') or body.get('done_reason') == 'length' or body.get('prompt_eval_count', 0) >= 29000:
+                raise SynthesisError('Incomplete model response')
+            raise SynthesisError('Invalid JSON in model response')
 
 
 def synthesize(question, context, model, qa_url=None, *, qa_provider='ollama',

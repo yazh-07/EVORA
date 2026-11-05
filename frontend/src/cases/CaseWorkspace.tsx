@@ -30,6 +30,9 @@ import { CaseAnalysisWorkspace } from './StartAnalysis';
 export { createCaseOverviewController } from './caseOverviewController';
 export { CaseOverviewPanel } from './CaseOverview';
 import { CaseOverview } from './CaseOverview';
+import { ExecutiveBrief } from './ExecutiveBrief';
+export { ExecutiveBriefPanel, createExecutiveBriefController } from './ExecutiveBrief';
+export { detectEvidenceKind } from './evidenceDetection';
 export { createObservationController } from './observationController';
 export { ObservationPanel } from './ObservationInspector';
 export { createProcessingStatusController } from './processingStatusController';
@@ -145,6 +148,7 @@ export function CaseEvidenceWorkspace({ caseId }: { caseId: string }) {
       <EntityEventInspector caseId={caseId} inspectEvidence={inspectEvidence} />
     </div>
     <div id="panel-overview" role="tabpanel" aria-labelledby="tab-overview" tabIndex={0} style={{ display: activeTab === 'overview' ? 'block' : 'none' }}>
+      <ExecutiveBrief />
       <CaseOverview caseId={caseId} />
     </div>
     <div id="panel-questions" role="tabpanel" aria-labelledby="tab-questions" tabIndex={0} style={{ display: activeTab === 'questions' ? 'block' : 'none' }}>

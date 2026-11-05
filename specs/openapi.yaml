@@ -1160,6 +1160,15 @@ components:
         analysis_run_id: { type: string, format: uuid }
         kind: { $ref: '#/components/schemas/FindingKind' }
         summary: { type: string }
+        details:
+          type: object
+          additionalProperties: false
+          required: [hypothesis, ai_generated, model]
+          description: Optional AI executive hypothesis metadata; investigative prose requires human verification.
+          properties:
+            hypothesis: { type: string, minLength: 1, maxLength: 12000 }
+            ai_generated: { type: boolean }
+            model: { type: string, minLength: 1 }
         evidence_ids:
           type: array
           minItems: 1

@@ -386,3 +386,26 @@ test('settings hide only lineage rays and switch evidence captions to filenames'
   assert.equal(elements(restored).find(e => e.props.className === 'graph-provenance-rays').props.display, undefined);
   assert.ok(diagramNodes(restored).some(e => e.props['aria-label'] === 'Inspect node evidence: Source description'));
 });
+
+test('raw event toggle hides event variants and incident edges while preserving entities and evidence', () => {
+  const g = graph();
+  g.nodes.push({ ...g.nodes[2], id: id(50), kind: 'network.activity' },
+    { ...g.nodes[2], id: id(51), kind: 'custom', entity_type: 'event' });
+  g.edges.push({ ...g.edges[0], id: id(52), to_id: id(50) });
+  let view = { filter: 'All', query: '', zoom: 1 };
+  const value = () => panel(g, { view, onViewChange: next => { view = next; } });
+  const toggle = () => elements(value()).find(e => e.type === 'button' && e.props.children === 'Hide raw log events');
+  toggle().props.onClick();
+  assert.equal(toggle().props['aria-pressed'], true);
+  assert.equal(diagramNodes(value()).length, 2);
+  assert.equal(elements(value()).filter(e => e.props.className === 'graph-edge').length, 1);
+  toggle().props.onClick();
+  assert.equal(diagramNodes(value()).length, 5);
+});
+
+test('evidence UUID captions fall back to clean filenames', () => {
+  const g = graph();
+  g.nodes[0].label = evidenceId;
+  g.nodes[0].properties = { filename: '/uploads/network.csv' };
+  assert.ok(diagramNodes(panel(g)).some(e => e.props['aria-label'] === 'Inspect node evidence: network.csv'));
+});

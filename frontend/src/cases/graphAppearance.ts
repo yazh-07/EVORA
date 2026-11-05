@@ -9,6 +9,8 @@ const styles = {
   document: { color: '#94a3b8', path: 'M5 2h10l4 4v16H5zM14 2v5h5M8 11h8m-8 4h8m-8 4h5' },
 };
 export const forensicTypes = Object.keys(styles) as (keyof typeof styles)[];
+export const isRawLogEvent = (kind: string, entityType?: string) =>
+  kind === 'event' || entityType === 'event' || kind.includes('activity') || kind === 'gps.location';
 export function graphAppearance(kind: string, entityType?: string) {
   const type = (entityType || kind).toLowerCase();
   const key = type === 'video' || type === 'image' ? 'camera' : type === 'face' ? 'person' : type === 'plate' ? 'vehicle' : type;

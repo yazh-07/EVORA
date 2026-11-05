@@ -451,3 +451,8 @@ h1 { font-size: clamp(1.5rem, 2vw, 2rem); }
 .source-highlight { background: var(--color-tab-active); outline: 1px solid var(--color-accent); outline-offset: -1px; }
 @media (max-width: 900px) { .metrics-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }.metric { border-bottom: 1px solid var(--color-border); } }
 @media (max-width: 560px) { .metrics-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }.metrics-heading > span:nth-child(2) { margin-left: 0; }.metric { padding: 14px; } }
+.auto-detect-badge { display: inline-block; color: #6ee7b7; background: #12382e; border: 1px solid #24624c; border-radius: 6px; padding: .4rem .65rem; }
+.advanced-metadata { margin: .8rem 0; }
+.advanced-metadata summary { cursor: pointer; margin-bottom: .6rem; }
+.executive-brief { border-left: 3px solid #8b5cf6; margin-bottom: 1rem; }
+.executive-hypothesis { white-space: pre-wrap; line-height: 1.65; }

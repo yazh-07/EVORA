@@ -43,6 +43,8 @@ function validEntry(f: Entry, caseId: string, runId?: string): boolean {
   return !!f && uuid(f.id) && f.case_id === caseId && !!runId && f.analysis_run_id === runId &&
     ['relationship', 'corroboration', 'conflict', 'gap', 'cluster', 'anomaly', 'hypothesis'].includes(f.kind) &&
     typeof f.summary === 'string' && typeof f.rule === 'string' && Number.isFinite(f.confidence) &&
+    (f.details === undefined || (!!f.details && typeof f.details.hypothesis === 'string' && !!f.details.hypothesis.trim() &&
+      typeof f.details.ai_generated === 'boolean' && typeof f.details.model === 'string' && !!f.details.model.trim())) &&
     f.confidence >= 0 && f.confidence <= 1 && ids(f.evidence_ids) && ids(f.observation_ids) &&
     (f.contradicting_evidence_ids === undefined || ids(f.contradicting_evidence_ids, false)) &&
     (f.entity_ids === undefined || ids(f.entity_ids, false)) &&
@@ -50,7 +52,7 @@ function validEntry(f: Entry, caseId: string, runId?: string): boolean {
       f.missing_information.every(v => typeof v === 'string' && v.trim().length > 0)));
 }
 const computedKey = (f: Entry) => JSON.stringify([f.id, f.case_id, f.analysis_run_id, f.kind, f.summary,
-  f.rule, f.confidence, f.evidence_ids, f.observation_ids, f.contradicting_evidence_ids, f.entity_ids, f.missing_information]);
+  f.rule, f.confidence, f.evidence_ids, f.observation_ids, f.contradicting_evidence_ids, f.entity_ids, f.missing_information, f.details]);
 const safeError = (error: unknown) => error instanceof ApiHttpError && error.status === 404 ?
   'Case, completed analysis or source unavailable or no longer accessible.' :
   error instanceof ApiClientError && error.kind === 'authentication' ? 'Authentication required. Open a session again before retrying.' :

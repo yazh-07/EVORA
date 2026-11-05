@@ -737,6 +737,12 @@ export interface components {
             analysis_run_id: string;
             kind: components["schemas"]["FindingKind"];
             summary: string;
+            /** @description Optional AI executive hypothesis metadata; investigative prose requires human verification. */
+            details?: {
+                hypothesis: string;
+                ai_generated: boolean;
+                model: string;
+            };
             evidence_ids: string[];
             contradicting_evidence_ids?: string[];
             /** @description Algorithm or rule version and basis */

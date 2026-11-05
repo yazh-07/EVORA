@@ -8,6 +8,7 @@ import { TranscriptViewer } from './TranscriptViewer';
 import { useApiClient } from '../api/ApiProvider';
 import { createEvidenceStore, evidenceKinds } from './evidenceStore';
 import type { Evidence, EvidenceState } from './evidenceStore';
+import { detectEvidenceKind } from './evidenceDetection';
 
 export function EvidenceWorkspace({ caseId, sourceSelection }: { caseId: string; sourceSelection?: { id: string; focus?: SourceFocus } }) {
   const client = useApiClient();
@@ -46,6 +47,10 @@ export function EvidencePanels({ state, load, select, upload, sourceFocus }: {
   const [kind, setKind] = useState('all');
   const [sort, setSort] = useState('newest');
   const [intakeOpen, setIntakeOpen] = useState(false);
+  const [detectedKind, setDetectedKind] = useState<string>();
+  const [detecting, setDetecting] = useState(false);
+  const cancelDetection = useRef<(() => void) | undefined>(undefined);
+  useEffect(() => () => cancelDetection.current?.(), []);
   const visible = (page?.items ?? []).filter(item =>
     (kind === 'all' || item.kind === kind) &&
     `${item.source_label} ${item.filename} ${item.id} ${item.sha256}`.toLowerCase().includes(query.trim().toLowerCase())
@@ -61,31 +66,41 @@ export function EvidencePanels({ state, load, select, upload, sourceFocus }: {
       <p>Upload one original file. Intake stores its bytes and integrity metadata; content has not been verified.</p>
       <form className="upload-form" noValidate aria-busy={state.submitting} onSubmit={async event => {
         event.preventDefault();
+        if (detecting) return;
         const form = event.currentTarget;
         const data = new FormData(form);
         const file = (form.elements.namedItem('file') as HTMLInputElement).files?.[0] ?? null;
-        if (await upload(file, String(data.get('kind')), String(data.get('source_label') ?? ''), String(data.get('acquired_at') ?? ''))) { form.reset(); setIntakeOpen(false); }
+        if (await upload(file, String(data.get('kind')), String(data.get('source_label') ?? ''), String(data.get('acquired_at') ?? ''))) { cancelDetection.current?.(); form.reset(); setDetectedKind(undefined); setIntakeOpen(false); }
         else error.current?.focus();
       }}>
         <fieldset disabled={state.submitting}>
           <legend>Original file and source</legend>
           <label htmlFor="evidence-file">File (required)</label><input id="evidence-file" name="file" type="file" required onChange={event => {
+            cancelDetection.current?.();
+            setDetectedKind(undefined); setDetecting(false);
             const file = event.target.files?.[0];
             const form = event.target.form;
             if (!file || !form) return;
             const label = form.elements.namedItem('source_label') as HTMLInputElement;
             if (!label.value) label.value = file.name.slice(0, 200);
             const kind = form.elements.namedItem('kind') as HTMLSelectElement;
-            const media = file.type.split('/')[0];
-            if (['image', 'audio', 'video'].includes(media ?? '')) kind.value = media!;
+            setDetecting(true);
+            cancelDetection.current = detectEvidenceKind(file, value => {
+              kind.value = value; setDetectedKind(value);
+            }, () => setDetecting(false));
           }} />
-          <label htmlFor="evidence-kind">Kind (required)</label><select id="evidence-kind" name="kind" required defaultValue="document">
+          {detectedKind && <span className="auto-detect-badge" role="status">✨ Auto-detected: {detectedKind}</span>}
+          <label htmlFor="evidence-kind">Kind (required)</label><select id="evidence-kind" name="kind" required defaultValue="document" onChange={() => {
+            cancelDetection.current?.(); setDetecting(false); setDetectedKind(undefined);
+          }}>
             {evidenceKinds.map(kind => <option key={kind} value={kind}>{kind}</option>)}
           </select>
           <label htmlFor="evidence-label">Source label (required)</label><input id="evidence-label" name="source_label" type="text" required maxLength={200} />
+          <details className="advanced-metadata"><summary>Chain-of-custody acquisition date (optional)</summary>
           <label htmlFor="evidence-acquired">Acquired at (optional, UTC)</label><input id="evidence-acquired" name="acquired_at" type="datetime-local" step="1" aria-describedby="acquired-help" />
           <p id="acquired-help">Enter the acquisition time in UTC. Leave blank if unknown.</p>
-          <button type="submit" disabled={state.submitting}>{state.submitting ? 'Uploading evidence...' : 'Upload evidence'}</button>
+          </details>
+          <button type="submit" disabled={state.submitting || detecting}>{state.submitting ? 'Uploading evidence...' : 'Upload evidence'}</button>
         </fieldset>
         {state.uploadMessage && <p role="alert" ref={error} tabIndex={-1}>{state.uploadMessage}</p>}
         {state.uploaded && <p role="status">Evidence uploaded. Its confirmed metadata is shown in the inspector.</p>}

@@ -113,6 +113,39 @@ class AnalysisTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(projection.get_projected_graph(self.app.state.database, self.neo,
             case_id=self.case, analysis_run_id=accepted['id']), graph)
 
+    async def test_executive_brief_published_with_frozen_sources_and_contract(self):
+        await self.upload()
+        self.app.state.qa_model = 'synthetic-model'
+        answer = dict(summary='Network activity warrants review.', hypothesis='D-7 appears in the network records.')
+        with patch('backend.qa_synthesis._chat', return_value=(answer, 'synthetic-model')) as chat:
+            accepted = await self.start()
+        self.assertEqual((await self.poll(accepted))['status'], 'completed')
+        payload = chat.call_args.args[2]
+        self.assertTrue(payload['evidence'])
+        self.assertTrue(payload['entities'])
+        self.assertTrue(payload['observations'])
+        page = (await self.client.get(self.base + '/findings', params={'analysis_run_id': accepted['id']})).json()
+        brief = next(item for item in page['items'] if item.get('details', {}).get('ai_generated'))
+        validator('Finding').validate(brief)
+        self.assertEqual(brief['details'], dict(hypothesis=answer['hypothesis'], ai_generated=True, model='synthetic-model'))
+        self.assertEqual(brief['observation_ids'], sorted(item['id'] for item in payload['observations']))
+        self.assertEqual(brief['evidence_ids'], sorted({item['evidence_id'] for item in payload['observations']}))
+        with patch('backend.qa_synthesis._chat', side_effect=AssertionError('Already published')) as chat:
+            analysis.process_analysis_run(self.app, accepted['id'])
+        chat.assert_not_called()
+
+    async def test_model_timeout_retains_deterministic_outputs(self):
+        await self.upload()
+        self.app.state.qa_model = 'synthetic-model'
+        with patch('backend.qa_synthesis._chat', side_effect=TimeoutError('private endpoint')):
+            accepted = await self.start()
+        self.assertEqual((await self.poll(accepted))['status'], 'completed')
+        with self.app.state.database.connect() as connection:
+            run = connection.execute('SELECT * FROM analysis_runs WHERE id=?', (accepted['id'],)).fetchone()
+            expected = analysis._outputs(connection, run)[1]
+        actual = (await self.client.get(self.base + '/findings', params={'analysis_run_id': accepted['id'], 'limit': 100})).json()
+        self.assertEqual(actual['items'], expected)
+
     async def test_replay_before_freeze_new_key_and_all_triggers(self):
         eid, _ = await self.upload()
         key = str(uuid4())

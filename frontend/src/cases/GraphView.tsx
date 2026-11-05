@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react';
-import { forensicTypes, graphAppearance } from './graphAppearance';
+import { forensicTypes, graphAppearance, isRawLogEvent } from './graphAppearance';
 import type { SourceFocus } from './mediaLocators';
 import './GraphView.css';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
@@ -14,7 +14,7 @@ const nodeShape = (kind: string) => ['person', 'face', 'vehicle', 'plate', 'devi
   ['network.activity', 'gps.location', 'event'].includes(kind) ? 'event' : kind === 'evidence' ? 'evidence' : 'other';
 
 type Point = { x: number; y: number };
-type GraphViewOptions = { filter: 'All' | 'Evidence' | 'Entities' | 'Events'; query: string; zoom: number };
+type GraphViewOptions = { filter: 'All' | 'Evidence' | 'Entities' | 'Events'; query: string; zoom: number; hideRawEvents?: boolean };
 const defaultView: GraphViewOptions = { filter: 'All', query: '', zoom: 1 };
 const shortLabel = (label: string, length = 28) => label.length > length ? `${label.slice(0, length - 1)}…` : label;
 const byId = (a: { id: string }, b: { id: string }) => a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
@@ -22,8 +22,13 @@ const isEvidence = (n: Graph['nodes'][number]) => ['evidence', 'camera', 'docume
 
 function displayLabels(nodes: Graph['nodes'], preference: Settings['default_node_label'] = 'source_description') {
   const key = preference === 'filename' ? 'filename' : 'source_label';
-  const labels = new Map(nodes.map(n => [n.id, isEvidence(n) && typeof n.properties?.[key] === 'string'
-    ? n.properties[key] as string || n.label : n.label]));
+  const labels = new Map(nodes.map(n => {
+    const text = (value: unknown) => typeof value === 'string' && value.trim() ? value.trim() : undefined;
+    const filename = text(n.properties?.filename)?.split(/[\\/]/).at(-1);
+    const label = isEvidence(n) ? (key === 'filename' ? filename : text(n.properties?.source_label))
+      || text(n.properties?.source_label) || filename || (n.label === n.id ? 'Evidence source' : n.label) : n.label;
+    return [n.id, label];
+  }));
   const groups = new Map<string, Graph['nodes']>();
   for (const n of nodes.filter(isEvidence).sort(byId)) {
     // Compare visible text too: distinct long source labels can truncate identically.
@@ -382,7 +387,8 @@ export function GraphPanel({ state, load, select, inspectEvidence, view = defaul
   const matches = (n: NonNullable<typeof graph>['nodes'][number]) =>
     [labels.get(n.id)!, n.label, n.kind, n.id, ...n.evidence_ids].some(value => value.toLocaleLowerCase().includes(query));
   const filterShape = { All: '', Evidence: 'evidence', Entities: 'entity', Events: 'event' }[view.filter];
-  const visibleNodes = graph?.nodes.filter(n => !filterShape || nodeShape(n.kind) === filterShape) ?? [];
+  const visibleNodes = graph?.nodes.filter(n => (!filterShape || nodeShape(n.kind) === filterShape)
+    && (!view.hideRawEvents || !isRawLogEvent(n.kind, n.entity_type))) ?? [];
   const visibleIds = new Set(visibleNodes.map(n => n.id));
   const visibleEdges = graph?.edges.filter(e => visibleIds.has(e.from_id) && visibleIds.has(e.to_id)) ?? [];
   const edgeGroups = new Map<string, typeof visibleEdges>();
@@ -424,6 +430,7 @@ export function GraphPanel({ state, load, select, inspectEvidence, view = defaul
               {(['All', 'Evidence', 'Entities', 'Events'] as const).map(filter =>
                 <button type="button" key={filter} aria-pressed={view.filter === filter} onClick={() => changeView({ filter })}>{filter}</button>)}
             </div>
+            <button type="button" aria-pressed={!!view.hideRawEvents} onClick={() => changeView({ hideRawEvents: !view.hideRawEvents })}>Hide raw log events</button>
             <label className="graph-search">Search nodes
               <input type="search" value={view.query} placeholder="Label, kind or source ID…"
                 onChange={event => changeView({ query: event.target.value })} />
