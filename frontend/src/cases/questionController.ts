@@ -8,8 +8,9 @@ export type QuestionState = {
   question: string;
   answer: CaseAnswer | null;
   message: string;
+  history?: CaseAnswer[];
 };
-const initial = (): QuestionState => ({ status: 'idle', question: '', answer: null, message: '' });
+const initial = (): QuestionState => ({ status: 'idle', question: '', answer: null, message: '', history: [] });
 const text = (value: unknown): value is string => typeof value === 'string' && !!value.trim();
 const uuid = (value: unknown): value is string => typeof value === 'string' &&
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
@@ -56,7 +57,7 @@ export function createQuestionController(client: ApiClient, caseId: string) {
     },
     setQuestion(question: string) {
       if (!enabled || state.status === 'submitting') return;
-      publish({ ...initial(), question });
+      publish({ ...initial(), question, history: state.history });
     },
     async submit() {
       if (!enabled || state.status === 'submitting' || session !== client.getSessionVersion()) return;
@@ -74,7 +75,7 @@ export function createQuestionController(client: ApiClient, caseId: string) {
         });
         if (!current()) return;
         if (!validAnswer(answer, caseId, question)) throw Error('Invalid case answer.');
-        publish({ ...state, status: 'ready', answer, message: '' });
+        publish({ ...state, status: 'ready', answer, history: [...(state.history ?? []), answer], message: '' });
       } catch (error) {
         if (!current()) return;
         publish({ ...state, status: 'error', answer: null, message: questionError(error) });

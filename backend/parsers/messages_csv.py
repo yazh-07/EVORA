@@ -5,7 +5,7 @@ from uuid import UUID
 
 from backend.parsers.network_csv import MAX_SOURCE_BYTES, MAX_DATA_ROWS, NetworkCSVError, _records
 
-PARSER_VERSION = 'messages-csv/1'
+PARSER_VERSION = 'messages-csv/2'
 HEADER = ('message_id', 'timestamp', 'sender', 'body')
 MAX_DEVICE_MENTIONS = 100000
 _DEVICE = re.compile(r'(?<![\w-])D-[0-9]+(?![\w-])')
@@ -36,6 +36,7 @@ class MessageRow:
     start_line: int
     end_line: int
     mentions: tuple[DeviceMention, ...]
+    recipient: str | None = None
 
 
 def device_mentions(body):
@@ -56,19 +57,20 @@ def parse_messages_csv(source: bytes, *, case_id: UUID, evidence_id: UUID, proce
     if '\x00' in text: raise MessageCSVError('MALFORMED_CSV')
     rows, count = [], 0
     try:
-        records = iter(_records(text))
+        records = iter(_records(text, max_columns=5))
         first = next(records, None)
-        if first is None or first[0] != HEADER: raise MessageCSVError('INVALID_HEADER', 1)
+        if first is None or first[0] not in (HEADER, HEADER + ('recipient',)): raise MessageCSVError('INVALID_HEADER', 1)
         for index, (values, start, end) in enumerate(records, 1):
             if index > MAX_DATA_ROWS: raise MessageCSVError('ROW_LIMIT', start)
-            if len(values) != 4 or any(not value.strip() for value in values):
+            if len(values) != len(first[0]) or any(not value.strip() for value in values):
                 raise MessageCSVError('INVALID_ROW', start)
             found = []
             for mention in device_mentions(values[3]):
                 count += 1
                 if count > MAX_DEVICE_MENTIONS: raise MessageCSVError('MENTION_LIMIT', start)
                 found.append(mention)
-            rows.append(MessageRow(case_id, evidence_id, processing_run_id, *values, start, end, tuple(found)))
+            rows.append(MessageRow(case_id, evidence_id, processing_run_id, *values[:4], start, end, tuple(found),
+                                   values[4] if len(values) == 5 else None))
     except NetworkCSVError as error:
         raise MessageCSVError(error.code, error.line) from None
     return tuple(rows)

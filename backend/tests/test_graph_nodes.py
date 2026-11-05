@@ -63,14 +63,14 @@ class GraphNodeTests(unittest.TestCase):
         by_id = {node.id: node.to_wire() for node in nodes}
         self.assertEqual(set(by_id), {E1, E2, ENTITY, EVENT})
         self.assertEqual(by_id[E1], dict(id=E1, case_id=CASE, kind='evidence',
-                                       label='network.csv', evidence_ids=[E1]))
+                                       label='network.csv', evidence_ids=[E1], entity_type='evidence', properties={'filename': 'network.csv'}))
         self.assertEqual(by_id[ENTITY], dict(id=ENTITY, case_id=CASE, kind='device',
-                                           label='D-7', evidence_ids=[E1]))
+                                           label='D-7', evidence_ids=[E1], entity_type='device', properties={'kind': 'device'}))
         self.assertEqual(by_id[EVENT], dict(id=EVENT, case_id=CASE, kind='network.connection',
-                                          label='Source reports a connection', evidence_ids=[E1]))
+                                          label='Source reports a connection', evidence_ids=[E1], entity_type='network.connection', properties={'kind': 'network.connection'}))
         for node in nodes:
             self.assertEqual(node.id, str(UUID(node.id)))
-            self.assertEqual(set(node.to_wire()), {'id', 'case_id', 'kind', 'label', 'evidence_ids'})
+            self.assertEqual(set(node.to_wire()), {'id', 'case_id', 'kind', 'label', 'evidence_ids', 'entity_type', 'properties'})
 
     def test_no_observation_ids_required_or_copied_and_full_records_accepted(self):
         self.entities[0].update(observation_ids=[str(uuid4())], candidate_key='device:D-7', confidence=0)
@@ -82,6 +82,18 @@ class GraphNodeTests(unittest.TestCase):
         self.assertEqual(build_graph_nodes(CASE, [], [], []), [])
         self.assertEqual(len(self.build(entities=[], events=[])), 2)
         self.assertEqual(len(self.build(evidence=self.evidence[:1], entities=[], events=[])), 1)
+
+    def test_evidence_source_labels_and_filenames_are_available_in_properties(self):
+        for kind, node_kind in (('network_log', 'evidence'), ('image', 'camera'), ('document', 'document')):
+            with self.subTest(kind=kind):
+                evidence = [dict(record, kind=kind, filename='network.csv', source_label=label)
+                            for record, label in zip(self.evidence, ('DMZ Firewall Logs', 'Perimeter Firewall Logs (DMZ)'))]
+                nodes = self.build(evidence=evidence, entities=[], events=[])
+                self.assertEqual({node.label for node in nodes}, {'network.csv'})
+                self.assertEqual({node.kind for node in nodes}, {node_kind})
+                self.assertEqual({node.properties['source_label'] for node in nodes},
+                                 {'DMZ Firewall Logs', 'Perimeter Firewall Logs (DMZ)'})
+                self.assertTrue(all(node.to_wire()['properties']['filename'] == 'network.csv' for node in nodes))
 
     def test_label_fallback_and_untrusted_unicode_text_preserved(self):
         evidence = dict(id=E1, case_id=CASE, label='  <script>synthetic</script> café\n')

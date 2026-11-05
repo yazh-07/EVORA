@@ -230,6 +230,58 @@ const nodePoint = element => {
 };
 const pointsByLabel = value => new Map(diagramNodes(value).map(e => [e.props['aria-label'], nodePoint(e)]));
 
+test('evidence, camera and document nodes use source labels in captions, clusters, search and inspection', () => {
+  for (const kind of ['evidence', 'camera', 'document']) {
+    const g = clusteredGraph();
+    const sources = g.nodes.filter(n => n.kind === 'evidence');
+    const labels = ['DMZ Firewall Logs', 'Perimeter Firewall Logs (DMZ)'];
+    sources.forEach((n, i) => { n.kind = kind; n.label = 'network.csv'; n.properties = { filename: n.label, source_label: labels[i] }; });
+    const value = panel(g, { view: { filter: 'All', query: 'perimeter', zoom: 1 },
+      state: { ...panelState(g), selection: { kind: 'node', id: sources[1].id } } });
+    for (const label of labels) {
+      const node = diagramNodes(value).find(e => e.props['aria-label'] === `Inspect node ${kind}: ${label}`);
+      assert.ok(node);
+      assert.equal(elements(node).find(e => e.type === 'title').props.children, label);
+      assert.ok(elements(value).some(e => e.props.className === 'graph-cluster' && elements(e).some(t => t.type === 'title' && t.props.children[0] === label)));
+    }
+    assert.equal(diagramNodes(value).filter(e => e.props['data-search-match']).length, 1);
+    assert.ok(elements(value).some(e => e.type === 'dd' && e.props.children === labels[1]));
+    const filenameSearch = panel(g, { view: { filter: 'All', query: 'network.csv', zoom: 1 } });
+    assert.equal(diagramNodes(filenameSearch).filter(e => e.props['data-search-match']).length, 2);
+  }
+});
+
+test('duplicate evidence captions have visible stable counters even with long labels or legacy filenames', () => {
+  for (const sourceLabels of [[undefined, undefined], ['Fleet GPS Telemetry', 'Fleet GPS Telemetry'],
+    ['A very long descriptive source label first', 'A very long descriptive source label second']]) {
+    const g = clusteredGraph();
+    const sources = g.nodes.filter(n => n.kind === 'evidence');
+    sources.forEach((n, i) => { n.label = 'gps.csv'; n.properties = { filename: n.label, source_label: sourceLabels[i] }; });
+    const captions = value => new Map(diagramNodes(value).filter(e => sources.some(n => n.id === e.props['data-node-id']))
+      .map(e => [e.props['data-node-id'], elements(e).find(t => t.type === 'text').props.children[1]]));
+    const value = panel(g), original = captions(value);
+    assert.equal(new Set(original.values()).size, 2);
+    assert.match(original.get(sources[0].id), /^#1 · /);
+    assert.match(original.get(sources[1].id), /^#2 · /);
+    assert.deepEqual(captions(panel({ ...g, nodes: [...g.nodes].reverse() })), original);
+    assert.deepEqual(captions(panel(g, { view: { filter: 'Evidence', query: '', zoom: 1 } })), original);
+    for (const cluster of elements(value).filter(e => e.props.className === 'graph-cluster')) {
+      assert.match(elements(cluster).find(e => e.type === 'title').props.children[0], /^#[12] · /);
+    }
+  }
+});
+
+test('empty or invalid source labels fall back to filenames and entity labels are preserved', () => {
+  for (const sourceLabel of ['', null, 42]) {
+    const g = graph();
+    g.nodes.forEach(n => { n.properties = { source_label: sourceLabel }; });
+    assert.deepEqual([...pointsByLabel(panel(g)).keys()], [...pointsByLabel(panel(graph())).keys()]);
+  }
+  const g = graph();
+  g.nodes[1].properties = { source_label: 'Do not replace an entity label' };
+  assert.deepEqual([...pointsByLabel(panel(g)).keys()], [...pointsByLabel(panel(graph())).keys()]);
+});
+
 test('unlinked provenance clusters seed compact particles and put a shared entity between evidence hubs', () => {
   const g = clusteredGraph(), value = panel(g), points = pointsByLabel(value);
   const point = label => points.get(`Inspect node ${label}`);
@@ -319,4 +371,18 @@ test('parallel and reversed candidate relationships retain separate labels, conf
     assert.ok(elements(edge).some(e => e.type === 'line' && e.props.className === 'graph-edge-hit'));
     assert.ok(elements(edge).some(e => e.type === 'line' && e.props.markerEnd));
   }
+});
+
+test('settings hide only lineage rays and switch evidence captions to filenames', () => {
+  const g = graph();
+  g.nodes[0].properties = { source_label: 'Source description', filename: 'capture.csv' };
+  const settings = { show_provenance_rays: false, default_node_label: 'filename' };
+  const value = panel(g, { settings });
+  const rays = elements(value).find(e => e.props.className === 'graph-provenance-rays');
+  assert.equal(rays.props.display, 'none');
+  assert.equal(elements(value).filter(e => e.props.className === 'graph-edge').length, g.edges.length);
+  assert.ok(diagramNodes(value).some(e => e.props['aria-label'] === 'Inspect node evidence: capture.csv'));
+  const restored = panel(g, { settings: { show_provenance_rays: true, default_node_label: 'source_description' } });
+  assert.equal(elements(restored).find(e => e.props.className === 'graph-provenance-rays').props.display, undefined);
+  assert.ok(diagramNodes(restored).some(e => e.props['aria-label'] === 'Inspect node evidence: Source description'));
 });

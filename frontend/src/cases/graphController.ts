@@ -22,10 +22,10 @@ function validGraph(g: Graph, caseId: string, runId?: string): boolean {
       (runId !== undefined && g.analysis_run_id !== runId) ||
       ((g.nodes.length > 0 || g.edges.length > 0) && !g.analysis_run_id)) return false;
   if (g.nodes.some(n => !n || !uuid(n.id) || n.case_id !== caseId || typeof n.kind !== 'string' ||
-      typeof n.label !== 'string' || !ids(n.evidence_ids)) || new Set(g.nodes.map(n => n.id)).size !== g.nodes.length) return false;
+      typeof n.label !== 'string' || (n.entity_type !== undefined && typeof n.entity_type !== 'string') || !ids(n.evidence_ids)) || new Set(g.nodes.map(n => n.id)).size !== g.nodes.length) return false;
   const nodes = new Set(g.nodes.map(n => n.id));
   return new Set(g.edges.map(e => e?.id)).size === g.edges.length && g.edges.every(e => e && uuid(e.id) &&
-    e.case_id === caseId && nodes.has(e.from_id) && nodes.has(e.to_id) && typeof e.kind === 'string' &&
+    e.case_id === caseId && nodes.has(e.from_id) && nodes.has(e.to_id) && typeof e.kind === 'string' && (e.label === undefined || typeof e.label === 'string') &&
     ids(e.evidence_ids) && ids(e.observation_ids) && Number.isFinite(e.confidence) && e.confidence >= 0 && e.confidence <= 1);
 }
 
@@ -111,6 +111,7 @@ export function createGraphController(client: ApiClient, caseId: string, analysi
     } finally { if (sources === request) sources = undefined; }
   }
   return {
+    clearSelection() { sources?.abort(); publish({ ...state, selection: null, citations: [], citationStatus: 'idle', citationMessage: '' }); },
     getSnapshot: () => state,
     subscribe(fn: () => void) { listeners.add(fn); return () => { listeners.delete(fn); }; },
     start() {

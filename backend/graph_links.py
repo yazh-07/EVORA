@@ -6,7 +6,7 @@ from itertools import combinations
 from math import isfinite
 from uuid import UUID, uuid5
 
-from backend.graph_nodes import _records, _text, _uuid
+from backend.graph_nodes import _records, _text, _uuid, location_nodes, source_group
 
 RULE = "candidate_link_shared_identifier:v1"
 CO_MENTION_RULE = "candidate_link_co_mention:v1"
@@ -22,9 +22,11 @@ class GraphEdge:
     observation_ids: tuple[str, ...]
     kind: str = "shared_identifier"
     confidence: float = 0.0
+    label: str = ""
 
     def to_wire(self) -> dict:
         wire = asdict(self)
+        wire["label"] = self.label or self.kind.replace("_", " ")
         for field in ("evidence_ids", "observation_ids"):
             wire[field] = list(wire[field])
         return wire
@@ -212,3 +214,71 @@ def derive_candidate_links(
                                 entity_ids=(from_id, to_id), rule=CO_MENTION_RULE, confidence=0.0))
 
     return sorted(edges, key=lambda item: item.id), sorted(findings, key=lambda item: item.id)
+
+
+SEMANTIC_RULE = "source_semantic_relations/1"
+
+
+def derive_semantic_links(case_id, analysis_run_id, evidence, entities, observations):
+    """Directed relations from explicit row roles, never proximity or co-mention.
+
+    Legacy transactions have only one account and messages have no recipient;
+    those records intentionally cannot establish a transfer/communication pair.
+    """
+    _uuid(case_id, "case_id")
+    _uuid(analysis_run_id, "analysis_run_id")
+    allowed = {_same_case(item, case_id, "evidence"): item for item in evidence}
+    # Reuse the strict entity/source/run validator even for standalone callers.
+    derive_candidate_links(case_id, analysis_run_id, entities, observations)
+    sources = {item["id"]: item for item in observations}
+    if any(item["evidence_id"] not in allowed for item in observations):
+        raise ValueError("Foreign semantic evidence")
+    by_observation = defaultdict(list)
+    for entity in entities:
+        for oid in entity["observation_ids"]:
+            if sources[oid].get("entity_key") == entity["candidate_key"]:
+                by_observation[oid].append(entity["id"])
+    edges = {}
+
+    def add(kind, origin, target, cited):
+        if origin == target:
+            return
+        ids = tuple(sorted({item["id"] for item in cited}))
+        evidence_ids = tuple(sorted({item["evidence_id"] for item in cited}))
+        name = f"{analysis_run_id}:{SEMANTIC_RULE}:{kind}:{origin}:{target}:" + ":".join(ids)
+        identifier = str(uuid5(UUID(case_id), name))
+        edges[identifier] = GraphEdge(id=identifier, case_id=case_id, kind=kind,
+            label=kind.replace("_", " "), from_id=origin, to_id=target,
+            evidence_ids=evidence_ids, observation_ids=ids)
+
+    groups = defaultdict(list)
+    for item in observations:
+        groups[source_group(item)].append(item)
+        if item["kind"] in ("image.detection", "video.frame_detection"):
+            for target in by_observation[item["id"]]:
+                add("detected_in_frame", item["evidence_id"], target, [item])
+        if allowed[item["evidence_id"]].get("kind") == "document":
+            for target in by_observation[item["id"]]:
+                add("referenced_in", target, item["evidence_id"], [item])
+    locations = {oid: node.id for node in location_nodes(case_id, observations)
+                 for oid in node.properties["observation_ids"]}
+    for items in groups.values():
+        roles = defaultdict(list)
+        for item in items:
+            for eid in by_observation[item["id"]]:
+                roles[item["kind"]].append((eid, item))
+        coords = [item for item in items if item["id"] in locations]
+        if coords:
+            for eid, source in roles["gps.device"]:
+                add("located_at", eid, locations[coords[0]["id"]], [source, *coords])
+        pairs = [("message.sender", "message.recipient", "communicated_with"),
+                 ("network.source", "network.destination", "communicated_with"),
+                 ("transaction.account", "transaction.recipient", "transferred_to")]
+        if any(item["kind"] == "network.event" and item["normalized_value"].casefold()
+               in ("connected", "sent", "received") for item in items):
+            pairs.append(("network.device", "network.ip", "assigned_ip"))
+        for first, second, kind in pairs:
+            for origin, a in roles[first]:
+                for target, b in roles[second]:
+                    add(kind, origin, target, items)
+    return sorted(edges.values(), key=lambda edge: edge.id)

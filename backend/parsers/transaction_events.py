@@ -8,8 +8,8 @@ from backend.parsers.normalization import NormalizedObservation, NormalizationRe
 from backend.parsers.candidate_entities import CandidateObservation, CandidateEntity
 from backend.parsers.source_events import SourceEvent, SourceEventResult
 
-ENTITY_VERSION = 'transaction-identifiers/1'
-EVENT_VERSION = 'transaction-source-events/1'
+ENTITY_VERSION = 'transaction-identifiers/2'
+EVENT_VERSION = 'transaction-source-events/2'
 
 
 class TransactionProjectionError(ValueError):
@@ -68,12 +68,24 @@ def project_transaction_records(rows: tuple[TransactionRow, ...], *, case_id: UU
             sources.append(source)
             observations.append(NormalizationResult(source, time, 'not_applicable'))
         groups.setdefault(row.account_id, []).append(sources[0])
+        if row.recipient is not None:
+            if not isinstance(row.recipient, str) or not row.recipient.strip():
+                raise TransactionProjectionError('INVALID_SOURCE')
+            target = CandidateObservation(id=uuid4(), case_id=case_id, evidence_id=row.evidence_id,
+                processing_run_id=row.processing_run_id, kind='transaction.recipient',
+                source_locator=location + ', recipient_account_id', raw_value=row.recipient,
+                normalized_value=row.recipient, observed_at_raw=row.timestamp,
+                observed_at_utc=time.utc_value, extraction_confidence=0, entity_key='account:' + row.recipient)
+            sources.append(target)
+            observations.append(NormalizationResult(target, time, 'not_applicable'))
+            groups.setdefault(row.recipient, []).append(target)
         event_rows.append((row, time, tuple(source.id for source in sources)))
     by_account = {account: CandidateEntity(uuid4(), case_id, 'account', account, 'account:' + account,
                     (sources[0].evidence_id,), tuple(sorted((source.id for source in sources), key=str)))
                  for account, sources in sorted(groups.items())}
     events = tuple(SourceEventResult(SourceEvent(uuid4(), case_id, 'transaction.record',
         'Source transaction record reports: ' + row.amount + ' ' + row.currency, (row.evidence_id,), refs,
-        (by_account[row.account_id].id,), row.timestamp, time.utc_value), time, version=EVENT_VERSION)
+        tuple(dict.fromkeys([by_account[row.account_id].id] +
+            ([by_account[row.recipient].id] if row.recipient else []))), row.timestamp, time.utc_value), time, version=EVENT_VERSION)
         for row, time, refs in event_rows)
     return TransactionProjection(tuple(observations), tuple(by_account.values()), events)

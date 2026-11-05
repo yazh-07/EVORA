@@ -1,6 +1,6 @@
 import type { components, paths } from './schema';
 
-type Method = 'get' | 'post';
+type Method = 'get' | 'post' | 'put';
 type Route<M extends Method> = {
   [P in keyof paths]: NonNullable<paths[P][M]> extends never ? never : P;
 }[keyof paths];
@@ -135,7 +135,7 @@ export function createApiClient(config: { baseUrl: string; fetch?: typeof global
       headers.set('Accept', binary ? 'application/octet-stream' : 'application/json');
       let body: BodyInit | undefined;
       if (parameters.body !== undefined) {
-        if (method !== 'post') throw new ApiClientError('request', 'This API read does not accept a body.');
+        if (method !== 'post' && method !== 'put') throw new ApiClientError('request', 'This API read does not accept a body.');
         if (parameters.body instanceof FormData) body = parameters.body;
         else {
           headers.set('Content-Type', 'application/json');

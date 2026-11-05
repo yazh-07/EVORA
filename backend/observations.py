@@ -31,6 +31,8 @@ class ObservationRecord(BaseModel):
     observed_at_raw: str | None = None
     observed_at_utc: AwareDatetime | None = Field(default=None, strict=False)
     entity_key: str | None = None
+    detector_weight: float | None = None
+    detector: str | None = None
     source_observation_id: UUID | None = None
     transcript_revision_id: UUID | None = None
 

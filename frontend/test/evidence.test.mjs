@@ -25,7 +25,7 @@ test('selected-case evidence has labeled upload fields, honest empty state, and 
   await store.load();
   assert.match(render(store), /No evidence uploaded yet for this case/);
   for (const markup of [/type="file" required/, /maxLength="200"/i, /<select[^>]*required/, /Acquired at \(optional, UTC\)/, /Upload evidence/]) assert.match(render(store), markup);
-  assert.equal((render(store).match(/<option /g) ?? []).length, 9);
+  assert.equal((render(store).match(/<select id="evidence-kind"[\s\S]*?<\/select>/)[0].match(/<option /g) ?? []).length, 9);
   calls = 0;
   for (const args of [[null, 'document', 'label'], [file(), 'document', ' \t '], [file(), 'invalid', 'label'], [file(), 'audio', 'x'.repeat(201)], [file(), 'document', 'label', 'invalid']]) assert.equal(await store.upload(...args), false);
   assert.equal(calls, 0); assert.match(render(store), /role="alert"/);
@@ -139,4 +139,21 @@ test('effect reconnect after cleanup loads evidence and ignores the aborted firs
   wait.resolve(Response.json(page())); await old;
   assert.equal(store.getSnapshot().page.items[0].id, item.id);
   assert.equal(store.getSnapshot().status, 'ready'); store.dispose();
+});
+
+
+test('source links resolve evidence outside the loaded page and still reject foreign case details', async () => {
+  let detail = item;
+  const { store } = setup(async url => String(url).includes('?') ? Response.json(page()) : Response.json(detail));
+  // Source navigation may arrive before the evidence list has loaded.
+  await store.select(item.id);
+  assert.equal(store.getSnapshot().detail.id, item.id);
+  await store.load();
+  await store.select(item.id);
+  assert.equal(store.getSnapshot().detail.id, item.id);
+  detail = { ...item, case_id: caseB.id };
+  await store.select(item.id);
+  assert.equal(store.getSnapshot().detail, null);
+  assert.equal(store.getSnapshot().detailStatus, 'error');
+  store.dispose();
 });

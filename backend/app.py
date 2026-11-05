@@ -5,12 +5,16 @@ from contextlib import asynccontextmanager
 import asyncio
 import os
 from pathlib import Path
+from typing import Literal, Optional
+from urllib.parse import urlsplit
 
-from fastapi import FastAPI, Request
+import httpx
+from fastapi import Depends, FastAPI, Request, Response
 from fastapi.exceptions import RequestValidationError
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from backend.analysis import initialize_analysis, recover_analysis_runs, router as analysis_router
-from backend.auth import CaseAccess, RejectTokens, TokenVerifier
+from backend.auth import CaseAccess, RejectTokens, TokenVerifier, authenticated_actor
 from backend.audit import initialize_audit, router as audit_router
 from backend.database import SQLiteDatabase
 from backend.cases import SQLiteCaseAccess, initialize_cases, router
@@ -26,6 +30,63 @@ from backend.triage_endpoints import router as triage_router
 from backend.questions import router as questions_router
 from backend.transcripts import initialize_transcripts, router as transcripts_router
 from backend.errors import AccessError, access_error, invalid_request
+
+
+class OllamaEndpoint(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+    qa_url: str = "http://127.0.0.1:11434"
+
+    @field_validator("qa_url")
+    @classmethod
+    def validate_url(cls, value: str) -> str:
+        url = urlsplit(value)
+        if (value != value.strip() or any(c.isspace() for c in value)
+                or url.scheme not in {"http", "https"} or not url.hostname
+                or url.username or url.password or url.path not in {"", "/"}
+                or url.query or url.fragment):
+            raise ValueError("Use an HTTP(S) origin without credentials.")
+        _ = url.port  # Validate the port too.
+        return value.rstrip("/")
+
+
+class ProviderEndpoint(OllamaEndpoint):
+    qa_provider: Literal['ollama', 'openai'] = 'ollama'
+    openai_api_key: Optional[str] = Field(default=None, repr=False)
+    openai_base_url: str = 'https://api.openai.com/v1'
+
+    @field_validator('openai_api_key')
+    @classmethod
+    def validate_api_key(cls, value: Optional[str]) -> Optional[str]:
+        if value is None or not value.strip():
+            return None
+        value = value.strip()
+        if any(ord(c) < 33 or ord(c) > 126 for c in value):
+            raise ValueError('Use an API key without whitespace or control characters.')
+        return value
+
+    @field_validator('openai_base_url')
+    @classmethod
+    def validate_base_url(cls, value: str) -> str:
+        url = urlsplit(value)
+        if (value != value.strip() or any(c.isspace() for c in value)
+                or url.scheme not in {'http', 'https'} or not url.hostname
+                or url.username or url.password or url.query or url.fragment):
+            raise ValueError('Use an HTTP(S) base URL without credentials, query or fragment.')
+        _ = url.port
+        return value.rstrip('/')
+
+
+class Settings(ProviderEndpoint):
+    qa_model: str = Field(default="deepseek-r1:8b", min_length=1, max_length=200)
+    detection_threshold: float = Field(default=0.7, ge=0.1, le=1.0, allow_inf_nan=False)
+    show_provenance_rays: bool = True
+
+    @field_validator("qa_model")
+    @classmethod
+    def validate_model(cls, value: str) -> str:
+        if not value.strip() or any(c.isspace() for c in value):
+            raise ValueError("Use a model name without whitespace.")
+        return value
 
 
 def create_app(
@@ -70,6 +131,13 @@ def create_app(
         docs_url=None,
         redoc_url=None,
     )
+    app.state.qa_model = os.environ.get("EVORA_QA_MODEL", "deepseek-r1:8b")
+    app.state.qa_url = os.environ.get("EVORA_QA_URL", "http://127.0.0.1:11434").rstrip("/")
+    app.state.qa_provider = os.environ.get('EVORA_QA_PROVIDER', 'ollama')
+    app.state.openai_api_key = os.environ.get('OPENAI_API_KEY') or None
+    app.state.openai_base_url = os.environ.get('OPENAI_BASE_URL', 'https://api.openai.com/v1').rstrip('/')
+    app.state.detection_threshold = 0.7
+    app.state.show_provenance_rays = True
     app.state.database = database
     app.state.processing_lock = asyncio.Lock()
     app.state.analysis_lock = asyncio.Lock()
@@ -80,6 +148,57 @@ def create_app(
     app.state.case_access = case_access if case_access is not None else SQLiteCaseAccess(database)
     app.add_exception_handler(RequestValidationError, invalid_request)
     app.add_exception_handler(AccessError, access_error)
+
+    @app.get("/api/v1/settings", dependencies=[Depends(authenticated_actor)])
+    async def get_settings(response: Response):
+        response.headers["Cache-Control"] = "no-store"
+        return {**{key: getattr(app.state, key) for key in Settings.model_fields if key != 'openai_api_key'},
+                'has_openai_key': bool(app.state.openai_api_key)}
+
+    @app.put("/api/v1/settings", dependencies=[Depends(authenticated_actor)])
+    async def put_settings(body: Settings, response: Response):
+        # Validation finishes before any mutation. Omitted values remain unchanged.
+        for key, value in body.model_dump(exclude_unset=True).items():
+            if key == 'openai_api_key' and not value:
+                continue
+            setattr(app.state, key, value)
+        return await get_settings(response)
+
+    @app.post("/api/v1/settings/models", dependencies=[Depends(authenticated_actor)])
+    async def list_models(body: ProviderEndpoint, response: Response):
+        response.headers["Cache-Control"] = "no-store"
+        provider = body.qa_provider if 'qa_provider' in body.model_fields_set else app.state.qa_provider
+        if provider == 'openai':
+            api_key = body.openai_api_key or app.state.openai_api_key
+            if not api_key:
+                raise AccessError(400, 'OPENAI_KEY_REQUIRED', 'Enter an API key before testing the connection.')
+            base_url = (body.openai_base_url if 'openai_base_url' in body.model_fields_set
+                        else app.state.openai_base_url)
+            url, field, name = base_url + '/models', 'data', 'id'
+        else:
+            url = (body.qa_url if 'qa_url' in body.model_fields_set else app.state.qa_url) + '/api/tags'
+            field, name = 'models', 'name'
+        try:
+            async with httpx.AsyncClient(timeout=5.0, trust_env=False, follow_redirects=False) as client:
+                if provider == 'openai':
+                    result = await client.get(url, headers={'Authorization': f'Bearer {api_key}'})
+                else:
+                    result = await client.get(url)
+                result.raise_for_status()
+                payload = result.json()
+            models = payload[field]
+            if not isinstance(models, list) or any(
+                not isinstance(item, dict) or not isinstance(item.get(name), str)
+                or not item[name].strip() for item in models
+            ):
+                raise ValueError("Invalid model list")
+            return {"models": sorted({item[name] for item in models})}
+        except (httpx.HTTPError, ValueError, KeyError, TypeError):
+            if provider == 'openai':
+                raise AccessError(502, 'OPENAI_UNAVAILABLE',
+                                  'Could not connect to the OpenAI-compatible provider or read its models. Check the API key and base URL.') from None
+            raise AccessError(502, "OLLAMA_UNAVAILABLE", "Could not connect to Ollama or read its models.") from None
+
     app.include_router(router)
     app.include_router(evidence_router)
     app.include_router(audit_router)

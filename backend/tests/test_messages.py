@@ -122,8 +122,8 @@ class MessageProcessingTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(all(x['processing_run_id'] == accepted['id'] for x in observations['items']))
         private = self.read(accepted)
         self.assertEqual(private['execution']['parameters']['max_device_mentions'], 100000)
-        self.assertEqual(private['execution']['versions']['parser_version'], 'messages-csv/1')
-        self.assertEqual(private['execution']['versions']['entity_version'], 'message-candidates/1')
+        self.assertEqual(private['execution']['versions']['parser_version'], 'messages-csv/2')
+        self.assertEqual(private['execution']['versions']['entity_version'], 'message-candidates/2')
         self.assertEqual(private['execution']['versions']['event_version'], 'not-used')
         self.assertIsNone(private['execution']['model'])
         self.assertEqual(private['outputs']['event_ids'], [])
@@ -393,7 +393,7 @@ class MessageProjectionTests(unittest.TestCase):
     def test_fixture_projection_retains_body_metadata_span_refs_and_unavailable_scores(self):
         rows = self.parse(); before = rows
         projection = project_message_entities(rows, case_id=self.context['case_id'])
-        self.assertEqual(projection.version, 'message-candidates/1')
+        self.assertEqual(projection.version, 'message-candidates/2')
         self.assertEqual((len(projection.observations), len(projection.entities)), (5,2))
         sources = {x.observation.id: x.observation for x in projection.observations}
         body = next(x for x in sources.values() if x.kind == 'message.body')

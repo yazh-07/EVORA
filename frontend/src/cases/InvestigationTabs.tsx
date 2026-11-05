@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 export const findingKinds = ['all', 'relationship', 'conflict', 'gap', 'cluster', 'anomaly', 'hypothesis'] as const;
 export type FindingKindFilterValue = typeof findingKinds[number];
@@ -31,12 +31,20 @@ const tabs = [
 export type InvestigationTab = typeof tabs[number]['id'];
 
 export function InvestigationTabs({ activeTab, onSelect }: { activeTab: InvestigationTab; onSelect: (tab: InvestigationTab) => void }) {
+  const [vertical, setVertical] = useState(false);
+  useEffect(() => {
+    const media = window.matchMedia('(min-width: 851px)');
+    const update = () => setVertical(media.matches);
+    update();
+    media.addEventListener('change', update);
+    return () => media.removeEventListener('change', update);
+  }, []);
   const buttons = useRef<(HTMLButtonElement | null)[]>([]);
-  return <div className="investigation-tabs" role="tablist" aria-label="Investigation navigation">
+  return <div className="investigation-tabs" role="tablist" aria-orientation={vertical ? 'vertical' : 'horizontal'} aria-label="Investigation navigation">
     {tabs.map((tab, index) => <button key={tab.id} ref={element => { buttons.current[index] = element; }}
       type="button" role="tab" id={`tab-${tab.id}`} aria-controls={`panel-${tab.id}`} aria-selected={activeTab === tab.id}
       tabIndex={activeTab === tab.id ? 0 : -1} onClick={() => onSelect(tab.id)} onKeyDown={event => {
-        const next = event.key === 'ArrowRight' ? (index + 1) % tabs.length : event.key === 'ArrowLeft' ? (index + tabs.length - 1) % tabs.length :
+        const next = (event.key === 'ArrowRight' || event.key === 'ArrowDown') ? (index + 1) % tabs.length : (event.key === 'ArrowLeft' || event.key === 'ArrowUp') ? (index + tabs.length - 1) % tabs.length :
           event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 : null;
         if (next !== null) { event.preventDefault(); onSelect(tabs[next]!.id); buttons.current[next]?.focus(); }
       }}>

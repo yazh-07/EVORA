@@ -166,7 +166,7 @@ def _validate(connection, run, graph, findings, triage):
         events.extend(json.loads(row["events_json"]))
     if set(observations) != set(snapshot["observation_ids"]):
         raise ValueError("Analysis observations differ from frozen snapshot")
-    source_nodes = {node.id: node.to_wire() for node in build_graph_nodes(case, evidence, entities, events)}
+    source_nodes = {node.id: node.to_wire() for node in build_graph_nodes(case, evidence, entities, events, observations.values())}
     if (not isinstance(graph, dict) or set(graph) != {"case_id", "analysis_run_id", "nodes", "edges"}
             or graph["case_id"] != case or graph["analysis_run_id"] != run_id
             or not isinstance(graph["nodes"], list) or not isinstance(graph["edges"], list)
@@ -195,7 +195,7 @@ def _validate(connection, run, graph, findings, triage):
     seen = set()
     for edge in graph["edges"]:
         sourced(edge)
-        if (set(edge) != {"id", "case_id", "from_id", "to_id", "kind", "confidence",
+        if (set(edge) - {"label"} != {"id", "case_id", "from_id", "to_id", "kind", "confidence",
                           "evidence_ids", "observation_ids"}
                 or not isinstance(edge["kind"], str) or not edge["kind"].strip()
                 or edge["id"] in seen or edge["from_id"] not in nodes or edge["to_id"] not in nodes):
@@ -227,19 +227,20 @@ _DELETE_EDGES = "MATCH ()-[r:Edge {case_id:$case_id, analysis_run_id:$run_id}]->
 _DELETE_NODES = "MATCH (n:Node {case_id:$case_id, analysis_run_id:$run_id}) DELETE n"
 _WRITE_NODE = """UNWIND $nodes AS node
  MERGE (n:Node {case_id:$case_id, analysis_run_id:$run_id, id:node.id})
- SET n.kind=node.kind, n.label=node.label, n.evidence_ids=node.evidence_ids"""
+ SET n.kind=node.kind, n.label=node.label, n.evidence_ids=node.evidence_ids,
+ n.entity_type=node.entity_type, n.properties_json=node.properties_json"""
 _WRITE_EDGE = """UNWIND $edges AS edge
  MATCH (a:Node {case_id:$case_id, analysis_run_id:$run_id, id:edge.from_id}),
  (b:Node {case_id:$case_id, analysis_run_id:$run_id, id:edge.to_id})
  MERGE (a)-[r:Edge {case_id:$case_id, analysis_run_id:$run_id, id:edge.id}]->(b)
  SET r.kind=edge.kind, r.confidence=edge.confidence, r.evidence_ids=edge.evidence_ids,
- r.observation_ids=edge.observation_ids"""
+ r.observation_ids=edge.observation_ids, r.label=edge.label"""
 _COUNT_NODES = "MATCH (n:Node {case_id:$case_id, analysis_run_id:$run_id}) RETURN count(n) AS count"
 _COUNT_EDGES = "MATCH ()-[r:Edge {case_id:$case_id, analysis_run_id:$run_id}]->() RETURN count(r) AS count"
 _READ_NODES = """MATCH (n:Node {case_id:$case_id, analysis_run_id:$run_id})
- RETURN n{.id,.case_id,.kind,.label,.evidence_ids} AS node"""
+ RETURN n{.id,.case_id,.kind,.label,.evidence_ids,.entity_type,.properties_json} AS node"""
 _READ_EDGES = """MATCH (a)-[r:Edge {case_id:$case_id, analysis_run_id:$run_id}]->(b)
- RETURN r{.id,.case_id,.kind,.confidence,.evidence_ids,.observation_ids} AS edge,
+ RETURN r{.id,.case_id,.kind,.confidence,.evidence_ids,.observation_ids,.label} AS edge,
  a.id AS from_id, b.id AS to_id, a.case_id AS from_case, b.case_id AS to_case,
  a.analysis_run_id AS from_run, b.analysis_run_id AS to_run,
  labels(a) AS from_labels, labels(b) AS to_labels"""
@@ -251,12 +252,17 @@ def _verify(tx, graph):
         if tx.run(query, **params).single(strict=True)["count"] != len(items):
             raise ProjectionError("Graph projection verification failed.")
     nodes = [row["node"] for row in tx.run(_READ_NODES, **params).data()]
+    for node in nodes:
+        if "properties_json" in node:
+            node["properties"] = json.loads(node.pop("properties_json"))
     edges = []
     for row in tx.run(_READ_EDGES, **params).data():
         if (row["from_case"] != params["case_id"] or row["to_case"] != params["case_id"]
                 or row["from_run"] != params["run_id"] or row["to_run"] != params["run_id"]
                 or "Node" not in row["from_labels"] or "Node" not in row["to_labels"]):
             raise ProjectionError("Graph projection verification failed.")
+        if row["edge"].get("label") is None:
+            row["edge"].pop("label", None)
         edges.append(row["edge"] | dict(from_id=row["from_id"], to_id=row["to_id"]))
     for actual, expected in ((nodes, graph["nodes"]), (edges, graph["edges"])):
         if sorted(actual, key=_json) != sorted(expected, key=_json):
@@ -276,7 +282,8 @@ def _project(neo4j_db, graph, *, rewrite):
                     # DELETE (not DETACH) refuses to damage foreign relationships.
                     tx.run(_DELETE_EDGES, **params).consume()
                     tx.run(_DELETE_NODES, **params).consume()
-                    tx.run(_WRITE_NODE, **params, nodes=graph["nodes"]).consume()
+                    tx.run(_WRITE_NODE, **params, nodes=[dict(node, properties_json=_json(node.get("properties", {})))
+                           for node in graph["nodes"]]).consume()
                     tx.run(_WRITE_EDGE, **params, edges=graph["edges"]).consume()
                 _verify(tx, graph)
                 tx.commit()

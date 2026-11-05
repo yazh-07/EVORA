@@ -4,6 +4,41 @@
  */
 
 export interface paths {
+    "/api/v1/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read current workstation settings */
+        get: operations["getSettings"];
+        /** Update runtime settings without restarting the workstation */
+        put: operations["updateSettings"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/settings/models": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Test an Ollama or OpenAI-compatible endpoint and fetch models without saving settings */
+        post: operations["listProviderModels"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/cases": {
         parameters: {
             query?: never;
@@ -449,6 +484,43 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        Settings: {
+            /**
+             * @default ollama
+             * @enum {string}
+             */
+            qa_provider: "ollama" | "openai";
+            /**
+             * Format: uri
+             * @default https://api.openai.com/v1
+             */
+            openai_base_url: string;
+            readonly has_openai_key: boolean;
+            /** @default deepseek-r1:8b */
+            qa_model: string;
+            /**
+             * Format: uri
+             * @default http://127.0.0.1:11434
+             */
+            qa_url: string;
+            /** @default 0.7 */
+            detection_threshold: number;
+            /** @default true */
+            show_provenance_rays: boolean;
+        };
+        SettingsUpdate: {
+            /** @enum {string} */
+            qa_provider?: "ollama" | "openai";
+            /** Format: uri */
+            openai_base_url?: string;
+            /** @description A non-empty key replaces the saved backend key; omitted, null or empty keys retain it. */
+            openai_api_key?: string | null;
+            qa_model?: string;
+            /** Format: uri */
+            qa_url?: string;
+            detection_threshold?: number;
+            show_provenance_rays?: boolean;
+        };
         ApiError: {
             code: string;
             message: string;
@@ -519,6 +591,8 @@ export interface components {
             observed_at_raw?: string;
             /** Format: date-time */
             observed_at_utc?: string;
+            detector_weight?: number;
+            detector?: string;
             extraction_confidence: number;
             /** @description Candidate identifier, NOT a verified identity */
             entity_key?: string;
@@ -614,7 +688,7 @@ export interface components {
             observed_at_utc?: string;
             confidence: number;
         };
-        /** @description id equals its source Evidence, Entity or Event UUID within the case; kind declares that record category. Reuse identity across analysis versions but partition storage by case_id and analysis_run_id. */
+        /** @description id equals its source Evidence, Entity or Event UUID, or a deterministic source-row UUID for derived GPS locations. kind and entity_type describe the forensic category; camera represents media, not verified hardware. Reuse identity across analysis versions but partition storage by case_id and analysis_run_id. */
         GraphNode: {
             /** Format: uuid */
             id: string;
@@ -622,6 +696,10 @@ export interface components {
             case_id: string;
             kind: string;
             label: string;
+            entity_type?: string;
+            properties?: {
+                [key: string]: unknown;
+            };
             evidence_ids: string[];
         };
         GraphEdge: {
@@ -634,6 +712,7 @@ export interface components {
             /** Format: uuid */
             to_id: string;
             kind: string;
+            label?: string;
             evidence_ids: string[];
             /** @description Same-case input observations supporting this result; resolve source locators through Observation. */
             observation_ids: string[];
@@ -941,6 +1020,99 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    getSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Current runtime settings */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Settings"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    updateSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SettingsUpdate"];
+            };
+        };
+        responses: {
+            /** @description Updated runtime settings; omitted fields are unchanged */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Settings"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    listProviderModels: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @enum {string} */
+                    qa_provider?: "ollama" | "openai";
+                    /** Format: uri */
+                    qa_url?: string;
+                    /** Format: uri */
+                    openai_base_url?: string;
+                    /** @description Omitted or empty keys use the saved backend key. */
+                    openai_api_key?: string | null;
+                };
+            };
+        };
+        responses: {
+            /** @description Connection succeeded */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        models: string[];
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            /** @description Provider is unavailable or returned an invalid model list */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
     listCases: {
         parameters: {
             query?: {

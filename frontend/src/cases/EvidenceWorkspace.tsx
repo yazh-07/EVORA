@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { MediaInspector } from './MediaInspector';
+import type { SourceFocus } from './mediaLocators';
 import { ObservationInspector } from './ObservationInspector';
 import { OriginalDownload } from './OriginalDownload';
 import { StartProcessing } from './StartProcessing';
@@ -7,13 +9,13 @@ import { useApiClient } from '../api/ApiProvider';
 import { createEvidenceStore, evidenceKinds } from './evidenceStore';
 import type { Evidence, EvidenceState } from './evidenceStore';
 
-export function EvidenceWorkspace({ caseId, sourceSelection }: { caseId: string; sourceSelection?: { id: string } }) {
+export function EvidenceWorkspace({ caseId, sourceSelection }: { caseId: string; sourceSelection?: { id: string; focus?: SourceFocus } }) {
   const client = useApiClient();
   const store = useMemo(() => createEvidenceStore(client, caseId), [client, caseId]);
   const state = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot);
   useEffect(() => { void store.start(); return () => store.dispose(); }, [store]);
   useEffect(() => { if (sourceSelection) void store.select(sourceSelection.id); }, [store, sourceSelection]);
-  return <>{sourceSelection && <p role="status">Source evidence inspection shows live metadata and processing outputs, separately from the selected analysis snapshot.</p>}<EvidencePanels state={state} load={offset => { void store.load(offset); }} select={id => { void store.select(id); }} upload={store.upload} /></>;
+  return <>{sourceSelection && <p role="status">Source evidence inspection shows live metadata. Citation locators select their referenced processing output when available; other processing controls show live outputs.</p>}<EvidencePanels sourceFocus={sourceSelection?.id === state.detail?.id ? sourceSelection?.focus : undefined} state={state} load={offset => { void store.load(offset); }} select={id => { void store.select(id); }} upload={store.upload} /></>;
 }
 function Metadata({ item, detailed = false }: { item: Evidence; detailed?: boolean }) {
   return <>
@@ -30,18 +32,31 @@ function Metadata({ item, detailed = false }: { item: Evidence; detailed?: boole
     </details>}
   </>;
 }
-export function EvidencePanels({ state, load, select, upload }: {
-  state: EvidenceState; load: (offset: number) => void; select: (id: string) => void;
+export function EvidencePanels({ state, load, select, upload, sourceFocus }: {
+  sourceFocus?: SourceFocus; state: EvidenceState; load: (offset: number) => void; select: (id: string) => void;
   upload: (file: File | null, kind: string, label: string, acquiredAt: string) => Promise<boolean>;
 }) {
   const heading = useRef<HTMLHeadingElement>(null);
+  const addButton = useRef<HTMLButtonElement>(null);
   const error = useRef<HTMLParagraphElement>(null);
   useEffect(() => { if (state.uploadMessage) error.current?.focus(); }, [state.uploadMessage]);
   useEffect(() => { if (state.detailStatus === 'ready' || state.detailStatus === 'error') heading.current?.focus(); }, [state.detail, state.detailStatus]);
   const page = state.page;
+  const [query, setQuery] = useState('');
+  const [kind, setKind] = useState('all');
+  const [sort, setSort] = useState('newest');
+  const [intakeOpen, setIntakeOpen] = useState(false);
+  const visible = (page?.items ?? []).filter(item =>
+    (kind === 'all' || item.kind === kind) &&
+    `${item.source_label} ${item.filename} ${item.id} ${item.sha256}`.toLowerCase().includes(query.trim().toLowerCase())
+  ).sort((a, b) => sort === 'name' ? a.source_label.localeCompare(b.source_label) : sort === 'size' ? b.size_bytes - a.size_bytes : b.created_at.localeCompare(a.created_at));
   return <div className="evidence-workspace">
+    {state.uploaded && <p className="upload-confirmation" role="status">Evidence uploaded. The original file and integrity metadata have been saved.</p>}
     <section className="panel intake-panel" aria-labelledby="upload-heading">
-      <details className="intake-disclosure">
+      <details className="intake-disclosure" id="evidence-intake" open={intakeOpen} onToggle={event => {
+        setIntakeOpen(event.currentTarget.open);
+        if (!event.currentTarget.open && event.currentTarget.contains(document.activeElement)) addButton.current?.focus();
+      }}>
       <summary><h2 id="upload-heading">Upload evidence</h2><span>Add an original file to this case</span></summary>
       <p>Upload one original file. Intake stores its bytes and integrity metadata; content has not been verified.</p>
       <form className="upload-form" noValidate aria-busy={state.submitting} onSubmit={async event => {
@@ -49,12 +64,21 @@ export function EvidencePanels({ state, load, select, upload }: {
         const form = event.currentTarget;
         const data = new FormData(form);
         const file = (form.elements.namedItem('file') as HTMLInputElement).files?.[0] ?? null;
-        if (await upload(file, String(data.get('kind')), String(data.get('source_label') ?? ''), String(data.get('acquired_at') ?? ''))) form.reset();
+        if (await upload(file, String(data.get('kind')), String(data.get('source_label') ?? ''), String(data.get('acquired_at') ?? ''))) { form.reset(); setIntakeOpen(false); }
         else error.current?.focus();
       }}>
         <fieldset disabled={state.submitting}>
           <legend>Original file and source</legend>
-          <label htmlFor="evidence-file">File (required)</label><input id="evidence-file" name="file" type="file" required />
+          <label htmlFor="evidence-file">File (required)</label><input id="evidence-file" name="file" type="file" required onChange={event => {
+            const file = event.target.files?.[0];
+            const form = event.target.form;
+            if (!file || !form) return;
+            const label = form.elements.namedItem('source_label') as HTMLInputElement;
+            if (!label.value) label.value = file.name.slice(0, 200);
+            const kind = form.elements.namedItem('kind') as HTMLSelectElement;
+            const media = file.type.split('/')[0];
+            if (['image', 'audio', 'video'].includes(media ?? '')) kind.value = media!;
+          }} />
           <label htmlFor="evidence-kind">Kind (required)</label><select id="evidence-kind" name="kind" required defaultValue="document">
             {evidenceKinds.map(kind => <option key={kind} value={kind}>{kind}</option>)}
           </select>
@@ -70,16 +94,29 @@ export function EvidencePanels({ state, load, select, upload }: {
     </section>
     <div className="workspace-layout">
       <section className="panel" aria-labelledby="evidence-heading" aria-busy={state.status === 'loading'}>
-        <h2 id="evidence-heading">Case evidence</h2>
+        <div className="section-heading"><div><span className="section-label">SOURCE LIBRARY</span><h2 id="evidence-heading">Case evidence</h2></div><button ref={addButton} type="button" className="button-primary" aria-expanded={intakeOpen} aria-controls="evidence-intake" onClick={() => { setIntakeOpen(true); requestAnimationFrame(() => document.getElementById('evidence-file')?.focus()); }}>＋ Add evidence</button></div>
+        <p>Choose a source to inspect its original, process its contents, and verify observations.</p>
+        <div className="evidence-toolbar">
+          <label className="search-field">Search evidence<input type="search" placeholder="Filename, label, ID or hash…" value={query} onChange={event => setQuery(event.target.value)} /></label>
+          <label>Kind<select value={kind} onChange={event => setKind(event.target.value)}><option value="all">All kinds</option>{evidenceKinds.map(value => <option key={value} value={value}>{value.replaceAll('_', ' ')}</option>)}</select></label>
+          <label>Sort by<select value={sort} onChange={event => setSort(event.target.value)}><option value="newest">Newest first</option><option value="name">Source name</option><option value="size">Largest first</option></select></label>
+        </div>
+        <p className="filter-scope">Search, kind and sorting apply to this page.</p>
         {state.status === 'loading' && <p role="status">Loading evidence...</p>}
         {state.status === 'error' && <p role="alert">{state.message}</p>}
         {state.status === 'ready' && page && <>
           <p role="status">{page.total} evidence items. Showing {page.items.length} on this page.</p>
           {page.items.length === 0 && <p>{page.total === 0 ? 'No evidence uploaded yet for this case' : 'No evidence on this page. Return to the previous page or refresh.'}</p>}
-          <ul className="evidence-list">{page.items.map(item => <li className="evidence-card" key={item.id}>
-            <button type="button" onClick={() => select(item.id)} aria-pressed={state.detail?.id === item.id}>{item.source_label}</button>
-            <Metadata item={item} />
-          </li>)}</ul>
+          {page.items.length > 0 && visible.length === 0 && <div className="empty-state"><h3>No matching evidence</h3><p>Try another filename or kind, or check another page.</p><button onClick={() => { setQuery(''); setKind('all'); }}>Clear filters</button></div>}
+          {visible.length > 0 && <div className="evidence-table-scroll" role="region" aria-label="Evidence library" tabIndex={0}><table className="evidence-table">
+            <thead><tr><th scope="col">Source / filename</th><th scope="col">Kind</th><th scope="col">Size</th><th scope="col">Added</th></tr></thead>
+            <tbody>{visible.map(item => <tr key={item.id} className={state.detail?.id === item.id ? 'selected-row' : ''}>
+              <td><button className="source-button" type="button" onClick={() => select(item.id)} aria-pressed={state.detail?.id === item.id}>{item.source_label}</button><span className="source-filename">{item.filename}</span></td>
+              <td><span className="kind-badge">{item.kind.replaceAll('_', ' ')}</span></td>
+              <td className="size-cell">{formatFileSize(item.size_bytes)}</td>
+              <td><time dateTime={item.created_at}>{new Date(item.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' })}</time></td>
+            </tr>)}</tbody>
+          </table></div>}
           <nav className="pagination" aria-label="Evidence pages">
             <button onClick={() => load(Math.max(0, page.offset - page.limit))} disabled={page.offset === 0 || state.submitting}>Previous</button>
             <button onClick={() => load(page.offset + page.limit)} disabled={page.offset + page.limit >= page.total || state.submitting}>Next</button>
@@ -89,18 +126,18 @@ export function EvidencePanels({ state, load, select, upload }: {
       </section>
       <aside className="panel inspector" aria-labelledby="evidence-inspector" aria-busy={state.detailStatus === 'loading'}>
         <h2 id="evidence-inspector" ref={heading} tabIndex={-1}>Evidence metadata</h2>
-        {state.detailStatus === 'idle' && <p>Select evidence to inspect its metadata.</p>}
+        {state.detailStatus === 'idle' && <div className="inspector-empty"><span aria-hidden="true">↗</span><h3>Follow the source</h3><p>Select evidence to inspect its metadata.</p><p>Original file, integrity hash, processing controls and extracted observations appear here.</p></div>}
         {state.detailStatus === 'loading' && <p role="status">Loading evidence metadata...</p>}
         {state.detailStatus === 'error' && <p role="alert">{state.detailMessage} Select evidence again to retry.</p>}
         {state.detail && <><h3>{state.detail.source_label}</h3><Metadata item={state.detail} detailed /><OriginalDownload key={state.detail.id} item={state.detail} />
-          <EvidenceProcessingInspection key={`${state.detail.case_id}:${state.detail.id}`} item={state.detail} /></>}
+          <EvidenceProcessingInspection key={`${state.detail.case_id}:${state.detail.id}`} item={state.detail} sourceFocus={sourceFocus} /></>}
       </aside>
     </div>
   </div>;
 }
 
 /** Selection-keyed lifetime also discards the previous completion/pin on evidence switches. */
-export function EvidenceProcessingInspection({ item }: { item: Evidence }) {
+export function EvidenceProcessingInspection({ item, sourceFocus }: { item: Evidence; sourceFocus?: SourceFocus }) {
   const [completedRunId, setCompletedRunId] = useState<string>();
   const [transcriptRefreshKey, setTranscriptRefreshKey] = useState<string>();
   const [pinnedRunId, setPinnedRunId] = useState<string>();
@@ -112,9 +149,17 @@ export function EvidenceProcessingInspection({ item }: { item: Evidence }) {
     {completedRunId && <label><input type="checkbox" checked={pinnedRunId !== undefined} onChange={event => setPinnedRunId(event.target.checked ? completedRunId : undefined)} />
       Pin observations to completed run {pinnedRunId ?? completedRunId}
     </label>}
-    <ObservationInspector caseId={item.case_id} evidenceId={item.id}
+    {sourceFocus && <p className="source-focus">Citation locator: <strong>{sourceFocus.source_locator}</strong>{sourceFocus.observation_id && <span className="identifier"> · {sourceFocus.observation_id}</span>}</p>}
+    {(item.kind === 'image' || item.kind === 'video') && <MediaInspector item={item} processingRunId={pinnedRunId} refreshKey={completedRunId} focus={sourceFocus} />}
+    <ObservationInspector focus={sourceFocus} caseId={item.case_id} evidenceId={item.id}
       processingRunId={pinnedRunId} refreshKey={pinnedRunId ?? completedRunId} />
     {(item.kind === 'audio' || item.kind === 'video') && <TranscriptViewer item={item}
       refreshKey={transcriptRefreshKey} onDerivedRun={setCompletedRunId} />}
   </>;
+}
+
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }

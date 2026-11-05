@@ -29,6 +29,72 @@ tags:
   - name: Investigation
     description: Human decisions, case questions and audit trail.
 paths:
+  /api/v1/settings:
+    get:
+      operationId: getSettings
+      summary: Read current workstation settings
+      responses:
+        '200':
+          description: Current runtime settings
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Settings' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    put:
+      operationId: updateSettings
+      summary: Update runtime settings without restarting the workstation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SettingsUpdate' }
+      responses:
+        '200':
+          description: Updated runtime settings; omitted fields are unchanged
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Settings' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /api/v1/settings/models:
+    post:
+      operationId: listProviderModels
+      summary: Test an Ollama or OpenAI-compatible endpoint and fetch models without saving settings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                qa_provider: { type: string, enum: [ollama, openai] }
+                qa_url: { type: string, format: uri }
+                openai_base_url: { type: string, format: uri }
+                openai_api_key:
+                  type: [string, 'null']
+                  writeOnly: true
+                  description: Omitted or empty keys use the saved backend key.
+      responses:
+        '200':
+          description: Connection succeeded
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [models]
+                properties:
+                  models:
+                    type: array
+                    items: { type: string }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '502':
+          description: Provider is unavailable or returned an invalid model list
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiError' }
   /api/v1/cases:
     post:
       tags: [Cases]
@@ -721,6 +787,32 @@ components:
         application/json:
           schema: { $ref: '#/components/schemas/ApiError' }
   schemas:
+    Settings:
+      type: object
+      additionalProperties: false
+      required: [qa_provider, qa_model, qa_url, openai_base_url, has_openai_key, detection_threshold, show_provenance_rays]
+      properties:
+        qa_provider: { type: string, enum: [ollama, openai], default: ollama }
+        openai_base_url: { type: string, format: uri, default: 'https://api.openai.com/v1' }
+        has_openai_key: { type: boolean, readOnly: true }
+        qa_model: { type: string, minLength: 1, maxLength: 200, default: 'deepseek-r1:8b' }
+        qa_url: { type: string, format: uri, default: 'http://127.0.0.1:11434' }
+        detection_threshold: { type: number, minimum: 0.1, maximum: 1.0, default: 0.7 }
+        show_provenance_rays: { type: boolean, default: true }
+    SettingsUpdate:
+      type: object
+      additionalProperties: false
+      properties:
+        qa_provider: { type: string, enum: [ollama, openai] }
+        openai_base_url: { type: string, format: uri }
+        openai_api_key:
+          type: [string, 'null']
+          writeOnly: true
+          description: A non-empty key replaces the saved backend key; omitted, null or empty keys retain it.
+        qa_model: { type: string, minLength: 1, maxLength: 200 }
+        qa_url: { type: string, format: uri }
+        detection_threshold: { type: number, minimum: 0.1, maximum: 1.0 }
+        show_provenance_rays: { type: boolean }
     ApiError:
       type: object
       additionalProperties: false
@@ -864,6 +956,8 @@ components:
         normalized_value: { type: string }
         observed_at_raw: { type: string }
         observed_at_utc: { type: string, format: date-time }
+        detector_weight: { type: number }
+        detector: { type: string }
         extraction_confidence: { type: number, minimum: 0, maximum: 1 }
         entity_key: { type: string, description: 'Candidate identifier, NOT a verified identity' }
         source_observation_id:
@@ -985,8 +1079,9 @@ components:
         confidence: { type: number, minimum: 0, maximum: 1 }
     GraphNode:
       description: >-
-        id equals its source Evidence, Entity or Event UUID within the case;
-        kind declares that record category. Reuse identity across analysis
+        id equals its source Evidence, Entity or Event UUID, or a deterministic
+        source-row UUID for derived GPS locations. kind and entity_type describe
+        the forensic category; camera represents media, not verified hardware. Reuse identity across analysis
         versions but partition storage by case_id and analysis_run_id.
       type: object
       additionalProperties: false
@@ -996,6 +1091,8 @@ components:
         case_id: { type: string, format: uuid }
         kind: { type: string }
         label: { type: string }
+        entity_type: { type: string }
+        properties: { type: object, additionalProperties: true }
         evidence_ids:
           type: array
           minItems: 1
@@ -1011,6 +1108,7 @@ components:
         from_id: { type: string, format: uuid }
         to_id: { type: string, format: uuid }
         kind: { type: string }
+        label: { type: string }
         evidence_ids:
           type: array
           minItems: 1

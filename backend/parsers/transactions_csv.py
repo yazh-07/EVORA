@@ -5,7 +5,7 @@ from uuid import UUID
 
 from backend.parsers.network_csv import MAX_SOURCE_BYTES, MAX_DATA_ROWS, NetworkCSVError, _records
 
-PARSER_VERSION = 'transactions-csv/1'
+PARSER_VERSION = 'transactions-csv/2'
 HEADER = ('timestamp', 'account_id', 'amount', 'currency')
 MAX_AMOUNT_CHARS = 128
 _AMOUNT = re.compile(r'-?[0-9]+(?:\.[0-9]+)?')
@@ -52,6 +52,7 @@ class TransactionRow:
     currency: str
     start_line: int
     end_line: int
+    recipient: str | None = None
 
 
 def parse_transactions_csv(source: bytes, *, case_id: UUID, evidence_id: UUID,
@@ -71,18 +72,19 @@ def parse_transactions_csv(source: bytes, *, case_id: UUID, evidence_id: UUID,
         raise TransactionCSVError('MALFORMED_CSV')
     rows = []
     try:
-        records = iter(_records(text))
+        records = iter(_records(text, max_columns=5))
         first = next(records, None)
-        if first is None or first[0] != HEADER:
+        if first is None or first[0] not in (HEADER, HEADER + ('recipient_account_id',)):
             raise TransactionCSVError('INVALID_HEADER', 1)
         for count, (values, start, end) in enumerate(records, 1):
             if count > MAX_DATA_ROWS:
                 raise TransactionCSVError('ROW_LIMIT', start)
-            if len(values) != len(HEADER) or any(not value.strip() for value in values):
+            if len(values) != len(first[0]) or any(not value.strip() for value in values):
                 raise TransactionCSVError('INVALID_ROW', start)
             normalize_amount(values[2])
             validate_currency(values[3])
-            rows.append(TransactionRow(case_id, evidence_id, processing_run_id, *values, start, end))
+            rows.append(TransactionRow(case_id, evidence_id, processing_run_id, *values[:4], start, end,
+                                       values[4] if len(values) == 5 else None))
     except NetworkCSVError as error:
         raise TransactionCSVError(error.code, error.line) from None
     return tuple(rows)

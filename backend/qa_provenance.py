@@ -9,7 +9,7 @@ import json
 from uuid import UUID, uuid4, uuid5
 
 
-PROMPT_TEMPLATE_VERSION = "rag-grounded-qa/1"
+PROMPT_TEMPLATE_VERSION = "forensic-case-synthesis/2"
 MODEL_VERSION = "deterministic-extractor/1"
 
 
@@ -39,9 +39,10 @@ def record_qa_provenance(connection, *, case_id: str, actor_id: str,
                          retrieval_version: str, question: str, answer: str,
                          citations: list[dict], supported: bool, created_at: str,
                          model_version: str | None = MODEL_VERSION,
-                         prompt_template_version: str | None = PROMPT_TEMPLATE_VERSION) -> str:
+                         prompt_template_version: str | None = PROMPT_TEMPLATE_VERSION,
+                         context: dict | None = None, verification: dict | None = None) -> str:
     question_hash = hashlib.sha256(question.encode('utf-8')).hexdigest()
-    provenance_id = str(uuid5(UUID(case_id), question_hash + ":" + retrieval_version))
+    provenance_id = str(uuid4())
     payload = {
         "provenance_id": provenance_id,
         "case_id": case_id,
@@ -55,8 +56,13 @@ def record_qa_provenance(connection, *, case_id: str, actor_id: str,
         "created_at": created_at,
         "answer": answer,
     }
+    if context is not None:
+        payload['context'] = context
+        payload['context_sha256'] = hashlib.sha256(_json(context).encode()).hexdigest()
+    if verification is not None:
+        payload['verification'] = verification
     connection.execute("""
-      INSERT OR REPLACE INTO qa_provenance (
+      INSERT INTO qa_provenance (
         id, case_id, actor_id, retrieval_version, model_version,
         prompt_template_version, question_sha256, supported,
         citations_json, payload_json, created_at

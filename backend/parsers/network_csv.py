@@ -48,7 +48,7 @@ class NetworkObservation:
                 "extraction_confidence": self.extraction_confidence}
 
 
-def _records(text: str):
+def _records(text: str, max_columns: int = 4):
     """Yield logical values and original 1-based physical record line spans."""
     fields, parts = [], []
     quoted = closed = False
@@ -81,7 +81,7 @@ def _records(text: str):
             index += len(ending)
         elif char == "," and not quoted:
             fields.append("".join(parts))
-            if len(fields) >= len(HEADER):
+            if len(fields) >= max_columns:
                 raise NetworkCSVError("INVALID_HEADER" if start == 1 else "INVALID_ROW", start)
             parts, closed = [], False
             index += 1

@@ -1,3 +1,4 @@
+import type { SourceFocus } from './mediaLocators';
 export { createTranscriptController } from './transcriptController';
 export { TranscriptViewer, TranscriptPanel } from './TranscriptViewer';
 export { EvidenceProcessingInspection } from './EvidenceWorkspace';
@@ -117,14 +118,16 @@ export function CaseWorkspace({ caseNavigation = 0 }: { caseNavigation?: number 
 }
 
 export function CaseEvidenceWorkspace({ caseId }: { caseId: string }) {
-  const [selection, setSelection] = useState<{ id: string }>();
+  const [selection, setSelection] = useState<{ id: string; focus?: SourceFocus }>();
   const [activeTab, setActiveTab] = useState<InvestigationTab>('evidence');
-  const inspectEvidence = (id: string) => {
-    setSelection({ id });
+  const inspectEvidence = (id: string, focus?: SourceFocus) => {
+    setSelection({ id, focus });
     setActiveTab('evidence');
   };
-  return <>
+  return <div className="investigation-layout">
     <InvestigationTabs activeTab={activeTab} onSelect={setActiveTab} />
+    <div className="investigation-content">
+    <div className="workflow-guide"><strong>Your investigation workflow</strong><span>01 Add evidence</span><span>02 Process each source</span><span>03 Start analysis</span><span>04 Review and verify</span></div>
     {/* Keep every panel mounted: source context, pagination and test contracts survive tab changes. */}
     <div id="panel-evidence" role="tabpanel" aria-labelledby="tab-evidence" tabIndex={0} style={{ display: activeTab === 'evidence' ? 'block' : 'none' }}>
       <EvidenceWorkspace caseId={caseId} sourceSelection={selection} />
@@ -147,30 +150,34 @@ export function CaseEvidenceWorkspace({ caseId }: { caseId: string }) {
     <div id="panel-questions" role="tabpanel" aria-labelledby="tab-questions" tabIndex={0} style={{ display: activeTab === 'questions' ? 'block' : 'none' }}>
       <QuestionAnswer key={caseId} caseId={caseId} inspectEvidence={inspectEvidence} />
     </div>
-  </>;
+    </div>
+  </div>;
 }
 
 export function CasePanels({ state, load, select }: { state: CaseState; load: (offset: number) => void; select: (id: string) => void }) {
   const page = state.page;
+  const [query, setQuery] = useState('');
+  const visibleCases = page?.items.filter(item => `${item.title} ${item.id}`.toLowerCase().includes(query.toLowerCase().trim())) ?? [];
   const detailHeading = useRef<HTMLHeadingElement>(null);
   useEffect(() => {
     if (state.detailStatus === 'ready' || state.detailStatus === 'error') detailHeading.current?.focus();
   }, [state.detailStatus, state.detail]);
   return <div className={`workspace-layout case-browser ${state.detailStatus === 'idle' ? 'case-browser-idle' : ''}`}>
     <section className="panel" aria-labelledby="cases-heading" aria-busy={state.status === 'loading'}>
-      <h2 id="cases-heading" tabIndex={-1}>Your cases</h2>
+      <div className="section-heading"><div><span className="section-label">INVESTIGATIONS</span><h2 id="cases-heading" tabIndex={-1}>Your cases</h2></div><label className="search-field">Find a case<input type="search" placeholder="Search this page…" value={query} onChange={event => setQuery(event.target.value)} /></label></div>
       {state.status === 'signed-out' && <p>Enter an access token to load your cases.</p>}
       {state.status === 'loading' && <p role="status">Loading cases...</p>}
       {state.status === 'error' && <><p role="alert">{state.message}</p><button onClick={() => load(0)}>Try again</button></>}
       {state.status === 'ready' && page && <>
         <p role="status">{page.total} accessible cases. {page.items.length ? `Showing ${page.offset + 1}-${page.offset + page.items.length}.` : 'Showing 0 cases on this page.'}</p>
         {page.items.length === 0 ? <p>{page.total === 0 ? 'No cases are available to this account.' : 'No cases on this page. Return to the first page or refresh.'}</p> :
-          <ul className="case-list">{page.items.map(item => <li key={item.id}>
+          <ul className="case-list">{visibleCases.map(item => <li key={item.id}>
             <button onClick={() => select(item.id)} aria-pressed={state.detail?.id === item.id}>{item.title}</button>
             <p className="identifier case-record-id">{item.id}</p>
             <p className="case-created">Created <time dateTime={item.created_at}>{new Date(item.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' })}</time></p>
             <button className="case-open" onClick={() => select(item.id)} aria-label={`Open case ${item.title}`}>Open case <span aria-hidden="true">→</span></button>
           </li>)}</ul>}
+        {query && <p role="status">{visibleCases.length} matching cases on this page.</p>}
         <nav className="pagination" aria-label="Case pages">
           <button onClick={() => load(Math.max(0, page.offset - page.limit))} disabled={page.offset === 0}>Previous</button>
           <button onClick={() => load(page.offset + page.limit)} disabled={page.offset + page.limit >= page.total}>Next</button>
@@ -207,12 +214,12 @@ export function CaseCreation({ state, create }: { state: CaseState; create: (tit
       else titleInput.current?.focus();
     }}>
       <label htmlFor="case-title">Title (required)</label>
-      <input ref={titleInput} id="case-title" name="title" required value={title}
+      <input ref={titleInput} id="case-title" name="title" required placeholder="e.g. November network review" value={title}
         disabled={busy} aria-invalid={state.createStatus === 'error'} aria-describedby={state.createMessage ? 'create-error' : undefined}
         onChange={event => setTitle(event.target.value)} />
       <p>Title: 1 to 200 characters. Description: up to 5000 characters.</p>
       <label htmlFor="case-description">Description (optional)</label>
-      <textarea id="case-description" name="description" value={description} disabled={busy}
+      <textarea id="case-description" name="description" placeholder="What are you investigating? Add context for your review." value={description} disabled={busy}
         onChange={event => setDescription(event.target.value)} />
       {state.createMessage && <p id="create-error" role="alert">{state.createMessage}</p>}
       <button type="submit" disabled={busy}>{busy ? 'Creating case...' : 'Create case'}</button>

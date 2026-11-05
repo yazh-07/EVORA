@@ -1,23 +1,24 @@
+import type { SourceFocus } from './mediaLocators';
 import { useEffect, useMemo, useSyncExternalStore } from 'react';
 import { useApiClient } from '../api/ApiProvider';
 import { createObservationController } from './observationController';
 import type { ObservationState } from './observationController';
 import { ReliabilityInspector } from './ReliabilityInspector';
 
-export function ObservationInspector({ caseId, evidenceId, processingRunId, refreshKey }: {
-  caseId: string; evidenceId: string; processingRunId?: string; refreshKey?: string;
+export function ObservationInspector({ caseId, evidenceId, processingRunId, refreshKey, focus }: {
+  caseId: string; evidenceId: string; processingRunId?: string; refreshKey?: string; focus?: SourceFocus;
 }) {
   const client = useApiClient();
-  const controller = useMemo(() => createObservationController(client, caseId, evidenceId, processingRunId),
-    [client, caseId, evidenceId, processingRunId, refreshKey]);
+  const controller = useMemo(() => createObservationController(client, caseId, evidenceId, processingRunId, focus),
+    [client, caseId, evidenceId, processingRunId, refreshKey, focus]);
   const state = useSyncExternalStore(controller.subscribe, controller.getSnapshot, controller.getSnapshot);
   useEffect(() => { controller.start(); return () => controller.dispose(); }, [controller]);
-  return <ObservationPanel state={state} load={controller.load} processingRunId={processingRunId} evidenceId={evidenceId} />;
+  return <ObservationPanel state={state} load={controller.load} processingRunId={focus ? state.page?.items[0]?.processing_run_id : processingRunId} evidenceId={evidenceId} focus={focus} />;
 }
 
-export function ObservationPanel({ state, load, processingRunId, evidenceId }: {
+export function ObservationPanel({ state, load, processingRunId, evidenceId, focus }: {
   state: ObservationState; load: (offset?: number) => Promise<void>; processingRunId?: string;
-  evidenceId?: string;
+  evidenceId?: string; focus?: SourceFocus;
 }) {
   const page = state.page;
   return <section aria-label="Extracted observations" aria-busy={state.status === 'loading'}>
@@ -35,7 +36,7 @@ export function ObservationPanel({ state, load, processingRunId, evidenceId }: {
         <div role="region" aria-label="Observation table" tabIndex={0} style={{ overflowX: 'auto' }}>
           <table><caption>Extracted source values</caption><thead><tr>
             {['Kind', 'Source locator', 'Raw value', 'Normalized value', 'Observed time (raw)', 'Observed time (UTC)', 'Extraction confidence', 'Processing run'].map(label => <th key={label} scope="col">{label}</th>)}
-          </tr></thead><tbody>{page.items.map(item => <tr key={item.id}>
+          </tr></thead><tbody>{page.items.map(item => <tr key={item.id} className={focus && (focus.observation_id === item.id || focus.source_locator === item.source_locator) ? 'source-highlight' : undefined}>
             <td>{item.kind}</td><td className="identifier">{item.source_locator}</td>
             <td style={{ whiteSpace: 'pre-wrap' }}>{item.raw_value}</td><td style={{ whiteSpace: 'pre-wrap' }}>{item.normalized_value}</td>
             <td>{item.observed_at_raw ?? 'Not provided'}</td><td>{item.observed_at_utc ?? 'Not provided'}</td>

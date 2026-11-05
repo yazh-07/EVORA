@@ -18,6 +18,7 @@ test('workspace offers session-only case access with landmarks and no fabricated
   assert.match(html, /Enter an access token to load your cases/);
   assert.match(html, /Case details/);
   assert.doesNotMatch(html, /SYSTEM ONLINE|Synthetic case|Create case|Upload/);
+  assert.match(html, /aria-haspopup="dialog">⚙️ Settings/);
   assert.equal(calls, 0);
 });
 

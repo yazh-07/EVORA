@@ -1,3 +1,4 @@
+import { CaseMetrics } from './CaseMetrics';
 import { createContext, useContext, useEffect, useMemo, useRef, useSyncExternalStore } from 'react';
 import type { ReactNode } from 'react';
 import { useApiClient } from '../api/ApiProvider';
@@ -36,6 +37,7 @@ export function CaseAnalysisWorkspace({ caseId, children, caseDetails, onBack }:
         <StartAnalysis state={state} submit={controller.submit} />
       </section>
     </header>
+    {caseDetails && <CaseMetrics />}
     {children}
   </AnalysisContext.Provider>;
 }

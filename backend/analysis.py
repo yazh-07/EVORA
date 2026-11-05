@@ -24,7 +24,7 @@ from backend.detectors import (DETECTOR_VERSION, detect_corroboration_findings,
 from backend.evidence import invalid_input
 from backend.graph_db import Neo4jGraphDatabase
 from backend.graph_nodes import build_graph_nodes
-from backend.graph_links import RULE, CO_MENTION_RULE, derive_candidate_links
+from backend.graph_links import RULE, CO_MENTION_RULE, derive_candidate_links, derive_semantic_links
 from backend.graph_projection import initialize_graph_projection, project_analysis_run
 from backend.observations import _utc_order
 from backend.triage.aggregation import aggregate_triage_result
@@ -34,7 +34,7 @@ from backend.triage.factors import (calculate_relevance_factor, calculate_connec
 from backend.triage.policy import POLICY_VERSION
 
 router = APIRouter()
-ALGORITHM_VERSION = f'evora-analysis/2;{RULE};{CO_MENTION_RULE};{POLICY_VERSION};{DETECTOR_VERSION}'
+ALGORITHM_VERSION = f'evora-analysis/3;source_semantic_relations/1;{RULE};{CO_MENTION_RULE};{POLICY_VERSION};{DETECTOR_VERSION}'
 
 
 class AnalysisInputSnapshot(TypedDict):
@@ -129,14 +129,19 @@ def _outputs(connection, run):
         observations.extend(json.loads(row['observations_json']))
         entities.extend(json.loads(row['entities_json']))
         events.extend(json.loads(row['events_json']))
-    nodes = build_graph_nodes(case, evidence, entities, events)
+    nodes = build_graph_nodes(case, evidence, entities, events, observations)
     edges, findings = derive_candidate_links(case, run_id, entities, observations)
+    edges.extend(derive_semantic_links(case, run_id, evidence, entities, observations))
+    edges.sort(key=lambda edge: edge.id)
     conflicts = detect_conflict_findings(case, run_id, observations, entities, events)
     gaps = detect_gap_findings(case, run_id, observations, evidence)
     findings.extend(detect_corroboration_findings(case, run_id, observations, entities, events, evidence))
     findings.extend(conflicts)
     findings.extend(gaps)
-    findings.extend(detect_cluster_findings(case, run_id, nodes, edges))
+    entity_ids = {entity["id"] for entity in entities}
+    findings.extend(detect_cluster_findings(case, run_id,
+        [node for node in nodes if node.id in entity_ids],
+        [edge for edge in edges if edge.from_id in entity_ids and edge.to_id in entity_ids]))
     findings.extend(detect_anomaly_findings(case, run_id, observations, evidence))
     findings.extend(detect_hypothesis_findings(case, run_id, observations, findings))
     findings.sort(key=lambda item: item.id)

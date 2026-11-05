@@ -1,0 +1,24 @@
+.media-inspector { margin-block: 20px; padding-block: 20px; border-block: 1px solid var(--color-border); }
+.media-inspector > p { color: var(--color-secondary); font-size: .75rem; }
+.media-inspector > button { margin-top: 12px; }
+.media-stage { position: relative; width: 100%; background: #080d14; isolation: isolate; margin-top: 16px; }
+.media-stage img, .media-stage video { display: block; width: 100%; height: 100%; }
+.media-stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.media-stage .media-box-hit { position: absolute; min-height: 0; min-width: 0; padding: 0; border: 0; border-radius: 0; background: transparent; cursor: crosshair; }
+.media-stage .media-box-hit:focus-visible { outline: 3px solid white; outline-offset: -3px; }
+.media-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding-block: 12px; font-size: .75rem; }
+.media-toolbar label { display: flex; gap: 8px; align-items: center; }
+.media-detection-list { display: grid; gap: 6px; max-height: 190px; overflow-y: auto; }
+.media-detection-list button { display: flex; flex-wrap: wrap; justify-content: space-between; text-align: left; font-size: .7rem; gap: 8px; }
+.media-detection-list button[aria-pressed="true"] { border-color: var(--color-accent); }
+.media-observation-details { padding: 12px; margin-top: 12px; background: var(--color-neutral); border-left: 2px solid var(--color-accent); }
+.media-observation-details dl { font-size: .75rem; overflow-wrap: anywhere; }
+.media-observation-details dd { margin: 4px 0 12px; }
+.media-playback { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; background: var(--color-neutral); padding: 10px; }
+.media-playback label { flex: 1; min-width: 100px; font-size: .7rem; }
+.media-playback input { width: 100%; accent-color: var(--color-accent); }
+.media-playback output { font-size: .7rem; font-variant-numeric: tabular-nums; }
+.evidence-workspace:has(.media-expanded) .workspace-layout { grid-template-columns: minmax(0, 1fr); }
+.evidence-workspace:has(.media-expanded) .inspector { position: static; max-height: none; overflow: visible; }
+.media-expanded .media-viewer { max-width: 1100px; margin-inline: auto; }
+.media-stage img { image-orientation: none; height: auto; }

@@ -51,7 +51,7 @@ export function createEvidenceStore(client: ApiClient, caseId: string) {
     load,
     start() { disposed = false; return load(); },
     async select(evidenceId: string) {
-      if (!active() || !state.page?.items.some(item => item.id === evidenceId)) return;
+      if (!active() || !/^[0-9a-f-]{36}$/i.test(evidenceId)) return;
       detailRequest?.abort();
       const request = detailRequest = new AbortController();
       publish({ ...state, detail: null, detailStatus: 'loading', detailMessage: '' });

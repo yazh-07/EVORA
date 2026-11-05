@@ -29,6 +29,7 @@ class QuestionTests(unittest.IsolatedAsyncioTestCase):
                 "questions-one": "investigator-1", "questions-two": "investigator-2",
             }))
         await self.enterAsyncContext(self.app.router.lifespan_context(self.app))
+        self.app.state.qa_model = ""  # Explicit offline extraction mode for retrieval contract tests.
         self.client = await self.enterAsyncContext(AsyncClient(
             transport=ASGITransport(self.app), base_url="http://test",
             headers={"Authorization": "Bearer questions-one"},
@@ -86,7 +87,7 @@ class QuestionTests(unittest.IsolatedAsyncioTestCase):
         self.validate("CaseAnswer", body)
         self.assertEqual(body["question"], question)
         self.assertEqual(body["case_id"], case or self.case)
-        self.assertEqual(body["retrieval_version"], "deterministic-grounded-retrieval/1")
+        self.assertEqual(body["retrieval_version"], "case-context-retrieval/2")
         return body
 
     def assert_supported(self, body, expected):
@@ -114,7 +115,7 @@ class QuestionTests(unittest.IsolatedAsyncioTestCase):
         path = "/api/v1/cases/{caseId}/questions"
         self.assertEqual(self.bundle["paths"][path]["post"]["operationId"], "askCaseQuestion")
         self.assertEqual(self.app.openapi()["paths"][path]["post"]["operationId"], "askCaseQuestion")
-        self.assertEqual(RETRIEVAL_VERSION, "deterministic-grounded-retrieval/1")
+        self.assertEqual(RETRIEVAL_VERSION, "case-context-retrieval/2")
 
     async def test_supported_identifier_casefold_and_exact_source_citations(self):
         observations = self.stored_observations()
@@ -176,7 +177,9 @@ class QuestionTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_same_snapshot_question_is_deterministic(self):
         first = await self.ask("203.0.113")
-        self.assertEqual(first, await self.ask("203.0.113"))
+        second = await self.ask("203.0.113")
+        self.assertNotEqual(first.pop("provenance_id"), second.pop("provenance_id"))
+        self.assertEqual(first, second)
         self.assertEqual(len(self.inquiries()), 2)
 
     async def test_supported_and_unsupported_audit_events_are_readable_and_do_not_store_question(self):
@@ -304,7 +307,9 @@ class QuestionTests(unittest.IsolatedAsyncioTestCase):
                 (running["id"], self.case, self.network["id"], json.dumps(partial), "[]", "[]", "[]"))
         with patch("backend.processing.publish_outputs", side_effect=RuntimeError("Synthetic failure")):
             await self.process(self.network)
-        self.assertEqual(await self.ask("D-7"), before)
+        after = await self.ask("D-7")
+        self.assertEqual({k: v for k, v in after.items() if k != "provenance_id"},
+                         {k: v for k, v in before.items() if k != "provenance_id"})
 
     async def test_retrieval_searches_beyond_first_observation_page(self):
         rows = b"timestamp,device_id,ip_address,event\n" + b"".join(

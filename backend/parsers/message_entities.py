@@ -5,7 +5,7 @@ from backend.parsers.messages_csv import MessageRow, DeviceMention, device_menti
 from backend.parsers.normalization import NormalizedObservation, NormalizationResult, normalize_timestamp
 from backend.parsers.candidate_entities import CandidateObservation, CandidateEntity, CandidateProjection
 
-PROJECTOR_VERSION = 'message-candidates/1'
+PROJECTOR_VERSION = 'message-candidates/2'
 
 
 class MessageProjectionError(ValueError):
@@ -54,7 +54,17 @@ def project_message_entities(rows, *, case_id: UUID):
             observations.append(NormalizationResult(source, time, 'not_applicable'))
             return source
         observation('message.id', row.message_id, location + ', message_id')
-        observation('message.sender', row.sender, location + ', sender')
+        if row.recipient is None:
+            observation('message.sender', row.sender, location + ', sender')
+        else:
+            if not isinstance(row.recipient, str) or not row.recipient.strip():
+                raise MessageProjectionError('INVALID_SOURCE')
+            for role, value in (('sender', row.sender), ('recipient', row.recipient)):
+                # Explicit exported communication endpoint, not an inferred body mention.
+                source = observation('message.' + role, value, location + ', ' + role, 'device:' + value)
+                group = groups.setdefault(value, (set(), set()))
+                group[0].add(row.evidence_id)
+                group[1].add(source.id)
         body = observation('message.body', row.body, location + ', body')
         for mention in row.mentions:
             key = 'device:' + mention.text

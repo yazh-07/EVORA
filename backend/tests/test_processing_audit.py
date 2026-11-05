@@ -316,7 +316,7 @@ class ProcessingAuditTests(unittest.IsolatedAsyncioTestCase):
             self.assertNotIn(value, public)
 
     async def test_pre_intake_adapter_rejection_produces_no_processing_event(self):
-        evidence = await self.upload(kind='image')
+        evidence = await self.upload(kind='audio')
         response = await self.client.post(self.base(self.case, evidence['id']),
                                           headers={'Idempotency-Key': 'unsupported'})
         self.assertEqual(response.status_code, 415)

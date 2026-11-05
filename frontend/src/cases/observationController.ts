@@ -1,3 +1,5 @@
+import { resolveSourceObservations } from './sourceObservations';
+import type { SourceFocus } from './mediaLocators';
 import { ApiClientError, ApiHttpError } from '../api/client';
 import type { ApiClient } from '../api/client';
 import type { components } from '../api/schema';
@@ -10,10 +12,11 @@ export type ObservationState = {
 };
 
 /** One evidence/optional historical output per controller; no persistent cache or timers. */
-export function createObservationController(client: ApiClient, caseId: string, evidenceId: string, processingRunId?: string) {
+export function createObservationController(client: ApiClient, caseId: string, evidenceId: string, processingRunId?: string, focus?: SourceFocus) {
   let state: ObservationState = { status: 'idle', page: null, message: '' };
   let enabled = false;
   let offset = 0;
+  let focusResolved = !focus;
   let session = client.getSessionVersion();
   let pending: AbortController | undefined;
   let unsubscribe: (() => void) | undefined;
@@ -27,6 +30,15 @@ export function createObservationController(client: ApiClient, caseId: string, e
     const current = () => enabled && pending === request && !request.signal.aborted && session === client.getSessionVersion();
     publish({ status: 'loading', page: null, message: '' });
     try {
+      if (!focusResolved && focus) {
+        const items = await resolveSourceObservations(client, caseId, evidenceId, request.signal, processingRunId, focus);
+        if (!current()) return;
+        const index = items.findIndex(item => focus.observation_id ? item.id === focus.observation_id : item.source_locator === focus.source_locator);
+        if (index < 0) throw Error('Source locator unavailable');
+        processingRunId = items[index]!.processing_run_id;
+        offset = nextOffset = Math.floor(index / 20) * 20;
+        focusResolved = true;
+      }
       const page = await client.request('get', '/api/v1/cases/{caseId}/observations', {
         path: { caseId }, query: { evidence_id: evidenceId, processing_run_id: processingRunId, limit: 20, offset },
         signal: request.signal,
@@ -52,6 +64,7 @@ export function createObservationController(client: ApiClient, caseId: string, e
         error instanceof ApiHttpError && error.status === 404 ? 'Evidence or completed processing run unavailable or no longer accessible.' :
         error instanceof ApiHttpError && error.status === 400 ? 'Observation request was rejected. Refresh the evidence selection and retry.' :
         error instanceof ApiClientError && error.kind === 'authentication' ? 'Authentication required. Open a session again before retrying.' :
+        focus && !focusResolved ? 'The cited source observation is unavailable. Retry the request or inspect the original file.' :
         'Could not load observations. Retry the request.',
       });
     } finally { if (pending === request) pending = undefined; }

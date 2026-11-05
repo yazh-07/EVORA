@@ -127,7 +127,7 @@ class DispatchTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(self.rows('processing_provenance'), [])
 
     async def test_every_other_declared_kind_415_before_run_key_or_output_creation(self):
-        for kind in ('image', 'video', 'audio'):
+        for kind in ('audio',):
             evidence = await self.upload(kind, filename='network.csv')
             response = await self.start('reusable-key', self.base(self.case, evidence['id']))
             self.assertEqual(response.status_code, 415)
@@ -265,7 +265,7 @@ class DispatchTests(unittest.IsolatedAsyncioTestCase):
 
 class AdapterRegistryTests(unittest.TestCase):
     def test_registry_and_descriptors_are_immutable_and_use_real_parser_metadata(self):
-        self.assertEqual(set(ADAPTERS), {'network_log', 'gps', 'message', 'document', 'mobile_log', 'transaction'})
+        self.assertEqual(set(ADAPTERS), {'network_log', 'gps', 'message', 'document', 'mobile_log', 'transaction', 'image', 'video'})
         for kind, module in [('network_log', network_csv), ('gps', gps_csv), ('message', messages_csv), ('mobile_log', mobile_csv), ('transaction', transactions_csv)]:
             adapter = adapter_for(kind)
             parser_name = {'network_log': 'parse_network_csv', 'gps': 'parse_gps_csv', 'message': 'parse_messages_csv', 'mobile_log': 'parse_mobile_csv', 'transaction': 'parse_transactions_csv'}[kind]
@@ -281,7 +281,7 @@ class AdapterRegistryTests(unittest.TestCase):
                          (text_document.PARSER_VERSION, text_document.MAX_SOURCE_BYTES, text_document.MAX_SOURCE_LINES))
         self.assertIsNone(document.max_data_rows)
         with self.assertRaises(FrozenInstanceError): document.max_source_lines = 1
-        for kind in ('image', 'GPS', 'network.csv', ''): self.assertIsNone(adapter_for(kind))
+        for kind in ('audio', 'GPS', 'network.csv', ''): self.assertIsNone(adapter_for(kind))
 
 
 
@@ -342,7 +342,7 @@ class DispatchLoopbackTests(unittest.TestCase):
                                 self.assertEqual(len(payload['outputs']['observation_ids']), 6 if kind == 'network_log' else 3)
                         self.assertNotIn('output_sha256', run)
                         self.assertEqual(client.get(f'/api/v1/cases/{case}/processing-provenance').status_code, 404)
-                    evidence = client.post(f'/api/v1/cases/{case}/evidence', data={'kind': 'image', 'source_label': 'Synthetic unsupported'},
+                    evidence = client.post(f'/api/v1/cases/{case}/evidence', data={'kind': 'audio', 'source_label': 'Synthetic unsupported'},
                         files={'file': ('network.csv', (ROOT/'fixtures/synthetic-case/network.csv').read_bytes(), 'text/csv')}).json()
                     unsupported_url = f"/api/v1/cases/{case}/evidence/{evidence['id']}/processing-runs"
                     self.assertEqual(client.post(unsupported_url, headers={'Idempotency-Key': str(uuid4())}).status_code, 415)

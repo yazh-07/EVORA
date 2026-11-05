@@ -31,6 +31,7 @@ class QAProvenanceAndAuditTests(unittest.IsolatedAsyncioTestCase):
             })
         )
         await self.enterAsyncContext(self.app.router.lifespan_context(self.app))
+        self.app.state.qa_model = ""  # Explicit offline extraction mode for retrieval contract tests.
         self.client = await self.enterAsyncContext(AsyncClient(
             transport=ASGITransport(self.app), base_url="http://test",
             headers={"Authorization": "Bearer qa-investigator"}

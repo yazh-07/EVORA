@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { CaseWorkspace, SessionStatus } from './cases/CaseWorkspace';
+import { SettingsModal } from './settings/SettingsModal';
 
 export function ThemeToggle() {
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
@@ -27,13 +28,14 @@ export function ThemeToggle() {
       aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
       title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
     >
-      {theme === 'dark' ? '☀️ Light' : '🌙 Dark'}
+      {theme === 'dark' ? 'Light mode' : 'Dark mode'}
     </button>
   );
 }
 
 export function App() {
   const [caseNavigation, setCaseNavigation] = useState(0);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   return (
     <>
       <a className="skip-link" href="#workspace">Skip to workspace</a>
@@ -46,12 +48,13 @@ export function App() {
             </svg>
             EVORA
           </a>
-          <span className="platform-name">Forensic Investigation Platform</span>
+          <span className="platform-name">Investigation workspace</span>
           <nav className="navigation" aria-label="Workspace">
             <a href="#workspace" aria-current="page" onClick={event => { event.preventDefault(); setCaseNavigation(value => value + 1); }}>Cases</a>
           </nav>
           <div className="header-actions">
             <ThemeToggle />
+            <button type="button" onClick={() => setSettingsOpen(true)} aria-haspopup="dialog">⚙️ Settings</button>
             <SessionStatus />
           </div>
         </header>
@@ -60,6 +63,7 @@ export function App() {
         </main>
         <footer>EVORA supports investigation. Findings require human verification.</footer>
       </div>
+      {settingsOpen && <SettingsModal onClose={() => setSettingsOpen(false)} />}
     </>
   );
 }

@@ -30,6 +30,7 @@ from backend.parsers.mobile_events import (ENTITY_VERSION as MOBILE_ENTITY_VERSI
     EVENT_VERSION as MOBILE_EVENT_VERSION, project_mobile_records)
 from backend.parsers.message_entities import PROJECTOR_VERSION as MESSAGE_ENTITY_VERSION, project_message_entities
 from backend.processing_dispatch import adapter_for
+from backend.parsers import media_detection
 from backend.parsers.normalization import NORMALIZER_VERSION, normalize_observations
 from backend.parsers.candidate_entities import PROJECTOR_VERSION as ENTITY_VERSION, project_candidate_entities
 from backend.parsers.source_events import PROJECTOR_VERSION as EVENT_VERSION, project_source_events
@@ -59,6 +60,13 @@ def _not_found():
 
 
 def _versions(adapter, *, deeper=False):
+    if adapter.kind in ('image', 'video'):
+        return dict(parser_version=adapter.parser_version, normalizer_version=media_detection.PARSER_VERSION,
+                    entity_version=media_detection.PARSER_VERSION, event_version=media_detection.PARSER_VERSION,
+                    processor_version=media_detection.PROCESSOR_VERSION, max_source_bytes=adapter.max_source_bytes,
+                    max_data_rows=adapter.max_data_rows, max_frames=media_detection.MAX_FRAMES,
+                    max_pixels=media_detection.MAX_PIXELS, max_decoded_frames=media_detection.MAX_DECODED_FRAMES,
+                    model=media_detection.model_info(), provenance_version=RECORD_VERSION)
     if adapter.kind == 'document':
         return dict(parser_version=adapter.parser_version, normalizer_version=TEXT_NORMALIZER_VERSION,
                     entity_version=TEXT_ENTITY_VERSION, event_version='not-used',
@@ -194,7 +202,9 @@ def process_run(app, run_id):
         if len(data) != config['size_bytes'] or hashlib.sha256(data).hexdigest() != config['sha256']:
             raise ValueError('source integrity')
         observations = adapter.parse(data, case_id=case_id, evidence_id=evidence_id, processing_run_id=UUID(run_id))
-        if adapter.kind == 'transaction':
+        if adapter.kind in ('image', 'video'):
+            normalized, entities, events = observations.observations, observations.entities, observations.events
+        elif adapter.kind == 'transaction':
             transactions = project_transaction_records(observations, case_id=case_id)
             normalized, entities, events = transactions.observations, transactions.entities, transactions.events
         elif adapter.kind == 'mobile_log':
@@ -213,7 +223,7 @@ def process_run(app, run_id):
         else:
             candidates = project_candidate_entities(normalize_observations(observations), case_id=case_id)
             events = project_source_events(candidates, case_id=case_id)
-        if adapter.kind not in ('document', 'mobile_log', 'transaction'):
+        if adapter.kind not in ('document', 'mobile_log', 'transaction', 'image', 'video'):
             normalized, entities = candidates.observations, candidates.entities
         output = (_json([x.observation.to_wire() for x in normalized]),
                   _json([x.to_wire() for x in entities]),
@@ -232,7 +242,8 @@ def process_run(app, run_id):
                 raise AccessError(404, 'SOURCE_UNAVAILABLE', 'Source unavailable.')
             publish_outputs(connection, run, output)
     except Exception as error:
-        code = ('NLP_' + error.code if isinstance(error, TextNERError) else
+        code = ('MEDIA_' + error.code if isinstance(error, media_detection.MediaDetectionError) else
+                'NLP_' + error.code if isinstance(error, TextNERError) else
                 'TEXT_' + error.code if isinstance(error, TextDocumentError) else
                 'CSV_' + error.code if isinstance(error, (NetworkCSVError, GPSCSVError, MessageCSVError, MobileCSVError, TransactionCSVError)) else
                 'SOURCE_UNAVAILABLE' if isinstance(error, (AccessError, OSError)) else 'PROCESSING_FAILED')

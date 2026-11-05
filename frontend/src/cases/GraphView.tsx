@@ -1,12 +1,16 @@
+import type { CSSProperties } from 'react';
+import { forensicTypes, graphAppearance } from './graphAppearance';
+import type { SourceFocus } from './mediaLocators';
 import './GraphView.css';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { useApiClient } from '../api/ApiProvider';
 import { useAnalysisWorkspace } from './StartAnalysis';
 import { createGraphController } from './graphController';
 import type { Graph, GraphSelection, GraphState } from './graphController';
+import { defaultSettings, useSettings, type Settings } from '../settings/settings';
 
 // A01 currently preserves source subkinds in the free-form wire kind. Unknown kinds stay explicit.
-const nodeShape = (kind: string) => ['device', 'ip', 'entity'].includes(kind) ? 'entity' :
+const nodeShape = (kind: string) => ['person', 'face', 'vehicle', 'plate', 'device', 'ip', 'location', 'account', 'document', 'video', 'camera', 'entity'].includes(kind) ? 'entity' :
   ['network.activity', 'gps.location', 'event'].includes(kind) ? 'event' : kind === 'evidence' ? 'evidence' : 'other';
 
 type Point = { x: number; y: number };
@@ -14,6 +18,24 @@ type GraphViewOptions = { filter: 'All' | 'Evidence' | 'Entities' | 'Events'; qu
 const defaultView: GraphViewOptions = { filter: 'All', query: '', zoom: 1 };
 const shortLabel = (label: string, length = 28) => label.length > length ? `${label.slice(0, length - 1)}…` : label;
 const byId = (a: { id: string }, b: { id: string }) => a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+const isEvidence = (n: Graph['nodes'][number]) => ['evidence', 'camera', 'document'].includes(n.kind);
+
+function displayLabels(nodes: Graph['nodes'], preference: Settings['default_node_label'] = 'source_description') {
+  const key = preference === 'filename' ? 'filename' : 'source_label';
+  const labels = new Map(nodes.map(n => [n.id, isEvidence(n) && typeof n.properties?.[key] === 'string'
+    ? n.properties[key] as string || n.label : n.label]));
+  const groups = new Map<string, Graph['nodes']>();
+  for (const n of nodes.filter(isEvidence).sort(byId)) {
+    // Compare visible text too: distinct long source labels can truncate identically.
+    const key = shortLabel(labels.get(n.id)!, 27);
+    const group = groups.get(key) ?? [];
+    group.push(n); groups.set(key, group);
+  }
+  for (const group of groups.values()) {
+    if (group.length > 1) group.forEach((n, i) => labels.set(n.id, `#${i + 1} · ${labels.get(n.id)}`));
+  }
+  return labels;
+}
 
 /** Deterministic starting positions; provenance springs are never rendered as candidate links. */
 const layoutCache = new WeakMap<Graph, ReturnType<typeof seedLayout>>();
@@ -25,7 +47,8 @@ function clusteredLayout(graph: Graph | null) {
 }
 function seedLayout(graph: Graph | null) {
   const nodes = [...(graph?.nodes ?? [])].sort(byId);
-  const evidence = new Map(nodes.filter(n => nodeShape(n.kind) === 'evidence').map(n => [n.id, n]));
+  const labels = displayLabels(nodes);
+  const evidence = new Map(nodes.filter(isEvidence).map(n => [n.id, n]));
   const sourceIds = [...new Set(nodes.flatMap(n => n.evidence_ids))].sort();
   const shared = nodes.filter(n => n.kind !== 'evidence' && n.evidence_ids.length > 1);
   const positions = new Map<string, Point>();
@@ -42,7 +65,7 @@ function seedLayout(graph: Graph | null) {
       const distance = 105 + 27 * Math.sqrt(i);
       positions.set(n.id, { x: x + Math.cos(theta) * distance, y: y + Math.sin(theta) * distance });
     });
-    return { id, label: anchor?.label ?? `Evidence ${id}`, members, x, y };
+    return { id, label: anchor ? labels.get(anchor.id)! : `Evidence ${id}`, members, x, y };
   });
   const hubs = new Map(clusters.map(c => [c.id, c]));
   shared.forEach((n, i) => {
@@ -66,7 +89,7 @@ function seedLayout(graph: Graph | null) {
   });
   const width = Math.max(960, ...[...positions.values()].map(p => Math.abs(p.x) * 2 + 280));
   const height = Math.max(680, ...[...positions.values()].map(p => Math.abs(p.y) * 2 + 180));
-  return { positions, clusters, shared, minX: -width / 2, minY: -height / 2, width, height };
+  return { positions, clusters, shared, labels, minX: -width / 2, minY: -height / 2, width, height };
 }
 
 type Particle = Point & { vx: number; vy: number; pinned: boolean };
@@ -131,11 +154,11 @@ function boundary(center: Point, target: Point, shape: string): Point {
 }
 
 /** Own animation and gestures outside React's render cycle; inspector updates never restart physics. */
-function GraphMotion({ graph, view, onViewChange }: { graph: Graph; view: GraphViewOptions; onViewChange?: (view: GraphViewOptions) => void }) {
+function GraphMotion({ graph, view, onViewChange, selection }: { graph: Graph; view: GraphViewOptions; selection: GraphSelection | null; onViewChange?: (view: GraphViewOptions) => void }) {
   const anchor = useRef<SVGGElement>(null);
-  const current = useRef({ view, onViewChange });
-  const runtime = useRef<{ redraw: () => void; zoom: (value: number) => void } | null>(null);
-  current.current = { view, onViewChange };
+  const current = useRef({ view, onViewChange, selection });
+  const runtime = useRef<{ redraw: () => void; zoom: (value: number) => void; highlight: () => void } | null>(null);
+  current.current = { view, onViewChange, selection };
   useEffect(() => {
     const svg = anchor.current!.ownerSVGElement!;
     const world = svg.querySelector<SVGGElement>('.graph-world')!;
@@ -163,10 +186,15 @@ function GraphMotion({ graph, view, onViewChange }: { graph: Graph; view: GraphV
     const redraw = () => {
       // Let the initial layout breathe without clipping floating labels. A gesture takes control.
       if (autoFit) {
-        simulation.particles.forEach(p => {
-          bounds.left = Math.min(bounds.left, p.x - 40); bounds.right = Math.max(bounds.right, p.x + 195);
-          bounds.top = Math.min(bounds.top, p.y - 40); bounds.bottom = Math.max(bounds.bottom, p.y + 65);
-        });
+        const points = [...simulation.particles.values()];
+        if (points.length) {
+          const left = Math.min(...points.map(p => p.x)) - 60, right = Math.max(...points.map(p => p.x)) + 195;
+          const top = Math.min(...points.map(p => p.y)) - 60, bottom = Math.max(...points.map(p => p.y)) + 65;
+          const width = Math.max(720, right - left), height = Math.max(480, bottom - top);
+          const target = { left: (left + right - width) / 2, right: (left + right + width) / 2,
+            top: (top + bottom - height) / 2, bottom: (top + bottom + height) / 2 };
+          for (const key of ['left', 'right', 'top', 'bottom'] as const) bounds[key] += (target[key] - bounds[key]) * (motion.matches ? 1 : .12);
+        }
         resizeViewport();
       }
       svg.querySelectorAll<SVGGElement>('[data-node-id]').forEach(el => {
@@ -183,6 +211,14 @@ function GraphMotion({ graph, view, onViewChange }: { graph: Graph; view: GraphV
         });
         const t = Number(el.dataset.lane), start = el.dataset.from! < el.dataset.to! ? from : to, end = start === from ? to : from;
         el.querySelector('.graph-edge-caption')?.setAttribute('transform', `translate(${start.x + (end.x - start.x) * t} ${start.y + (end.y - start.y) * t})`);
+      });
+      svg.querySelectorAll<SVGLineElement>('.graph-provenance-ray').forEach(line => {
+        const from = simulation.particles.get(line.dataset.from!);
+        const to = simulation.particles.get(line.dataset.to!);
+        if (from && to) {
+          line.setAttribute('x1', String(from.x)); line.setAttribute('y1', String(from.y));
+          line.setAttribute('x2', String(to.x)); line.setAttribute('y2', String(to.y));
+        }
       });
       transform();
     };
@@ -202,8 +238,13 @@ function GraphMotion({ graph, view, onViewChange }: { graph: Graph; view: GraphV
       if (motion.matches) { cancelAnimationFrame(frame); frame = 0; for (let i = 0; i < 180; i++) simulation.tick(); redraw(); }
       else if (!frame && visible && !document.hidden) frame = requestAnimationFrame(animate);
     };
-    const illuminate = (id?: string) => {
-      const connected = id ? neighbors.get(id) : undefined;
+    const illuminate = (id?: string, otherId?: string) => {
+      if (!id && current.current.selection) {
+        const selected = current.current.selection;
+        if (selected.kind === 'node') id = selected.id;
+        else { const edge = graph.edges.find(e => e.id === selected.id); id = edge?.from_id; otherId = edge?.to_id; }
+      }
+      const connected = id ? new Set([...(neighbors.get(id) ?? []), ...(otherId ? neighbors.get(otherId) ?? [] : [])]) : undefined;
       svg.querySelectorAll<SVGGElement>('[data-node-id]').forEach(el => {
         el.dataset.dimmed = String(!!connected && !connected.has(el.dataset.nodeId!));
         el.dataset.neighbor = String(!!connected?.has(el.dataset.nodeId!));
@@ -211,6 +252,11 @@ function GraphMotion({ graph, view, onViewChange }: { graph: Graph; view: GraphV
       svg.querySelectorAll<SVGGElement>('[data-edge-id]').forEach(el => {
         const incident = !!id && (el.dataset.from === id || el.dataset.to === id);
         el.dataset.dimmed = String(!!id && !incident); el.dataset.neighbor = String(incident);
+      });
+      svg.querySelectorAll<SVGLineElement>('.graph-provenance-ray').forEach(line => {
+        const active = !!id && (line.dataset.from === id || line.dataset.to === id);
+        line.dataset.active = String(active);
+        line.dataset.dimmed = String(!!id && !active);
       });
     };
     const down = (event: PointerEvent) => {
@@ -257,7 +303,7 @@ function GraphMotion({ graph, view, onViewChange }: { graph: Graph; view: GraphV
     const over = (event: Event) => {
       if (gesture) return;
       const target = (event.target as Element).closest<SVGGElement>('[data-node-id], [data-edge-id]');
-      illuminate(target?.dataset.nodeId ?? target?.dataset.from);
+      illuminate(target?.dataset.nodeId ?? target?.dataset.from, target?.dataset.to);
     };
     const leave = () => { if (!gesture) illuminate(); };
     const reset = () => {
@@ -278,7 +324,7 @@ function GraphMotion({ graph, view, onViewChange }: { graph: Graph; view: GraphV
     svg.addEventListener('pointerover', over); svg.addEventListener('pointerleave', leave);
     svg.addEventListener('focusin', over); svg.addEventListener('focusout', leave);
     canvas.addEventListener('graph-reset', reset); document.addEventListener('visibilitychange', visibility); motion.addEventListener('change', wake);
-    runtime.current = { redraw, zoom: value => { if (zoom !== value) autoFit = false; zoom = value; transform(); } };
+    runtime.current = { redraw, highlight: () => illuminate(), zoom: value => { if (zoom !== value) autoFit = false; zoom = value; transform(); } };
     wake();
     return () => {
       cancelAnimationFrame(frame); observer.disconnect(); resize.disconnect(); runtime.current = null;
@@ -292,12 +338,14 @@ function GraphMotion({ graph, view, onViewChange }: { graph: Graph; view: GraphV
     };
   }, [graph]);
   useLayoutEffect(() => { runtime.current?.redraw(); });
+  useEffect(() => { runtime.current?.highlight(); }, [selection]);
   useEffect(() => { runtime.current?.zoom(view.zoom); }, [view.zoom]);
   return <g ref={anchor} aria-hidden="true" />;
 }
 
-export function GraphView({ inspectEvidence }: { inspectEvidence?: (id: string) => void }) {
+export function GraphView({ inspectEvidence }: { inspectEvidence?: (id: string, focus?: SourceFocus) => void }) {
   const client = useApiClient();
+  const settings = useSettings();
   const { caseId, analysis_run_id, selectCompletedRun } = useAnalysisWorkspace();
   const controller = useMemo(() => createGraphController(client, caseId, analysis_run_id ?? undefined, selectCompletedRun),
     [client, caseId, analysis_run_id, selectCompletedRun]);
@@ -309,14 +357,18 @@ export function GraphView({ inspectEvidence }: { inspectEvidence?: (id: string) 
   const scope = `${caseId}:${analysis_run_id ?? ''}`;
   const [presentation, setPresentation] = useState({ scope, view: defaultView });
   const view = presentation.scope === scope ? presentation.view : defaultView;
-  return <GraphPanel state={visible} load={controller.load} select={controller.select} inspectEvidence={inspectEvidence}
+  return <GraphPanel settings={settings} state={visible} load={controller.load} select={controller.select} dismiss={() => {
+      const selected = document.querySelector<SVGGElement>('.graph-node[aria-pressed="true"], .graph-edge[aria-pressed="true"]');
+      controller.clearSelection(); selected?.focus();
+    }} inspectEvidence={inspectEvidence}
     view={view} onViewChange={next => setPresentation({ scope, view: next })} />;
 }
 
-export function GraphPanel({ state, load, select, inspectEvidence, view = defaultView, onViewChange }: {
+export function GraphPanel({ state, load, select, inspectEvidence, view = defaultView, onViewChange, dismiss, settings = defaultSettings }: {
   state: GraphState; load: () => Promise<void>; select: (selection: GraphSelection) => Promise<void>;
-  inspectEvidence?: (id: string) => void;
-  view?: GraphViewOptions; onViewChange?: (view: GraphViewOptions) => void;
+  inspectEvidence?: (id: string, focus?: SourceFocus) => void;
+  dismiss?: () => void; view?: GraphViewOptions; onViewChange?: (view: GraphViewOptions) => void;
+  settings?: Settings;
 }) {
   const graph = state.graph;
   const selection = state.selection;
@@ -325,9 +377,10 @@ export function GraphPanel({ state, load, select, inspectEvidence, view = defaul
   const record = node ?? edge;
   const layout = clusteredLayout(graph);
   const { positions } = layout;
+  const labels = displayLabels(graph?.nodes ?? [], settings.default_node_label);
   const query = view.query.trim().toLocaleLowerCase();
   const matches = (n: NonNullable<typeof graph>['nodes'][number]) =>
-    [n.label, n.kind, n.id, ...n.evidence_ids].some(value => value.toLocaleLowerCase().includes(query));
+    [labels.get(n.id)!, n.label, n.kind, n.id, ...n.evidence_ids].some(value => value.toLocaleLowerCase().includes(query));
   const filterShape = { All: '', Evidence: 'evidence', Entities: 'entity', Events: 'event' }[view.filter];
   const visibleNodes = graph?.nodes.filter(n => !filterShape || nodeShape(n.kind) === filterShape) ?? [];
   const visibleIds = new Set(visibleNodes.map(n => n.id));
@@ -342,17 +395,17 @@ export function GraphPanel({ state, load, select, inspectEvidence, view = defaul
   const nodeById = new Map(graph?.nodes.map(n => [n.id, n]));
   const arrowId = `graph-arrow-${graph?.case_id}-${graph?.analysis_run_id}`;
   const changeView = (change: Partial<GraphViewOptions>) => onViewChange?.({ ...view, ...change });
-  const source = (id: string, label = id) => inspectEvidence ?
-    <button type="button" className="identifier" onClick={() => inspectEvidence(id)} aria-label={`Inspect source evidence ${id}: ${label}`}>{label}</button> : <span className="identifier">{label}</span>;
+  const source = (id: string, label = id, focus?: SourceFocus) => inspectEvidence ?
+    <button type="button" className="identifier" onClick={() => inspectEvidence(id, focus)} aria-label={`Inspect source evidence ${id}: ${label}`}>{label}</button> : <span className="identifier">{label}</span>;
   return <section className="panel knowledge-graph" aria-label="Knowledge Graph" aria-busy={state.status === 'loading'}>
-    <h2>Knowledge Graph</h2>
+    <span className="section-label">RELATIONSHIP INTELLIGENCE</span><h2>Knowledge Graph</h2>
     <p>Candidate relationships require human verification; confidence does not establish identity, source reliability or guilt.</p>
     {state.status === 'loading' && <p role="status">Loading graph...</p>}
     {state.message && <p role="alert">{state.message}</p>}
     {state.status === 'error' && <button type="button" onClick={() => { void load(); }}>Retry graph</button>}
     {state.status === 'ready' && graph && <>
       {graph.analysis_run_id && <p className="identifier">Selected completed analysis: {graph.analysis_run_id}</p>}
-      <div className="graph-layout"><div className="graph-primary">
+      <div className="graph-layout" data-inspecting={!!record}><div className="graph-primary">
       {!graph.analysis_run_id ? <p>No analysis run completed yet. Start analysis to generate graph.</p> :
         graph.nodes.length === 0 ? <p>No graph nodes in this completed analysis. Available inputs may not contain extracted relationships.</p> : <>
           <div className="graph-toolbar" role="group" aria-label="Graph controls">
@@ -390,8 +443,23 @@ export function GraphPanel({ state, load, select, inspectEvidence, view = defaul
               <g className="graph-world">
               <g className="graph-clusters" aria-label="Source evidence clusters">
                 {layout.clusters.map(c => <g key={c.id} className="graph-cluster" data-evidence-id={c.id}>
-                  <title>{c.label} · {c.id} · Source evidence · {c.members.length} local nodes</title>
+                  <title>{labels.get(c.id) ?? c.label} · {c.id} · Source evidence · {c.members.length} local nodes</title>
                 </g>)}
+              </g>
+              <g className="graph-provenance-rays" aria-label="Evidence lineage" display={settings.show_provenance_rays ? undefined : 'none'} aria-hidden={!settings.show_provenance_rays}>
+                {layout.clusters.flatMap(c => {
+                  const anchor = positions.get(c.id);
+                  if (!anchor || !visibleIds.has(c.id)) return [];
+                  return (graph?.nodes ?? []).filter(m => m.id !== c.id && m.evidence_ids.includes(c.id) && visibleIds.has(m.id)).map(m => {
+                    const p = positions.get(m.id);
+                    if (!p) return null;
+                    return <line key={`ray-${c.id}-${m.id}`}
+                      className="graph-provenance-ray"
+                      data-from={c.id} data-to={m.id}
+                      x1={anchor.x} y1={anchor.y}
+                      x2={p.x} y2={p.y} />;
+                  }).filter(Boolean);
+                })}
               </g>
               {visibleEdges.map(e => {
                 const fromCenter = positions.get(e.from_id)!, toCenter = positions.get(e.to_id)!;
@@ -403,7 +471,8 @@ export function GraphPanel({ state, load, select, inspectEvidence, view = defaul
                 // Canonical endpoint order keeps opposite-direction edge labels in separate slots.
                 const start = e.from_id < e.to_id ? from : to, end = e.from_id < e.to_id ? to : from;
                 const label = { x: start.x + (end.x - start.x) * t, y: start.y + (end.y - start.y) * t };
-                const labelWidth = Math.max(125, e.kind.length * 6 + 51);
+                const relationshipLabel = e.label || e.kind;
+                const labelWidth = Math.max(125, relationshipLabel.length * 6 + 51);
                 return <g key={e.id} className="graph-edge" data-kind={e.kind}
                   data-edge-id={e.id} data-from={e.from_id} data-to={e.to_id} data-lane={t} role="button" tabIndex={0}
                   data-cross-source={e.evidence_ids.length > 1 || new Set([...nodeById.get(e.from_id)!.evidence_ids, ...nodeById.get(e.to_id)!.evidence_ids]).size > 1}
@@ -414,7 +483,7 @@ export function GraphPanel({ state, load, select, inspectEvidence, view = defaul
                   <line x1={from.x} y1={from.y} x2={to.x} y2={to.y} markerEnd={`url(#${arrowId})`} strokeDasharray={e.kind === 'shared_identifier' ? '8 4' : e.kind === 'supported_by' ? undefined : '2 4'} />
                   <g className="graph-edge-caption" transform={`translate(${label.x} ${label.y})`}>
                     <rect className="graph-edge-label" x={-labelWidth / 2} y="-11" width={labelWidth} height="22" rx="11" />
-                    <text x={-labelWidth / 2 + 9} y="4" textAnchor="start">{e.kind}</text>
+                    <text x={-labelWidth / 2 + 9} y="4" textAnchor="start">{relationshipLabel}</text>
                     <rect className="graph-confidence-badge" x={labelWidth / 2 - 36} y="-8" width="32" height="16" rx="8" />
                     <text className="graph-confidence" x={labelWidth / 2 - 20} y="4" textAnchor="middle">{e.confidence.toFixed(2)}</text>
                   </g>
@@ -422,7 +491,10 @@ export function GraphPanel({ state, load, select, inspectEvidence, view = defaul
               })}
               {visibleNodes.map(n => {
                 const { x, y } = positions.get(n.id)!;
-                return <g key={n.id} role="button" tabIndex={0} aria-label={`Inspect node ${n.kind}: ${n.label}`} aria-pressed={node?.id === n.id}
+                const label = labels.get(n.id)!;
+                const appearance = graphAppearance(n.kind, n.entity_type);
+                return <g key={n.id} role="button" tabIndex={0} aria-label={`Inspect node ${n.kind}: ${label}`} aria-pressed={node?.id === n.id}
+                  style={{ '--particle': appearance.color } as CSSProperties} data-entity-type={n.entity_type || n.kind}
                   data-node-id={n.id} data-evidence-ids={n.evidence_ids.join(' ')} data-cross-source={n.evidence_ids.length > 1}
                   data-search-match={query ? matches(n) : undefined}
                   onClick={() => { void select({ kind: 'node', id: n.id }); }}
@@ -430,17 +502,19 @@ export function GraphPanel({ state, load, select, inspectEvidence, view = defaul
                   {nodeShape(n.kind) === 'entity' ? <ellipse cx={x} cy={y} rx="12" ry="12" /> : nodeShape(n.kind) === 'event' ?
                     <polygon points={`${x},${y - 12} ${x + 12},${y} ${x},${y + 12} ${x - 12},${y}`} /> :
                     <rect x={x - 14} y={y - 14} width="28" height="28" rx="6" />}
+                  <path className="graph-node-icon" d={appearance.path} transform={`translate(${x - 8} ${y - 8}) scale(.667)`} />
                   <circle className="graph-node-hit" cx={x} cy={y} r="22" />
-                  <text x={x + 18} y={y + 4} textAnchor="start"><title>{n.label}</title>{shortLabel(n.label, 27)}</text>
+                  <text x={x + 18} y={y + 4} textAnchor="start"><title>{label}</title>{shortLabel(label, 27)}</text>
                   <text className="graph-node-kind" x={x + 18} y={y + 20} textAnchor="start">{shortLabel(n.kind, 22)}{n.evidence_ids.length > 1 ? ` · ${n.evidence_ids.length} sources` : ''}</text>
                   {n.evidence_ids.length > 1 && <text className="graph-shared-label" x={x + 18} y={y + 35} textAnchor="start">Cross-source correlation</text>}
                 </g>;
               })}
               </g>
-              <GraphMotion graph={graph} view={view} onViewChange={onViewChange} />
+              <GraphMotion graph={graph} selection={selection} view={view} onViewChange={onViewChange} />
             </svg>
           </div>
           <ul className="graph-legend" aria-label="Graph legend">
+            {forensicTypes.map(type => <li key={type}><span style={{ background: graphAppearance(type).color }} aria-hidden="true" />{type === 'camera' ? 'video / camera' : type}</li>)}
             <li><span className="graph-legend-evidence" aria-hidden="true" />Evidence (Rect)</li>
             <li><span className="graph-legend-entity" aria-hidden="true" />Entity (Ellipse)</li>
             <li><span className="graph-legend-event" aria-hidden="true" />Event (Diamond)</li>
@@ -449,27 +523,29 @@ export function GraphPanel({ state, load, select, inspectEvidence, view = defaul
           <p>Select a node or line to inspect its complete label and sources. Edge direction is from → to. Drag nodes to rearrange; drag the background to pan. Scroll to zoom, or use the toolbar. Tab and Enter inspect records.</p>
           <details className="graph-record-browser"><summary>Browse graph records</summary><div className="graph-records">
             <div><h3>Nodes</h3>{visibleNodes.map(n => <button key={n.id} type="button" aria-pressed={node?.id === n.id}
-              onClick={() => { void select({ kind: 'node', id: n.id }); }}>{n.kind}: {n.label}</button>)}</div>
+              onClick={() => { void select({ kind: 'node', id: n.id }); }}>{n.kind}: {labels.get(n.id)}</button>)}</div>
             <div><h3>Candidate relationships</h3>{visibleEdges.map(e => <button key={e.id} type="button" aria-pressed={edge?.id === e.id}
-              onClick={() => { void select({ kind: 'edge', id: e.id }); }}>{graph.nodes.find(n => n.id === e.from_id)?.label} → {e.kind} → {graph.nodes.find(n => n.id === e.to_id)?.label} · confidence {e.confidence.toFixed(2)}</button>)}</div>
+              onClick={() => { void select({ kind: 'edge', id: e.id }); }}>{labels.get(e.from_id)} → {e.kind} → {labels.get(e.to_id)} · confidence {e.confidence.toFixed(2)}</button>)}</div>
           </div></details>
         </>}
-      </div><aside className="graph-inspector" aria-label="Graph record details" aria-live="polite">
+      </div><aside className="graph-inspector" aria-label="Graph record details" aria-live="polite" onKeyDown={event => { if (event.key === 'Escape') dismiss?.(); }}>
         {!record ? <><h3>Record inspector</h3><p>Select a node or relationship to inspect sources.</p><p>Review source evidence and observation locators before drawing conclusions.</p></> : <>
+          <button className="graph-drawer-close" type="button" onClick={dismiss} aria-label="Close graph details">✕</button>
           <h3>{node ? 'Node details' : 'Candidate relationship details'}</h3>
           {node && !visibleIds.has(node.id) && <p>Selected node is hidden by the current filter.</p>}
           {edge && !visibleEdges.some(e => e.id === edge.id) && <p>Selected relationship is hidden by the current filter.</p>}
           <dl><dt>ID</dt><dd className="identifier">{record.id}</dd><dt>Kind</dt><dd>{record.kind}</dd>
-            {node && <><dt>Label</dt><dd>{node.label}</dd></>}
+            {node && <><dt>Label</dt><dd>{labels.get(node.id)}</dd><dt>Entity type</dt><dd>{node.entity_type || node.kind}</dd></>}
             {edge && <><dt>From → to</dt><dd className="identifier">{edge.from_id} → {edge.to_id}</dd><dt>Relationship confidence</dt><dd>{edge.confidence.toFixed(2)}</dd></>}
           </dl>
+          {node?.properties && <dl>{Object.entries(node.properties).map(([key, value]) => <div key={key}><dt>{key}</dt><dd>{typeof value === 'string' ? value : JSON.stringify(value)}</dd></div>)}</dl>}
           <h4>Source evidence IDs</h4><ul>{record.evidence_ids.map(id => <li key={id}>{source(id)}</li>)}</ul>
           {edge && <><h4>Observation citations</h4><ul>{edge.observation_ids.map(id => <li key={id} className="identifier">{id}</li>)}</ul>
             {state.citationStatus === 'loading' && <p role="status">Resolving historical source locators...</p>}
             {state.citationMessage && <p role="alert">{state.citationMessage}</p>}
             {state.citationStatus === 'error' && <button type="button" onClick={() => { void select({ kind: 'edge', id: edge.id }); }}>Retry citations</button>}
             {state.citations.map(item => <div key={item.id}><p className="identifier">Observation {item.id} · processing run {item.processing_run_id}</p>
-              {source(item.evidence_id, item.source_locator)}</div>)}
+              {source(item.evidence_id, item.source_locator, { source_locator: item.source_locator, observation_id: item.id, processing_run_id: item.processing_run_id })}</div>)}
             <p>Locators refer to this analysis snapshot. Source actions open evidence metadata and the authorized original download; the separate evidence panel labels its live processing view.</p>
           </>}
         </>}

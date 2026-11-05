@@ -166,12 +166,13 @@ test('questions, answers, claims, locators and retrieval versions are escaped te
     'Textarea plus question, answer, claim, locator and version must all be escaped');
 });
 
-test('editing a completed inquiry clears the previous answer before a new request', async t => {
+test('editing a new inquiry clears its active answer while preserving the conversation', async t => {
   const { controller: c } = setup(t);
   change(c, question); await c.submit(); assert.equal(c.getSnapshot().status, 'ready');
   change(c, 'New inquiry');
   assert.equal(c.getSnapshot().status, 'idle'); assert.equal(c.getSnapshot().answer, null);
-  assert.doesNotMatch(render(c), /Supported by Evidence|Network observation/);
+  assert.equal(c.getSnapshot().history.length, 1);
+  assert.match(render(c), /Supported by Evidence|Network observation/);
 });
 
 test('malformed, mismatched and inconsistent citation responses fail safely', async t => {

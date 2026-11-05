@@ -226,7 +226,7 @@ class CoMentionAnalysisLifecycleTests(unittest.IsolatedAsyncioTestCase):
         run = await self.get('/analysis-runs/' + response.json()['id'])
         self.assertEqual(run['status'], 'completed', run)
         self.assertEqual(run['algorithm_version'],
-                         f'evora-analysis/2;{RULE};{CO_MENTION_RULE};{POLICY_VERSION};{DETECTOR_VERSION}')
+                         f'evora-analysis/3;source_semantic_relations/1;{RULE};{CO_MENTION_RULE};{POLICY_VERSION};{DETECTOR_VERSION}')
         validator('AnalysisRun').validate(run)
         return run
 
@@ -264,8 +264,9 @@ class CoMentionAnalysisLifecycleTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(run1['trigger'], 'initial')
         before = await self.outputs(run1)
         stored_before = self.stored(run1)
-        self.assertEqual(before['graph']['edges'], [])
-        self.assertEqual(before['findings']['items'], [])
+        self.assertEqual(sorted(edge['kind'] for edge in before['graph']['edges']),
+                         ['assigned_ip', 'assigned_ip', 'located_at'])
+        self.assertTrue(all(finding['kind'] == 'cluster' for finding in before['findings']['items']))
         results1 = self.results(before)
         for eid in (net_id, gps_id):
             self.assertEqual(next(f['value'] for f in results1[eid]['factors'] if f['name'] == 'connectivity'), 0.0)
@@ -280,12 +281,15 @@ class CoMentionAnalysisLifecycleTests(unittest.IsolatedAsyncioTestCase):
         validator('Graph').validate(after['graph'])
         entities = (await self.get('/entities'))['items']
         groups = [[entity for entity in entities if eid in entity['evidence_ids']] for eid in (net_id, gps_id, msg_id)]
-        assert_links(self, after['graph']['edges'],
+        candidate_edges = [edge for edge in after['graph']['edges']
+                           if edge['kind'] in ('shared_identifier', 'co_mention')]
+        assert_links(self, candidate_edges,
                      [item for item in after['findings']['items'] if item['kind'] == 'relationship'],
                      entities, three_pairs(*groups))
         d9 = next(entity['id'] for entity in entities if entity['canonical_label'] == 'D-9')
-        self.assertTrue(all(d9 not in (edge['from_id'], edge['to_id']) for edge in after['graph']['edges']))
-        self.assertTrue(all(d9 not in finding['entity_ids'] for finding in after['findings']['items']))
+        self.assertTrue(all(d9 not in (edge['from_id'], edge['to_id']) for edge in candidate_edges))
+        self.assertTrue(all(d9 not in finding['entity_ids'] for finding in after['findings']['items']
+                            if finding['kind'] == 'relationship'))
 
         results2 = self.results(after)
         for eid, relevance, connectivity in ((net_id, 4/5, .1), (gps_id, 1/5, .1), (msg_id, 2/5, .2)):

@@ -39,7 +39,7 @@ def initialize_provenance(connection):
       DROP TRIGGER IF EXISTS processing_provenance_context;
       CREATE TRIGGER processing_provenance_context BEFORE INSERT ON processing_provenance
         WHEN NOT EXISTS(SELECT 1 FROM processing_runs r JOIN processing_outputs o ON o.run_id=r.id
-          WHERE r.id=NEW.run_id AND r.status='running' AND r.processor_version IN ('processing-lifecycle/2','processing-lifecycle/3','processing-lifecycle/4','processing-lifecycle/5','processing-lifecycle/6','processing-lifecycle/7','transcript-correction/1')
+          WHERE r.id=NEW.run_id AND r.status='running' AND r.processor_version IN ('processing-lifecycle/2','processing-lifecycle/3','processing-lifecycle/4','processing-lifecycle/5','processing-lifecycle/6','processing-lifecycle/7','processing-lifecycle/8','transcript-correction/1')
           AND r.case_id=NEW.case_id AND r.evidence_id=NEW.evidence_id
           AND o.case_id=r.case_id AND o.evidence_id=r.evidence_id)
         BEGIN SELECT RAISE(ABORT,'Invalid processing provenance context'); END;
@@ -52,7 +52,7 @@ def initialize_provenance(connection):
         BEGIN SELECT RAISE(ABORT,'Immutable processing provenance'); END;
       DROP TRIGGER IF EXISTS processing_completion_provenance;
       CREATE TRIGGER processing_completion_provenance BEFORE UPDATE OF status ON processing_runs
-        WHEN NEW.status='completed' AND NEW.processor_version IN ('processing-lifecycle/2','processing-lifecycle/3','processing-lifecycle/4','processing-lifecycle/5','processing-lifecycle/6','processing-lifecycle/7','transcript-correction/1') AND NOT EXISTS(
+        WHEN NEW.status='completed' AND NEW.processor_version IN ('processing-lifecycle/2','processing-lifecycle/3','processing-lifecycle/4','processing-lifecycle/5','processing-lifecycle/6','processing-lifecycle/7','processing-lifecycle/8','transcript-correction/1') AND NOT EXISTS(
           SELECT 1 FROM processing_provenance p WHERE p.run_id=NEW.id AND p.case_id=NEW.case_id
           AND p.evidence_id=NEW.evidence_id AND p.record_version='processing-provenance/1'
           AND p.finished_at=NEW.finished_at)
@@ -88,6 +88,13 @@ def _payload(run, output, finished_at):
         processor = TRANSACTION_PROCESSOR_VERSION
     model = None
     method = 'deterministic'
+    if config.get('kind') in ('image', 'video'):
+        processor = 'processing-lifecycle/8'
+        parameters += ('max_frames', 'max_pixels', 'max_decoded_frames')
+        model = config.get('model')
+        if not isinstance(model, dict) or not model.get('cascades'):
+            raise ValueError('Missing visual model provenance')
+        method = 'local_opencv_haar'
     if config.get('kind') == 'document' and run['processor_version'] == 'processing-lifecycle/7':
         processor = 'processing-lifecycle/7'
         parameters += ('max_source_chars', 'max_line_chars', 'max_mentions', 'ner_timeout_seconds', 'ner_workers')
@@ -107,7 +114,7 @@ def _payload(run, output, finished_at):
         raise ValueError('Invalid frozen provenance configuration')
     if (config['provenance_version'] != RECORD_VERSION or run['processor_version'] != processor
             or config['processor_version'] != run['processor_version']
-            or config['kind'] not in {'network_log', 'gps', 'message', 'document', 'mobile_log', 'transaction'}
+            or config['kind'] not in {'network_log', 'gps', 'message', 'document', 'mobile_log', 'transaction', 'image', 'video'}
             or any(not isinstance(config[key], str) or not config[key] for key in _VERSIONS)
             or not isinstance(config['sha256'], str) or not re.fullmatch('[0-9a-f]{64}', config['sha256'])
             or type(config['size_bytes']) is not int or config['size_bytes'] < 0

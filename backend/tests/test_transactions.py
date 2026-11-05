@@ -252,8 +252,8 @@ class TransactionProcessingTests(unittest.IsolatedAsyncioTestCase):
                 self.assertEqual(sources[oid].get('observed_at_utc'),event.get('observed_at_utc'))
         private=self.private(run)
         self.assertEqual(private['execution']['parameters'],{'max_source_bytes':52428800,'max_data_rows':100000,'max_amount_chars':128})
-        self.assertEqual(private['execution']['versions'],dict(parser_version='transactions-csv/1',normalizer_version='source-normalization/1',
-            entity_version='transaction-identifiers/1',event_version='transaction-source-events/1',processor_version='processing-lifecycle/6'))
+        self.assertEqual(private['execution']['versions'],dict(parser_version='transactions-csv/2',normalizer_version='source-normalization/1',
+            entity_version='transaction-identifiers/2',event_version='transaction-source-events/2',processor_version='processing-lifecycle/6'))
         self.assertIsNone(private['execution']['model'])
         for name,field in [('observations','observation_ids'),('entities','entity_ids'),('events','event_ids')]:
             self.assertEqual(set(private['outputs'][field]),{x['id'] for x in pages[name]['items']})
@@ -493,7 +493,7 @@ class TransactionLoopbackTests(unittest.TestCase):
                         self.assertEqual(connection.execute('SELECT count(*) FROM processing_outputs').fetchone()[0],1)
                         payload=json.loads(connection.execute('SELECT payload_json FROM processing_provenance').fetchone()[0])
                         self.assertEqual(payload['input']['sha256'],hashlib.sha256(SOURCE).hexdigest())
-                        self.assertEqual(payload['execution']['versions']['event_version'],'transaction-source-events/1')
+                        self.assertEqual(payload['execution']['versions']['event_version'],'transaction-source-events/2')
             finally:
                 process.terminate()
                 try:process.communicate(timeout=10)
