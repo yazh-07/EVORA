@@ -110,7 +110,7 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
         {error && <p role="alert">{error}</p>}
         {loadFailed && <button type="button" onClick={() => setReload(value => value + 1)}>Retry loading settings</button>}
         <fieldset disabled={disabled}><legend>AI Copilot Configuration</legend>
-          <p>Choose the provider and model used to answer questions about your evidence.</p>
+          <p>{draft.offline_mode ? 'Offline mode: evidence questions use an installed local Ollama model. Cloud providers are disabled.' : 'Choose the provider and model used to answer questions about your evidence.'}</p>
           <label>Provider<select value={draft.qa_provider} onChange={event => {
             const provider = event.target.value as Settings['qa_provider'];
             update('qa_provider', provider);
@@ -118,7 +118,7 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
             setCustom(false);
           }}>
             <option value="ollama">Local (Ollama)</option>
-            <option value="openai">Cloud / Custom (OpenAI-compatible)</option>
+            {!draft.offline_mode && <option value="openai">Cloud / Custom (OpenAI-compatible)</option>}
           </select></label>
           <label htmlFor="settings-model">Model</label>
           <select id="settings-model" value={custom ? 'custom' : draft.qa_model} onChange={event => {

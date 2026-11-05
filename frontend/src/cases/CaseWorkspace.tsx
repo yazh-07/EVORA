@@ -1,3 +1,6 @@
+import { LocalLogin } from '../auth/LocalLogin';
+import { PasswordChange } from '../auth/AccountDialog';
+import { SessionControls } from '../auth/SessionControls';
 import type { SourceFocus } from './mediaLocators';
 export { createTranscriptController } from './transcriptController';
 export { TranscriptViewer, TranscriptPanel } from './TranscriptViewer';
@@ -29,8 +32,12 @@ export { StartAnalysis, CaseAnalysisWorkspace, useAnalysisWorkspace } from './St
 import { CaseAnalysisWorkspace } from './StartAnalysis';
 export { createCaseOverviewController } from './caseOverviewController';
 export { CaseOverviewPanel } from './CaseOverview';
-import { CaseOverview } from './CaseOverview';
-import { ExecutiveBrief } from './ExecutiveBrief';
+import { InvestigationOverview } from './InvestigationOverview';
+import { TimelineWorkspace } from './TimelineWorkspace';
+import { ReportWorkspace } from './ReportWorkspace';
+export { filterTimeline } from './TimelineWorkspace';
+export { buildReportText } from './ReportWorkspace';
+export { collectPages, loadTimeline, loadReport } from './workspaceData';
 export { ExecutiveBriefPanel, createExecutiveBriefController } from './ExecutiveBrief';
 export { detectEvidenceKind } from './evidenceDetection';
 export { createObservationController } from './observationController';
@@ -50,6 +57,7 @@ import { InvestigationTabs, type InvestigationTab } from './InvestigationTabs';
 
 export function SessionStatus() {
   const client = useApiClient();
+  if (client.isLocalAuth()) return <SessionControls />;
   return <div className="session-status">
     <span className={`session-pill ${client.hasToken() ? 'session-active' : ''}`}>
       <span className="status-dot" aria-hidden="true" />{client.hasToken() ? 'Session active' : 'Signed out'}
@@ -62,9 +70,6 @@ export function CaseWorkspace({ caseNavigation = 0 }: { caseNavigation?: number 
   const client = useApiClient();
   const store = useMemo(() => createCaseStore(client), [client]);
   const state = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot);
-  const [tokenError, setTokenError] = useState('');
-  const [token, setToken] = useState('');
-  const tokenInput = useRef<HTMLInputElement>(null);
   const browsingHeading = useRef<HTMLHeadingElement>(null);
   const returningToCases = useRef(false);
   const lastCaseNavigation = useRef(caseNavigation);
@@ -82,78 +87,65 @@ export function CaseWorkspace({ caseNavigation = 0 }: { caseNavigation?: number 
       returningToCases.current = false;
     }
   }, [activeCase, caseNavigation]);
+  if (client.getUser()?.must_change_password) return <PasswordChange required />;
   return <>
     {!activeCase && <header className={`selection-header ${!client.hasToken() ? 'sign-in-heading' : ''}`}>
       <h1 ref={browsingHeading}>Case workspace</h1>
       <p>{client.hasToken() ? 'Select a case to continue your investigation, or create a new one.' : 'Secure access to your investigations and evidence.'}</p>
     </header>}
-    {!client.hasToken() && <section className="panel session-panel" aria-labelledby="session-heading">
-      <span className="section-label">INVESTIGATOR ACCESS</span>
-      <h2 id="session-heading">Case access</h2>
-      <p>Sign in to open your authorized cases.</p>
-      <form onSubmit={event => {
-        event.preventDefault();
-        try { client.setToken(token); setToken(''); setTokenError(''); }
-        catch { setTokenError('Enter a valid access token.'); }
-      }}>
-        <label htmlFor="access-token">Access token</label>
-        <input ref={tokenInput} id="access-token" name="access-token" type="password" autoComplete="off" required
-          value={token} onChange={event => setToken(event.target.value)} aria-describedby="session-help" />
-        <button className="button-primary" type="submit">Open cases</button>
-      </form>
-      <p id="session-help">Use an authorized token from your local administrator. It is kept only for this session.</p>
-      <div className="demo-access">
-        <p>Local demo · synthetic accounts</p>
-        <div>{['u02-synthetic-one', 'u02-synthetic-two'].map(value => <button key={value} type="button" className="demo-token identifier"
-          onClick={() => { setToken(value); tokenInput.current?.focus(); }}>{value}</button>)}</div>
-      </div>
-      {tokenError && <p role="alert">{tokenError}</p>}
-    </section>}
+    {!client.hasToken() && <LocalLogin />}
     <div style={{ display: !activeCase && client.hasToken() ? 'block' : 'none' }}>
-      {client.hasToken() && <CaseCreation state={state} create={(title, description) => store.create(title, description)} />}
+      {client.hasToken() && client.getUser()?.role !== 'reviewer' && <CaseCreation state={state} create={(title, description) => store.create(title, description)} />}
       <CasePanels state={state} load={offset => { void store.load(offset); }} select={id => { void store.select(id); }} />
     </div>
     {activeCase && <CaseAnalysisWorkspace key={activeCase.id} caseId={activeCase.id} caseDetails={activeCase}
       onBack={() => { returningToCases.current = true; void store.load(state.page?.offset ?? 0); }}>
-      <CaseEvidenceWorkspace caseId={activeCase.id} />
+      <CaseEvidenceWorkspace caseId={activeCase.id} caseTitle={activeCase.title} />
     </CaseAnalysisWorkspace>}
   </>;
 }
 
-export function CaseEvidenceWorkspace({ caseId }: { caseId: string }) {
+export function CaseEvidenceWorkspace({ caseId, caseTitle = 'Investigation' }: { caseId: string; caseTitle?: string }) {
   const [selection, setSelection] = useState<{ id: string; focus?: SourceFocus }>();
-  const [activeTab, setActiveTab] = useState<InvestigationTab>('evidence');
+  const [activeTab, setActiveTab] = useState<InvestigationTab>('overview');
+  const [visited, setVisited] = useState<Set<InvestigationTab>>(() => new Set(['overview']));
+  const [tool, setTool] = useState('findings');
+  const [visitedTools, setVisitedTools] = useState(() => new Set(['findings']));
+  const [intakeRequest, setIntakeRequest] = useState(0);
+  const navigate = (tab: InvestigationTab) => { setActiveTab(tab); setVisited(value => new Set([...value, tab])); };
   const inspectEvidence = (id: string, focus?: SourceFocus) => {
-    setSelection({ id, focus });
-    setActiveTab('evidence');
+    setSelection({ id, focus }); navigate('evidence');
   };
+  const addEvidence = () => { setIntakeRequest(value => value + 1); navigate('evidence'); };
+  const tools = [
+    ['findings', 'Review findings', 'Check the source evidence and record your assessment.'],
+    ['graph', 'Explore connections', 'Follow relationships between sources, devices, accounts, and events.'],
+    ['entities', 'Browse entities', 'Inspect extracted candidates and the evidence that mentions them.'],
+    ['triage', 'Prioritize evidence', 'See which sources warrant attention and record priority decisions.'],
+    ['questions', 'Ask about the case', 'Ask focused questions and verify every answer against its citations.'],
+  ] as const;
   return <div className="investigation-layout">
-    <InvestigationTabs activeTab={activeTab} onSelect={setActiveTab} />
+    <aside className="workspace-sidebar"><span className="section-label">CASE WORKSPACE</span><InvestigationTabs activeTab={activeTab} onSelect={navigate} /><div className="sidebar-note"><strong>Keep the source in sight</strong><p>Every finding is a lead until you verify its supporting evidence.</p></div></aside>
     <div className="investigation-content">
-    <div className="workflow-guide"><strong>Your investigation workflow</strong><span>01 Add evidence</span><span>02 Process each source</span><span>03 Start analysis</span><span>04 Review and verify</span></div>
-    {/* Keep every panel mounted: source context, pagination and test contracts survive tab changes. */}
-    <div id="panel-evidence" role="tabpanel" aria-labelledby="tab-evidence" tabIndex={0} style={{ display: activeTab === 'evidence' ? 'block' : 'none' }}>
-      <EvidenceWorkspace caseId={caseId} sourceSelection={selection} />
-    </div>
-    <div id="panel-triage" role="tabpanel" aria-labelledby="tab-triage" tabIndex={0} style={{ display: activeTab === 'triage' ? 'block' : 'none' }}>
-      <PriorityList inspectEvidence={inspectEvidence} />
-    </div>
-    <div id="panel-graph" role="tabpanel" aria-labelledby="tab-graph" tabIndex={0} style={{ display: activeTab === 'graph' ? 'block' : 'none' }}>
-      <GraphView inspectEvidence={inspectEvidence} />
-    </div>
-    <div id="panel-findings" role="tabpanel" aria-labelledby="tab-findings" tabIndex={0} style={{ display: activeTab === 'findings' ? 'block' : 'none' }}>
-      <FindingInspector inspectEvidence={inspectEvidence} />
-    </div>
-    <div id="panel-entities-events" role="tabpanel" aria-labelledby="tab-entities-events" tabIndex={0} style={{ display: activeTab === 'entities-events' ? 'block' : 'none' }}>
-      <EntityEventInspector caseId={caseId} inspectEvidence={inspectEvidence} />
-    </div>
-    <div id="panel-overview" role="tabpanel" aria-labelledby="tab-overview" tabIndex={0} style={{ display: activeTab === 'overview' ? 'block' : 'none' }}>
-      <ExecutiveBrief />
-      <CaseOverview caseId={caseId} />
-    </div>
-    <div id="panel-questions" role="tabpanel" aria-labelledby="tab-questions" tabIndex={0} style={{ display: activeTab === 'questions' ? 'block' : 'none' }}>
-      <QuestionAnswer key={caseId} caseId={caseId} inspectEvidence={inspectEvidence} />
-    </div>
+      {(['overview', 'evidence', 'timeline', 'investigation', 'report'] as const).map(tab => <div key={tab} id={`panel-${tab}`} role="tabpanel" aria-labelledby={`tab-${tab}`} tabIndex={0} hidden={activeTab !== tab}>
+        {visited.has(tab) && <>
+          {tab === 'overview' && <InvestigationOverview caseId={caseId} navigate={navigate} addEvidence={addEvidence} />}
+          {tab === 'evidence' && <><header className="workspace-section-heading"><span className="section-label">START WITH THE SOURCE</span><h2>Your evidence library</h2><p>Add original files, extract their contents, and inspect the records behind each finding.</p></header><EvidenceWorkspace caseId={caseId} sourceSelection={selection} intakeRequest={intakeRequest} /></>}
+          {tab === 'timeline' && <TimelineWorkspace caseId={caseId} inspectEvidence={inspectEvidence} />}
+          {tab === 'investigation' && <>
+            <header className="workspace-section-heading"><span className="section-label">FOLLOW THE EVIDENCE</span><h2>Investigate and verify</h2><p>{tools.find(item => item[0] === tool)?.[2]}</p></header>
+            <div className="investigation-tool-switch" role="group" aria-label="Investigation tools">{tools.map(([id, label]) => <button key={id} type="button" aria-pressed={tool === id} onClick={() => { setTool(id); setVisitedTools(value => new Set([...value, id])); }}>{label}</button>)}</div>
+            {tools.map(([id]) => <div key={id} hidden={tool !== id}>{visitedTools.has(id) && <>
+              {id === 'findings' && <FindingInspector inspectEvidence={inspectEvidence} />}
+              {id === 'graph' && <GraphView inspectEvidence={inspectEvidence} />}
+              {id === 'entities' && <EntityEventInspector caseId={caseId} inspectEvidence={inspectEvidence} />}
+              {id === 'triage' && <PriorityList inspectEvidence={inspectEvidence} />}
+              {id === 'questions' && <QuestionAnswer caseId={caseId} inspectEvidence={inspectEvidence} />}
+            </>}</div>)}
+          </>}
+          {tab === 'report' && <ReportWorkspace caseId={caseId} caseTitle={caseTitle} investigate={() => { setTool('findings'); navigate('investigation'); }} />}
+        </>}
+      </div>)}
     </div>
   </div>;
 }
@@ -169,7 +161,7 @@ export function CasePanels({ state, load, select }: { state: CaseState; load: (o
   return <div className={`workspace-layout case-browser ${state.detailStatus === 'idle' ? 'case-browser-idle' : ''}`}>
     <section className="panel" aria-labelledby="cases-heading" aria-busy={state.status === 'loading'}>
       <div className="section-heading"><div><span className="section-label">INVESTIGATIONS</span><h2 id="cases-heading" tabIndex={-1}>Your cases</h2></div><label className="search-field">Find a case<input type="search" placeholder="Search this page…" value={query} onChange={event => setQuery(event.target.value)} /></label></div>
-      {state.status === 'signed-out' && <p>Enter an access token to load your cases.</p>}
+      {state.status === 'signed-out' && <p>Sign in to load your cases.</p>}
       {state.status === 'loading' && <p role="status">Loading cases...</p>}
       {state.status === 'error' && <><p role="alert">{state.message}</p><button onClick={() => load(0)}>Try again</button></>}
       {state.status === 'ready' && page && <>
@@ -177,7 +169,7 @@ export function CasePanels({ state, load, select }: { state: CaseState; load: (o
         {page.items.length === 0 ? <p>{page.total === 0 ? 'No cases are available to this account.' : 'No cases on this page. Return to the first page or refresh.'}</p> :
           <ul className="case-list">{visibleCases.map(item => <li key={item.id}>
             <button onClick={() => select(item.id)} aria-pressed={state.detail?.id === item.id}>{item.title}</button>
-            <p className="identifier case-record-id">{item.id}</p>
+            <p className="case-description">{item.description || 'Open this case to continue reviewing its evidence.'}</p>
             <p className="case-created">Created <time dateTime={item.created_at}>{new Date(item.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' })}</time></p>
             <button className="case-open" onClick={() => select(item.id)} aria-label={`Open case ${item.title}`}>Open case <span aria-hidden="true">→</span></button>
           </li>)}</ul>}
@@ -221,8 +213,8 @@ export function CaseCreation({ state, create }: { state: CaseState; create: (tit
       <input ref={titleInput} id="case-title" name="title" required placeholder="e.g. November network review" value={title}
         disabled={busy} aria-invalid={state.createStatus === 'error'} aria-describedby={state.createMessage ? 'create-error' : undefined}
         onChange={event => setTitle(event.target.value)} />
-      <p>Title: 1 to 200 characters. Description: up to 5000 characters.</p>
-      <label htmlFor="case-description">Description (optional)</label>
+      <p>Give the case a recognizable name. You can describe your scope and investigative questions below.</p>
+      <label htmlFor="case-description">Scope and investigative questions (optional)</label>
       <textarea id="case-description" name="description" placeholder="What are you investigating? Add context for your review." value={description} disabled={busy}
         onChange={event => setDescription(event.target.value)} />
       {state.createMessage && <p id="create-error" role="alert">{state.createMessage}</p>}

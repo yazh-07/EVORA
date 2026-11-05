@@ -34,7 +34,7 @@ test('explicit bodyless typed start carries UUID key; serial queued/running/comp
   const calls = []; const states = [];
   const { controller } = setup(async (url, options) => { calls.push({ url: String(url), ...options }); return reply(responses.shift()); });
   try {
-    assert.match(render(controller), />Start Analysis<\/button>/); assert.equal(calls.length, 0);
+    assert.match(render(controller), />Run case analysis<\/button>/); assert.equal(calls.length, 0);
     controller.subscribe(() => { states.push({ ...controller.getSnapshot(), markup: render(controller) }); });
     const click = StartAnalysis({ state: controller.getSnapshot(), submit: controller.submit }).props.children[0].props.onClick;
     click(); await controller.submit();
@@ -48,7 +48,7 @@ test('explicit bodyless typed start carries UUID key; serial queued/running/comp
       assert.equal(call.method, 'GET'); assert.ok(call.url.endsWith(`/analysis-runs/${runId}`));
       assert.equal(call.body, undefined); assert.equal(call.cache, 'no-store');
     }
-    assert.ok(states.some(s => s.markup.includes('Queued')));
+    assert.ok(states.some(s => s.markup.includes('Waiting to analyze processed evidence')));
     assert.ok(states.some(s => s.markup.includes('Analyzing case evidence...')));
     assert.ok(states.filter(s => s.status !== 'terminal').every(s => s.pinnedAnalysisRunId === null));
     assert.equal(controller.getSnapshot().pinnedAnalysisRunId, runId);
@@ -73,7 +73,7 @@ test('terminal POST must be confirmed by polling; existing completed pin survive
     await until(() => controller.getSnapshot().status === 'terminal');
     assert.match(render(controller), /Analysis failed: &lt;script&gt;synthetic failure/);
     assert.doesNotMatch(render(controller), /<script>/);
-    assert.match(render(controller), /Retry analysis with new key/);
+    assert.match(render(controller), /Retry case analysis/);
     assert.equal(controller.getSnapshot().pinnedAnalysisRunId, runId);
     const before = polls; await delay(10); assert.equal(polls, before);
     phase = 0; await controller.submit();
@@ -165,7 +165,7 @@ test('case workspace exposes one initially empty analysis pin and the explicit a
     return createElement('p', {}, `${value.caseId}:${value.analysis_run_id ?? 'no completed analysis'}`);
   }
   const markup = renderToStaticMarkup(createElement(ApiProvider, { client }, createElement(CaseAnalysisWorkspace, { caseId }, createElement(Consumer))));
-  assert.match(markup, />Start Analysis<\/button>/);
+  assert.match(markup, />Run case analysis<\/button>/);
   assert.ok(markup.includes(`${caseId}:no completed analysis`));
 });
 
@@ -202,4 +202,18 @@ test('switching to a newer completed pin is atomic and object-key order does not
     assert.ok(pins.filter(([status]) => status !== 'terminal').every(([, pin]) => pin === runId));
     assert.deepEqual(pins.at(-1), ['terminal', otherId]);
   } finally { controller.dispose(); }
+});
+
+test('explicit history choice changes the pin while passive discovery cannot override the investigator', () => {
+  const { controller } = setup(async () => { throw Error('No requests expected'); });
+  try {
+    controller.selectCompletedRun(runId);
+    controller.selectCompletedRun(otherId);
+    assert.equal(controller.getSnapshot().pinnedAnalysisRunId,runId);
+    controller.chooseCompletedRun(otherId);
+    assert.equal(controller.getSnapshot().pinnedAnalysisRunId,otherId);
+    controller.selectCompletedRun(runId);
+    controller.chooseCompletedRun('invalid');
+    assert.equal(controller.getSnapshot().pinnedAnalysisRunId,otherId);
+  } finally {controller.dispose();}
 });

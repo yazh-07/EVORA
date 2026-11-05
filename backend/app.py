@@ -29,7 +29,20 @@ from backend.overrides import initialize_overrides, router as overrides_router
 from backend.triage_endpoints import router as triage_router
 from backend.questions import router as questions_router
 from backend.transcripts import initialize_transcripts, router as transcripts_router
+from backend.local_auth import initialize_auth, router as local_auth_router
 from backend.errors import AccessError, access_error, invalid_request
+
+
+def validate_offline_endpoint(value):
+    import ipaddress
+    url = urlsplit(value)
+    host = url.hostname
+    try:
+        local = host == 'localhost' or ipaddress.ip_address(host or '').is_loopback
+    except ValueError:
+        local = False
+    if url.scheme not in ('http', 'https') or not local or url.username or url.password or url.query or url.fragment or url.path not in ('', '/'):
+        raise AccessError(400, 'OFFLINE_ENDPOINT', 'Offline mode requires an Ollama endpoint on localhost or a loopback address.')
 
 
 class OllamaEndpoint(BaseModel):
@@ -95,6 +108,7 @@ def create_app(
     token_verifier: TokenVerifier | None = None,
     case_access: CaseAccess | None = None,
     storage_dir: str | Path | None = None,
+    offline_mode: bool | None = None,
 ) -> FastAPI:
     """Configure an isolated app; opening SQLite is deferred until startup."""
     configured_path = (
@@ -109,6 +123,8 @@ def create_app(
     @asynccontextmanager
     async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
         initialize_cases(database)
+        if _app.state.local_auth:
+            initialize_auth(database)
         initialize_evidence(database)
         initialize_audit(database)
         initialize_processing(database)
@@ -131,11 +147,29 @@ def create_app(
         docs_url=None,
         redoc_url=None,
     )
+    app.state.local_auth = token_verifier is None
+    app.state.offline_mode = (app.state.local_auth if offline_mode is None else offline_mode)
+    if app.state.local_auth:
+        from starlette.middleware.trustedhost import TrustedHostMiddleware
+        app.add_middleware(TrustedHostMiddleware, allowed_hosts=['localhost', '127.0.0.1', '[::1]'])
+    @app.middleware('http')
+    async def local_session_headers(request: Request, call_next):
+        response = await call_next(request)
+        if app.state.local_auth and request.url.path.startswith('/api/'):
+            response.headers['Cache-Control'] = 'no-store'
+            if getattr(request.state, 'actor_id', None):
+                response.headers['X-Evora-User'] = request.state.actor_id
+        return response
+    app.include_router(local_auth_router)
     app.state.qa_model = os.environ.get("EVORA_QA_MODEL", "deepseek-r1:8b")
     app.state.qa_url = os.environ.get("EVORA_QA_URL", "http://127.0.0.1:11434").rstrip("/")
     app.state.qa_provider = os.environ.get('EVORA_QA_PROVIDER', 'ollama')
     app.state.openai_api_key = os.environ.get('OPENAI_API_KEY') or None
     app.state.openai_base_url = os.environ.get('OPENAI_BASE_URL', 'https://api.openai.com/v1').rstrip('/')
+    if app.state.offline_mode:
+        app.state.qa_provider = 'ollama'
+        app.state.openai_api_key = None
+        validate_offline_endpoint(app.state.qa_url)
     app.state.detection_threshold = 0.7
     app.state.show_provenance_rays = True
     app.state.database = database
@@ -153,10 +187,17 @@ def create_app(
     async def get_settings(response: Response):
         response.headers["Cache-Control"] = "no-store"
         return {**{key: getattr(app.state, key) for key in Settings.model_fields if key != 'openai_api_key'},
-                'has_openai_key': bool(app.state.openai_api_key)}
+                'has_openai_key': bool(app.state.openai_api_key), **({'offline_mode': app.state.offline_mode} if app.state.local_auth else {})}
 
     @app.put("/api/v1/settings", dependencies=[Depends(authenticated_actor)])
-    async def put_settings(body: Settings, response: Response):
+    async def put_settings(body: Settings, response: Response, request: Request):
+        if app.state.local_auth:
+            from backend.local_auth import admin
+            admin(authenticated_actor(request))
+        if app.state.offline_mode:
+            if body.qa_provider != 'ollama' or body.openai_api_key:
+                raise AccessError(400, 'OFFLINE_MODE', 'Offline mode supports local Ollama models only.')
+            validate_offline_endpoint(body.qa_url)
         # Validation finishes before any mutation. Omitted values remain unchanged.
         for key, value in body.model_dump(exclude_unset=True).items():
             if key == 'openai_api_key' and not value:
@@ -168,6 +209,10 @@ def create_app(
     async def list_models(body: ProviderEndpoint, response: Response):
         response.headers["Cache-Control"] = "no-store"
         provider = body.qa_provider if 'qa_provider' in body.model_fields_set else app.state.qa_provider
+        if app.state.offline_mode:
+            if provider != 'ollama':
+                raise AccessError(400, 'OFFLINE_MODE', 'Cloud providers are disabled in offline mode.')
+            validate_offline_endpoint(body.qa_url if 'qa_url' in body.model_fields_set else app.state.qa_url)
         if provider == 'openai':
             api_key = body.openai_api_key or app.state.openai_api_key
             if not api_key:

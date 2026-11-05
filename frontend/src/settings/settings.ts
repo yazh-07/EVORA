@@ -2,6 +2,7 @@ import { useMemo, useSyncExternalStore } from 'react';
 import type { ApiClient } from '../api/client';
 
 export type Settings = {
+  offline_mode?: boolean;
   qa_provider: 'ollama' | 'openai';
   openai_base_url: string;
   has_openai_key: boolean;
@@ -29,6 +30,7 @@ export function parseSettings(raw: string | null): Settings {
   try {
     const saved = JSON.parse(raw ?? '{}');
     if (!saved || typeof saved !== 'object') return settings;
+    if (typeof saved.offline_mode === 'boolean') settings.offline_mode = saved.offline_mode;
     if (saved.qa_provider === 'openai') settings.qa_provider = 'openai';
     if (typeof saved.openai_base_url === 'string' && /^https?:\/\//.test(saved.openai_base_url)) settings.openai_base_url = saved.openai_base_url;
     if (typeof saved.has_openai_key === 'boolean') settings.has_openai_key = saved.has_openai_key;

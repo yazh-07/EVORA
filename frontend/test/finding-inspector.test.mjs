@@ -37,7 +37,7 @@ test('typed GET, safe list/details, authoritative pagination and source navigati
   }, { limit: 2, onSelectedRun: pin => pins.push(pin) });
   try {
     await settled(c); assert.equal(c.getSnapshot().status, 'ready'); const html = render(c);
-    for (const text of ['relationship', 'Candidate match', 'Confidence: 0.00', 'shared-identifier/1', 'Supporting evidence IDs', 'Supporting observation IDs', 'Contradicting evidence IDs', 'Missing information', id(40), id(41), id(50)]) assert.ok(html.includes(text), text);
+    for (const text of ['relationship', 'Candidate match', 'Confidence: 0.00', 'shared-identifier/1', 'Supporting sources', 'Observation references', 'Contradicting evidence IDs', 'Missing information', id(40), id(41), id(50)]) assert.ok(html.includes(text), text);
     assert.match(html, /&lt;script&gt;/); assert.match(html, /&lt;img&gt;/); assert.doesNotMatch(html, /<script>|<img>/);
     assert.match(html, /disabled="">Previous/); click(c, 'Next'); await settled(c);
     assert.equal(c.getSnapshot().page.offset, 2); assert.match(render(c), /Showing 3–3/); assert.match(render(c), /disabled="">Next/);
@@ -170,5 +170,5 @@ test('page switch cancels pending detail sources; session replacement clears fin
 test('finding component composes with shared case analysis context', () => {
   const client = createApiClient({ baseUrl: 'http://127.0.0.1:8000' }); client.setToken('synthetic');
   const html = renderToStaticMarkup(createElement(ApiProvider, { client }, createElement(CaseAnalysisWorkspace, { caseId }, createElement(FindingInspector))));
-  assert.match(html, /Findings/); assert.match(html, /Start Analysis/);
+  assert.match(html, /Findings/); assert.match(html, /Run case analysis/);
 });

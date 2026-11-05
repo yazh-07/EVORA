@@ -14,7 +14,7 @@ const nodeShape = (kind: string) => ['person', 'face', 'vehicle', 'plate', 'devi
   ['network.activity', 'gps.location', 'event'].includes(kind) ? 'event' : kind === 'evidence' ? 'evidence' : 'other';
 
 type Point = { x: number; y: number };
-type GraphViewOptions = { filter: 'All' | 'Evidence' | 'Entities' | 'Events'; query: string; zoom: number; hideRawEvents?: boolean };
+type GraphViewOptions = { filter: 'All' | 'Evidence' | 'Entities' | 'Events'; query: string; zoom: number; hideRawEvents?: boolean; focusSelection?: boolean };
 const defaultView: GraphViewOptions = { filter: 'All', query: '', zoom: 1 };
 const shortLabel = (label: string, length = 28) => label.length > length ? `${label.slice(0, length - 1)}…` : label;
 const byId = (a: { id: string }, b: { id: string }) => a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
@@ -387,8 +387,14 @@ export function GraphPanel({ state, load, select, inspectEvidence, view = defaul
   const matches = (n: NonNullable<typeof graph>['nodes'][number]) =>
     [labels.get(n.id)!, n.label, n.kind, n.id, ...n.evidence_ids].some(value => value.toLocaleLowerCase().includes(query));
   const filterShape = { All: '', Evidence: 'evidence', Entities: 'entity', Events: 'event' }[view.filter];
+  const neighborhood = new Set<string>(node ? [node.id] : []);
+  if (node) for (const link of graph?.edges ?? []) {
+    if (link.from_id === node.id) neighborhood.add(link.to_id);
+    if (link.to_id === node.id) neighborhood.add(link.from_id);
+  }
   const visibleNodes = graph?.nodes.filter(n => (!filterShape || nodeShape(n.kind) === filterShape)
-    && (!view.hideRawEvents || !isRawLogEvent(n.kind, n.entity_type))) ?? [];
+    && (!view.hideRawEvents || !isRawLogEvent(n.kind, n.entity_type))
+    && (!view.focusSelection || !node || neighborhood.has(n.id))) ?? [];
   const visibleIds = new Set(visibleNodes.map(n => n.id));
   const visibleEdges = graph?.edges.filter(e => visibleIds.has(e.from_id) && visibleIds.has(e.to_id)) ?? [];
   const edgeGroups = new Map<string, typeof visibleEdges>();
@@ -404,7 +410,7 @@ export function GraphPanel({ state, load, select, inspectEvidence, view = defaul
   const source = (id: string, label = id, focus?: SourceFocus) => inspectEvidence ?
     <button type="button" className="identifier" onClick={() => inspectEvidence(id, focus)} aria-label={`Inspect source evidence ${id}: ${label}`}>{label}</button> : <span className="identifier">{label}</span>;
   return <section className="panel knowledge-graph" aria-label="Knowledge Graph" aria-busy={state.status === 'loading'}>
-    <span className="section-label">RELATIONSHIP INTELLIGENCE</span><h2>Knowledge Graph</h2>
+    <span className="section-label">RELATIONSHIPS AND THEIR SOURCES</span><h2>Explore connections</h2>
     <p>Candidate relationships require human verification; confidence does not establish identity, source reliability or guilt.</p>
     {state.status === 'loading' && <p role="status">Loading graph...</p>}
     {state.message && <p role="alert">{state.message}</p>}
@@ -430,6 +436,7 @@ export function GraphPanel({ state, load, select, inspectEvidence, view = defaul
               {(['All', 'Evidence', 'Entities', 'Events'] as const).map(filter =>
                 <button type="button" key={filter} aria-pressed={view.filter === filter} onClick={() => changeView({ filter })}>{filter}</button>)}
             </div>
+            <button type="button" disabled={!node && !view.focusSelection} aria-pressed={!!view.focusSelection} onClick={() => changeView({ focusSelection: !view.focusSelection })}>Focus on selected node</button>
             <button type="button" aria-pressed={!!view.hideRawEvents} onClick={() => changeView({ hideRawEvents: !view.hideRawEvents })}>Hide raw log events</button>
             <label className="graph-search">Search nodes
               <input type="search" value={view.query} placeholder="Label, kind or source ID…"

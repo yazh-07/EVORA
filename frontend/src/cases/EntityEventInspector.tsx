@@ -22,10 +22,10 @@ export function EntityEventPanel({ state, load, selectView, inspectEvidence }: {
   const sources = (evidenceIds: string[], observationIds: string[]) => <>
     <h4>Supporting evidence</h4>
     {evidenceIds.length ? <ul className="candidate-sources">{evidenceIds.map((id, index) => <li key={index}>
-      <button type="button" aria-label={`Inspect source evidence ${id}`} onClick={() => inspectEvidence(id)}>Inspect source evidence {id}</button>
+      <button type="button" aria-label={`Inspect source evidence ${id}`} onClick={() => inspectEvidence(id)}>Open source {index + 1} ↗</button>
     </li>)}</ul> : <p>No supporting evidence IDs provided.</p>}
-    <h4>Supporting observation IDs</h4>
-    {observationIds.length ? <ul>{observationIds.map((id, index) => <li className="identifier" key={index}>{id}</li>)}</ul> : <p>No supporting observation IDs provided.</p>}
+    <details className="technical-details"><summary>Supporting observation references</summary>
+    {observationIds.length ? <ul>{observationIds.map((id, index) => <li className="identifier" key={index}>{id}</li>)}</ul> : <p>No supporting observation IDs provided.</p>}</details>
   </>;
   return <section className="panel entity-event-inspector" aria-label="Candidate entities and events" aria-busy={current.status === 'loading'}>
     <h2>Entities &amp; Events</h2>
@@ -46,8 +46,7 @@ export function EntityEventPanel({ state, load, selectView, inspectEvidence }: {
         {state.entities.page.items.map(item => <li key={item.id}>
           <span className="candidate-kind">{item.kind}</span>
           <h4 className="candidate-text">{item.canonical_label}</h4>
-          <p className="identifier">Candidate key: {item.candidate_key}</p>
-          <p>Confidence: {item.confidence.toFixed(2)}</p>
+          <details className="technical-details"><summary>Extraction details</summary><p className="identifier">Candidate key: {item.candidate_key}</p><p>Confidence: {item.confidence.toFixed(2)}</p></details>
           {sources(item.evidence_ids, item.observation_ids)}
         </li>)}
       </ul>}

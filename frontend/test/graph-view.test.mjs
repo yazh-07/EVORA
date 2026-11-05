@@ -409,3 +409,13 @@ test('evidence UUID captions fall back to clean filenames', () => {
   g.nodes[0].properties = { filename: '/uploads/network.csv' };
   assert.ok(diagramNodes(panel(g)).some(e => e.props['aria-label'] === 'Inspect node evidence: network.csv'));
 });
+
+test('focusing a selected node shows only it and direct neighbors without dropping the underlying graph', () => {
+  const source=graph();
+  const state={status:'ready',graph:source,selection:{kind:'node',id:evidenceId},citations:[],citationStatus:'idle',message:''};
+  const focused=GraphPanel({state,load:async()=>{},select:async()=>{},view:{filter:'All',query:'',zoom:1,focusSelection:true}});
+  assert.deepEqual(elements(focused).filter(item=>item.props?.['data-node-id']).map(item=>item.props['data-node-id']).sort(),[evidenceId,id(11)].sort());
+  assert.equal(source.nodes.length,3);
+  const complete=GraphPanel({state:{...state,selection:null},load:async()=>{},select:async()=>{},view:{filter:'All',query:'',zoom:1,focusSelection:true}});
+  assert.equal(elements(complete).filter(item=>item.props?.['data-node-id']).length,3);
+});

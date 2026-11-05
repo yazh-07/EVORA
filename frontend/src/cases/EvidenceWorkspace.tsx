@@ -9,14 +9,16 @@ import { useApiClient } from '../api/ApiProvider';
 import { createEvidenceStore, evidenceKinds } from './evidenceStore';
 import type { Evidence, EvidenceState } from './evidenceStore';
 import { detectEvidenceKind } from './evidenceDetection';
+import { EvidenceIntake, formatSupport } from './EvidenceIntake';
+import { OriginalTextPreview } from './OriginalTextPreview';
 
-export function EvidenceWorkspace({ caseId, sourceSelection }: { caseId: string; sourceSelection?: { id: string; focus?: SourceFocus } }) {
+export function EvidenceWorkspace({ caseId, sourceSelection, intakeRequest = 0 }: { caseId: string; intakeRequest?: number; sourceSelection?: { id: string; focus?: SourceFocus } }) {
   const client = useApiClient();
   const store = useMemo(() => createEvidenceStore(client, caseId), [client, caseId]);
   const state = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot);
   useEffect(() => { void store.start(); return () => store.dispose(); }, [store]);
   useEffect(() => { if (sourceSelection) void store.select(sourceSelection.id); }, [store, sourceSelection]);
-  return <>{sourceSelection && <p role="status">Source evidence inspection shows live metadata. Citation locators select their referenced processing output when available; other processing controls show live outputs.</p>}<EvidencePanels sourceFocus={sourceSelection?.id === state.detail?.id ? sourceSelection?.focus : undefined} state={state} load={offset => { void store.load(offset); }} select={id => { void store.select(id); }} upload={store.upload} /></>;
+  return <>{sourceSelection && <p role="status">Source evidence inspection shows live metadata. Citation locators select their referenced processing output when available; other processing controls show live outputs.</p>}<EvidencePanels readOnly={client.getUser()?.role === 'reviewer'} intakeRequest={intakeRequest} sourceFocus={sourceSelection?.id === state.detail?.id ? sourceSelection?.focus : undefined} state={state} load={offset => { void store.load(offset); }} select={id => { void store.select(id); }} upload={store.upload} /></>;
 }
 function Metadata({ item, detailed = false }: { item: Evidence; detailed?: boolean }) {
   return <>
@@ -33,7 +35,9 @@ function Metadata({ item, detailed = false }: { item: Evidence; detailed?: boole
     </details>}
   </>;
 }
-export function EvidencePanels({ state, load, select, upload, sourceFocus }: {
+export function EvidencePanels({ state, load, select, upload, sourceFocus, intakeRequest = 0, readOnly = false }: {
+  readOnly?: boolean;
+  intakeRequest?: number;
   sourceFocus?: SourceFocus; state: EvidenceState; load: (offset: number) => void; select: (id: string) => void;
   upload: (file: File | null, kind: string, label: string, acquiredAt: string) => Promise<boolean>;
 }) {
@@ -41,12 +45,13 @@ export function EvidencePanels({ state, load, select, upload, sourceFocus }: {
   const addButton = useRef<HTMLButtonElement>(null);
   const error = useRef<HTMLParagraphElement>(null);
   useEffect(() => { if (state.uploadMessage) error.current?.focus(); }, [state.uploadMessage]);
-  useEffect(() => { if (state.detailStatus === 'ready' || state.detailStatus === 'error') heading.current?.focus(); }, [state.detail, state.detailStatus]);
+  useEffect(() => { if (!state.submitting && (state.detailStatus === 'ready' || state.detailStatus === 'error')) heading.current?.focus(); }, [state.detail, state.detailStatus]);
   const page = state.page;
   const [query, setQuery] = useState('');
   const [kind, setKind] = useState('all');
   const [sort, setSort] = useState('newest');
   const [intakeOpen, setIntakeOpen] = useState(false);
+  useEffect(() => { if (intakeRequest) setIntakeOpen(true); }, [intakeRequest]);
   const [detectedKind, setDetectedKind] = useState<string>();
   const [detecting, setDetecting] = useState(false);
   const cancelDetection = useRef<(() => void) | undefined>(undefined);
@@ -57,12 +62,14 @@ export function EvidencePanels({ state, load, select, upload, sourceFocus }: {
   ).sort((a, b) => sort === 'name' ? a.source_label.localeCompare(b.source_label) : sort === 'size' ? b.size_bytes - a.size_bytes : b.created_at.localeCompare(a.created_at));
   return <div className="evidence-workspace">
     {state.uploaded && <p className="upload-confirmation" role="status">Evidence uploaded. The original file and integrity metadata have been saved.</p>}
-    <section className="panel intake-panel" aria-labelledby="upload-heading">
+    <section hidden={readOnly} className="panel intake-panel" aria-labelledby="upload-heading">
       <details className="intake-disclosure" id="evidence-intake" open={intakeOpen} onToggle={event => {
         setIntakeOpen(event.currentTarget.open);
         if (!event.currentTarget.open && event.currentTarget.contains(document.activeElement)) addButton.current?.focus();
       }}>
-      <summary><h2 id="upload-heading">Upload evidence</h2><span>Add an original file to this case</span></summary>
+      <summary><h2 id="upload-heading">Add evidence</h2><span>Originals are preserved</span></summary>
+      <EvidenceIntake upload={upload} submitting={state.submitting} />
+      <details className="single-intake"><summary>Add one file with individual metadata</summary>
       <p>Upload one original file. Intake stores its bytes and integrity metadata; content has not been verified.</p>
       <form className="upload-form" noValidate aria-busy={state.submitting} onSubmit={async event => {
         event.preventDefault();
@@ -106,10 +113,12 @@ export function EvidencePanels({ state, load, select, upload, sourceFocus }: {
         {state.uploaded && <p role="status">Evidence uploaded. Its confirmed metadata is shown in the inspector.</p>}
       </form>
       </details>
+      {state.uploadMessage && <p role="alert">{state.uploadMessage}</p>}
+      </details>
     </section>
     <div className="workspace-layout">
       <section className="panel" aria-labelledby="evidence-heading" aria-busy={state.status === 'loading'}>
-        <div className="section-heading"><div><span className="section-label">SOURCE LIBRARY</span><h2 id="evidence-heading">Case evidence</h2></div><button ref={addButton} type="button" className="button-primary" aria-expanded={intakeOpen} aria-controls="evidence-intake" onClick={() => { setIntakeOpen(true); requestAnimationFrame(() => document.getElementById('evidence-file')?.focus()); }}>＋ Add evidence</button></div>
+        <div className="section-heading"><div><span className="section-label">SOURCE LIBRARY</span><h2 id="evidence-heading">Case evidence</h2></div><button ref={addButton} hidden={readOnly} type="button" className="button-primary" aria-expanded={intakeOpen} aria-controls="evidence-intake" onClick={() => { setIntakeOpen(true); requestAnimationFrame(() => document.getElementById('batch-evidence-files')?.focus()); }}>＋ Add evidence</button></div>
         <p>Choose a source to inspect its original, process its contents, and verify observations.</p>
         <div className="evidence-toolbar">
           <label className="search-field">Search evidence<input type="search" placeholder="Filename, label, ID or hash…" value={query} onChange={event => setQuery(event.target.value)} /></label>
@@ -140,11 +149,12 @@ export function EvidencePanels({ state, load, select, upload, sourceFocus }: {
         <button type="button" onClick={() => load(0)} disabled={state.submitting}>Refresh evidence</button>
       </section>
       <aside className="panel inspector" aria-labelledby="evidence-inspector" aria-busy={state.detailStatus === 'loading'}>
-        <h2 id="evidence-inspector" ref={heading} tabIndex={-1}>Evidence metadata</h2>
+        <h2 id="evidence-inspector" ref={heading} tabIndex={-1}>Inspect the source</h2>
         {state.detailStatus === 'idle' && <div className="inspector-empty"><span aria-hidden="true">↗</span><h3>Follow the source</h3><p>Select evidence to inspect its metadata.</p><p>Original file, integrity hash, processing controls and extracted observations appear here.</p></div>}
         {state.detailStatus === 'loading' && <p role="status">Loading evidence metadata...</p>}
         {state.detailStatus === 'error' && <p role="alert">{state.detailMessage} Select evidence again to retry.</p>}
-        {state.detail && <><h3>{state.detail.source_label}</h3><Metadata item={state.detail} detailed /><OriginalDownload key={state.detail.id} item={state.detail} />
+        {state.detail && <><h3>{state.detail.source_label}</h3><p className="format-support">{formatSupport(state.detail.filename, state.detail.kind)}</p><details className="source-integrity"><summary>Integrity and acquisition details</summary><Metadata item={state.detail} detailed /></details><OriginalDownload key={state.detail.id} item={state.detail} />
+          <OriginalTextPreview key={`original:${state.detail.id}`} item={state.detail} />
           <EvidenceProcessingInspection key={`${state.detail.case_id}:${state.detail.id}`} item={state.detail} sourceFocus={sourceFocus} /></>}
       </aside>
     </div>
@@ -160,6 +170,7 @@ export function EvidenceProcessingInspection({ item, sourceFocus }: { item: Evid
     setCompletedRunId(runId); setTranscriptRefreshKey(runId);
   }, []);
   return <>
+    <div className="extraction-heading"><h3>Extract and inspect</h3><p>Processing derives observations from the original. Review the source before relying on an extraction.</p></div>
     <StartProcessing caseId={item.case_id} evidenceId={item.id} onCompleted={onProcessingCompleted} />
     {completedRunId && <label><input type="checkbox" checked={pinnedRunId !== undefined} onChange={event => setPinnedRunId(event.target.checked ? completedRunId : undefined)} />
       Pin observations to completed run {pinnedRunId ?? completedRunId}

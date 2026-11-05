@@ -19,6 +19,7 @@ from backend.errors import AccessError
 @dataclass(frozen=True)
 class Actor:
     id: str
+    role: str = "investigator"
 
 
 @dataclass(frozen=True)
@@ -89,6 +90,13 @@ class SyntheticTokenVerifier:
 
 def authenticated_actor(request: Request) -> Actor:
     """Accept one well-formed Authorization bearer header, never query/cookies."""
+    if getattr(request.app.state, 'local_auth', False):
+        from backend.local_auth import session_actor
+        actor = session_actor(request)
+        if actor is None:
+            raise AccessError(401, 'UNAUTHORIZED', 'Sign in to your local account.')
+        request.state.actor_id = actor.id
+        return actor
     values = request.headers.getlist("authorization")
     match = _BEARER.fullmatch(values[0]) if len(values) == 1 else None
     actor = request.app.state.token_verifier.verify(match[1]) if match else None

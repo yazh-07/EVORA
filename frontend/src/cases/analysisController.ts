@@ -25,7 +25,7 @@ function snapshotKey(run: AnalysisRun): string {
   return JSON.stringify([s.case_id, s.evidence_ids, s.processing_run_ids, s.observation_ids, s.sha256]);
 }
 
-function validRun(run: AnalysisRun, caseId: string): boolean {
+export function validAnalysisRun(run: AnalysisRun, caseId: string): boolean {
   const snapshot = run?.input_snapshot;
   return !!run && uuid(run.id) && run.case_id === caseId &&
     ['queued', 'running', 'completed', 'failed'].includes(run.status) &&
@@ -61,7 +61,7 @@ export function createAnalysisController(client: ApiClient, caseId: string, poll
         path: { caseId }, header: { 'Idempotency-Key': crypto.randomUUID() }, signal: pending.signal,
       });
       if (!current()) return;
-      if (!validRun(run, caseId) || (runId && run.id !== runId) ||
+      if (!validAnalysisRun(run, caseId) || (runId && run.id !== runId) ||
           (runId && (!state.run || snapshotKey(run) !== snapshotKey(state.run)))) {
         throw new Error('Invalid analysis response.');
       }
@@ -94,6 +94,10 @@ export function createAnalysisController(client: ApiClient, caseId: string, poll
     // A selected listTriage response identifies a completed same-case snapshot.
     selectCompletedRun(id: string) {
       if (enabled && !state.pinnedAnalysisRunId && uuid(id)) publish({ ...state, pinnedAnalysisRunId: id });
+    },
+    // Explicit investigator selection, separate from first-result discovery.
+    chooseCompletedRun(id: string) {
+      if (enabled && uuid(id)) publish({ ...state, pinnedAnalysisRunId: id });
     },
     async submit() {
       if (!enabled || request || state.status === 'polling') return;

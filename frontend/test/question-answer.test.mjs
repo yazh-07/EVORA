@@ -232,12 +232,11 @@ test('disposal is restartable and unsubscribes from session updates', async t =>
   assert.match(render(c), /Authentication required/);
 });
 
-test('investigation workspace exposes a labeled questions tab and associated panel', t => {
+test('workspace defers the question composer until the investigator opens the tool', t => {
   const { client, calls } = setup(t);
   const html = renderToStaticMarkup(createElement(ApiProvider, { client },
     createElement(CaseAnalysisWorkspace, { caseId }, createElement(CaseEvidenceWorkspace, { caseId }))));
-  assert.match(html, /role="tab" id="tab-questions" aria-controls="panel-questions"/);
-  assert.match(html, /Questions &amp; Answers/);
-  assert.match(html, /id="panel-questions" role="tabpanel" aria-labelledby="tab-questions"/);
-  assert.match(html, /id="case-question"/); assert.equal(calls.length, 0);
+  assert.match(html, /role="tab" id="tab-investigation" aria-controls="panel-investigation"/);
+  assert.match(html, /id="panel-investigation" role="tabpanel" aria-labelledby="tab-investigation" tabindex="0" hidden=""/);
+  assert.doesNotMatch(html, /id="case-question"/); assert.equal(calls.length, 0);
 });

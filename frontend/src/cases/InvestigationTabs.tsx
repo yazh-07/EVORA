@@ -20,13 +20,11 @@ export function FindingKindFilter({ value, onSelect }: {
 }
 
 const tabs = [
-  { id: 'evidence', label: 'Evidence & Intake', path: 'M3 7h7l2 2h9v11H3V7Zm0 0V4h7l2 3' },
-  { id: 'triage', label: 'Triage & Priority', path: 'M4 5h16M4 12h11M4 19h6M18 10v10m-3-3 3 3 3-3' },
-  { id: 'graph', label: 'Knowledge Graph', path: 'M9 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm12 0a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm-6 13a3 3 0 1 1-6 0 3 3 0 0 1 6 0ZM9 6h6M7 9l4 7m6-7-4 7' },
-  { id: 'entities-events', label: 'Entities & Events', path: 'M8 7a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm-6 13v-3a3 3 0 0 1 6 0v3M12 5h9M12 12h9M12 19h9' },
-  { id: 'findings', label: 'Findings & Citations', path: 'M16 10a6 6 0 1 1-12 0 6 6 0 0 1 12 0Zm-2 4 6 6M7 8h6M7 11h4' },
-  { id: 'questions', label: 'Questions & Answers', path: 'M4 4h16v13H9l-5 4V4Zm5 4a3 3 0 0 1 6 0c0 2-3 2-3 4m0 2v1' },
-  { id: 'overview', label: 'Case Overview', path: 'M4 3v18h17M8 17v-5m5 5V8m5 9V4' },
+  { id: 'overview', label: 'Overview', path: 'M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z' },
+  { id: 'evidence', label: 'Evidence', path: 'M3 7h7l2 2h9v11H3V7Zm0 0V4h7l2 3' },
+  { id: 'timeline', label: 'Timeline', path: 'M12 3v18M5 6h7m0 6h7M5 18h7' },
+  { id: 'investigation', label: 'Investigation', path: 'M16 10a6 6 0 1 1-12 0 6 6 0 0 1 12 0Zm-2 4 6 6M7 8h6M7 11h4' },
+  { id: 'report', label: 'Report', path: 'M5 3h10l4 4v14H5V3Zm10 0v5h4M9 12h6m-6 4h6' },
 ] as const;
 export type InvestigationTab = typeof tabs[number]['id'];
 

@@ -122,7 +122,7 @@ test('creation form has labeled constrained fields and rejects blank titles with
   let calls = 0;
   const { store } = setup(async () => { calls++; return Response.json(page()); });
   const html = creationHtml(store);
-  assert.match(html, /<form/); assert.match(html, /1 to 200 characters/); assert.doesNotMatch(html, /maxLength=/i);
+  assert.match(html, /<form/); assert.match(html, /Give the case a recognizable name/); assert.doesNotMatch(html, /maxLength=/i);
   assert.match(html, /for="case-title"/); assert.match(html, /Create case/);
   for (const title of ['', '  \t\n', 'x'.repeat(201)]) assert.equal(await store.create(title, ''), false);
   assert.equal(await store.create('Valid', 'x'.repeat(5001)), false);

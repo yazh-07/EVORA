@@ -55,7 +55,7 @@ for (const view of ['entities', 'events']) test(`${view}: typed GET, loading, so
   await setImmediate();
   assert.equal(c.getSnapshot()[view].status, 'ready');
   let html = render(c);
-  for (const text of ['Showing 1–2 of 3', 'Supporting evidence', 'Supporting observation IDs', evidenceId, observationId]) assert.ok(html.includes(text), text);
+  for (const text of ['Showing 1–2 of 3', 'Supporting evidence', 'Supporting observation references', evidenceId, observationId]) assert.ok(html.includes(text), text);
   if (view === 'entities') {
     for (const text of ['device', 'ip', 'Candidate 0', 'device:D-0', 'Confidence: 0.00', 'Confidence: 0.86']) assert.ok(html.includes(text), text);
   } else {
@@ -228,16 +228,17 @@ test('session change clears both loaded views, aborts requests and allows explic
   hold = false; click(c, 'Retry entities'); await setImmediate(); assert.equal(c.getSnapshot().entities.status, 'ready');
 });
 
-test('inspector and workspace expose accessible Entities & Events navigation without invented records', () => {
+test('entity inspector stays accessible as an on-demand investigation tool without invented records', () => {
   let calls = 0;
   const client = createApiClient({ baseUrl: 'https://candidates.invalid', fetch: async () => { calls++; throw Error(); } }); client.setToken('synthetic');
   const wrap = child => renderToStaticMarkup(createElement(ApiProvider, { client }, child));
-  const html = wrap(createElement(CaseAnalysisWorkspace, { caseId }, createElement(CaseEvidenceWorkspace, { caseId })));
-  assert.match(html, /role="tab" id="tab-entities-events" aria-controls="panel-entities-events" aria-selected="false"/);
-  assert.match(html, /id="panel-entities-events" role="tabpanel" aria-labelledby="tab-entities-events" tabindex="0" style="display:none"/);
-  assert.match(html, /Entities &amp; Events/); assert.match(html, /aria-label="Candidate entities and events"/);
+  const shell = wrap(createElement(CaseAnalysisWorkspace, { caseId }, createElement(CaseEvidenceWorkspace, { caseId })));
+  assert.match(shell, /id="tab-investigation" aria-controls="panel-investigation"/);
+  assert.doesNotMatch(shell, /aria-label="Candidate entities and events"/);
+  const html = wrap(createElement(EntityEventInspector, { caseId, inspectEvidence: () => {} }));
+  assert.match(html, /aria-label="Candidate entities and events"/);
   assert.match(html, /role="group" aria-label="Candidate view"/);
   assert.match(html, /aria-pressed="true">Entities/); assert.match(html, /aria-pressed="false">Events/);
-  assert.doesNotMatch(wrap(createElement(EntityEventInspector, { caseId, inspectEvidence: () => {} })), /Candidate 0|No entities extracted|Showing/);
+  assert.doesNotMatch(html, /Candidate 0|No entities extracted|Showing/);
   assert.equal(calls, 0);
 });

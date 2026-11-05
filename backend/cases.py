@@ -20,6 +20,10 @@ class SQLiteCaseAccess:
         # The same indexed query handles foreign and missing IDs. Never look up
         # case existence separately or expose a different denial response.
         with self.database.connect() as connection:
+            # Local administrators manage all existing cases; other accounts need membership.
+            if connection.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='local_users'").fetchone():
+                if connection.execute("SELECT 1 FROM local_users WHERE id=? AND role='administrator' AND disabled=0", (actor_id,)).fetchone():
+                    return connection.execute('SELECT 1 FROM cases WHERE id=?', (str(case_id),)).fetchone() is not None
             return connection.execute(
                 "SELECT 1 FROM case_members WHERE case_id = ? AND actor_id = ?",
                 (str(case_id), actor_id),
@@ -80,6 +84,10 @@ def list_cases(request: Request,
     with request.app.state.database.connect() as connection:
         # Count and page share one SQLite read snapshot.
         connection.execute("BEGIN")
+        if actor.role == 'administrator':
+            total = connection.execute('SELECT count(*) FROM cases').fetchone()[0]
+            rows = connection.execute('SELECT * FROM cases ORDER BY created_at DESC,id ASC LIMIT ? OFFSET ?', (limit, offset)).fetchall()
+            return CasePage(items=[Case(**dict(row)) for row in rows], total=total, limit=limit, offset=offset)
         total = connection.execute(
             "SELECT count(*) FROM case_members WHERE actor_id = ?", (actor.id,),
         ).fetchone()[0]

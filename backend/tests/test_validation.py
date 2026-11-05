@@ -51,7 +51,7 @@ class ValidationTests(unittest.IsolatedAsyncioTestCase):
 
         await self.enterAsyncContext(self.app.router.lifespan_context(self.app))
         self.client = await self.enterAsyncContext(AsyncClient(
-            transport=ASGITransport(self.app), base_url="http://test"
+            transport=ASGITransport(self.app), base_url="http://localhost"
         ))
 
     async def send(self, **overrides):
@@ -112,7 +112,7 @@ class ValidationTests(unittest.IsolatedAsyncioTestCase):
             return {"value": 0}
 
         async with AsyncClient(
-            transport=ASGITransport(self.app, raise_app_exceptions=False), base_url="http://test"
+            transport=ASGITransport(self.app, raise_app_exceptions=False), base_url="http://localhost"
         ) as client:
             response = await client.get("/_test/bad-response")
         self.assertEqual(response.status_code, 500)

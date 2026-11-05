@@ -19,7 +19,8 @@ export function ProcessingStatusPanel({ state, retry }: { state: ProcessingStatu
     {state.message && <p role="alert">{state.message}</p>}
     {state.retryable && <button type="button" onClick={() => { void retry(); }}>Retry status check</button>}
     {run && <div role="status">
-      <p>Last reported status: {run.status}</p>
+      <p className={`processing-stage status-${run.status}`}>{run.status === 'queued' ? 'Waiting for extraction to start.' : run.status === 'running' ? 'Extracting records from this source. You can continue reviewing other evidence.' : run.status === 'completed' ? 'Extraction complete. Inspect the observations below, then run case analysis to connect the evidence.' : 'Extraction could not complete. Check the file format and diagnostic before trying again.'}</p>
+      <p className="scope-note">Last reported status: {run.status}</p>
       <details className="processing-details"><summary>Processing run details</summary><dl>
         <dt>Run ID</dt><dd className="identifier">{run.id}</dd>
         <dt>Created time</dt><dd>{run.created_at}</dd>

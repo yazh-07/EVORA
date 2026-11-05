@@ -25,12 +25,13 @@ export function FindingInspector({ inspectEvidence }: { inspectEvidence?: (id: s
   // Latest discovery must become the shared pin before any results are displayed.
   const visible = state.page?.analysis_run_id && state.page.analysis_run_id !== analysis_run_id ?
     { ...state, status: 'loading' as const, page: null } : state;
-  return <FindingPanel state={visible} load={controller.load} select={controller.select} inspectEvidence={inspectEvidence}
+  return <FindingPanel readOnly={client.getUser()?.role === 'reviewer'} state={visible} load={controller.load} select={controller.select} inspectEvidence={inspectEvidence}
     findingKind={findingKind} onKindChange={setFindingKind}
     loadReviews={controller.loadReviews} updateReview={controller.updateReview} submitReview={controller.submitReview} />;
 }
 
-export function FindingPanel({ state, load, select, inspectEvidence, loadReviews, updateReview, submitReview, findingKind = 'all', onKindChange }: {
+export function FindingPanel({ state, load, select, inspectEvidence, loadReviews, updateReview, submitReview, findingKind = 'all', onKindChange, readOnly = false }: {
+  readOnly?: boolean;
   state: FindingState; load: (offset?: number) => Promise<void>; select: (id: string) => Promise<void>;
   inspectEvidence?: (id: string) => void;
   findingKind?: FindingKindFilterValue; onKindChange?: (kind: FindingKindFilterValue) => void;
@@ -38,8 +39,8 @@ export function FindingPanel({ state, load, select, inspectEvidence, loadReviews
   const page = state.page;
   const findings = page?.items.filter(f => findingKind === 'all' || f.kind === findingKind) ?? [];
   const selectedFinding = findings.find(f => f.id === state.selectedId);
-  const source = (id: string) => inspectEvidence ? <button type="button" className="identifier"
-    onClick={() => inspectEvidence(id)} aria-label={`Inspect source evidence ${id}`}>{id}</button> : <span className="identifier">{id}</span>;
+  const source = (id: string, index = 0) => inspectEvidence ? <button type="button" className="identifier"
+    onClick={() => inspectEvidence(id)} aria-label={`Inspect source evidence ${id}`}>Open source {index + 1} ↗</button> : <span className="identifier">{id}</span>;
   const reviewDetails = (findingId: string) => {
     if (!loadReviews || !updateReview || !submitReview) return null;
     const review = state.reviews[findingId];
@@ -68,7 +69,7 @@ export function FindingPanel({ state, load, select, inspectEvidence, loadReviews
         <form noValidate aria-label={`Submit human review for finding ${findingId}`} onSubmit={event => {
           event.preventDefault(); void submitReview(findingId);
         }}>
-          <fieldset disabled={review?.status !== 'ready' || busy}>
+          <fieldset disabled={readOnly || review?.status !== 'ready' || busy}>
             <legend>Record a human review</legend>
             <label htmlFor={`review-decision-${findingId}`}>Decision</label>
             <select id={`review-decision-${findingId}`} name="decision" value={review?.decision ?? 'needs_investigation'}
@@ -98,7 +99,7 @@ export function FindingPanel({ state, load, select, inspectEvidence, loadReviews
     {state.message && <p role="alert">{state.message}</p>}
     {state.status === 'error' && <button type="button" onClick={() => { void load(); }}>Retry findings</button>}
     {state.status === 'ready' && page && <>
-      {page.analysis_run_id ? <p className="identifier">Selected completed analysis: {page.analysis_run_id}</p> :
+      {page.analysis_run_id ? <details className="technical-details"><summary>Selected analysis reference</summary><p className="identifier">{page.analysis_run_id}</p></details> :
         <p>No completed analysis run. Start analysis to generate findings.</p>}
       <p role="status">{page.total} findings. {page.items.length ? `Showing ${page.offset + 1}–${page.offset + page.items.length}.` : 'Showing 0 findings on this page.'}</p>
       {page.analysis_run_id && page.items.length === 0 && <p>{page.total === 0 ?
@@ -108,21 +109,23 @@ export function FindingPanel({ state, load, select, inspectEvidence, loadReviews
       <ul className="findings-list">{findings.map(f => <li key={f.id}>
         <strong className="finding-kind-badge">{f.kind}</strong>
         <h3>{f.summary}</h3>
-        <p className="identifier">Finding ID: {f.id}</p>
+        <details className="technical-details"><summary>Rule, score, and finding reference</summary><p className="identifier">Finding ID: {f.id}</p>
         <p>Confidence: {f.confidence.toFixed(2)} (reported score, 0–1)</p>
-        <p>Rule: {f.rule}</p>
+        <p>Rule: {f.rule}</p></details>
         {(f.kind === 'relationship' || f.kind === 'corroboration') && <>
-        <p>Supporting evidence IDs:</p><ul>{f.evidence_ids.map(id => <li key={id}>{source(id)}</li>)}</ul>
-        <p>Supporting observation IDs:</p><ul>{f.observation_ids.map(id => <li key={id} className="identifier">{id}</li>)}</ul>
+        <p>Supporting sources</p><ul className="finding-source-actions">{f.evidence_ids.map((id, index) => <li key={id}>{source(id, index)}</li>)}</ul>
+        <details className="technical-details"><summary>Observation references ({f.observation_ids.length})</summary><ul>{f.observation_ids.map(id => <li key={id} className="identifier">{id}</li>)}</ul></details>
         {!!f.contradicting_evidence_ids?.length && <><p>Contradicting evidence IDs:</p><ul>{f.contradicting_evidence_ids.map(id => <li key={id}>{source(id)}</li>)}</ul></>}
         {!!f.missing_information?.length && <><p>Missing information:</p><ul>{f.missing_information.map((text, i) => <li key={i}>{text}</li>)}</ul></>}
         </>}
+        {f.kind !== 'relationship' && f.kind !== 'corroboration' && <details className="finding-analysis-details"><summary>Supporting evidence and limitations · {f.evidence_ids.length} sources</summary>
         {f.kind === 'conflict' && <ConflictPanel finding={f} citations={state.selectedId === f.id ? state.citations : []} inspectEvidence={inspectEvidence} />}
         {f.kind === 'gap' && <GapPanel finding={f} citations={state.selectedId === f.id ? state.citations : []} inspectEvidence={inspectEvidence} />}
         {f.kind === 'cluster' && <ClusterPanel finding={f} citations={state.selectedId === f.id ? state.citations : []} inspectEvidence={inspectEvidence} />}
         {f.kind === 'anomaly' && <AnomalyPanel finding={f} citations={state.selectedId === f.id ? state.citations : []} inspectEvidence={inspectEvidence} />}
         {f.kind === 'hypothesis' && <HypothesisPanel finding={f} citations={state.selectedId === f.id ? state.citations : []} inspectEvidence={inspectEvidence} />}
-        <button type="button" aria-pressed={state.selectedId === f.id} onClick={() => { void select(f.id); }}>Inspect finding sources {f.id}</button>
+        </details>}
+        <button type="button" aria-pressed={state.selectedId === f.id} onClick={() => { void select(f.id); }} aria-label={`Inspect finding sources ${f.id}`}>Inspect supporting records</button>
         {reviewDetails(f.id)}
       </li>)}</ul>
       {selectedFinding && <aside aria-label="Finding source details" aria-busy={state.citationStatus === 'loading'}>

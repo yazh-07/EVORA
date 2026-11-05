@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { CaseWorkspace, SessionStatus } from './cases/CaseWorkspace';
+import { useApiClient } from './api/ApiProvider';
 import { SettingsModal } from './settings/SettingsModal';
 
 export function ThemeToggle() {
@@ -8,10 +9,9 @@ export function ThemeToggle() {
       try {
         const saved = localStorage.getItem('evora-theme');
         if (saved === 'light' || saved === 'dark') return saved;
-        if (window.matchMedia?.('(prefers-color-scheme: light)').matches) return 'light';
       } catch {}
     }
-    return 'dark';
+    return 'light';
   });
 
   useEffect(() => {
@@ -34,6 +34,7 @@ export function ThemeToggle() {
 }
 
 export function App() {
+  const client = useApiClient();
   const [caseNavigation, setCaseNavigation] = useState(0);
   const [settingsOpen, setSettingsOpen] = useState(false);
   return (
@@ -48,13 +49,13 @@ export function App() {
             </svg>
             EVORA
           </a>
-          <span className="platform-name">Investigation workspace</span>
+          <span className="platform-name">Forensic investigation workspace</span>
           <nav className="navigation" aria-label="Workspace">
             <a href="#workspace" aria-current="page" onClick={event => { event.preventDefault(); setCaseNavigation(value => value + 1); }}>Cases</a>
           </nav>
           <div className="header-actions">
             <ThemeToggle />
-            <button type="button" onClick={() => setSettingsOpen(true)} aria-haspopup="dialog">⚙️ Settings</button>
+            {(!client.isLocalAuth() || client.getUser()?.role === 'administrator') && <button type="button" onClick={() => setSettingsOpen(true)} aria-haspopup="dialog">Settings</button>}
             <SessionStatus />
           </div>
         </header>

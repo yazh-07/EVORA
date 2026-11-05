@@ -67,3 +67,9 @@ en-core-web-sm @ https://github.com/explosion/spacy-models/releases/download/en_
 # Local image/video decoding and Haar detection.
 opencv-python-headless==4.14.0.94
 Pillow==13.0.0
+
+# Local offline account password hashing.
+argon2-cffi==25.1.0
+argon2-cffi-bindings==26.1.0
+cffi==2.1.1
+pycparser==3.12

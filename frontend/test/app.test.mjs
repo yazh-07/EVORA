@@ -6,7 +6,7 @@ import { App } from '../.test-build/src/App.mjs';
 import { ApiProvider } from '../.test-build/src/api/ApiProvider.mjs';
 import { createApiClient } from '../.test-build/src/api/client.mjs';
 
-test('workspace offers session-only case access with landmarks and no fabricated records', () => {
+test('workspace offers local login with landmarks and no fabricated records', () => {
   let calls = 0;
   const client = createApiClient({ baseUrl: 'http://127.0.0.1:8000', fetch: async () => { calls++; throw Error(); } });
   const html = renderToStaticMarkup(createElement(ApiProvider, { client }, createElement(App)));
@@ -14,26 +14,27 @@ test('workspace offers session-only case access with landmarks and no fabricated
   assert.match(html, /href="#workspace">Skip to workspace/);
   assert.match(html, /<main id="workspace" tabindex="-1"/);
   assert.match(html, /aria-label="Workspace"/);
-  assert.match(html, /type="password" autoComplete="off"/);
-  assert.match(html, /Enter an access token to load your cases/);
+  assert.match(html, /Sign in to EVORA/);
+  assert.doesNotMatch(html, /Access token|synthetic-one|synthetic-two/);
+  assert.match(html, /Sign in to load your cases/);
   assert.match(html, /Case details/);
   assert.doesNotMatch(html, /SYSTEM ONLINE|Synthetic case|Create case|Upload/);
-  assert.match(html, /aria-haspopup="dialog">⚙️ Settings/);
+  assert.match(html, /aria-haspopup="dialog">Settings/);
   assert.equal(calls, 0);
 });
 
-test('active investigation keeps all five accessible tab panels mounted with CSS display toggles', async () => {
+test('task navigation starts at overview and defers unused tools while keeping accessible panel targets', async () => {
   const { CaseEvidenceWorkspace, CaseAnalysisWorkspace } = await import('../.test-build/src/cases/CaseWorkspace.mjs');
   const caseId = '11111111-1111-4111-8111-111111111111';
   let calls = 0;
   const client = createApiClient({ baseUrl: 'http://127.0.0.1:8000', fetch: async () => { calls++; throw Error(); } });
   const html = renderToStaticMarkup(createElement(ApiProvider, { client },
     createElement(CaseAnalysisWorkspace, { caseId }, createElement(CaseEvidenceWorkspace, { caseId }))));
-  for (const tab of ['evidence', 'triage', 'graph', 'findings', 'overview']) {
-    assert.match(html, new RegExp(`role="tab" id="tab-${tab}" aria-controls="panel-${tab}" aria-selected="${tab === 'evidence'}"`));
-    assert.match(html, new RegExp(`id="panel-${tab}" role="tabpanel" aria-labelledby="tab-${tab}" tabindex="0" style="display:${tab === 'evidence' ? 'block' : 'none'}"`));
+  for (const tab of ['overview', 'evidence', 'timeline', 'investigation', 'report']) {
+    assert.match(html, new RegExp(`role="tab" id="tab-${tab}" aria-controls="panel-${tab}" aria-selected="${tab === 'overview'}"`));
+    assert.match(html, new RegExp(`id="panel-${tab}" role="tabpanel" aria-labelledby="tab-${tab}" tabindex="0"${tab === 'overview' ? '>' : ' hidden=""'}`));
   }
-  for (const heading of ['upload-heading', 'evidence-heading', 'evidence-inspector', 'analysis-heading']) assert.ok(html.includes(`id="${heading}"`));
-  for (const label of ['Triage &amp; Priority', 'Knowledge Graph', 'Findings', 'Case evidence overview']) assert.ok(html.includes(label));
+  assert.match(html, /A clear path through the evidence/);
+  assert.doesNotMatch(html, /id="evidence-file"|class="knowledge-graph"|id="case-question"/);
   assert.equal(calls, 0);
 });

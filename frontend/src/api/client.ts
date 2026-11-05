@@ -1,5 +1,7 @@
 import type { components, paths } from './schema';
 
+export type LocalUser = components['schemas']['LocalUser'];
+
 type Method = 'get' | 'post' | 'put';
 type Route<M extends Method> = {
   [P in keyof paths]: NonNullable<paths[P][M]> extends never ? never : P;
@@ -89,27 +91,70 @@ function isApiError(value: unknown): value is components['schemas']['ApiError'] 
 }
 
 /** One fixed server origin per instance. Tokens and in-flight data stay in memory. */
-export function createApiClient(config: { baseUrl: string; fetch?: typeof globalThis.fetch }) {
+export function createApiClient(config: { baseUrl: string; fetch?: typeof globalThis.fetch; authMode?: 'local' | 'bearer' }) {
   const origin = apiOrigin(config.baseUrl);
   const transport = config.fetch ?? globalThis.fetch.bind(globalThis);
+  const local = config.authMode === 'local';
+  let user: LocalUser | null = null;
   let token: string | null = null;
   let sessionVersion = 0;
   const pending = new Set<AbortController>();
   const listeners = new Set<() => void>();
 
+  function broadcastSession() {
+    if (local && typeof window !== 'undefined' && typeof BroadcastChannel !== 'undefined') {
+      const channel = new BroadcastChannel('evora-local-session'); channel.postMessage('changed'); channel.close();
+    }
+  }
   function changeToken(next: string | null) {
     if (next === token) return;
     token = next;
+    if (next === null) user = null;
     sessionVersion += 1;
     for (const controller of pending) controller.abort();
     for (const listener of listeners) listener();
   }
 
   return {
+    isLocalAuth: () => local,
+    getUser: () => user,
+    activateUser(value: LocalUser, announce = true) {
+      if (!local || !value || value.disabled || !value.id || !['administrator','investigator','reviewer'].includes(value.role)) throw new ApiClientError('authentication', 'Invalid local account.');
+      if (token !== null) changeToken(null);
+      user = value;
+      changeToken('local:' + value.id);
+      if (announce) broadcastSession();
+    },
+    async authRequest<M extends Method, P extends Route<NoInfer<M>>>(method: M, path: P, options: RequestOptions<Operation<M, P>>): Promise<Data<Operation<M, P>>> {
+      if (!path.startsWith('/api/v1/auth/')) throw new ApiClientError('request', 'Use an authentication endpoint.');
+      const parameters = options as RuntimeOptions;
+      const version = sessionVersion;
+      const controller = new AbortController(); pending.add(controller);
+      const signal = parameters.signal ? AbortSignal.any([controller.signal, parameters.signal]) : controller.signal;
+      try {
+        const response = await transport(requestUrl(origin, path, parameters), {
+          method: method.toUpperCase(), headers: { 'Content-Type': 'application/json', 'X-Evora-Request': '1' },
+          ...(parameters.body === undefined ? {} : { body: JSON.stringify(parameters.body) }),
+          credentials: 'same-origin', cache: 'no-store', redirect: 'error', referrerPolicy: 'no-referrer', signal,
+        });
+        if (version !== sessionVersion) throw new ApiClientError('session', 'Session changed.');
+        signal.throwIfAborted();
+        const data: unknown = await response.json();
+        if (version !== sessionVersion) throw new ApiClientError('session', 'Session changed.');
+        if (!response.ok) throw new ApiHttpError(response.status, isApiError(data) ? data : undefined);
+        if (path === '/api/v1/auth/logout') broadcastSession();
+        return data as Data<Operation<M, P>>;
+      } catch (error) {
+        if (error instanceof ApiHttpError || error instanceof ApiClientError) throw error;
+        if (signal.aborted) throw new DOMException('Request cancelled.', 'AbortError');
+        throw new ApiClientError('network', 'Could not connect to the local workstation service.');
+      } finally { pending.delete(controller); }
+    },
     setToken(value: string) {
       if (typeof value !== 'string' || !/^[a-zA-Z0-9\-._~+/]+=*$/.test(value)) {
         throw new ApiClientError('authentication', 'A valid bearer token is required.');
       }
+      if (local) throw new ApiClientError('authentication', 'Sign in with your local account.');
       changeToken(value);
     },
     clearToken() { changeToken(null); },
@@ -125,7 +170,7 @@ export function createApiClient(config: { baseUrl: string; fetch?: typeof global
       if (token === null) throw new ApiClientError('authentication', 'Authentication is required before an API request.');
       const parameters = options as RuntimeOptions;
       const url = requestUrl(origin, path, parameters);
-      const headers = new Headers({ Authorization: `Bearer ${token}` });
+      const headers = new Headers(local ? { 'X-Evora-Request': '1' } : { Authorization: `Bearer ${token}` });
       for (const [key, value] of Object.entries(parameters.header ?? {})) {
         if (key !== 'Idempotency-Key') throw new ApiClientError('request', 'Use only generated request headers.');
         try { headers.set(key, value); }
@@ -154,10 +199,14 @@ export function createApiClient(config: { baseUrl: string; fetch?: typeof global
         signal.throwIfAborted();
         const response = await transport(url, {
           method: method.toUpperCase(), headers, body, signal,
-          credentials: 'omit', cache: 'no-store', redirect: 'error', referrerPolicy: 'no-referrer',
+          credentials: local ? 'same-origin' : 'omit', cache: 'no-store', redirect: 'error', referrerPolicy: 'no-referrer',
         });
         checkSession();
         signal.throwIfAborted();
+        if (local && response.ok && response.headers.get('X-Evora-User') !== user?.id) {
+          changeToken(null);
+          throw new ApiClientError('session', 'The local account changed. Sign in again.');
+        }
         if (response.status === 401) {
           changeToken(null);
           throw new ApiHttpError(401, { code: 'UNAUTHORIZED', message: 'Authentication required.' });

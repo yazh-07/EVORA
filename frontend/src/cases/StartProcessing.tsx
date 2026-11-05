@@ -9,6 +9,7 @@ export function StartProcessing({ caseId, evidenceId, onCompleted }: { caseId: s
   const controller = useMemo(() => createProcessingController(client, caseId, evidenceId), [client, caseId, evidenceId]);
   const state = useSyncExternalStore(controller.subscribe, controller.getSnapshot, controller.getSnapshot);
   useEffect(() => { controller.start(); return () => controller.dispose(); }, [controller]);
+  if (client.getUser()?.role === 'reviewer') return <p className="scope-note">Read-only access. You can inspect existing source observations.</p>;
   return <StartProcessingPanel state={state} submit={controller.submit} onCompleted={onCompleted} />;
 }
 

@@ -224,7 +224,7 @@ class AuthenticationTests(unittest.IsolatedAsyncioTestCase):
         self.assert_access_error(await self.client.get("/_test/auth", headers=headers), 401)
 
     async def test_separate_apps_do_not_share_authentication_configuration(self):
-        other = create_app(self.app.state.database.path)
+        other = create_app(self.app.state.database.path, token_verifier=SyntheticTokenVerifier({}))
 
         @other.get("/_test/auth")
         def identity(actor: Annotated[Actor, Depends(authenticated_actor)]):

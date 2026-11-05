@@ -27,7 +27,7 @@ class SkeletonTests(unittest.IsolatedAsyncioTestCase):
                 self.assertEqual(connection.execute("PRAGMA foreign_keys").fetchone()[0], 1)
                 self.assertEqual([row[0] for row in connection.execute(
                     "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"
-                )], ["analysis_outputs", "analysis_runs", "audit_events", "case_members", "cases", "evidence", "finding_reviews", "intake_provenance",
+                )], ["account_audit", "analysis_outputs", "analysis_runs", "audit_events", "auth_attempts", "case_members", "cases", "evidence", "finding_reviews", "intake_provenance", "local_sessions", "local_users",
                      "priority_overrides", "processing_outputs", "processing_provenance", "processing_runs", "transcript_revisions"])
         # Lifespan has left no open connection; reconnect after shutdown.
         with closing(sqlite3.connect(self.path)) as connection:
@@ -66,7 +66,7 @@ class SkeletonTests(unittest.IsolatedAsyncioTestCase):
     async def test_only_f01_routes_are_exposed(self):
         app = create_app(self.path)
         async with app.router.lifespan_context(app), AsyncClient(
-            transport=ASGITransport(app), base_url="http://test"
+            transport=ASGITransport(app), base_url="http://localhost"
         ) as client:
             for path in ("/", "/health", "/status", "/docs", "/redoc", "/openapi.json",
                          "/_test/input"):
