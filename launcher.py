@@ -1,0 +1,101 @@
+"""EVORA Desktop Application Launcher.
+
+Bundled entry point for standalone Windows and Linux binaries.
+Starts the local offline backend server and opens the browser interface.
+"""
+import argparse
+import os
+import sys
+import threading
+import time
+import webbrowser
+from pathlib import Path
+
+import uvicorn
+from starlette.staticfiles import StaticFiles
+
+# Determine bundle directory (PyInstaller sets _MEIPASS in frozen mode)
+if getattr(sys, 'frozen', False):
+    BUNDLE_DIR = Path(getattr(sys, '_MEIPASS', Path(__file__).resolve().parent))
+else:
+    BUNDLE_DIR = Path(__file__).resolve().parent
+
+if str(BUNDLE_DIR) not in sys.path:
+    sys.path.insert(0, str(BUNDLE_DIR))
+
+from backend.app import create_app
+
+
+def open_browser(url: str, delay_seconds: float = 1.0):
+    """Open user's default browser after the server has initialized."""
+    time.sleep(delay_seconds)
+    try:
+        webbrowser.open_new(url)
+    except Exception as exc:
+        print(f"[EVORA] Could not open default browser: {exc}")
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="EVORA — Forensic Evidence Fusion & Investigation Platform"
+    )
+    default_data_dir = Path.cwd() / "evora_data"
+    parser.add_argument(
+        "--database",
+        default=str(default_data_dir / "cases.sqlite3"),
+        help="Path to the SQLite database file",
+    )
+    parser.add_argument(
+        "--storage",
+        default=str(default_data_dir / "evidence_vault"),
+        help="Directory to store uploaded evidence binaries",
+    )
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=8000,
+        help="Port to serve the application on (default: 8000)",
+    )
+    parser.add_argument(
+        "--no-browser",
+        action="store_true",
+        help="Do not automatically launch the web browser",
+    )
+    args = parser.parse_args()
+
+    frontend_dist = BUNDLE_DIR / "frontend" / "dist"
+    if not (frontend_dist / "index.html").is_file():
+        repo_dist = Path(__file__).resolve().parent / "frontend" / "dist"
+        if (repo_dist / "index.html").is_file():
+            frontend_dist = repo_dist
+        else:
+            sys.exit(
+                "Error: Compiled frontend not found. Please run 'npm --prefix frontend run build' first."
+            )
+
+    db_path = Path(args.database).resolve()
+    db_path.parent.mkdir(parents=True, exist_ok=True)
+    vault_path = Path(args.storage).resolve()
+    vault_path.mkdir(parents=True, exist_ok=True)
+
+    print("=" * 60)
+    print("  EVORA — Forensic Evidence Fusion Platform")
+    print("=" * 60)
+    print(f"  Interface & API : http://127.0.0.1:{args.port}")
+    print(f"  Database        : {db_path}")
+    print(f"  Evidence Vault  : {vault_path}")
+    print("=" * 60)
+    print("  Press Ctrl+C to stop the workstation server.\n")
+
+    app = create_app(str(db_path), storage_dir=str(vault_path), offline_mode=True)
+    app.mount("/", StaticFiles(directory=str(frontend_dist), html=True), name="workstation")
+
+    if not args.no_browser:
+        target_url = f"http://127.0.0.1:{args.port}"
+        threading.Thread(target=open_browser, args=(target_url,), daemon=True).start()
+
+    uvicorn.run(app, host="127.0.0.1", port=args.port, access_log=False)
+
+
+if __name__ == "__main__":
+    main()
