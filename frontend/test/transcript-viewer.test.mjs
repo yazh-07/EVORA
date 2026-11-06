@@ -351,14 +351,22 @@ test('refresh supersedes pending reads; late results cannot replace the newer tr
   assert.match(render(c), /Fresh transcript/);
 });
 
-test('source playback downloads authorized bytes, verifies integrity and revokes media URLs on disposal', async t => {
+test('source playback downloads authorized bytes, verifies integrity and revokes media URLs on disposal', {timeout:5000}, async t => {
   const revoked = [], revoke = URL.revokeObjectURL;
   t.mock.method(URL, 'revokeObjectURL', url => { revoked.push(url); revoke(url); });
   const { c, calls } = setup(t, url => url.pathname.endsWith('/content')
     ? new Response(sourceBytes, { headers: { 'Content-Type': 'application/octet-stream' } }) : Response.json(page([segment()])));
-  await ready(c); button(c, 'Listen / Download audio');
+  await ready(c);
+  let unsubscribe;
+  const completed=new Promise(resolve=>{
+    unsubscribe=c.subscribe(()=>{
+      if(['ready','error'].includes(c.getSnapshot().media.status))resolve();
+    });
+  });
+  t.after(()=>unsubscribe());
+  button(c, 'Listen / Download audio');
   assert.match(render(c), /Loading source media/);
-  for (let i = 0; i < 100 && c.getSnapshot().media.status === 'loading'; i++) await setImmediate();
+  await completed;
   const sourceUrl = c.getSnapshot().sourceUrl;
   assert.match(sourceUrl, /^blob:/); assert.match(render(c), /<audio controls="" preload="metadata"/);
   assert.match(render(c), /download="interview.wav"/); assert.match(render(c), /verified against recorded size and SHA-256/);
