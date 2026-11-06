@@ -202,3 +202,34 @@ class LocalAuthTests(unittest.IsolatedAsyncioTestCase):
             response=await self.client.put('/api/v1/settings',json={'openai_base_url':'https://untrusted.example/v1'})
             self.assertEqual(response.status_code,400)
             outbound.assert_not_called()
+
+    async def test_draft_online_connection_works_before_saving_offline_switch(self):
+        await self.setup_admin()
+        remote = httpx.Response(200, request=httpx.Request('GET', 'https://openrouter.ai/api/v1/models'),
+            json={'data': [dict(id='provider/multimodal', architecture={'input_modalities':['text','image']}),
+                           dict(id='provider/text', architecture={'input_modalities':['text']})]})
+        with patch('backend.app.httpx.AsyncClient.get', return_value=remote) as outbound:
+            response=await self.client.post('/api/v1/settings/models',json={
+                'offline_mode':False,'qa_provider':'openai','openai_base_url':'https://openrouter.ai/api/v1/',
+                'openai_api_key':'synthetic-key'})
+            self.assertEqual(response.status_code,200,response.text)
+            self.assertEqual(response.json()['vision_models'],['provider/multimodal'])
+            outbound.assert_awaited_once_with('https://openrouter.ai/api/v1/models', headers={'Authorization':'Bearer synthetic-key'})
+        self.assertTrue(self.app.state.offline_mode)
+        self.assertEqual(self.app.state.qa_provider,'ollama')
+        self.assertIsNone(self.app.state.openai_api_key)
+        with patch('backend.app.httpx.AsyncClient.get') as outbound:
+            response=await self.client.post('/api/v1/settings/models',json={
+                'qa_provider':'openai','openai_api_key':'synthetic-key'})
+            self.assertEqual(response.status_code,400)
+            outbound.assert_not_called()
+
+    async def test_investigator_cannot_override_offline_mode_for_connection_test(self):
+        await self.setup_admin()
+        await self.new_user()
+        other=await self.other()
+        with patch('backend.app.httpx.AsyncClient.get') as outbound:
+            response=await other.post('/api/v1/settings/models',json={
+                'offline_mode':False,'qa_provider':'openai','openai_api_key':'synthetic-key'})
+            self.assertEqual(response.status_code,403)
+            outbound.assert_not_called()

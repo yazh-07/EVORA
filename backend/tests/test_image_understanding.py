@@ -8,13 +8,15 @@ from unittest.mock import patch
 from uuid import uuid4
 
 import httpx
-from PIL import Image
+from PIL import Image, ImageDraw
 from backend import image_understanding as vision
 from backend.tests import test_processing_dispatch as dispatch
 
 
 def picture():
-    output=BytesIO();Image.new('RGB',(2600,400),'white').save(output,format='PNG');return output.getvalue()
+    output=BytesIO();image=Image.new('RGB',(2600,400),'white')
+    ImageDraw.Draw(image).text((20,20),'NOTICE Room 12',fill='black')
+    image.save(output,format='PNG');return output.getvalue()
 
 
 class VisionProcessingTests(unittest.IsolatedAsyncioTestCase):
@@ -80,6 +82,78 @@ class VisionProcessingTests(unittest.IsolatedAsyncioTestCase):
             _outputs(c,fake_run,context)
             self.assertIn('image.description',{item['kind'] for item in context['observations']})
 
+    async def test_uniform_pixels_cannot_publish_invented_objects_or_text(self):
+        output=BytesIO();Image.new('RGB',(320,240),'white').save(output,format='PNG')
+        evidence=await self.upload('image',output.getvalue(),filename='blank.png',media='image/png');body=self.settings()
+        invented=dict(description='Black borders surround a notice.',visible_text='NOTICE 42',limitations=[])
+        with self.transport([],answer=invented):response=await self.invoke(evidence,body)
+        run=response.json()
+        status=(await self.client.get(self.base(self.case,evidence['id'])+'/'+run['id'])).json()
+        self.assertEqual(status['status'],'completed',status)
+        records=(await self.client.get(f'/api/v1/cases/{self.case}/observations',params={'processing_run_id':run['id'],'limit':100})).json()['items']
+        values={item['kind']:item['raw_value'] for item in records}
+        self.assertEqual(values['image.ocr'],'')
+        self.assertEqual(values['image.description'],'Uniform white image with no visible objects or text.')
+        provenance=json.loads(values['image.provenance'])
+        self.assertEqual(provenance['uniform_rgb'],[255,255,255])
+        self.assertEqual(provenance['content_validation'],'uniform-pixel-check/1')
+        self.assertEqual(len(provenance['provider_output_sha256']),64)
+
+    async def test_legacy_frozen_prompt_remains_valid_and_executes_its_original_text(self):
+        self.settings()
+        frozen=vision.freeze_config(self.app,False)
+        old_hash=hashlib.sha256(vision.LEGACY_PROMPT.encode()).hexdigest()
+        self.assertEqual(old_hash,'8c123035b793585ccec194569a89c3b02cd31a722b8663e73a7b557c22ef49a9')
+        self.assertNotEqual(old_hash,vision.PROMPT_HASH)
+        frozen['prompt_sha256']=old_hash
+        requests=[]
+        with self.transport(requests):
+            items=vision.extract(self.app,picture(),frozen,case_id=uuid4(),evidence_id=uuid4(),processing_run_id=uuid4())
+        payload=json.loads(next(request for request in requests if request.url.path=='/api/chat').content)
+        self.assertEqual(payload['messages'][0]['content'],vision.LEGACY_PROMPT)
+        metadata=json.loads(next(item.observation.raw_value for item in items if item.observation.kind=='image.provenance'))
+        self.assertEqual(metadata['prompt_sha256'],old_hash)
+        with self.assertRaises(ValueError):vision.validate_config({**frozen,'prompt_sha256':'0'*64})
+
+    async def test_shared_model_publishes_images_without_separate_vision_model(self):
+        evidence=await self.upload('image',picture(),filename='image.png',media='image/png')
+        body=self.settings()
+        self.app.state.vision_model=''
+        self.app.state.vision_use_qa_model=True
+        self.app.state.qa_model='test-vision'
+        requests=[]
+        with self.transport(requests):response=await self.invoke(evidence,body)
+        self.assertEqual(response.status_code,202,response.text)
+        status=(await self.client.get(self.base(self.case,evidence['id'])+'/'+response.json()['id'])).json()
+        self.assertEqual(status['status'],'completed',status)
+        payload=json.loads(next(request for request in requests if request.url.path=='/api/chat').content)
+        self.assertEqual(payload['model'],'test-vision')
+        self.app.state.qa_model='different-model'
+        self.assertEqual((await self.invoke(evidence,body)).status_code,409)
+
+    async def test_chatgpt_image_uses_responses_and_binds_the_connected_account(self):
+        import time
+        evidence=await self.upload('image',picture(),filename='image.png',media='image/png')
+        self.settings('openai');self.app.state.qa_provider='chatgpt'
+        connection=self.app.state.chatgpt_connection
+        record=dict(client_id='oaiapp_test',subject='test-user',access_token='private-access',expires_at=time.time()+3600,scopes=['chatgpt.tokens.use.direct'])
+        connection._write(record)
+        body=dict(expected_provider='chatgpt',expected_model='test-vision',expected_endpoint='https://api.openai.com/v1',confirm_external_processing=True)
+        answer=json.dumps(dict(description='A test frame.',visible_text='NOTICE',limitations=[]))
+        with patch.object(connection,'infer',return_value=(answer,'actual-model')) as infer:
+            response=await self.invoke(evidence,body)
+        self.assertEqual(response.status_code,202,response.text)
+        run=response.json()
+        status=(await self.client.get(self.base(self.case,evidence['id'])+'/'+run['id'])).json()
+        self.assertEqual(status['status'],'completed',status)
+        content=infer.call_args.args[2]
+        self.assertEqual(content[1]['type'],'input_image')
+        self.assertTrue(content[1]['image_url'].startswith('data:image/png;base64,'))
+        frozen=self.read(run,evidence)['execution']['image_understanding']
+        self.assertNotIn('private-access',json.dumps(frozen))
+        connection._write({**record,'subject':'different-user'})
+        with self.assertRaises(ValueError):vision.extract(self.app,picture(),frozen,case_id=uuid4(),evidence_id=uuid4(),processing_run_id=uuid4())
+
     async def test_hosted_request_is_explicit_and_uses_image_content_blocks(self):
         evidence=await self.upload('image',picture(),filename='image.png',media='image/png');body=self.settings('openai')
         requests=[]
@@ -139,6 +213,15 @@ class VisionProcessingTests(unittest.IsolatedAsyncioTestCase):
 
 
 class ImagePreparationTests(unittest.TestCase):
+    def test_uniform_check_uses_every_original_visible_pixel_before_resizing(self):
+        source=BytesIO();image=Image.new('RGB',(3000,3000),'white');image.putpixel((1234,2345),(254,255,255));image.save(source,format='PNG')
+        _,metadata=vision.prepare_image(source.getvalue())
+        self.assertIsNone(metadata['uniform_rgb'],'a single faint mark is not a uniform image')
+        for color in ('white','black','red'):
+            source=BytesIO();Image.new('RGB',(8,8),color).save(source,format='PNG')
+            _,metadata=vision.prepare_image(source.getvalue())
+            self.assertEqual(metadata['uniform_rgb'],list(Image.new('RGB',(1,1),color).getpixel((0,0))))
+
     def test_invalid_animated_and_remote_local_endpoints_rejected(self):
         with self.assertRaises(Exception):vision.prepare_image(b'not an image')
         for endpoint,provider in [('http://example.com','openai'),('https://example.com','ollama')]:

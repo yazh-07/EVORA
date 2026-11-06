@@ -242,7 +242,8 @@ test('evidence, camera and document nodes use source labels in captions, cluster
       const node = diagramNodes(value).find(e => e.props['aria-label'] === `Inspect node ${kind}: ${label}`);
       assert.ok(node);
       assert.equal(elements(node).find(e => e.type === 'title').props.children, label);
-      assert.ok(elements(value).some(e => e.props.className === 'graph-cluster' && elements(e).some(t => t.type === 'title' && t.props.children[0] === label)));
+      const source=sources.find(item=>item.properties.source_label===label);
+      assert.ok(elements(value).some(e => e.props.className === 'graph-cluster' && elements(e).some(t => t.type === 'title' && typeof t.props.children==='string' && t.props.children.startsWith(`${label} · ${source.id} · Source evidence · `))));
     }
     assert.equal(diagramNodes(value).filter(e => e.props['data-search-match']).length, 1);
     assert.ok(elements(value).some(e => e.type === 'dd' && e.props.children === labels[1]));
@@ -266,7 +267,9 @@ test('duplicate evidence captions have visible stable counters even with long la
     assert.deepEqual(captions(panel({ ...g, nodes: [...g.nodes].reverse() })), original);
     assert.deepEqual(captions(panel(g, { view: { filter: 'Evidence', query: '', zoom: 1 } })), original);
     for (const cluster of elements(value).filter(e => e.props.className === 'graph-cluster')) {
-      assert.match(elements(cluster).find(e => e.type === 'title').props.children[0], /^#[12] · /);
+      const title=elements(cluster).find(e => e.type === 'title').props.children;
+      assert.equal(typeof title,'string');
+      assert.match(title, /^#[12] · /);
     }
   }
 });

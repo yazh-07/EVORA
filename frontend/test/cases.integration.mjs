@@ -1,5 +1,8 @@
 import assert from 'node:assert/strict';
 import { createElement } from 'react';
+import { verifyTriagePolicy } from './triage-policy-oracle.mjs';
+import { verifyGraphLineage } from './graph-lineage.mjs';
+import { verifyFindingLineage } from './finding-lineage-oracle.mjs';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { createHash } from 'node:crypto';
 import { execFileSync, spawn } from 'node:child_process';
@@ -509,16 +512,14 @@ try {
         const result = first.items[0].latest_result;
         assert.equal(first.items[0].evidence_id, evidenceId);
         // One processed source per case: all known keys match, no cross-source neighbors.
-        assert.equal(result.score, 55.56); assert.equal(result.priority, 'P3');
-        assert.deepEqual(result.factors.map(({ name, value, weight, contribution, evidence_ids }) =>
-          ({ name, value, weight, contribution, evidence_ids })), [
-          { name: 'relevance', value: 1, weight: .25 / .45, contribution: 55.56, evidence_ids: [evidenceId] },
-          { name: 'connectivity', value: 0, weight: .20 / .45, contribution: 0, evidence_ids: [evidenceId] },
-        ]);
+        // The current producers also evaluate the absence of gaps/conflicts.
+        // Unknown source quality/corroboration and unavailable reference times stay absent.
+        const expected=verifyTriagePolicy(result,{relevance:1,connectivity:0,gap_relevance:0,conflict_relevance:0});
+        for(const factor of result.factors)assert.deepEqual(factor.evidence_ids,[evidenceId]);
         assert.ok(result.factors.every(factor => factor.explanation.length > 0));
-        assert.match(result.explanation, /Rounded contribution sum 55\.56/);
+        assert.ok(result.explanation.includes(`Rounded contribution sum ${expected.score}`));
         const html = renderToStaticMarkup(createElement(PriorityListPanel, { state: triage.getSnapshot(), load: triage.load }));
-        assert.match(html, /55\.56/); assert.match(html, /relevance/); assert.match(html, /connectivity/);
+        assert.ok(html.includes(String(expected.score))); assert.match(html, /relevance/); assert.match(html, /connectivity/);
         const history = await client.request('get', '/api/v1/cases/{caseId}/evidence/{evidenceId}/triage-history', { path: { caseId, evidenceId } });
         assert.deepEqual(history.find(item => item.analysis_run_id === completed.id), result);
         const items = [...first.items];
@@ -551,7 +552,7 @@ try {
     } finally { analysis.dispose(); }
   }
   console.log(`PASS U05D real HTTP/FastAPI/SQLite analysis: network/GPS frozen snapshots and SHA-256, completed pins, terminal stop, pinned graph/findings/triage; ${projectionDescription}.`);
-  console.log('PASS U06 real HTTP priority controller: exact 55.56/P3/factors, history, pinned all-page membership/order across upload and newer completed analysis; unscored evidence stays unscored.');
+  console.log('PASS U06 real HTTP priority controller: source-derived factor values and current normalized policy, history, pinned all-page membership/order across upload and newer completed analysis; unscored evidence stays unscored.');
   // U07 real graph, including nonempty cross-source candidate links and historical locators.
   const graphCase = await client.request('post', '/api/v1/cases', { body: { title: 'Synthetic U07 graph case' } });
   const graphCaseId = graphCase.id;
@@ -610,15 +611,16 @@ try {
         if (entities[i].candidate_key === entities[j].candidate_key) expectedPairs.push([entities[i].id, entities[j].id].sort().join(':'));
       }
       assert.ok(expectedPairs.length > 0);
-      assert.deepEqual(displayed.edges.map(e => [e.from_id, e.to_id].sort().join(':')).sort(), expectedPairs.sort());
+      assert.deepEqual(displayed.edges.filter(edge=>edge.kind==='shared_identifier').map(e => [e.from_id, e.to_id].sort().join(':')).sort(), expectedPairs.sort());
       const observations = new Map();
       for (const { runId } of graphSources) {
         const page = await client.request('get', '/api/v1/cases/{caseId}/observations', { path: { caseId: graphCaseId }, query: { processing_run_id: runId, limit: 100, offset: 0 } });
         for (const item of page.items) observations.set(item.id, item);
       }
+      verifyGraphLineage({graph:displayed,caseId:graphCaseId,evidence:graphSources.map(source=>source.evidence),entities:candidatePages[0].items,events:candidatePages[1].items,observations:[...observations.values()]});
       for (const edge of displayed.edges) {
-        assert.equal(edge.kind, 'shared_identifier'); assert.equal(edge.confidence, 0, 'producer reports unavailable confidence as zero; do not invent certainty');
-        assert.deepEqual(edge.evidence_ids, evidenceIds);
+        assert.ok(['shared_identifier','assigned_ip'].includes(edge.kind)); assert.equal(edge.confidence, 0, 'producer reports unavailable confidence as zero; do not invent certainty');
+        assert.deepEqual(edge.evidence_ids,[...new Set(edge.observation_ids.map(id=>observations.get(id).evidence_id))].sort());
         assert.ok(edge.observation_ids.length > 0);
         assert.ok(edge.observation_ids.every(id => completed.input_snapshot.observation_ids.includes(id)));
         await graphUI.select({ kind: 'edge', id: edge.id });
@@ -634,7 +636,7 @@ try {
         findingsUI.start(); await settle(() => ['ready', 'error'].includes(findingsUI.getSnapshot().status), 'findings load');
         assert.equal(findingsUI.getSnapshot().status, 'ready', findingsUI.getSnapshot().message);
         const total = findingsUI.getSnapshot().page.total;
-        assert.equal(total, displayed.edges.length); assert.ok(total > 1);
+        assert.ok(total > 1);
         findingPages = [];
         for (let offset = 0; offset < total; offset++) {
           await findingsUI.load(offset);
@@ -643,7 +645,7 @@ try {
           assert.equal(page.analysis_run_id, completed.id); assert.equal(page.total, total);
           assert.deepEqual([page.limit, page.offset, page.items.length], [1, offset, 1]);
           const finding = page.items[0]; findingPages.push(finding);
-          assert.equal(finding.kind, 'relationship'); assert.equal(finding.rule, 'candidate_link_shared_identifier:v1');
+          assert.equal(finding.rule,{relationship:'candidate_link_shared_identifier:v1',cluster:'cluster_connected_components:v1',corroboration:'corroboration_reported_claim:v1'}[finding.kind]);
           assert.equal(finding.case_id, graphCaseId); assert.equal(finding.analysis_run_id, completed.id);
           assert.equal(finding.confidence, 0); assert.deepEqual(finding.evidence_ids, evidenceIds);
           assert.ok(finding.observation_ids.length > 0);
@@ -657,6 +659,7 @@ try {
           }
         }
         assert.equal(new Set(findingPages.map(f => f.id)).size, total);
+        verifyFindingLineage({graph:displayed,findings:findingPages,entities:candidatePages[0].items,events:candidatePages[1].items});
       } finally { findingsUI.dispose(); }
       const originalEdge = displayed.edges[0];
       // New processing/analysis cannot replace this displayed graph or its frozen citations.

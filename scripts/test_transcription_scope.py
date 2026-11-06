@@ -5,13 +5,16 @@ import os
 from pathlib import Path
 import unittest
 
-import verify_coordination as audit
+if __package__:
+    from . import verify_coordination as audit
+else:
+    import verify_coordination as audit
 
 
 class TranscriptionScopeTests(unittest.TestCase):
     def setUp(self):
         root = Path(__file__).resolve().parents[1]
-        self.rows = audit.parse_catalog((root / "docs/TASK_BREAKDOWN.md").read_text(), strict=True)
+        self.rows = audit.parse_catalog((root / "fixtures/planning/transcription-task-catalog.txt").read_text(), strict=True)
         self.spec = json.loads(Path(os.environ["EVORA_CONTRACT_BUNDLE"]).read_text())
 
     def test_transcription_dependency_handoffs_pass(self):
@@ -57,6 +60,21 @@ class TranscriptionScopeTests(unittest.TestCase):
         spec["info"]["version"] = "0.2.0"
         with self.assertRaisesRegex(ValueError, "version 0.3.0"):
             audit.verify_spec(spec)
+
+    def test_current_media_addition_cannot_be_renamed_or_duplicated(self):
+        for replacement in ('silentlyRenamedImage','appendTranscriptRevision'):
+            spec=copy.deepcopy(self.spec)
+            for item in spec['paths'].values():
+                for operation in item.values():
+                    if isinstance(operation,dict) and operation.get('operationId')=='analyzeImage':
+                        operation['operationId']=replacement
+            with self.assertRaisesRegex(ValueError,'Expected preserved operations|Duplicate operation'):
+                audit.verify_spec(spec)
+
+    def test_broken_contract_reference_is_rejected(self):
+        spec=copy.deepcopy(self.spec)
+        spec['components']['schemas']['BrokenFixture']={'$ref':'#/components/schemas/MissingFixture'}
+        with self.assertRaisesRegex(ValueError,'Broken reference'):audit.verify_spec(spec)
 
 
 if __name__ == "__main__":

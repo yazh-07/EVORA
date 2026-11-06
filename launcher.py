@@ -98,4 +98,14 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    # Frozen child workers must re-enter this executable rather than argparse.
+    if sys.argv[1:3] == ['-m', 'backend.text_ner_worker']:
+        sys.argv = sys.argv[2:]
+        from backend.text_ner_worker import run
+        run()
+    elif sys.argv[1:3] == ['-m', 'backend.video_speech_worker']:
+        sys.argv = sys.argv[2:]
+        from backend.video_speech_worker import main as speech_main
+        speech_main()
+    else:
+        main()

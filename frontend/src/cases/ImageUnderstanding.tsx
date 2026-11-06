@@ -29,7 +29,7 @@ export function ImageUnderstanding({ item, observations, onCompleted }: {
       if (!request.signal.aborted) setSettings(value);
     }).catch(() => { if (!request.signal.aborted) setMessage('Could not load vision settings. Refresh settings to retry.'); });
     return () => request.abort();
-  }, [client, refresh, preferences.vision_model, preferences.qa_provider, preferences.qa_url, preferences.openai_base_url, preferences.offline_mode]);
+  }, [client, refresh, preferences.vision_model, preferences.vision_use_qa_model, preferences.qa_model, preferences.qa_provider, preferences.qa_url, preferences.openai_base_url, preferences.offline_mode]);
   useEffect(() => () => pending.current?.abort(), []);
   const complete = useCallback((id: string) => {
     if (finished.current === id) return;
@@ -41,18 +41,21 @@ export function ImageUnderstanding({ item, observations, onCompleted }: {
   const provenance = records.get('image.provenance');
   let model = '';
   if (provenance) { try { const parsed = JSON.parse(provenance.raw_value); if (typeof parsed.actual_model === 'string') model = parsed.actual_model; } catch { /* Raw provenance remains inspectable below. */ } }
-  const hosted = settings?.qa_provider === 'openai';
+  const hosted = settings !== undefined && settings.qa_provider !== 'ollama';
+  const destination = settings?.qa_provider === 'chatgpt' ? 'https://api.openai.com/v1' : settings?.openai_base_url;
+  const authorized = settings?.qa_provider === 'chatgpt' ? settings.has_chatgpt_connection : settings?.has_openai_key;
+  const selectedModel = settings?.vision_use_qa_model ? settings.qa_model : settings?.vision_model;
   const status = runStatus ?? run?.status;
   const busy = submitting || status === 'queued' || status === 'running';
   const start = async () => {
-    if (!settings?.vision_model || busy || !allowed || (hosted && !consent)) return;
+    if (!settings || !selectedModel || busy || !allowed || (hosted && !consent)) return;
     setSubmitting(true); setMessage('');
     const request = pending.current = new AbortController();
     try {
       const result = await client.request('post', '/api/v1/cases/{caseId}/evidence/{evidenceId}/image-analysis', {
         path: { caseId: item.case_id, evidenceId: item.id }, header: { 'Idempotency-Key': crypto.randomUUID() }, signal: request.signal,
         body: { confirm_external_processing: consent, expected_provider: settings.qa_provider,
-          expected_model: settings.vision_model, expected_endpoint: hosted ? settings.openai_base_url : settings.qa_url },
+          expected_model: selectedModel, expected_endpoint: hosted ? destination! : settings.qa_url },
       });
       if (!request.signal.aborted) {
         if (!validRun(result, item.case_id, item.id)) throw Error('Invalid image analysis run');
@@ -70,11 +73,11 @@ export function ImageUnderstanding({ item, observations, onCompleted }: {
     {records.get('image.limitations') && <p className="scope-note">Limitations: {records.get('image.limitations')!.raw_value}</p>}
     {provenance && <details className="technical-details"><summary>Image-processing provenance{model ? ` · ${model}` : ''}</summary><p className="identifier">Processing run: {provenance.processing_run_id}</p><pre>{provenance.raw_value}</pre></details>}
     {!description && !text && <p className="scope-note">No description or text extraction in the displayed processing output.</p>}
-    {settings && <div className="image-model-destination"><p>Provider: <strong>{hosted ? 'Hosted / OpenAI-compatible' : 'Local Ollama'}</strong> · Vision model: <strong>{settings.vision_model || 'Not configured'}</strong></p>
-      {!settings.vision_model && <p>Ask an administrator to set a vision-capable model in Settings. A text-only chat model cannot inspect image pixels.</p>}
-      {allowed && hosted && <label><input type="checkbox" checked={consent} disabled={busy} onChange={event => setConsent(event.target.checked)} />Send a normalized copy of this image to {settings.openai_base_url} using {settings.vision_model || 'the configured vision model'}. Provider usage charges may apply.</label>}
-      {allowed && <button type="button" disabled={busy || !settings.vision_model || (hosted && (!consent || !settings.has_openai_key))} onClick={() => { void start(); }}>{busy ? 'Analyzing image…' : 'Describe image and extract text'}</button>}
-      {hosted && !settings.has_openai_key && <p>Configure an API key in Settings before using the hosted provider.</p>}
+    {settings && <div className="image-model-destination"><p>Provider: <strong>{settings.qa_provider==='chatgpt'?'ChatGPT plan':hosted ? 'Hosted / OpenAI-compatible' : 'Local Ollama'}</strong> · Vision model: <strong>{selectedModel || 'Not configured'}</strong></p>
+      {!selectedModel && <p>Ask an administrator to set a vision-capable model in Settings. A text-only chat model cannot inspect image pixels.</p>}
+      {allowed && hosted && <label><input type="checkbox" checked={consent} disabled={busy} onChange={event => setConsent(event.target.checked)} />Send a normalized copy of this image to {destination} using {selectedModel || 'the configured vision model'}. Provider usage charges may apply.</label>}
+      {allowed && <button type="button" disabled={busy || !selectedModel || (hosted && (!consent || !authorized))} onClick={() => { void start(); }}>{busy ? 'Analyzing image…' : 'Describe image and extract text'}</button>}
+      {hosted && !authorized && <p>Connect the selected provider in Settings before using it.</p>}
     </div>}
     {!allowed && <p className="scope-note">Read-only access. An investigator can generate a new description.</p>}
     {status === 'failed' && <p role="alert">Image understanding failed. Check that the selected model supports images and that its service and credentials are available. Earlier completed results remain available.</p>}

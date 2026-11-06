@@ -6,6 +6,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { setTimeout as delay } from 'node:timers/promises';
+import { verifyGraphLineage } from './graph-lineage.mjs';
 
 // Real HTTP/FastAPI/SQLite, registered CSV producers, detectors and scoring.
 // serve-cases.py explicitly doubles Neo4j; this is not live graph acceptance.
@@ -139,7 +140,10 @@ try {
         assert.equal(observation.processing_run_id, processing.id);
         assert.ok(observation.source_locator.trim());
       }
-      const source = { evidence, processing, observations, bytes };
+      const ownObservations=new Set(observations.map(item=>item.id));
+      const entities=(await page('/entities')).items.filter(item=>item.observation_ids.every(id=>ownObservations.has(id)));
+      const events=(await page('/events')).items.filter(item=>item.observation_ids.every(id=>ownObservations.has(id)));
+      const source = { evidence, processing, observations, entities, events, bytes };
       sources.push(source);
       return source;
     }
@@ -169,6 +173,10 @@ try {
         get('/graph', query), page('/findings', query), page('/triage', query),
       ]);
       for (const output of [graph, findings, triage]) assert.equal(output.analysis_run_id, run.id);
+      const frozenSources=sources.filter(item=>run.input_snapshot.processing_run_ids.includes(item.processing.id));
+      verifyGraphLineage({ graph, caseId, evidence:frozenSources.map(item=>item.evidence),
+        entities:frozenSources.flatMap(item=>item.entities), events:frozenSources.flatMap(item=>item.events),
+        observations:frozenSources.flatMap(item=>item.observations) });
       assert.deepEqual(sorted(triage.items.map(item => item.evidence_id)), run.input_snapshot.evidence_ids);
       return { graph, findings, triage };
     }
@@ -192,8 +200,16 @@ try {
     const persistedBefore = storedRun(run1.id);
     const gpsBefore = resultFor(before, gps);
     await check(`${label}: baseline findings, factors and history`, async () => {
-      assert.deepEqual(before.graph.edges, []);
-      assert.deepEqual(before.findings.items, []);
+      assert.deepEqual(before.graph.edges.filter(edge=>edge.kind==='shared_identifier'), []);
+      const clusterFacts=item=>JSON.stringify([sorted(item.entity_ids),sorted(item.evidence_ids),sorted(item.observation_ids)]);
+      for(const finding of before.findings.items){
+        assert.equal(finding.kind,'cluster');assert.equal(finding.rule,'cluster_connected_components:v1');
+        assert.equal(finding.analysis_run_id,run1.id);assert.equal(finding.case_id,caseId);
+      }
+      // The source-validated, disjoint device/IP assignments each form a real
+      // entity component. GPS locations are not candidate-entity clusters.
+      assert.deepEqual(before.findings.items.map(clusterFacts).sort(),before.graph.edges.filter(edge=>edge.kind==='assigned_ip')
+        .map(edge=>clusterFacts({...edge,entity_ids:[edge.from_id,edge.to_id]})).sort());
       for (const source of [network, gps]) {
         const result = resultFor(before, source);
         assert.ok(factor(result, 'relevance').value > 0);
@@ -240,8 +256,9 @@ try {
         });
         assert.deepEqual(sorted(finding.evidence_ids), sorted(new Set(cited.map(item => item.evidence_id))));
       }
-      assert.equal(after.graph.edges.length, 1, 'one shared-identifier edge in both scenarios');
-      assert.deepEqual(sorted(after.graph.edges[0].evidence_ids), sorted([gps.evidence.id, extra.evidence.id]));
+      const shared=after.graph.edges.filter(edge=>edge.kind==='shared_identifier');
+      assert.equal(shared.length, 1, 'one shared-identifier edge in both scenarios; all other edges validated from source roles');
+      assert.deepEqual(sorted(shared[0].evidence_ids), sorted([gps.evidence.id, extra.evidence.id]));
       assert.equal(factor(gpsAfter, 'relevance').value, factor(gpsBefore, 'relevance').value);
       assert.equal(factor(gpsAfter, 'connectivity').value, 0.1);
       const conflicts = after.findings.items.filter(item => item.kind === 'conflict');

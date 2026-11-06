@@ -1,0 +1,1411 @@
+openapi: 3.1.0
+info:
+  title: EVORA case investigation API
+  version: 0.3.0
+  description: >-
+    Proposed v1 wire contract for team review. An investigation aid, not a
+    forensic certification or a determination of guilt. All case-scoped
+    resources must be authorized for that case. No endpoint may return data
+    from a different case. See docs/INTEGRATION.md for workflow semantics.
+servers:
+  - url: http://{host}:{port}
+    description: Local development defaults; clients configure their actual base URL.
+    variables:
+      host:
+        default: 127.0.0.1
+      port:
+        default: '8000'
+security:
+  - bearerAuth: []
+tags:
+  - name: Cases
+    description: Case identity and access scope.
+  - name: Evidence
+    description: Preserve and retrieve original artifacts.
+  - name: Processing
+    description: Extract case-scoped observations from originals.
+  - name: Analysis
+    description: Build findings and versioned automated priorities.
+  - name: Investigation
+    description: Human decisions, case questions and audit trail.
+paths:
+  /api/v1/cases:
+    post:
+      tags: [Cases]
+      operationId: createCase
+      summary: Create a case
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateCase' }
+      responses:
+        '201':
+          description: Case created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Case' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    get:
+      tags: [Cases]
+      operationId: listCases
+      summary: List accessible cases
+      parameters:
+        - { $ref: '#/components/parameters/Limit' }
+        - { $ref: '#/components/parameters/Offset' }
+      responses:
+        '200':
+          description: Authorized cases only
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CasePage' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /api/v1/cases/{caseId}:
+    parameters:
+      - { $ref: '#/components/parameters/CaseId' }
+    get:
+      tags: [Cases]
+      operationId: getCase
+      summary: Read a case
+      responses:
+        '200':
+          description: Case detail
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Case' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/v1/cases/{caseId}/evidence:
+    parameters:
+      - { $ref: '#/components/parameters/CaseId' }
+    post:
+      tags: [Evidence]
+      operationId: uploadEvidence
+      summary: Store original evidence
+      description: >-
+        Stream and hash the original bytes before analysis. Never trust the
+        client filename as a storage path. Do not process the file inline.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file, source_label, kind]
+              properties:
+                file: { type: string, format: binary }
+                source_label: { type: string, minLength: 1 }
+                kind: { $ref: '#/components/schemas/EvidenceKind' }
+                acquired_at: { type: string, format: date-time }
+      responses:
+        '201':
+          description: Stored original evidence
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Evidence' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '413': { $ref: '#/components/responses/TooLarge' }
+        '415': { $ref: '#/components/responses/UnsupportedMedia' }
+    get:
+      tags: [Evidence]
+      operationId: listEvidence
+      summary: List case evidence
+      parameters:
+        - { $ref: '#/components/parameters/Limit' }
+        - { $ref: '#/components/parameters/Offset' }
+      responses:
+        '200':
+          description: Evidence list
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EvidencePage' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/v1/cases/{caseId}/evidence/{evidenceId}:
+    parameters:
+      - { $ref: '#/components/parameters/CaseId' }
+      - { $ref: '#/components/parameters/EvidenceId' }
+    get:
+      tags: [Evidence]
+      operationId: getEvidence
+      summary: Read evidence metadata
+      responses:
+        '200':
+          description: Evidence metadata
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Evidence' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/v1/cases/{caseId}/evidence/{evidenceId}/content:
+    parameters:
+      - { $ref: '#/components/parameters/CaseId' }
+      - { $ref: '#/components/parameters/EvidenceId' }
+    get:
+      tags: [Evidence]
+      operationId: downloadEvidence
+      summary: Download original evidence bytes
+      description: >-
+        Authorized download of unmodified original bytes; never expose a server path.
+        U14 uses these bytes in an in-memory media Blob/object URL for local playback
+        and seeks using media-time source_locator offsets. Revoke URLs on disposal;
+        no persistent browser evidence cache, remote media URL, new playback endpoint
+        or HTTP Range/206 support is promised by this contract.
+      responses:
+        '200':
+          description: Original bytes
+          content:
+            application/octet-stream:
+              schema: { type: string, format: binary }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/v1/cases/{caseId}/evidence/{evidenceId}/processing-runs:
+    parameters:
+      - { $ref: '#/components/parameters/CaseId' }
+      - { $ref: '#/components/parameters/EvidenceId' }
+    post:
+      tags: [Processing]
+      operationId: startProcessing
+      summary: Start an evidence processing run
+      description: >-
+        Freeze a processing configuration at acceptance. Reusing the same key
+        with the same request returns the original run, including failed runs;
+        retry/reprocess with a new key. Different evidence target with the same
+        actor/case/operation key returns 409. Processing output is immutable.
+      parameters:
+        - { $ref: '#/components/parameters/IdempotencyKey' }
+      responses:
+        '202':
+          description: Processing queued
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ProcessingRun' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '415': { $ref: '#/components/responses/UnsupportedMedia' }
+    get:
+      tags: [Processing]
+      operationId: listProcessingRuns
+      summary: List evidence processing runs
+      responses:
+        '200':
+          description: Processing history, oldest first
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/ProcessingRun' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/v1/cases/{caseId}/evidence/{evidenceId}/processing-runs/{runId}:
+    parameters:
+      - { $ref: '#/components/parameters/CaseId' }
+      - { $ref: '#/components/parameters/EvidenceId' }
+      - { $ref: '#/components/parameters/RunId' }
+    get:
+      tags: [Processing]
+      operationId: getProcessingRun
+      summary: Poll an evidence processing run
+      responses:
+        '200':
+          description: Processing run state
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ProcessingRun' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/v1/cases/{caseId}/observations:
+    parameters:
+      - { $ref: '#/components/parameters/CaseId' }
+    get:
+      tags: [Processing]
+      operationId: listObservations
+      summary: List extracted observations
+      parameters:
+        - { $ref: '#/components/parameters/Limit' }
+        - { $ref: '#/components/parameters/Offset' }
+        - name: evidence_id
+          in: query
+          schema: { type: string, format: uuid }
+        - name: processing_run_id
+          in: query
+          description: >-
+            Optional completed run selector for historical provenance. Without
+            it, return outputs of the latest completed run per evidence using
+            finished_at UTC then UUID. Failed/running outputs are never visible.
+            Both filters must identify same-case resources; mismatch returns 404.
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Case-scoped normalized observations
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ObservationPage' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/v1/cases/{caseId}/observations/{observationId}/transcript-revisions:
+    parameters:
+      - { $ref: '#/components/parameters/CaseId' }
+      - name: observationId
+        in: path
+        required: true
+        description: Original machine transcript.segment observation, never a derived correction observation.
+        schema: { type: string, format: uuid }
+    post:
+      tags: [Investigation]
+      operationId: appendTranscriptRevision
+      summary: Append an immutable human transcript correction
+      description: >-
+        U14B: authorize every referenced resource in the same case and evidence.
+        The path observation must be a machine transcript.segment in the supplied
+        original completed processing_run_id. Missing/foreign/mismatched references
+        return 404; a non-transcript target returns 400. Require base_processing_run_id
+        to be the latest completed output for this evidence and expected_latest_revision_id
+        to equal this source segment's latest revision (null for the first); stale
+        values or a base no longer containing the original segment lineage return
+        409; do not auto-rebase across re-transcription. Prepare a complete derived
+        output from that base, copying
+        unaffected observations with new IDs and retaining their provenance, replacing
+        this segment's effective text and rebuilding dependent candidate entities/events.
+        Atomically append revision, publish a new completed ProcessingRun and all its
+        output, and append one safe audit reference without transcript/reason contents.
+        Completion ordering must be strictly after the base; serialize with concurrent
+        processing publication. Carry forward other segments' effective revisions.
+        Every copied transcript segment exposes source_observation_id pointing to its
+        original machine root, even when it has no correction/revision yet.
+        Compare both preconditions again
+        at publication; failures expose no revision or partial output. Preserve original
+        bytes/hash, machine transcript, earlier revisions/runs and analysis snapshots.
+        New analysis keys select this derived completed run through existing snapshot
+        rules; original-key replay retains old inputs. Neither startProcessing nor
+        startAnalysis gains a request body. Replayed identical revision requests return
+        the original 201 result before checking stale preconditions, with access rechecked.
+      parameters:
+        - { $ref: '#/components/parameters/IdempotencyKey' }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateTranscriptRevision' }
+      responses:
+        '201':
+          description: Immutable revision and complete derived processing output published atomically
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TranscriptRevision' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+    get:
+      tags: [Investigation]
+      operationId: listTranscriptRevisions
+      summary: List immutable corrections against the original machine segment
+      description: >-
+        Same-case original machine transcript.segment only; missing/foreign target
+        returns 404, non-transcript target returns 400. Order by created_at UTC then
+        revision UUID ascending before pagination. History is never a mutable overlay
+        on historical observations or analytical snapshots.
+      parameters:
+        - { $ref: '#/components/parameters/Limit' }
+        - { $ref: '#/components/parameters/Offset' }
+      responses:
+        '200':
+          description: Append-only correction history, oldest first
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TranscriptRevisionPage' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/v1/cases/{caseId}/entities:
+    parameters:
+      - { $ref: '#/components/parameters/CaseId' }
+    get:
+      tags: [Processing]
+      operationId: listEntities
+      summary: List case-scoped candidate entities
+      parameters:
+        - { $ref: '#/components/parameters/Limit' }
+        - { $ref: '#/components/parameters/Offset' }
+      responses:
+        '200':
+          description: Source-backed candidate entities
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EntityPage' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/v1/cases/{caseId}/events:
+    parameters:
+      - { $ref: '#/components/parameters/CaseId' }
+    get:
+      tags: [Processing]
+      operationId: listEvents
+      summary: List extracted case events
+      parameters:
+        - { $ref: '#/components/parameters/Limit' }
+        - { $ref: '#/components/parameters/Offset' }
+      responses:
+        '200':
+          description: Source-backed candidate events
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EventPage' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/v1/cases/{caseId}/analysis-runs:
+    parameters:
+      - { $ref: '#/components/parameters/CaseId' }
+    post:
+      tags: [Analysis]
+      operationId: startAnalysis
+      summary: Start or repeat case analysis
+      description: >-
+        Freeze input_snapshot at acceptance, selecting the latest completed
+        processing run per evidence by finished_at UTC then UUID. Include all
+        currently uploaded evidence IDs, including unprocessed items. Derive
+        trigger as initial when no completed analysis exists, new_observations
+        when the snapshot hash differs from the latest completed analysis, or
+        manual otherwise. No trigger request field exists. Reusing a key returns
+        the original run before any new snapshot is selected. A new key requests
+        a new run. Publish graph, findings and available triage together only
+        after the case/run-scoped Neo4j projection verifies; hide partial outputs.
+        Never score unprocessed items with fabricated factors. Retain old runs.
+      parameters:
+        - { $ref: '#/components/parameters/IdempotencyKey' }
+      responses:
+        '202':
+          description: Analysis accepted
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AnalysisRun' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+    get:
+      tags: [Analysis]
+      operationId: listAnalysisRuns
+      summary: List case analysis runs
+      responses:
+        '200':
+          description: Runs in creation order
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/AnalysisRun' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/v1/cases/{caseId}/analysis-runs/{runId}:
+    parameters:
+      - { $ref: '#/components/parameters/CaseId' }
+      - { $ref: '#/components/parameters/RunId' }
+    get:
+      tags: [Analysis]
+      operationId: getAnalysisRun
+      summary: Poll a case analysis run
+      responses:
+        '200':
+          description: Analysis run state
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AnalysisRun' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/v1/cases/{caseId}/graph:
+    parameters:
+      - { $ref: '#/components/parameters/CaseId' }
+    get:
+      tags: [Analysis]
+      operationId: getGraph
+      summary: Read the latest case graph
+      description: >-
+        Latest completed run ordered by created_at UTC then UUID, not finish
+        order; empty graph without analysis_run_id when no completed run exists.
+        Every nonempty graph includes its analysis_run_id. All graph IDs and
+        supporting observations belong to the authorized case/run partition.
+      parameters:
+        - { $ref: '#/components/parameters/AnalysisRunSelector' }
+      responses:
+        '200':
+          description: Evidence-backed relationships
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Graph' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/v1/cases/{caseId}/findings:
+    parameters:
+      - { $ref: '#/components/parameters/CaseId' }
+    get:
+      tags: [Analysis]
+      operationId: listFindings
+      summary: List latest case findings
+      parameters:
+        - { $ref: '#/components/parameters/AnalysisRunSelector' }
+        - { $ref: '#/components/parameters/Limit' }
+        - { $ref: '#/components/parameters/Offset' }
+      responses:
+        '200':
+          description: Latest completed findings
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/FindingPage' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/v1/cases/{caseId}/findings/{findingId}/reviews:
+    parameters:
+      - { $ref: '#/components/parameters/CaseId' }
+      - { $ref: '#/components/parameters/FindingId' }
+    post:
+      tags: [Investigation]
+      operationId: reviewFinding
+      summary: Record a human finding review
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateReview' }
+      responses:
+        '201':
+          description: Audited review decision (append-only)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ReviewDecision' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    get:
+      tags: [Investigation]
+      operationId: listFindingReviews
+      summary: Read append-only review history
+      responses:
+        '200':
+          description: Review decisions, oldest first
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/ReviewDecision' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/v1/cases/{caseId}/triage:
+    parameters:
+      - { $ref: '#/components/parameters/CaseId' }
+    get:
+      tags: [Analysis]
+      operationId: listTriage
+      summary: List latest priorities
+      description: >-
+        Select the same-case completed analysis_run_id, or latest completed run by
+        (created_at UTC, id UUID) when omitted; missing, foreign, pending or failed
+        selectors return 404. For a selected completed run, membership is exactly
+        AnalysisRun.input_snapshot.evidence_ids, including unscored evidence, and
+        total is that manifest's count. Return TriagePage.analysis_run_id even for
+        empty or entirely unscored pages; latest_result, when present, belongs to
+        the selected run. Sort scored entries by pinned latest_result.score
+        descending, ties by evidence UUID lexically ascending, then unscored
+        entries by evidence UUID ascending, before limit/offset slicing. Later
+        uploads, processing or analyses cannot change pinned membership, total,
+        automated results or ordering. Only before any completed analysis, an
+        unselected read lists live uploaded case evidence, unscored with no
+        latest_result, live total and evidence UUID ascending order.
+        On each read, override is the live latest authorized same-case override
+        for that evidence by (created_at UTC, id UUID), not an automated snapshot
+        field. effective_priority is its priority, otherwise the selected
+        automated priority, and is omitted if neither exists. Override changes
+        must not reorder the list, change membership/total or cause pagination
+        duplicates/skips; clients must not re-sort by effective priority.
+        getTriageHistory remains immutable append-only automated results.
+      parameters:
+        - { $ref: '#/components/parameters/AnalysisRunSelector' }
+        - { $ref: '#/components/parameters/Limit' }
+        - { $ref: '#/components/parameters/Offset' }
+      responses:
+        '200':
+          description: Selected-run automated results (or pre-analysis unscored uploads) with live authorized override overlays
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TriagePage' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/v1/cases/{caseId}/evidence/{evidenceId}/triage-history:
+    parameters:
+      - { $ref: '#/components/parameters/CaseId' }
+      - { $ref: '#/components/parameters/EvidenceId' }
+    get:
+      tags: [Analysis]
+      operationId: getTriageHistory
+      summary: Read automated priority history
+      responses:
+        '200':
+          description: Append-only automated ranking history, oldest first
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/TriageResult' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/v1/cases/{caseId}/evidence/{evidenceId}/priority-overrides:
+    parameters:
+      - { $ref: '#/components/parameters/CaseId' }
+      - { $ref: '#/components/parameters/EvidenceId' }
+    post:
+      tags: [Investigation]
+      operationId: setPriorityOverride
+      summary: Record a manual priority override
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateOverride' }
+      responses:
+        '201':
+          description: Recorded manual override, never changes automated history
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PriorityOverride' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/v1/cases/{caseId}/questions:
+    parameters:
+      - { $ref: '#/components/parameters/CaseId' }
+    post:
+      tags: [Investigation]
+      operationId: askCaseQuestion
+      summary: Ask a case-grounded question
+      description: Grounded retrieval; insufficient support yields supported=false and no invented answer.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CaseQuestion' }
+      responses:
+        '200':
+          description: Case-grounded answer or unsupported result
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CaseAnswer' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/v1/cases/{caseId}/audit-events:
+    parameters:
+      - { $ref: '#/components/parameters/CaseId' }
+    get:
+      tags: [Investigation]
+      operationId: listAuditEvents
+      summary: List case audit events
+      parameters:
+        - { $ref: '#/components/parameters/Limit' }
+        - { $ref: '#/components/parameters/Offset' }
+      responses:
+        '200':
+          description: Audit trail
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AuditPage' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: Identity provider and roles TBD; no hard-coded demo token in production.
+  parameters:
+    CaseId:
+      name: caseId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    EvidenceId:
+      name: evidenceId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    FindingId:
+      name: findingId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    RunId:
+      name: runId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    Limit:
+      name: limit
+      in: query
+      schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+    Offset:
+      name: offset
+      in: query
+      schema: { type: integer, minimum: 0, default: 0 }
+    AnalysisRunSelector:
+      name: analysis_run_id
+      in: query
+      description: >-
+        Pin a completed same-case snapshot across graph/findings/triage and
+        pagination. Omit for latest completed run by created_at UTC then UUID.
+        Foreign, missing, failed or incomplete run returns 404. Clients pin the
+        returned run ID across related reads to avoid mixed-run displays.
+      schema: { type: string, format: uuid }
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema: { type: string, minLength: 1, maxLength: 128 }
+      description: >-
+        Scope to authenticated actor, case and operation. Fingerprint method,
+        target path and explicit request parameters/body, not mutable server
+        state. Same key with identical request returns the stored run; changed
+        request returns 409. New data/configuration requires a new key to select
+        a fresh snapshot. Enforce case access again on every replay.
+  responses:
+    BadRequest:
+      description: Invalid path, query, header or body input; shared FastAPI validation maps to 400 ApiError.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ApiError' }
+    Unauthorized:
+      description: Authentication required
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ApiError' }
+    NotFound:
+      description: Missing resource or inaccessible case/resource (no existence leak)
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ApiError' }
+    Conflict:
+      description: Conflicting submission
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ApiError' }
+    TooLarge:
+      description: Upload exceeds configured limit
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ApiError' }
+    UnsupportedMedia:
+      description: File cannot be processed as declared
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ApiError' }
+  schemas:
+    ApiError:
+      type: object
+      additionalProperties: false
+      required: [code, message]
+      properties:
+        code: { type: string }
+        message: { type: string }
+    CreateCase:
+      type: object
+      additionalProperties: false
+      required: [title]
+      properties:
+        title: { type: string, minLength: 1, maxLength: 200 }
+        description: { type: string, maxLength: 5000 }
+    Case:
+      type: object
+      additionalProperties: false
+      required: [id, title, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        title: { type: string }
+        description: { type: string }
+        created_at: { type: string, format: date-time }
+    EvidenceKind:
+      type: string
+      enum: [document, image, video, audio, message, network_log, mobile_log, transaction, gps]
+    Evidence:
+      type: object
+      additionalProperties: false
+      required: [id, case_id, kind, filename, media_type, source_label, sha256, size_bytes, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        case_id: { type: string, format: uuid }
+        kind: { $ref: '#/components/schemas/EvidenceKind' }
+        filename: { type: string }
+        media_type: { type: string }
+        source_label: { type: string }
+        acquired_at: { type: string, format: date-time }
+        sha256: { type: string, pattern: '^[0-9a-f]{64}$' }
+        size_bytes: { type: integer, minimum: 0 }
+        created_at: { type: string, format: date-time }
+    RunStatus:
+      type: string
+      enum: [queued, running, completed, failed]
+    ProcessingRun:
+      allOf:
+        - if:
+            properties:
+              status: { enum: [completed, failed] }
+            required: [status]
+          then:
+            properties:
+              finished_at: { type: string, format: date-time }
+            required: [finished_at]
+        - if:
+            properties:
+              status: { const: failed }
+            required: [status]
+          then:
+            properties:
+              error: { type: string, minLength: 1 }
+            required: [error]
+      type: object
+      additionalProperties: false
+      required: [id, case_id, evidence_id, status, processor_version, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        case_id: { type: string, format: uuid }
+        evidence_id: { type: string, format: uuid }
+        status: { $ref: '#/components/schemas/RunStatus' }
+        processor_version: { type: string }
+        created_at: { type: string, format: date-time }
+        finished_at: { type: string, format: date-time }
+        error: { type: string }
+    Observation:
+      description: >-
+        P16 local audio/video speech transcription emits transcript.segment observations;
+        raw_value is the immutable machine text and normalized_value is effective text.
+        Unclear spans use [unclear], not invented words; silence/no audio emits one
+        transcript.status with normalized_value silence or no_audio and no segments.
+        extraction_confidence is an uncalibrated model score, not truth, identity or
+        source reliability; unavailable model score uses 0 with private provenance.
+        Human correction retains the original machine raw_value and confidence, adds
+        transcript_revision_id and source_observation_id, and changes effective text
+        only in a new derived completed processing output. All materialized copies
+        retain provenance privately, including predecessor IDs and original source.
+      allOf:
+        - if:
+            properties:
+              kind: { const: transcript.segment }
+            required: [kind]
+          then:
+            properties:
+              source_locator:
+                pattern: '^media:start_ms=(0|[1-9][0-9]*);end_ms=(0|[1-9][0-9]*)$'
+              raw_value: { minLength: 1 }
+              normalized_value: { minLength: 1 }
+        - if:
+            properties:
+              kind: { const: transcript.status }
+            required: [kind]
+          then:
+            properties:
+              normalized_value: { enum: [silence, no_audio] }
+        - if:
+            properties:
+              source_observation_id: { type: string, format: uuid }
+            required: [source_observation_id]
+          then:
+            properties:
+              kind: { const: transcript.segment }
+        - if:
+            properties:
+              transcript_revision_id: { type: string, format: uuid }
+            required: [transcript_revision_id]
+          then:
+            required: [source_observation_id]
+            properties:
+              source_observation_id: { type: string, format: uuid }
+              kind: { const: transcript.segment }
+      type: object
+      additionalProperties: false
+      required: [id, case_id, evidence_id, processing_run_id, kind, source_locator, raw_value, normalized_value, extraction_confidence]
+      properties:
+        id: { type: string, format: uuid }
+        case_id: { type: string, format: uuid }
+        evidence_id: { type: string, format: uuid }
+        processing_run_id: { type: string, format: uuid }
+        kind: { type: string, description: 'Namespaced string, e.g. network.ip or gps.location' }
+        source_locator:
+          type: string
+          minLength: 1
+          description: >-
+            Row/page/frame/byte range in original evidence. transcript.segment uses
+            media:start_ms=<integer>;end_ms=<integer>, nonnegative elapsed milliseconds
+            from the ORIGINAL artifact media timeline, end strictly greater than start
+            and within decoded duration. Account for extracted track offsets; never
+            substitute capture UTC, processing time or clip-local zero. Other locator
+            forms are unchanged. See transcript conditional and runtime bounds checks.
+        raw_value: { type: string }
+        normalized_value: { type: string }
+        observed_at_raw: { type: string }
+        observed_at_utc: { type: string, format: date-time }
+        extraction_confidence: { type: number, minimum: 0, maximum: 1 }
+        entity_key: { type: string, description: 'Candidate identifier, NOT a verified identity' }
+        source_observation_id:
+          type: string
+          format: uuid
+          description: >-
+            Original same-case machine segment UUID for every materialized transcript
+            copy, including unchanged segments without a correction. Omitted on the
+            original machine segment itself. Enables correction UI to address the root.
+        transcript_revision_id:
+          type: string
+          format: uuid
+          description: Immutable human correction used by this derived segment, never a live overlay.
+    CreateTranscriptRevision:
+      type: object
+      additionalProperties: false
+      required: [processing_run_id, base_processing_run_id, expected_latest_revision_id, corrected_text, reason]
+      properties:
+        processing_run_id:
+          type: string
+          format: uuid
+          description: Original completed machine run containing the path source observation; not the derived base run.
+        base_processing_run_id:
+          type: string
+          format: uuid
+          description: Expected latest completed same-evidence output to materialize; stale or lineage no longer present returns 409.
+        expected_latest_revision_id:
+          type: [string, 'null']
+          format: uuid
+          description: Latest revision for this original segment, or explicit null for the first; stale returns 409.
+        corrected_text:
+          type: string
+          minLength: 1
+          maxLength: 20000
+          pattern: '\S'
+          description: Full replacement effective segment text; [unclear] for unintelligible speech. No speaker identity or timestamp editing.
+        reason: { type: string, minLength: 1, maxLength: 2000, pattern: '\S' }
+    TranscriptRevision:
+      type: object
+      additionalProperties: false
+      required: [id, case_id, evidence_id, source_observation_id, processing_run_id, base_processing_run_id, previous_revision_id, corrected_text, reason, actor_id, created_at, derived_processing_run_id, derived_observation_id]
+      description: >-
+        Immutable server-authored lineage, actor and time. All referenced records must
+        join to the same authorized case/evidence. Source observation/run always identify
+        the original machine segment, even on later corrections. derived_processing_run_id
+        identifies a new complete completed materialization, not a mutation of any base.
+        Original locator, raw machine text and machine confidence remain unchanged.
+      properties:
+        id: { type: string, format: uuid }
+        case_id: { type: string, format: uuid }
+        evidence_id: { type: string, format: uuid }
+        source_observation_id: { type: string, format: uuid }
+        processing_run_id: { type: string, format: uuid }
+        base_processing_run_id: { type: string, format: uuid }
+        previous_revision_id: { type: [string, 'null'], format: uuid }
+        corrected_text: { type: string, minLength: 1, maxLength: 20000, pattern: '\S' }
+        reason: { type: string, minLength: 1, maxLength: 2000, pattern: '\S' }
+        actor_id: { type: string, minLength: 1 }
+        created_at: { type: string, format: date-time }
+        derived_processing_run_id: { type: string, format: uuid }
+        derived_observation_id: { type: string, format: uuid }
+    TranscriptRevisionPage:
+      type: object
+      additionalProperties: false
+      required: [items, total, limit, offset]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/TranscriptRevision' }
+        total: { type: integer, minimum: 0 }
+        limit: { type: integer, minimum: 1 }
+        offset: { type: integer, minimum: 0 }
+    Entity:
+      type: object
+      additionalProperties: false
+      required: [id, case_id, kind, canonical_label, candidate_key, evidence_ids, observation_ids, confidence]
+      properties:
+        id: { type: string, format: uuid }
+        case_id: { type: string, format: uuid }
+        kind: { type: string, description: 'Device, person, account, etc.; does not establish real-world identity' }
+        canonical_label: { type: string }
+        candidate_key: { type: string, description: 'Namespaced normalized key, e.g. device:D-7' }
+        evidence_ids:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items: { type: string, format: uuid }
+        observation_ids:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items: { type: string, format: uuid }
+        confidence: { type: number, minimum: 0, maximum: 1 }
+    Event:
+      type: object
+      additionalProperties: false
+      required: [id, case_id, kind, summary, evidence_ids, observation_ids, entity_ids, confidence]
+      properties:
+        id: { type: string, format: uuid }
+        case_id: { type: string, format: uuid }
+        kind: { type: string }
+        summary: { type: string }
+        evidence_ids:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items: { type: string, format: uuid }
+        observation_ids:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items: { type: string, format: uuid }
+        entity_ids:
+          type: array
+          uniqueItems: true
+          items: { type: string, format: uuid }
+        observed_at_raw: { type: string }
+        observed_at_utc: { type: string, format: date-time }
+        confidence: { type: number, minimum: 0, maximum: 1 }
+    GraphNode:
+      description: >-
+        id equals its source Evidence, Entity or Event UUID within the case;
+        kind declares that record category. Reuse identity across analysis
+        versions but partition storage by case_id and analysis_run_id.
+      type: object
+      additionalProperties: false
+      required: [id, case_id, kind, label, evidence_ids]
+      properties:
+        id: { type: string, format: uuid }
+        case_id: { type: string, format: uuid }
+        kind: { type: string }
+        label: { type: string }
+        evidence_ids:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items: { type: string, format: uuid }
+    GraphEdge:
+      type: object
+      additionalProperties: false
+      required: [id, case_id, from_id, to_id, kind, evidence_ids, observation_ids, confidence]
+      properties:
+        id: { type: string, format: uuid }
+        case_id: { type: string, format: uuid }
+        from_id: { type: string, format: uuid }
+        to_id: { type: string, format: uuid }
+        kind: { type: string }
+        evidence_ids:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items: { type: string, format: uuid }
+        observation_ids:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          description: Same-case input observations supporting this result; resolve source locators through Observation.
+          items: { type: string, format: uuid }
+        confidence: { type: number, minimum: 0, maximum: 1 }
+    Graph:
+      allOf:
+        - if:
+            anyOf:
+              - properties:
+                  nodes: { minItems: 1 }
+                required: [nodes]
+              - properties:
+                  edges: { minItems: 1 }
+                required: [edges]
+          then:
+            properties:
+              analysis_run_id: { type: string, format: uuid }
+            required: [analysis_run_id]
+      type: object
+      additionalProperties: false
+      required: [case_id, nodes, edges]
+      properties:
+        case_id: { type: string, format: uuid }
+        analysis_run_id: { type: string, format: uuid }
+        nodes:
+          type: array
+          items: { $ref: '#/components/schemas/GraphNode' }
+        edges:
+          type: array
+          items: { $ref: '#/components/schemas/GraphEdge' }
+    FindingKind:
+      type: string
+      enum: [relationship, corroboration, conflict, gap, cluster, anomaly, hypothesis]
+    Finding:
+      type: object
+      additionalProperties: false
+      required: [id, case_id, analysis_run_id, kind, summary, evidence_ids, observation_ids, rule, confidence]
+      properties:
+        id: { type: string, format: uuid }
+        case_id: { type: string, format: uuid }
+        analysis_run_id: { type: string, format: uuid }
+        kind: { $ref: '#/components/schemas/FindingKind' }
+        summary: { type: string }
+        evidence_ids:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items: { type: string, format: uuid }
+        contradicting_evidence_ids:
+          type: array
+          uniqueItems: true
+          items: { type: string, format: uuid }
+        rule: { type: string, description: 'Algorithm or rule version and basis' }
+        observation_ids:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          description: Same-case input observations supporting this result; resolve source locators through Observation.
+          items: { type: string, format: uuid }
+        confidence: { type: number, minimum: 0, maximum: 1 }
+        entity_ids:
+          type: array
+          uniqueItems: true
+          description: Same-case candidate entities involved, including cluster membership when applicable.
+          items: { type: string, format: uuid }
+        missing_information:
+          type: array
+          description: Explicitly unknown or missing information, not assertions of non-occurrence.
+          items: { type: string, minLength: 1 }
+    AnalysisInputSnapshot:
+      type: object
+      additionalProperties: false
+      required: [case_id, evidence_ids, processing_run_ids, observation_ids, sha256]
+      description: >-
+        Immutable acceptance-time input manifest. UUID arrays are unique and
+        sorted lexically. evidence_ids includes every uploaded item in the case;
+        select one latest completed processing run per item by finished_at UTC
+        then UUID, with all its observations. Empty arrays are allowed. sha256 is
+        lowercase SHA-256 of UTF-8 compact JSON with sorted object keys for
+        case_id, evidence_ids, processing_run_ids and observation_ids; exclude
+        sha256 itself. Original evidence hashes and output records are immutable.
+      properties:
+        case_id: { type: string, format: uuid }
+        evidence_ids:
+          type: array
+          uniqueItems: true
+          items: { type: string, format: uuid }
+        processing_run_ids:
+          type: array
+          uniqueItems: true
+          items: { type: string, format: uuid }
+        observation_ids:
+          type: array
+          uniqueItems: true
+          items: { type: string, format: uuid }
+        sha256: { type: string, pattern: '^[0-9a-f]{64}$' }
+    AnalysisRun:
+      allOf:
+        - if:
+            properties:
+              status: { enum: [completed, failed] }
+            required: [status]
+          then:
+            properties:
+              finished_at: { type: string, format: date-time }
+            required: [finished_at]
+        - if:
+            properties:
+              status: { const: failed }
+            required: [status]
+          then:
+            properties:
+              error: { type: string, minLength: 1 }
+            required: [error]
+      type: object
+      additionalProperties: false
+      required: [id, case_id, status, trigger, algorithm_version, input_snapshot, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        case_id: { type: string, format: uuid }
+        status: { $ref: '#/components/schemas/RunStatus' }
+        trigger: { type: string, enum: [initial, new_observations, manual] }
+        algorithm_version: { type: string }
+        input_snapshot: { $ref: '#/components/schemas/AnalysisInputSnapshot' }
+        created_at: { type: string, format: date-time }
+        finished_at: { type: string, format: date-time }
+        error: { type: string }
+    Priority:
+      type: string
+      enum: [P1, P2, P3, P4]
+    TriageFactor:
+      type: object
+      additionalProperties: false
+      required: [name, value, weight, contribution, explanation, evidence_ids]
+      properties:
+        name:
+          type: string
+          enum: [relevance, connectivity, corroboration, gap_relevance, source_quality, conflict_relevance, temporal_proximity]
+        value: { type: number, minimum: 0, maximum: 1 }
+        weight: { type: number, minimum: 0, maximum: 1 }
+        contribution: { type: number, minimum: 0, maximum: 100 }
+        explanation: { type: string }
+        evidence_ids:
+          type: array
+          uniqueItems: true
+          items: { type: string, format: uuid }
+    TriageResult:
+      type: object
+      additionalProperties: false
+      required: [id, case_id, evidence_id, analysis_run_id, score, priority, factors, explanation, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        case_id: { type: string, format: uuid }
+        evidence_id: { type: string, format: uuid }
+        analysis_run_id: { type: string, format: uuid }
+        score: { type: number, minimum: 0, maximum: 100 }
+        priority: { $ref: '#/components/schemas/Priority' }
+        factors:
+          type: array
+          items: { $ref: '#/components/schemas/TriageFactor' }
+        explanation: { type: string }
+        created_at: { type: string, format: date-time }
+    TriageEntry:
+      type: object
+      additionalProperties: false
+      required: [evidence_id]
+      properties:
+        evidence_id: { type: string, format: uuid }
+        latest_result: { $ref: '#/components/schemas/TriageResult' }
+        effective_priority: { $ref: '#/components/schemas/Priority' }
+        override: { $ref: '#/components/schemas/PriorityOverride' }
+    CreateReview:
+      type: object
+      additionalProperties: false
+      required: [decision, reason]
+      properties:
+        decision: { type: string, enum: [accepted, rejected, needs_investigation] }
+        reason: { type: string, minLength: 1 }
+    ReviewDecision:
+      type: object
+      additionalProperties: false
+      required: [id, case_id, finding_id, actor_id, decision, reason, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        case_id: { type: string, format: uuid }
+        finding_id: { type: string, format: uuid }
+        actor_id: { type: string }
+        decision: { type: string, enum: [accepted, rejected, needs_investigation] }
+        reason: { type: string }
+        created_at: { type: string, format: date-time }
+    CreateOverride:
+      type: object
+      additionalProperties: false
+      required: [priority, reason]
+      properties:
+        priority: { $ref: '#/components/schemas/Priority' }
+        reason: { type: string, minLength: 1 }
+    PriorityOverride:
+      type: object
+      additionalProperties: false
+      required: [id, case_id, evidence_id, actor_id, priority, reason, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        case_id: { type: string, format: uuid }
+        evidence_id: { type: string, format: uuid }
+        actor_id: { type: string }
+        priority: { $ref: '#/components/schemas/Priority' }
+        reason: { type: string }
+        created_at: { type: string, format: date-time }
+    CaseQuestion:
+      type: object
+      additionalProperties: false
+      required: [question]
+      properties:
+        question: { type: string, minLength: 1, maxLength: 2000 }
+    AnswerCitation:
+      type: object
+      additionalProperties: false
+      required: [claim, evidence_id, source_locator]
+      properties:
+        claim: { type: string, minLength: 1, description: 'Factual assertion in the answer supported by this citation' }
+        evidence_id: { type: string, format: uuid }
+        source_locator: { type: string, minLength: 1, description: 'Row/page/frame/byte range or entire original artifact' }
+        observation_id: { type: string, format: uuid }
+    CaseAnswer:
+      allOf:
+        - if:
+            properties:
+              supported: { const: true }
+            required: [supported]
+          then:
+            properties:
+              citations: { minItems: 1 }
+          else:
+            properties:
+              citations: { maxItems: 0 }
+      type: object
+      additionalProperties: false
+      required: [case_id, question, supported, answer, citations, retrieval_version]
+      properties:
+        case_id: { type: string, format: uuid }
+        question: { type: string }
+        supported: { type: boolean }
+        answer: { type: string, description: 'When unsupported, explain insufficient evidence; make no factual claim.' }
+        citations:
+          type: array
+          description: 'One or more same-case source citations per supported factual claim; empty when unsupported.'
+          items: { $ref: '#/components/schemas/AnswerCitation' }
+        retrieval_version: { type: string }
+        model_version: { type: string }
+        prompt_template_version: { type: string }
+        provenance_id:
+          type: string
+          format: uuid
+          description: Authorized internal provenance record reference; never a storage path or public prompt dump.
+    AuditEvent:
+      type: object
+      additionalProperties: false
+      required: [id, case_id, actor_id, action, target_id, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        case_id: { type: string, format: uuid }
+        actor_id: { type: string }
+        action: { type: string }
+        target_id: { type: string }
+        reason: { type: string }
+        created_at: { type: string, format: date-time }
+    CasePage:
+      type: object
+      additionalProperties: false
+      required: [items, total, limit, offset]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/Case' }
+        total: { type: integer, minimum: 0 }
+        limit: { type: integer, minimum: 1 }
+        offset: { type: integer, minimum: 0 }
+    EvidencePage:
+      type: object
+      additionalProperties: false
+      required: [items, total, limit, offset]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/Evidence' }
+        total: { type: integer, minimum: 0 }
+        limit: { type: integer, minimum: 1 }
+        offset: { type: integer, minimum: 0 }
+    ObservationPage:
+      type: object
+      additionalProperties: false
+      required: [items, total, limit, offset]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/Observation' }
+        total: { type: integer, minimum: 0 }
+        limit: { type: integer, minimum: 1 }
+        offset: { type: integer, minimum: 0 }
+    EntityPage:
+      type: object
+      additionalProperties: false
+      required: [items, total, limit, offset]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/Entity' }
+        total: { type: integer, minimum: 0 }
+        limit: { type: integer, minimum: 1 }
+        offset: { type: integer, minimum: 0 }
+    EventPage:
+      type: object
+      additionalProperties: false
+      required: [items, total, limit, offset]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/Event' }
+        total: { type: integer, minimum: 0 }
+        limit: { type: integer, minimum: 1 }
+        offset: { type: integer, minimum: 0 }
+    FindingPage:
+      allOf:
+        - if:
+            anyOf:
+              - properties:
+                  items: { minItems: 1 }
+                required: [items]
+              - properties:
+                  total: { minimum: 1 }
+                required: [total]
+          then:
+            properties:
+              analysis_run_id: { type: string, format: uuid }
+            required: [analysis_run_id]
+      type: object
+      additionalProperties: false
+      required: [items, total, limit, offset]
+      properties:
+        analysis_run_id:
+          type: string
+          format: uuid
+          description: Selected completed snapshot ID; required whenever a completed run is selected, even for an empty page. Absent only when no completed analysis exists.
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/Finding' }
+        total: { type: integer, minimum: 0 }
+        limit: { type: integer, minimum: 1 }
+        offset: { type: integer, minimum: 0 }
+    TriagePage:
+      allOf:
+        - if:
+            properties:
+              items:
+                contains:
+                  type: object
+                  properties:
+                    latest_result: { $ref: '#/components/schemas/TriageResult' }
+                  required: [latest_result]
+            required: [items]
+          then:
+            properties:
+              analysis_run_id: { type: string, format: uuid }
+            required: [analysis_run_id]
+      type: object
+      additionalProperties: false
+      required: [items, total, limit, offset]
+      properties:
+        analysis_run_id:
+          type: string
+          format: uuid
+          description: Selected completed snapshot ID; required whenever a completed run is selected, even for an empty page. Absent only when no completed analysis exists.
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/TriageEntry' }
+        total: { type: integer, minimum: 0 }
+        limit: { type: integer, minimum: 1 }
+        offset: { type: integer, minimum: 0 }
+    AuditPage:
+      type: object
+      additionalProperties: false
+      required: [items, total, limit, offset]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/AuditEvent' }
+        total: { type: integer, minimum: 0 }
+        limit: { type: integer, minimum: 1 }
+        offset: { type: integer, minimum: 0 }

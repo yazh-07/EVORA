@@ -192,6 +192,12 @@ class WireExamples(unittest.TestCase):
             "startAnalysis", "listAnalysisRuns", "getAnalysisRun", "getGraph",
             "listFindings", "reviewFinding", "listFindingReviews", "listTriage",
             "getTriageHistory", "setPriorityOverride", "askCaseQuestion", "listAuditEvents",
+            "updateCaseMembership", "listProviderModels", "connectChatGPT", "touchLocalSession",
+            "getLocalSession", "updateSettings", "analyzeVideo", "disconnectChatGPT",
+            "analyzeImage", "createLocalAccount", "listAccountAudit", "changeLocalPassword",
+            "getSettings", "getMediaCapabilities", "setupLocalAdministrator", "recoverLocalAccount",
+            "updateLocalAccount", "loginLocalAccount", "getChatGPTStatus", "listLocalAccounts",
+            "listCaseMembers", "getAuthStatus", "logoutLocalAccount",
         }
         actual = [operation["operationId"] for path in self.spec["paths"].values()
                   for method, operation in path.items()

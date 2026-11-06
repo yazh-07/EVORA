@@ -92,6 +92,20 @@ test('failed OpenAI saves never persist draft credentials or preferences', async
   assert.deepEqual(parseSettings(JSON.stringify({ ...defaultSettings, openai_api_key: 'sk-secret' })), defaultSettings);
 });
 
+test('shared vision model preference round-trips independently of a separate model', async t => {
+  browser(t);
+  const client = createApiClient({ baseUrl: 'http://backend.test', fetch: async (_url, options) => {
+    const body = JSON.parse(options.body);
+    assert.equal(body.vision_use_qa_model, true);
+    assert.equal(body.vision_model, '');
+    return Response.json(body);
+  } });
+  client.setToken('synthetic-settings');
+  const settings = { ...defaultSettings, qa_model: 'provider/multimodal', vision_model: '', vision_use_qa_model: true };
+  await saveSettings(client, settings);
+  assert.deepEqual(readSettings(), settings);
+});
+
 test('storage failures after backend success are reported without claiming complete persistence', async t => {
   const window = browser(t);
   window.localStorage.setItem = () => { throw Error('Quota'); };
@@ -117,8 +131,22 @@ test('settings dialog exposes labeled controls, slider bounds and actions', () =
   for (const text of ['aria-labelledby="settings-title"', 'Model configuration', 'Visual Forensics &amp; Media Settings',
     'Knowledge Graph Settings', 'Source Description', 'Filename', 'Show Bounding Boxes', 'Show Provenance Rays',
     'Test Connection &amp; Fetch Models', 'Save Settings', 'Reset to Defaults', 'Cancel', 'min="50" max="95"',
-    'Local (Ollama)', 'Cloud / Custom (OpenAI-compatible)', 'Ollama Endpoint URL']) assert.ok(html.includes(text), text);
+    'Local (Ollama)', 'Ollama Endpoint URL']) assert.ok(html.includes(text), text);
+  assert.ok(!html.includes('Cloud / Custom (OpenAI-compatible)'));
+  assert.ok(!html.includes('<option value="chatgpt"'));
   assert.ok(!html.includes('type="password"'));
+});
+
+test('cloud provider choices require an explicitly online settings draft', t => {
+  const window=browser(t);
+  const client=createApiClient({baseUrl:'http://backend.test'});
+  const render=()=>renderToStaticMarkup(createElement(ApiProvider,{client},createElement(SettingsModal,{onClose(){}})));
+  for(const offline_mode of [undefined,true,false]){
+    window.localStorage.setItem(SETTINGS_KEY,JSON.stringify({...defaultSettings,offline_mode}));
+    const html=render();
+    assert.equal(html.includes('Cloud / Custom (OpenAI-compatible)'),offline_mode===false);
+    assert.equal(html.includes('<option value="chatgpt"'),offline_mode===false);
+  }
 });
 
 test('OpenAI settings show password, base URL and model choices without revealing saved keys', t => {

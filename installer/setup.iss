@@ -3,7 +3,7 @@
 
 #define MyAppName "EVORA"
 #define MyAppFullName "EVORA — Forensic Evidence Fusion & Investigation Workstation"
-#define MyAppVersion "1.0.0"
+#define MyAppVersion "1.2.0"
 #define MyAppPublisher "EVORA Team"
 #define MyAppURL "https://github.com/yazh-07/EVORA"
 #define MyAppExeName "EVORA.exe"

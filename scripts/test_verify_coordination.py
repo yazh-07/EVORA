@@ -66,7 +66,12 @@ class ContractAuditTests(unittest.TestCase):
 
     def test_actual_contract_passes(self):
         self.assertTrue(callable(getattr(audit, "verify_spec", None)), "Spec verifier missing")
-        self.assertEqual(len(audit.verify_spec(self.spec)), 27)
+        operations=audit.verify_spec(self.spec)
+        expected={operation['operationId'] for item in self.spec['paths'].values()
+                  for method,operation in item.items() if method in {'get','post','put','patch','delete','head','options','trace'}}
+        self.assertEqual(set(operations),expected)
+        self.assertEqual(self.spec['paths']['/api/v1/cases/{caseId}/evidence/{evidenceId}/image-analysis']['post']['operationId'],'analyzeImage')
+        self.assertIn('connectChatGPT',operations)
 
     def test_missing_error_response_is_rejected(self):
         self.assertTrue(callable(getattr(audit, "verify_spec", None)), "Spec verifier missing")
@@ -142,7 +147,8 @@ class CommandLineTests(unittest.TestCase):
         self.temporary = tempfile.TemporaryDirectory()
         self.addCleanup(self.temporary.cleanup)
         self.root = Path(self.temporary.name)
-        source = Path(__file__).resolve().parents[1]
+        project = Path(__file__).resolve().parents[1]
+        source = project / 'fixtures/planning/legacy-coordination'
         paths = list(source.glob("*.md")) + list((source / "docs").glob("*.md"))
         paths += list((source / "fixtures").rglob("*.csv"))
         paths += [source / "specs/openapi.yaml", source / "scripts/verify_coordination.py",
@@ -151,12 +157,14 @@ class CommandLineTests(unittest.TestCase):
             target = self.root / path.relative_to(source)
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(path, target)
+        # Exercise the current CLI against an explicitly historical planning tree.
+        shutil.copyfile(project / 'scripts/verify_coordination.py',self.root / 'scripts/verify_coordination.py')
         self.bundle = self.root / "bundle.json"
-        shutil.copyfile(os.environ["EVORA_CONTRACT_BUNDLE"], self.bundle)
+        shutil.copyfile(source / 'openapi.json', self.bundle)
 
     def execute(self):
         return subprocess.run(
-            [sys.executable, str(self.root / "scripts/verify_coordination.py"), str(self.bundle)],
+            [sys.executable, str(self.root / "scripts/verify_coordination.py"), str(self.bundle), '--historical-planning'],
             capture_output=True, text=True, check=False, timeout=15,
         )
 
@@ -387,7 +395,7 @@ class CommandLineTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertIn("assembled_publication_dependencies", json.loads(result.stdout)["checks"])
 
-    def test_actual_tree_cli_passes(self):
+    def test_archived_tree_cli_passes(self):
         result = self.execute()
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertEqual(json.loads(result.stdout)["operations"], 27)

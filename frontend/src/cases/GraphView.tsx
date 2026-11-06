@@ -457,7 +457,7 @@ export function GraphPanel({ state, load, select, inspectEvidence, view = defaul
               <g className="graph-world">
               <g className="graph-clusters" aria-label="Source evidence clusters">
                 {layout.clusters.map(c => <g key={c.id} className="graph-cluster" data-evidence-id={c.id}>
-                  <title>{labels.get(c.id) ?? c.label} · {c.id} · Source evidence · {c.members.length} local nodes</title>
+                  <title>{`${labels.get(c.id) ?? c.label} · ${c.id} · Source evidence · ${c.members.length} local nodes`}</title>
                 </g>)}
               </g>
               <g className="graph-provenance-rays" aria-label="Evidence lineage" display={settings.show_provenance_rays ? undefined : 'none'} aria-hidden={!settings.show_provenance_rays}>

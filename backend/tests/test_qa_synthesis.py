@@ -111,6 +111,43 @@ class SynthesisTests(unittest.TestCase):
             with self.assertRaises(qa_synthesis.SynthesisError):
                 qa_synthesis.synthesize('question', self.context, 'test')
 
+    def test_every_citation_must_be_an_exact_observation_id(self):
+        evidence_id=self.context['observations'][0]['evidence_id']
+        self.context['findings']=[dict(id='finding-id',kind='relationship',summary='Candidate link',observation_ids=[self.oid])]
+        for ids in ([self.oid,str(uuid4())],[evidence_id],['finding-id'],[self.oid,None],[self.oid,{}]):
+            with self.subTest(ids=ids):
+                result=dict(supported=True,claims=[dict(text='The network record mentions D-7.',observation_ids=ids)])
+                with patch.object(qa_synthesis,'_chat',side_effect=[(result,'test'),({'supported':True},'test')]) as chat:
+                    with self.assertRaises(qa_synthesis.SynthesisError):
+                        qa_synthesis.synthesize('D-7?',self.context,'test')
+                self.assertEqual(chat.call_count,1,'invalid IDs fail before model verification')
+
+    def test_verifier_requires_an_actual_boolean_true(self):
+        for flag in (1,1.0,'true',None,False):
+            with self.subTest(flag=flag),patch.object(qa_synthesis,'_chat',side_effect=[(self.result,'test'),({'supported':flag},'test')]):
+                with self.assertRaises(qa_synthesis.SynthesisError):
+                    qa_synthesis.synthesize('D-7?',self.context,'test')
+
+    def test_short_answers_are_validated_instead_of_silently_dropped(self):
+        for oid in (self.oid,'fabricated'):
+            result=dict(supported=True,claims=[dict(text='D-7',observation_ids=[oid])])
+            with patch.object(qa_synthesis,'_chat',side_effect=[(result,'test'),({'supported':True},'test')]):
+                if oid==self.oid:
+                    citations,_,_=qa_synthesis.synthesize('Which device?',self.context,'test')
+                    self.assertEqual(citations[0]['claim'],'D-7')
+                else:
+                    with self.assertRaises(qa_synthesis.SynthesisError):qa_synthesis.synthesize('Which device?',self.context,'test')
+
+    def test_media_claims_are_qualified_before_verification_and_publication(self):
+        for kind in ('image.description','image.ocr','video.scene','video.ocr','transcript.segment'):
+            with self.subTest(kind=kind):
+                self.context['observations'][0]['kind']=kind
+                result=dict(supported=True,claims=[dict(text='The visible text mentions D-7.',observation_ids=[self.oid])])
+                with patch.object(qa_synthesis,'_chat',side_effect=[(result,'test'),({'supported':True},'test')]) as chat:
+                    citations,_,_=qa_synthesis.synthesize('What text is visible?',self.context,'test')
+                self.assertTrue(citations[0]['claim'].startswith('Model-derived, unverified: '))
+                self.assertEqual(chat.call_args_list[1].args[2]['claims'][0]['text'],citations[0]['claim'])
+
 
 class GeneratedQuestionTests(unittest.IsolatedAsyncioTestCase):
     asyncSetUp = questions.QuestionTests.asyncSetUp
@@ -119,6 +156,19 @@ class GeneratedQuestionTests(unittest.IsolatedAsyncioTestCase):
     process = questions.QuestionTests.process
     stored_observations = questions.QuestionTests.stored_observations
     validate = questions.QuestionTests.validate
+
+    async def test_invalid_generation_cannot_publish_or_store_partial_citations(self):
+        self.app.state.qa_model='test-model';item=self.stored_observations()[0]
+        for ids,flag in (([item['id'],str(uuid4())],True),([item['id']],1)):
+            result=dict(supported=True,claims=[dict(text='A recorded observation is present.',observation_ids=ids)])
+            with patch.object(qa_synthesis,'_chat',side_effect=[(result,'test'),({'supported':flag},'test')]):
+                response=await self.client.post(self.url,json={'question':'Summarize the recorded source.'})
+            self.assertEqual(response.status_code,200)
+            answer=response.json();self.assertFalse(answer['supported']);self.assertEqual(answer['citations'],[])
+            with self.app.state.database.connect() as connection:
+                payload=json.loads(connection.execute('SELECT payload_json FROM qa_provenance WHERE id=?',(answer['provenance_id'],)).fetchone()[0])
+            self.assertEqual(payload['citations'],[])
+            self.assertEqual(payload['verification']['status'],'generation_unavailable_or_unverified')
 
     async def test_generated_answer_private_context_and_unknown_provenance(self):
         gps = await self.process(await self.upload('gps'))

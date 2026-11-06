@@ -6,6 +6,15 @@ import json
 from pathlib import Path
 import re
 
+ADDED_OPERATIONS = {
+    'getChatGPTStatus', 'connectChatGPT', 'disconnectChatGPT', 'analyzeVideo',
+    'getMediaCapabilities', 'analyzeImage', 'getAuthStatus', 'setupLocalAdministrator',
+    'loginLocalAccount', 'getLocalSession', 'logoutLocalAccount', 'changeLocalPassword',
+    'recoverLocalAccount', 'touchLocalSession', 'listLocalAccounts', 'createLocalAccount',
+    'updateLocalAccount', 'listAccountAudit', 'listCaseMembers', 'updateCaseMembership',
+    'getSettings', 'updateSettings', 'listProviderModels',
+}
+
 TASK_ID = r"\b[GFPAUI]\d{2}[A-Z]?\b"
 CHECKPOINT_ID = r"(?:0|[1-9]\d*)[A-Z]?"
 CATALOG_SECTIONS = (
@@ -288,10 +297,10 @@ def verify_transcription_handoffs(rows, closures):
             raise ValueError(f"Transcription full-scope gate {gate} misses {sorted(missing)}")
 
 
-def verify_spec(spec):
+def verify_spec(spec, *, historical=False):
     """Check local references and critical cross-module contract invariants."""
     methods = {"get", "post", "put", "patch", "delete", "head", "options", "trace"}
-    operations = {}
+    operations, paths = {}, {}
     for path, item in spec["paths"].items():
         for method, operation in item.items():
             if method not in methods:
@@ -300,12 +309,7 @@ def verify_spec(spec):
             if name in operations:
                 raise ValueError(f"Duplicate operation {name}")
             operations[name] = operation
-            if operation["responses"].get("400") != {"$ref": "#/components/responses/BadRequest"}:
-                raise ValueError(f"Missing common 400 response: {name}")
-            if operation["responses"].get("401") != {"$ref": "#/components/responses/Unauthorized"}:
-                raise ValueError(f"Missing common 401 response: {name}")
-            if "{caseId}" in path and operation["responses"].get("404") != {"$ref": "#/components/responses/NotFound"}:
-                raise ValueError(f"Missing common 404 response: {name}")
+            paths[name] = path
     expected_operations = {
         "listCases", "createCase", "getCase", "listEvidence", "uploadEvidence",
         "getEvidence", "downloadEvidence", "startProcessing", "getProcessingRun",
@@ -315,12 +319,23 @@ def verify_spec(spec):
         "listFindingReviews", "setPriorityOverride", "askCaseQuestion", "listAuditEvents",
         "listTranscriptRevisions", "appendTranscriptRevision",
     }
+    if not historical:
+        expected_operations |= ADDED_OPERATIONS
     if set(operations) != expected_operations:
         raise ValueError(f"Expected preserved operations plus transcript revisions; "
                          f"missing {sorted(expected_operations - set(operations))}, "
                          f"unexpected {sorted(set(operations) - expected_operations)}")
     if spec["info"]["version"] != "0.3.0":
         raise ValueError("Expected transcription draft version 0.3.0")
+    for name, operation in operations.items():
+        if name in ADDED_OPERATIONS:
+            continue
+        if operation['responses'].get('400') != {'$ref':'#/components/responses/BadRequest'}:
+            raise ValueError(f'Missing common 400 response: {name}')
+        if operation['responses'].get('401') != {'$ref':'#/components/responses/Unauthorized'}:
+            raise ValueError(f'Missing common 401 response: {name}')
+        if '{caseId}' in paths[name] and operation['responses'].get('404') != {'$ref':'#/components/responses/NotFound'}:
+            raise ValueError(f'Missing common 404 response: {name}')
 
     def references(value):
         if isinstance(value, dict):
@@ -382,11 +397,13 @@ def verify_documents(root):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("bundle", type=Path, help="Redocly-bundled OpenAPI JSON")
+    parser.add_argument('--historical-planning', action='store_true', help='Validate the archived 27-operation planning contract, not the current application contract')
+    parser.add_argument('--planning-root', type=Path, help='Explicit historical planning fixture root')
     args = parser.parse_args()
-    root = Path(__file__).resolve().parents[1]
+    root = args.planning_root.resolve() if args.planning_root else Path(__file__).resolve().parents[1]
     try:
         spec = json.loads(args.bundle.read_text(encoding="utf-8"))
-        operations = verify_spec(spec)
+        operations = verify_spec(spec, historical=args.historical_planning)
         rows = parse_catalog((root / "docs/TASK_BREAKDOWN.md").read_text(encoding="utf-8"), strict=True)
         closures = dependency_closure(rows)
         schemas = set(spec["components"]["schemas"])

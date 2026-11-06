@@ -1,0 +1,170 @@
+[
+  {
+    "requested_model": "gpt-5.6-luna",
+    "text": {
+      "completed": true,
+      "actual_model": "gpt-5.6-luna",
+      "answer": {
+        "result": 42
+      },
+      "correct": true,
+      "seconds": 3.22
+    },
+    "image": {
+      "completed": true,
+      "actual_model": "gpt-5.6-luna",
+      "answer": {
+        "heading": "Region-based segmentation"
+      },
+      "correct": true,
+      "seconds": 2.79
+    }
+  },
+  {
+    "requested_model": "gpt-5.6-sol",
+    "text": {
+      "completed": true,
+      "actual_model": "gpt-5.6-sol",
+      "answer": {
+        "result": 42
+      },
+      "correct": true,
+      "seconds": 3.02
+    },
+    "image": {
+      "completed": true,
+      "actual_model": "gpt-5.6-sol",
+      "answer": {
+        "heading": "Region-based segmentation"
+      },
+      "correct": true,
+      "seconds": 2.67
+    }
+  },
+  {
+    "requested_model": "gpt-5.6-terra",
+    "text": {
+      "completed": true,
+      "actual_model": "gpt-5.6-terra",
+      "answer": {
+        "result": 42
+      },
+      "correct": true,
+      "seconds": 2.65
+    },
+    "image": {
+      "completed": true,
+      "actual_model": "gpt-5.6-terra",
+      "answer": {
+        "heading": "Region-based segmentation"
+      },
+      "correct": true,
+      "seconds": 3.1
+    }
+  },
+  {
+    "requested_model": "gpt-6-astra",
+    "text": {
+      "completed": true,
+      "actual_model": "gpt-6-astra",
+      "answer": {
+        "result": 42
+      },
+      "correct": true,
+      "seconds": 3.27
+    },
+    "image": {
+      "completed": true,
+      "actual_model": "gpt-6-astra",
+      "answer": {
+        "heading": "Region-based segmentation"
+      },
+      "correct": true,
+      "seconds": 3.0
+    }
+  },
+  {
+    "requested_model": "gpt-6-luna",
+    "text": {
+      "completed": true,
+      "actual_model": "gpt-6-luna",
+      "answer": {
+        "result": 42
+      },
+      "correct": true,
+      "seconds": 2.21
+    },
+    "image": {
+      "completed": true,
+      "actual_model": "gpt-6-luna",
+      "answer": {
+        "heading": "Region-based segmentation"
+      },
+      "correct": true,
+      "seconds": 3.87
+    }
+  },
+  {
+    "requested_model": "gpt-6-sol",
+    "text": {
+      "completed": true,
+      "actual_model": "gpt-6-sol",
+      "answer": {
+        "result": 42
+      },
+      "correct": true,
+      "seconds": 2.45
+    },
+    "image": {
+      "completed": true,
+      "actual_model": "gpt-6-sol",
+      "answer": {
+        "heading": "Region-based segmentation"
+      },
+      "correct": true,
+      "seconds": 3.06
+    }
+  },
+  {
+    "requested_model": "gpt-6.1-sol",
+    "text": {
+      "completed": true,
+      "actual_model": "gpt-6.1-sol",
+      "answer": {
+        "result": 42
+      },
+      "correct": true,
+      "seconds": 2.78
+    },
+    "image": {
+      "completed": true,
+      "actual_model": "gpt-6.1-sol",
+      "answer": {
+        "heading": "Region-based segmentation"
+      },
+      "correct": true,
+      "seconds": 3.47
+    }
+  },
+  {
+    "requested_model": "gpt-6.1-terra",
+    "text": {
+      "completed": true,
+      "actual_model": "gpt-6.1-terra",
+      "answer": {
+        "result": 42
+      },
+      "correct": true,
+      "seconds": 2.65
+    },
+    "image": {
+      "completed": true,
+      "actual_model": "gpt-6.1-terra",
+      "answer": {
+        "heading": "Region-based segmentation"
+      },
+      "correct": true,
+      "seconds": 2.41
+    }
+  }
+]

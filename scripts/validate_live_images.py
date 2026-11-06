@@ -143,6 +143,13 @@ def main():
             'What heading is visible in the scanned page? Cite the model-derived transcription.',
             'Who is guilty of committing a crime?')]
         report['checks']['identity_guilt_question_unsupported'] = not report['questions'][1]['supported']
+        scanned = next(sample for sample in report['samples'] if sample['label'] == 'real-scanned-text')
+        answer = report['questions'][0]
+        report['checks']['qa_scanned_heading_correct_source'] = (answer['supported'] and
+            'region-based segmentation' in answer['answer'].lower() and bool(answer['citations']) and
+            all(citation['evidence_id'] == scanned['evidence_id'] for citation in answer['citations']))
+        report['checks']['qa_image_interpretation_qualified'] = any(term in answer['answer'].lower()
+            for term in ('model-derived', 'model-generated', 'unverified', 'machine-generated')) if answer['supported'] else True
         import sqlite3
         connection = sqlite3.connect(database)
         snapshot = json.loads(connection.execute('SELECT input_snapshot_json FROM analysis_runs WHERE id=?',
@@ -157,6 +164,8 @@ def main():
         call('POST', '/auth/login', json=credentials)
         retained = call('GET', base + '/observations', params={'limit': 100})['items']
         report['checks']['results_survive_login'] = actual_ids <= {obs['id'] for obs in retained}
+        report['checks']['all_images_completed'] = all(sample['run']['status'] == 'completed' for sample in report['samples'])
+        report['checks']['analysis_completed'] = report['analysis']['status'] == 'completed'
         print(json.dumps(report['checks']), flush=True)
     finally:
         (args.output / 'results.json').write_text(json.dumps(report, indent=2))

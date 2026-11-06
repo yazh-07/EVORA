@@ -30,6 +30,11 @@ tags:
   - name: Investigation
     description: Human decisions, case questions and audit trail.
 paths:
+  /api/v1/chatgpt/status: {"get": {"operationId": "getChatGPTStatus", "responses": {"200": {"description": "Success", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ChatGPTStatus"}}}}, "400": {"description": "Rejected request", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}, "401": {"description": "Rejected request", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}, "403": {"description": "Rejected request", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}}}}
+  /api/v1/chatgpt/connect: {"post": {"operationId": "connectChatGPT", "responses": {"200": {"description": "Success", "content": {"application/json": {"schema": {"type": "object", "additionalProperties": false, "required": ["authorization_url"], "properties": {"authorization_url": {"type": "string", "format": "uri"}}}}}}, "400": {"description": "Rejected request", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}, "401": {"description": "Rejected request", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}, "403": {"description": "Rejected request", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}}, "requestBody": {"required": true, "content": {"application/json": {"schema": {"type": "object", "additionalProperties": false, "properties": {"offline_mode": {"type": "boolean"}, "new_account": {"type": "boolean"}}}}}}}}
+  /api/v1/chatgpt/disconnect: {"post": {"operationId": "disconnectChatGPT", "responses": {"200": {"description": "Success", "content": {"application/json": {"schema": {"type": "object", "additionalProperties": false, "required": ["disconnected", "revoked"], "properties": {"disconnected": {"type": "boolean"}, "revoked": {"type": "boolean"}}}}}}, "400": {"description": "Rejected request", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}, "401": {"description": "Rejected request", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}, "403": {"description": "Rejected request", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}}}}
+  /api/v1/cases/{caseId}/evidence/{evidenceId}/video-analysis: {"post": {"operationId": "analyzeVideo", "summary": "Analyze sampled video frames, geometric candidate tracks and optional local speech", "description": "Creates a new immutable processing run. Hosted providers require explicit consent and matching expected provider, model, and endpoint. No automatic cloud transmission during ordinary extraction.", "parameters": [{"name": "caseId", "in": "path", "required": true, "schema": {"type": "string", "format": "uuid"}}, {"name": "evidenceId", "in": "path", "required": true, "schema": {"type": "string", "format": "uuid"}}, {"name": "Idempotency-Key", "in": "header", "required": true, "schema": {"type": "string", "format": "uuid"}}], "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/VideoAnalysisRequest"}}}}, "responses": {"202": {"description": "Queued processing run", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ProcessingRun"}}}}, "400": {"description": "Request rejected", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}, "401": {"description": "Request rejected", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}, "403": {"description": "Request rejected", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}, "404": {"description": "Request rejected", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}, "409": {"description": "Request rejected", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}, "415": {"description": "Request rejected", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}}}}
+  /api/v1/media-capabilities: {"get": {"operationId": "getMediaCapabilities", "responses": {"200": {"description": "Installed media tools", "content": {"application/json": {"schema": {"type": "object", "additionalProperties": false, "required": ["video_audio_tools", "local_speech_ready"], "properties": {"video_audio_tools": {"type": "boolean"}, "local_speech_ready": {"type": "boolean"}}}}}}}}}
   /api/v1/cases/{caseId}/evidence/{evidenceId}/image-analysis: {"post": {"operationId": "analyzeImage", "summary": "Describe an image and transcribe visible text with the configured vision model", "description": "Creates a new immutable processing run. Hosted providers require explicit consent and matching expected provider, model, and endpoint. No automatic cloud transmission during ordinary extraction.", "parameters": [{"name": "caseId", "in": "path", "required": true, "schema": {"type": "string", "format": "uuid"}}, {"name": "evidenceId", "in": "path", "required": true, "schema": {"type": "string", "format": "uuid"}}, {"name": "Idempotency-Key", "in": "header", "required": true, "schema": {"type": "string", "format": "uuid"}}], "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ImageAnalysisRequest"}}}}, "responses": {"202": {"description": "Queued processing run", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ProcessingRun"}}}}, "400": {"description": "Request rejected", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}, "401": {"description": "Request rejected", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}, "403": {"description": "Request rejected", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}, "404": {"description": "Request rejected", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}, "409": {"description": "Request rejected", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}, "415": {"description": "Request rejected", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}}}}
   /api/v1/auth/status: {"get": {"operationId": "getAuthStatus", "summary": "getAuthStatus", "description": "Offline local account operation. Mutations require X-Evora-Request: 1 and a same-origin request.", "responses": {"200": {"description": "Success", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/AuthStatus"}}}}, "400": {"description": "Request rejected", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}, "401": {"description": "Request rejected", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}, "403": {"description": "Request rejected", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}, "404": {"description": "Request rejected", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}, "409": {"description": "Request rejected", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}, "429": {"description": "Request rejected", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}}, "security": []}}
   /api/v1/auth/setup: {"post": {"operationId": "setupLocalAdministrator", "summary": "setupLocalAdministrator", "description": "Offline local account operation. Mutations require X-Evora-Request: 1 and a same-origin request.", "responses": {"200": {"description": "Success", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/AuthSetupResult"}}}}, "400": {"description": "Request rejected", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}, "401": {"description": "Request rejected", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}, "403": {"description": "Request rejected", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}, "404": {"description": "Request rejected", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}, "409": {"description": "Request rejected", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}, "429": {"description": "Request rejected", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}}, "security": [], "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/AuthSetupInput"}}}}}}
@@ -82,7 +87,8 @@ paths:
               type: object
               additionalProperties: false
               properties:
-                qa_provider: { type: string, enum: [ollama, openai] }
+                offline_mode: { type: boolean, description: Administrator-selected draft mode for this connection test only; does not save settings. }
+                qa_provider: { type: string, enum: [ollama, openai, chatgpt] }
                 qa_url: { type: string, format: uri }
                 openai_base_url: { type: string, format: uri }
                 openai_api_key:
@@ -101,6 +107,10 @@ paths:
                 properties:
                   models:
                     type: array
+                    items: { type: string }
+                  vision_models:
+                    type: array
+                    description: Model IDs advertising image input when the provider supplies modality metadata. Omitted when unknown.
                     items: { type: string }
         '400': { $ref: '#/components/responses/BadRequest' }
         '401': { $ref: '#/components/responses/Unauthorized' }
@@ -260,6 +270,10 @@ paths:
         with the same request returns the original run, including failed runs;
         retry/reprocess with a new key. Different evidence target with the same
         actor/case/operation key returns 409. Processing output is immutable.
+        Upload preserves originals independently of processing support. Image
+        requests validate stored bytes and decoding limits before creating a run;
+        invalid or unsupported image bytes return 415 UNSUPPORTED_MEDIA with no
+        run or partial output. MIME type and filename alone do not decide support.
       parameters:
         - { $ref: '#/components/parameters/IdempotencyKey' }
       responses:
@@ -805,7 +819,9 @@ components:
         application/json:
           schema: { $ref: '#/components/schemas/ApiError' }
   schemas:
-    ImageAnalysisRequest: {"type": "object", "additionalProperties": false, "required": ["expected_provider", "expected_model", "expected_endpoint"], "properties": {"confirm_external_processing": {"type": "boolean", "default": false}, "expected_provider": {"type": "string", "enum": ["ollama", "openai"]}, "expected_model": {"type": "string", "minLength": 1, "maxLength": 200}, "expected_endpoint": {"type": "string", "minLength": 1, "maxLength": 2000}}}
+    VideoAnalysisRequest: {"type": "object", "additionalProperties": false, "required": ["expected_provider", "expected_model", "expected_endpoint"], "properties": {"confirm_external_processing": {"type": "boolean", "default": false}, "expected_provider": {"type": "string", "enum": ["ollama", "openai", "chatgpt"]}, "expected_model": {"type": "string", "minLength": 1, "maxLength": 200}, "expected_endpoint": {"type": "string", "minLength": 1, "maxLength": 2000}, "sample_interval_seconds": {"type": "integer", "minimum": 1, "maximum": 60, "default": 5}, "max_frames": {"type": "integer", "minimum": 1, "maximum": 60, "default": 12}, "transcribe_speech": {"type": "boolean", "default": false}}}
+    ChatGPTStatus: {"type": "object", "additionalProperties": false, "required": ["connected", "sharing", "pending", "email", "error"], "properties": {"connected": {"type": "boolean"}, "sharing": {"type": "boolean"}, "pending": {"type": "boolean"}, "email": {"type": "string"}, "error": {"type": "string"}}}
+    ImageAnalysisRequest: {"type": "object", "additionalProperties": false, "required": ["expected_provider", "expected_model", "expected_endpoint"], "properties": {"confirm_external_processing": {"type": "boolean", "default": false}, "expected_provider": {"type": "string", "enum": ["ollama", "openai", "chatgpt"]}, "expected_model": {"type": "string", "minLength": 1, "maxLength": 200}, "expected_endpoint": {"type": "string", "minLength": 1, "maxLength": 2000}}}
     LocalUser: {"type": "object", "additionalProperties": false, "properties": {"id": {"type": "string", "format": "uuid"}, "username": {"type": "string"}, "display_name": {"type": "string"}, "role": {"type": "string", "enum": ["administrator", "investigator", "reviewer"]}, "disabled": {"type": "boolean"}, "must_change_password": {"type": "boolean"}}, "required": ["id", "username", "display_name", "role", "disabled", "must_change_password"]}
     AuthCredentials: {"type": "object", "additionalProperties": false, "properties": {"username": {"type": "string", "minLength": 1, "maxLength": 64, "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$"}, "password": {"type": "string", "minLength": 1, "maxLength": 256}}, "required": ["username", "password"]}
     AuthSetupInput: {"type": "object", "additionalProperties": false, "properties": {"username": {"type": "string", "minLength": 1, "maxLength": 64, "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$"}, "password": {"type": "string", "minLength": 12, "maxLength": 256}, "display_name": {"type": "string", "minLength": 1, "maxLength": 120}}, "required": ["username", "password", "display_name"]}
@@ -827,11 +843,13 @@ components:
       additionalProperties: false
       required: [qa_provider, qa_model, qa_url, openai_base_url, has_openai_key, detection_threshold, show_provenance_rays]
       properties:
+        vision_use_qa_model: { type: boolean, description: Use the selected Q&A model for explicit image processing; it must support image input. }
         vision_model: { type: string, maxLength: 200, description: Separate vision-capable model for explicit image description and model-assisted text extraction. }
         offline_mode: { type: boolean }
-        qa_provider: { type: string, enum: [ollama, openai], default: ollama }
+        qa_provider: { type: string, enum: [ollama, openai, chatgpt], default: ollama }
         openai_base_url: { type: string, format: uri, default: 'https://api.openai.com/v1' }
         has_openai_key: { type: boolean, readOnly: true }
+        has_chatgpt_connection: { type: boolean, readOnly: true }
         qa_model: { type: string, minLength: 1, maxLength: 200, default: 'deepseek-r1:8b' }
         qa_url: { type: string, format: uri, default: 'http://127.0.0.1:11434' }
         detection_threshold: { type: number, minimum: 0.1, maximum: 1.0, default: 0.7 }
@@ -840,9 +858,10 @@ components:
       type: object
       additionalProperties: false
       properties:
+        vision_use_qa_model: { type: boolean }
         vision_model: { type: string, maxLength: 200, description: Separate vision-capable model for explicit image description and model-assisted text extraction. }
         offline_mode: { type: boolean, description: Administrator-controlled local-only or hosted-provider operation. }
-        qa_provider: { type: string, enum: [ollama, openai] }
+        qa_provider: { type: string, enum: [ollama, openai, chatgpt] }
         openai_base_url: { type: string, format: uri }
         openai_api_key:
           type: [string, 'null']
@@ -1138,6 +1157,11 @@ components:
           uniqueItems: true
           items: { type: string, format: uuid }
     GraphEdge:
+      description: >-
+        Source-backed relationships between forensic subjects, including explicit
+        same-row GPS located_at and network assigned_ip relationships. Mere source
+        membership is node.evidence_ids lineage, rendered as visual provenance
+        rays rather than referenced_in or detected_in_frame graph edges.
       type: object
       additionalProperties: false
       required: [id, case_id, from_id, to_id, kind, evidence_ids, observation_ids, confidence]

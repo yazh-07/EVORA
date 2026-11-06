@@ -56,7 +56,7 @@ class RoadmapLedgerTests(unittest.TestCase):
 
 class FeatureInventoryTests(unittest.TestCase):
     def setUp(self):
-        root = Path(__file__).resolve().parents[1]
+        root = Path(__file__).resolve().parents[1] / 'fixtures/planning/legacy-coordination'
         self.rows = audit.parse_catalog((root / "docs/TASK_BREAKDOWN.md").read_text())
         checkpoints = {row["checkpoint"] for row in self.rows.values()}
         self.counts = dict.fromkeys(sorted(checkpoints, key=lambda value: (

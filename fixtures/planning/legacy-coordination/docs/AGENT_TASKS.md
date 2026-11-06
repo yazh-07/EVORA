@@ -1,0 +1,107 @@
+# EVORA scoped agent assignment templates
+
+Coordination-branch draft 0.3.0, not a running app. Four people each work on one module; confirmed GitHub-handle assignments and integration coordination are in [ROADMAP.md](ROADMAP.md#module-assignment-and-live-task-state). Full initial proposal scope is fixed. Use the canonical phase/checkpoint ledger in [ROADMAP.md](ROADMAP.md). Assign one catalog row, not an entire module, milestone or full dashboard. Codex fills the task card from recorded repository decisions before editing. Missing common-base/allowed-path choices or a shared G/I assignee need a short clarification, not a guessed assignment.
+
+## Copy this into Codex
+
+Open Codex inside the EVORA repository. Replace only `[GITHUB_HANDLE]`. Codex selects and implements the next eligible task; you do not need to find or enter its ID.
+
+```text
+I am [GITHUB_HANDLE], working on EVORA.
+
+Read AGENTS.md and follow its instructions. Use docs/ROADMAP.md
+and docs/TASK_BREAKDOWN.md to select my next eligible task using
+the automatic-selection rules in docs/AGENT_TASKS.md.
+
+Briefly state the task ID and why it is next, fill its assignment
+card from the repo, then implement and test it without asking me
+to choose a task. Preserve existing work and the API contract.
+
+Ask only if a required decision, assignment or safe shared base
+is missing. Do not guess, skip dependencies or take another person's work.
+Report actual results, blockers and the next eligible task when finished.
+Include a "How you can test it" checklist with exact setup/run commands
+or UI steps, synthetic test inputs, expected results and one failure case.
+Clearly label anything you could not test. Wait for my review before
+starting another task; do not mark unintegrated work Complete.
+Do not commit, push or merge unless I explicitly ask.
+```
+
+This authorizes **automatic selection and implementation of one bounded task per run**, not an unlimited loop or automatic publication. Start a fresh session for the next task after the previous change has been reviewed/integrated or an explicit safe dependency handoff has been recorded. A prompt alone is not a background scheduler.
+
+The detailed sections below are **reference for Codex**, not extra text the user needs to paste. All AGENTS.md reading, privacy, evidence-integrity, dependency and verification rules still apply.
+
+### Optional: choose a specific task
+
+Add `Use task [TASK_ID] instead of automatic selection.` to the prompt. All ownership, dependency and readiness checks still apply.
+
+## Assignment card (Codex fills this before editing)
+
+| Field | Fill from catalog/shared base |
+|---|---|
+| Task/checkpoint and exact acceptance | One ID/row matching ROADMAP and the catalog, success and negative assertions |
+| Module/person and coordination | Module owner from ROADMAP; explicit G/I assignee and scoped help if needed |
+| Branch/common commit | Short-lived `feat/<id>-<slug>`, exact common spec commit |
+| Paths | Actual component/tests after skeleton; no unrelated module/spec/migration overwrite |
+| Dependencies | Exact prerequisite IDs and commits; real merged producer or disclosed schema-derived fixture; no false integrated claim |
+| Input/output | Existing operation/schema/internal policy and fixture/source locators |
+| Gate | Only needed C-03–C-06/setup choice; unaffected work may proceed |
+| Commands and proof | Exact implementation test/build/contract commands, read-back, current checkpoint checks and prior completed checkpoint regressions |
+| Handoff | Changed paths/interfaces, known limits, next ticket/PR and coordinated status |
+
+## Choosing the next task
+
+### Automatic-selection rules
+
+1. Read the live module-owner and task state in ROADMAP, the exact checkpoint ledger, catalog dependencies and relevant communication gates. Read Git status and verify the recorded common-base commit is available and includes the required shared contract. An uncommitted draft is not an implementation base.
+2. Limit candidates to the caller's module, or a G/I task explicitly assigned to that handle. Coordination responsibility does not automatically assign shared tasks. Do not take another person's task or an already active branch. Resume an existing In Progress task only when its recorded assignee/branch and the user's session match.
+3. In the earliest unfinished checkpoint, choose an unclaimed Backlog task whose prerequisites, base and required decisions are ready. If several qualify, use catalog row order as a tie-break only after checking dependencies. Do not ask the user to pick among equally eligible tasks. Later independent fixture work needs an explicit recorded assignment; automatic selection must not skip checkpoint gates.
+4. Fill the card with the exact task/checkpoint/owner/base, allowed paths and tests from recorded decisions. Briefly announce the selection, then work without another approval request. If a necessary base/path/policy decision is absent, ask one focused question; if no task is eligible, report the blocking dependency rather than inventing work or polling indefinitely.
+5. Use a fresh task branch from the verified common base. Do not move, stash, reset or overwrite unrelated local changes to make the checkout fit. If existing edits prevent isolation, stop and ask for a safe branch/worktree handoff. Coordinate any shared ledger claim before edits to avoid two agents choosing the same row.
+6. Execute the task's real acceptance/negative tests and required prior-checkpoint regressions. Report fixture-only work as such. A locally passing unintegrated change is not integrated Complete; record branch/results and pending integration honestly under ROADMAP's state rules.
+7. Finish with the task ID, actual tests, blockers, a **How you can test it** checklist and next eligible ID (or exact dependency blocking it). The checklist supplies prerequisites, exact setup/run commands or UI actions, synthetic/permitted input, expected observable results, one relevant failure case and any cleanup. Do not expose secrets or require real evidence. State which steps Codex actually exercised and which remain untested; a manual checklist is not proof those steps passed. If the full UI or upstream dependency is absent, give the available component/API verification and label what cannot yet be tested end to end. Do not automatically commit/push/merge or mark a whole checkpoint complete. Stop for user review after this bounded task; the next fresh run re-reads current state rather than assuming the previously suggested next task is still available.
+
+Start in the earliest unfinished checkpoint with a dependency-ready bounded row. G00 is the first common task. After the shared base is recorded, G01 and G01B can proceed independently; G01C verifies their skeletons. In 1A, F00 needs C-03 and U01 needs real F00 or a disclosed fixture. In 1B, adapter/lifecycle/UI rows follow actual dependencies; I00B is their real integration gate. In 1C, G01D/G02 precede projection/scoring; I01 requires early provenance/audit and explanations. Never prompt an agent with all checkpoint IDs as one implementation request.
+
+G/I work is assigned to an existing contributor with explicit shared paths. Do not infer a person from a task prefix. Future tasks can be developed independently when their own choices/interfaces are ready, but cannot close a milestone against test doubles. Unimplemented future actions must remain unavailable rather than fake successful.
+
+In 4A select remaining analytical producer rows for component tests, not real-API panel closure. U12A/U12B/U12C/U12D/U12E/U13B can begin fixture-based component work earlier, but their integrated-completion checkpoint is 4B and A17 is an additional prerequisite for each. In 4B verify A17 assembly/coherent publication, complete all six real-API views, then detector feedback/evaluation; retain every existing task acceptance.
+
+## Row-specific module suffixes
+
+### M1 — one Fxx row
+
+> Apply only this row's invariants: F00/F01 authorization; F03/F05 original bytes/hash; F06–F08E append-only audit/private provenance; F09 owning-route regression. Rich model/parser/prompt parameters/input/output/time/verification remain private authorized data, not public audit fields/raw application logs. Shared 400 ApiError mapping is declared contract requiring tests. Do not implement unrelated routes to make the task appear complete.
+
+### M2 — one Pxx row
+
+> For adapter rows, document supported format/model/limits first, then source-located raw/normalized outputs and uncertainty; detection is not a person's identity. Lifecycle rows test idempotency/atomic completed publication, latest completed selection and processing_run_id historical output. P14/P14D preserve private versioned provenance; P15 selects deeper/reconfigured existing-evidence processing internally with a new key, unchanged original and immutable old output. Never invent processing request fields or claim another modality from a single CSV test.
+
+P16/P16B add local audio/video speech with segment offsets, private model/decoder provenance and candidate extraction. Resolve C-04 model/language/codec/resources before adapter work, not G03. U14/U14B/U14C add playback/search and append-only corrections under the canonical contract. Preserve machine text and frozen analytical sources; no automatic speaker identity or spoken-event truth, and no double-counted video/audio/transcript corroboration.
+
+### M3 — one Axx row
+
+> A factor row tests that one G02 function and controls, not the full scoring system. A04 aggregates initial available factors; A17 explicitly wires all reviewed factors/detectors. A01B tests pending SQL→idempotent case+run Neo4j→verify→SQL completed pointer and recovery, without distributed transaction claims. A05 tests bodyless frozen snapshot/hash/trigger and original-key replay before resnapshot. A05B/A06 test analysis_run_id pinned completed reads and selector 404. A18/A19 prove existing-evidence reprocessing/detector-driven rank changes with immutable history. A16 deterministic retrieval does not replace A16B full context/final LLM RAG.
+
+### M4 — one Uxx row
+
+> Implement exactly the view/command/API named by the row. U05C starts processing, U05D starts bodyless analysis and polls. Pin completed analysis_run_id across graph/findings/triage and pagination; never combine mixed-run data. U13 counts/types/status aggregate all pages; U13B/U13C expose distinct uncertainty/candidate sources. U10/U11 deterministic tracer remains separate from required U10B/U10C/U11B approved generation/citation verification/private provenance. Review/overrides audit actor/reason and never overwrite automated scores. Apply DESIGN.md shared components, keyboard/focus/contrast/responsive requirements, safe text rendering and in-memory token/evidence handling. Test loading/empty/busy/error paths for this row only; no frontend DB connection, scoring duplicate or Streamlit dashboard.
+
+### Cross-module — one G/I row
+
+> Prove this row's real dependency closure, not a plausible subset. I00 proves intake and I00B proves immutable initial processing before I01 proves source-backed graph/triage/pinned read paths. I03B proves all modalities through actual command/source-inspection UI. I07 detector feedback and I07B same-evidence deeper processing are distinct from new-upload I02. I08 evaluates every modality and final RAG; I09 covers all F/P/A/U features; I09B clean full Windows/CI; I06 follows full gates. No fake metrics, fabricated provider result or passing app claim from document lint.
+
+## Example bounded F03 assignment
+
+> Implement F03 upload/hash on `feat/f03-evidence-upload` from `[COMMON_COMMIT]`, M1 `[ASSIGNEE]`, only `[EVIDENCE IMPLEMENTATION + FOCUSED TEST PATHS]`. Use real F01/F00 or explicitly declared schema-derived tests. Follow C-04 limits/type policy; stream immutable private bytes, stable UUID, exact Evidence response and source metadata. Test network.csv hash/size/bytes plus unsafe filename/oversized/invalid content/foreign-case failures. If F05 has not landed, assert bytes at the storage test boundary rather than implement download in F03. Exercise real F05 integration before the intake gate I00. Report actual tests and stop only the needed unresolved gate, not unrelated work.
+
+## Reviewer checks
+
+- Exact ID/checkpoint/allowed scope/common contract, dependency-ready row, appropriate negatives and actual test output?
+- Valid same-case source observation IDs/locators and original Evidence hashes?
+- Declared validation/status/idempotency/snapshot/selectors used without invented wire fields?
+- No partial graph/results, cross-run display, raw sensitive logs or silently changed old output?
+- Real producer/provider exercised where claiming integrated/full-scope completion; doubles disclosed?
+- Accurate uncertainty, no guilt/certification/originality claims or fabricated benchmarks?
+
+Coordination checks: lint/bundle, generated client/TypeScript compilation, `scripts/verify_coordination.py <bundled-json-path>`, the `test_*.py` unittest suite with EVORA_CONTRACT_BUNDLE set to that bundle (jsonschema==4.25.1) and DESIGN lint via the shared workflow. Those are artifact checks, not substitutes for selected row's application tests. G01/G01B/G01D pin tested versions; clean full-scope Windows proof is I09B.

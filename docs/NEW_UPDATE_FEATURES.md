@@ -1,6 +1,6 @@
 # EVORA — Updated Application Features
 
-**Updated:** 5 November 2026  
+**Updated:** 7 November 2026
 **Scope:** The redesigned investigation workspace and offline local account system, including the existing forensic tools available through the new workflow.
 
 This document describes implemented capabilities. Installation requirements and current limitations appear at the end so file storage, extraction, analysis, and reporting support are clear.
@@ -32,8 +32,8 @@ The application organizes each case into five primary sections:
 - Serve the application on `127.0.0.1:8000` by default.
 - Select a different database, evidence directory, or port through launcher arguments.
 - Keep account information, case records, session records, and audit history in the local SQLite database; retain original evidence in the configured evidence directory.
-- Use installed Ollama models for local AI assistance.
-- Disable cloud AI providers in the offline launcher.
+- Use installed Ollama models for local AI assistance, or configure a hosted OpenAI-compatible provider in online mode.
+- Start with cloud AI providers disabled; administrators can explicitly enable online mode in Settings or use the `--online` launcher option.
 - Reject model endpoints outside `localhost` or literal loopback addresses in offline mode.
 
 Dependencies, Neo4j where required, Ollama, and model files must be installed before disconnecting the workstation. See [Runtime requirements](#18-runtime-requirements-and-startup).
@@ -132,7 +132,7 @@ The interface supports these evidence categories:
 | Category | Extraction or inspection support |
 | --- | --- |
 | Document | UTF-8 plain-text extraction; original storage for other uploaded document formats. |
-| Image | Visual candidate extraction for media that the installed decoder supports. |
+| Image | Visual candidate extraction, plus explicit vision-model scene descriptions and model-assisted OCR for supported single images. |
 | Video | Visual candidate extraction and source playback where decoding/browser support permits. |
 | Audio | Original storage and playback; review of transcript records when already available. |
 | Network log | Extraction from the supported network CSV layout. |
@@ -176,6 +176,12 @@ Source extraction produces candidates and observations that still require invest
 
 ## 10. Media and transcript inspection
 
+- Explicit video analysis adds timestamped descriptions and OCR of capped, sampled frames.
+- Candidate tracks associate nearby visual detection boxes within the clip without verifying identity.
+- Optional Faster Whisper speech transcription runs locally and feeds the transcript viewer and correction history.
+- Hosted frame processing requires consent; audio remains local. Failed runs preserve earlier completed results.
+- See [Video analysis setup and limits](video-analysis.md).
+
 - Inspect supported original images and videos.
 - Display available detection boxes over the media.
 - Toggle detection overlays and apply the configured detection-score threshold.
@@ -189,7 +195,27 @@ Source extraction produces candidates and observations that still require invest
 - Preserve corrections as a new derived processing output.
 - Run a new analysis to include revised transcript evidence.
 
-Transcript review and correction tools do not imply that automatic speech transcription is installed. Visual candidates do not identify a person or establish vehicle ownership.
+Automatic video speech transcription requires the optional local speech engine, downloaded model and audio tools. Visual candidates and tracks do not identify a person or establish vehicle ownership.
+
+### Image descriptions and model-assisted OCR
+
+- **ChatGPT plan** connects eligible accounts through **Continue with ChatGPT**, without a manually supplied API key. Local EVORA accounts remain separate. Text, image and sampled-video requests use the official plan-specific Responses API; speech stays local. See [ChatGPT connection](chatgpt-connection.md) for setup, eligibility, credential storage and verification limits.
+
+- Image processing can reuse the selected Q&A model when it supports images, or use a separate vision model.
+- **Fetch image-capable models** provides a searchable provider list for choosing a separate image model while preserving a text-only Q&A model.
+- OpenRouter model discovery supports unsaved online settings, labels advertised image-capable models, and shows specific connection errors. Use `https://openrouter.ai/api/v1` and full provider/model IDs.
+
+- Configure a separate vision-capable model using local Ollama or a hosted OpenAI-compatible provider.
+- Explicitly request a scene description and visible-text transcription for a selected image.
+- Confirm the exact hosted destination and model before transmitting an image.
+- Preserve line breaks in returned text and display generated output separately from the original.
+- Record model/provider identity, available model digest, prompt hash, source hash, submitted-image hash, and normalization details.
+- Save results in an immutable processing output, available to subsequent case analysis and Q&A.
+- Keep prior completed outputs when vision processing fails.
+- Prevent automatic retransmission when saved results are read or the page reloads.
+- Reject cloud-backed Ollama entries in the local vision path.
+
+This is model-assisted text extraction with whole-image provenance; dedicated OCR confidence and text-region boxes are not provided. See [Image descriptions and OCR](image-description-and-ocr.md).
 
 ## 11. Case analysis and history
 
@@ -319,6 +345,9 @@ Report drafts remain in memory for the open case. Switching sections preserves t
 ### Interface
 
 - Support light and dark themes and remember the selected theme in the browser.
+- Use short, smooth transitions when switching sections, opening or closing dialogs, expanding details, and interacting with controls.
+- Honor reduced-motion preferences by disabling decorative animations and transitions.
+- Use direct workstation labels and restrained surfaces; generated material remains explicitly identified for review.
 - Adapt layouts for desktop and narrow screens.
 - Provide keyboard-operable primary navigation, focus indicators, labeled forms, status messages, and error feedback.
 - Keep original-source access available throughout investigative workflows.
@@ -364,8 +393,8 @@ The update does not yet provide:
 - Task assignments, general evidence tagging, or collaborative editing.
 - Versioned report storage or a complete case/chain-of-custody export package.
 - Automatic identity reconciliation or a verified identification system.
-- General PDF/DOCX text extraction, OCR, or packet-capture analysis.
-- Newly implemented automatic speech transcription.
+- General PDF/DOCX text extraction, dedicated OCR-engine confidence/text boxes, or packet-capture analysis.
+- Automatic audio-only evidence transcription, speaker diarization and speaker identification. Video speech transcription is available with the optional local engine configured.
 - Case-wide evidence-library search; the library's search, category filter, and sorting apply to the current page.
 - A timeline of every observation or a conversion of all media-relative offsets to absolute time.
 - Evidence encryption through the login password.
@@ -392,5 +421,6 @@ Live Neo4j, live AI model behavior, all possible codecs, and forensic certificat
 
 ## Related documentation
 
-- [Offline local accounts and administration](docs/local-accounts.md)
-- [Investigation workspace implementation notes](docs/workspace-revamp.md)
+- [Image descriptions and model-assisted OCR](image-description-and-ocr.md)
+- [Offline local accounts and administration](local-accounts.md)
+- [Investigation workspace implementation notes](workspace-revamp.md)

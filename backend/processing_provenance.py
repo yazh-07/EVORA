@@ -39,7 +39,7 @@ def initialize_provenance(connection):
       DROP TRIGGER IF EXISTS processing_provenance_context;
       CREATE TRIGGER processing_provenance_context BEFORE INSERT ON processing_provenance
         WHEN NOT EXISTS(SELECT 1 FROM processing_runs r JOIN processing_outputs o ON o.run_id=r.id
-          WHERE r.id=NEW.run_id AND r.status='running' AND r.processor_version IN ('processing-lifecycle/2','processing-lifecycle/3','processing-lifecycle/4','processing-lifecycle/5','processing-lifecycle/6','processing-lifecycle/7','processing-lifecycle/8','processing-lifecycle/9','transcript-correction/1')
+          WHERE r.id=NEW.run_id AND r.status='running' AND r.processor_version IN ('processing-lifecycle/2','processing-lifecycle/3','processing-lifecycle/4','processing-lifecycle/5','processing-lifecycle/6','processing-lifecycle/7','processing-lifecycle/8','processing-lifecycle/9','processing-lifecycle/10','transcript-correction/1')
           AND r.case_id=NEW.case_id AND r.evidence_id=NEW.evidence_id
           AND o.case_id=r.case_id AND o.evidence_id=r.evidence_id)
         BEGIN SELECT RAISE(ABORT,'Invalid processing provenance context'); END;
@@ -52,7 +52,7 @@ def initialize_provenance(connection):
         BEGIN SELECT RAISE(ABORT,'Immutable processing provenance'); END;
       DROP TRIGGER IF EXISTS processing_completion_provenance;
       CREATE TRIGGER processing_completion_provenance BEFORE UPDATE OF status ON processing_runs
-        WHEN NEW.status='completed' AND NEW.processor_version IN ('processing-lifecycle/2','processing-lifecycle/3','processing-lifecycle/4','processing-lifecycle/5','processing-lifecycle/6','processing-lifecycle/7','processing-lifecycle/8','processing-lifecycle/9','transcript-correction/1') AND NOT EXISTS(
+        WHEN NEW.status='completed' AND NEW.processor_version IN ('processing-lifecycle/2','processing-lifecycle/3','processing-lifecycle/4','processing-lifecycle/5','processing-lifecycle/6','processing-lifecycle/7','processing-lifecycle/8','processing-lifecycle/9','processing-lifecycle/10','transcript-correction/1') AND NOT EXISTS(
           SELECT 1 FROM processing_provenance p WHERE p.run_id=NEW.id AND p.case_id=NEW.case_id
           AND p.evidence_id=NEW.evidence_id AND p.record_version='processing-provenance/1'
           AND p.finished_at=NEW.finished_at)
@@ -96,6 +96,14 @@ def _payload(run, output, finished_at):
             raise ValueError('Missing visual model provenance')
         method = 'local_opencv_haar'
     vision = config.get('image_understanding')
+    video = config.get('video_understanding')
+    if video is not None:
+        from backend.video_understanding import validate_config as validate_video, PROCESSOR_VERSION as VIDEO_VERSION
+        validate_video(video)
+        if config.get('kind') != 'video' or vision is not None:
+            raise ValueError('Invalid video understanding source')
+        processor = VIDEO_VERSION
+        method = 'opencv_haar_plus_sampled_video_vision_local_speech_and_geometric_tracks'
     if vision is not None:
         from backend.image_understanding import validate_config, PROCESSOR_VERSION as VISION_VERSION
         validate_config(vision)
@@ -118,7 +126,8 @@ def _payload(run, output, finished_at):
         method = 'local_cpu_ner_plus_rules'
     if (set(config) != set(_VERSIONS + parameters) |
             {'kind', 'sha256', 'size_bytes', 'provenance_version'} | ({'model'} if model else set()) |
-            (DEEPER_FIELDS if deeper else set()) | ({'image_understanding'} if vision is not None else set())):
+            (DEEPER_FIELDS if deeper else set()) | ({'image_understanding'} if vision is not None else set()) |
+            ({'video_understanding'} if video is not None else set())):
         raise ValueError('Invalid frozen provenance configuration')
     if (config['provenance_version'] != RECORD_VERSION or run['processor_version'] != processor
             or config['processor_version'] != run['processor_version']
@@ -175,6 +184,9 @@ def _payload(run, output, finished_at):
                      parameters={key: config[key] for key in parameters}, method=method, model=model)
     if vision is not None:
         execution['image_understanding'] = vision
+    if video is not None:
+        execution['video_understanding'] = {**video, 'speech':
+            {key:value for key,value in video['speech'].items() if key != 'path'} if video['speech'] is not None else None}
     if deeper is not None:
         execution['deeper_processing'] = deeper
     return dict(record_version=RECORD_VERSION, case_id=case_id, evidence_id=evidence_id,

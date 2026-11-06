@@ -4,6 +4,90 @@
  */
 
 export interface paths {
+    "/api/v1/chatgpt/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getChatGPTStatus"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/chatgpt/connect": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["connectChatGPT"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/chatgpt/disconnect": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["disconnectChatGPT"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cases/{caseId}/evidence/{evidenceId}/video-analysis": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Analyze sampled video frames, geometric candidate tracks and optional local speech
+         * @description Creates a new immutable processing run. Hosted providers require explicit consent and matching expected provider, model, and endpoint. No automatic cloud transmission during ordinary extraction.
+         */
+        post: operations["analyzeVideo"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/media-capabilities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getMediaCapabilities"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/cases/{caseId}/evidence/{evidenceId}/image-analysis": {
         parameters: {
             query?: never;
@@ -425,7 +509,7 @@ export interface paths {
         put?: never;
         /**
          * Start an evidence processing run
-         * @description Freeze a processing configuration at acceptance. Reusing the same key with the same request returns the original run, including failed runs; retry/reprocess with a new key. Different evidence target with the same actor/case/operation key returns 409. Processing output is immutable.
+         * @description Freeze a processing configuration at acceptance. Reusing the same key with the same request returns the original run, including failed runs; retry/reprocess with a new key. Different evidence target with the same actor/case/operation key returns 409. Processing output is immutable. Upload preserves originals independently of processing support. Image requests validate stored bytes and decoding limits before creating a run; invalid or unsupported image bytes return 415 UNSUPPORTED_MEDIA with no run or partial output. MIME type and filename alone do not decide support.
          */
         post: operations["startProcessing"];
         delete?: never;
@@ -752,11 +836,32 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        VideoAnalysisRequest: {
+            /** @default false */
+            confirm_external_processing: boolean;
+            /** @enum {string} */
+            expected_provider: "ollama" | "openai" | "chatgpt";
+            expected_model: string;
+            expected_endpoint: string;
+            /** @default 5 */
+            sample_interval_seconds: number;
+            /** @default 12 */
+            max_frames: number;
+            /** @default false */
+            transcribe_speech: boolean;
+        };
+        ChatGPTStatus: {
+            connected: boolean;
+            sharing: boolean;
+            pending: boolean;
+            email: string;
+            error: string;
+        };
         ImageAnalysisRequest: {
             /** @default false */
             confirm_external_processing: boolean;
             /** @enum {string} */
-            expected_provider: "ollama" | "openai";
+            expected_provider: "ollama" | "openai" | "chatgpt";
             expected_model: string;
             expected_endpoint: string;
         };
@@ -847,6 +952,8 @@ export interface components {
             }[];
         };
         Settings: {
+            /** @description Use the selected Q&A model for explicit image processing; it must support image input. */
+            vision_use_qa_model?: boolean;
             /** @description Separate vision-capable model for explicit image description and model-assisted text extraction. */
             vision_model?: string;
             offline_mode?: boolean;
@@ -854,13 +961,14 @@ export interface components {
              * @default ollama
              * @enum {string}
              */
-            qa_provider: "ollama" | "openai";
+            qa_provider: "ollama" | "openai" | "chatgpt";
             /**
              * Format: uri
              * @default https://api.openai.com/v1
              */
             openai_base_url: string;
             readonly has_openai_key: boolean;
+            readonly has_chatgpt_connection?: boolean;
             /** @default deepseek-r1:8b */
             qa_model: string;
             /**
@@ -874,12 +982,13 @@ export interface components {
             show_provenance_rays: boolean;
         };
         SettingsUpdate: {
+            vision_use_qa_model?: boolean;
             /** @description Separate vision-capable model for explicit image description and model-assisted text extraction. */
             vision_model?: string;
             /** @description Administrator-controlled local-only or hosted-provider operation. */
             offline_mode?: boolean;
             /** @enum {string} */
-            qa_provider?: "ollama" | "openai";
+            qa_provider?: "ollama" | "openai" | "chatgpt";
             /** Format: uri */
             openai_base_url?: string;
             /** @description A non-empty key replaces the saved backend key; omitted, null or empty keys retain it. */
@@ -1071,6 +1180,7 @@ export interface components {
             };
             evidence_ids: string[];
         };
+        /** @description Source-backed relationships between forensic subjects, including explicit same-row GPS located_at and network assigned_ip relationships. Mere source membership is node.evidence_ids lineage, rendered as visual provenance rays rather than referenced_in or detected_in_frame graph edges. */
         GraphEdge: {
             /** Format: uuid */
             id: string;
@@ -1395,6 +1505,266 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    getChatGPTStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatGPTStatus"];
+                };
+            };
+            /** @description Rejected request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Rejected request */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Rejected request */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    connectChatGPT: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    offline_mode?: boolean;
+                    new_account?: boolean;
+                };
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** Format: uri */
+                        authorization_url: string;
+                    };
+                };
+            };
+            /** @description Rejected request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Rejected request */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Rejected request */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    disconnectChatGPT: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        disconnected: boolean;
+                        revoked: boolean;
+                    };
+                };
+            };
+            /** @description Rejected request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Rejected request */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Rejected request */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    analyzeVideo: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+            };
+            path: {
+                caseId: string;
+                evidenceId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VideoAnalysisRequest"];
+            };
+        };
+        responses: {
+            /** @description Queued processing run */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProcessingRun"];
+                };
+            };
+            /** @description Request rejected */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Request rejected */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Request rejected */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Request rejected */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Request rejected */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Request rejected */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    getMediaCapabilities: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Installed media tools */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        video_audio_tools: boolean;
+                        local_speech_ready: boolean;
+                    };
+                };
+            };
+        };
+    };
     analyzeImage: {
         parameters: {
             query?: never;
@@ -2605,8 +2975,10 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": {
+                    /** @description Administrator-selected draft mode for this connection test only; does not save settings. */
+                    offline_mode?: boolean;
                     /** @enum {string} */
-                    qa_provider?: "ollama" | "openai";
+                    qa_provider?: "ollama" | "openai" | "chatgpt";
                     /** Format: uri */
                     qa_url?: string;
                     /** Format: uri */
@@ -2625,6 +2997,8 @@ export interface operations {
                 content: {
                     "application/json": {
                         models: string[];
+                        /** @description Model IDs advertising image input when the provider supplies modality metadata. Omitted when unknown. */
+                        vision_models?: string[];
                     };
                 };
             };
