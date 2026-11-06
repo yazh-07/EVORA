@@ -29,6 +29,7 @@ from backend.overrides import initialize_overrides, router as overrides_router
 from backend.triage_endpoints import router as triage_router
 from backend.questions import router as questions_router
 from backend.transcripts import initialize_transcripts, router as transcripts_router
+from backend.image_understanding import router as image_understanding_router
 from backend.local_auth import initialize_auth, router as local_auth_router
 from backend.errors import AccessError, access_error, invalid_request
 
@@ -90,14 +91,16 @@ class ProviderEndpoint(OllamaEndpoint):
 
 
 class Settings(ProviderEndpoint):
+    offline_mode: bool = True
+    vision_model: str = Field(default='', max_length=200)
     qa_model: str = Field(default="deepseek-r1:8b", min_length=1, max_length=200)
     detection_threshold: float = Field(default=0.7, ge=0.1, le=1.0, allow_inf_nan=False)
     show_provenance_rays: bool = True
 
-    @field_validator("qa_model")
+    @field_validator("qa_model", "vision_model")
     @classmethod
     def validate_model(cls, value: str) -> str:
-        if not value.strip() or any(c.isspace() for c in value):
+        if (value and not value.strip()) or any(c.isspace() for c in value):
             raise ValueError("Use a model name without whitespace.")
         return value
 
@@ -170,6 +173,7 @@ def create_app(
         app.state.qa_provider = 'ollama'
         app.state.openai_api_key = None
         validate_offline_endpoint(app.state.qa_url)
+    app.state.vision_model = os.environ.get('EVORA_VISION_MODEL', '')
     app.state.detection_threshold = 0.7
     app.state.show_provenance_rays = True
     app.state.database = database
@@ -186,18 +190,27 @@ def create_app(
     @app.get("/api/v1/settings", dependencies=[Depends(authenticated_actor)])
     async def get_settings(response: Response):
         response.headers["Cache-Control"] = "no-store"
-        return {**{key: getattr(app.state, key) for key in Settings.model_fields if key != 'openai_api_key'},
-                'has_openai_key': bool(app.state.openai_api_key), **({'offline_mode': app.state.offline_mode} if app.state.local_auth else {})}
+        return {**{key: getattr(app.state, key) for key in Settings.model_fields if key not in ('openai_api_key', 'offline_mode', 'vision_model')},
+                'has_openai_key': bool(app.state.openai_api_key), **({'offline_mode': app.state.offline_mode, 'vision_model': app.state.vision_model} if app.state.local_auth or app.state.vision_model else {})}
 
     @app.put("/api/v1/settings", dependencies=[Depends(authenticated_actor)])
     async def put_settings(body: Settings, response: Response, request: Request):
         if app.state.local_auth:
             from backend.local_auth import admin
             admin(authenticated_actor(request))
-        if app.state.offline_mode:
-            if body.qa_provider != 'ollama' or body.openai_api_key:
+        offline = body.offline_mode if 'offline_mode' in body.model_fields_set else app.state.offline_mode
+        provider = body.qa_provider if 'qa_provider' in body.model_fields_set else app.state.qa_provider
+        qa_url = body.qa_url if 'qa_url' in body.model_fields_set else app.state.qa_url
+        base = body.openai_base_url if 'openai_base_url' in body.model_fields_set else app.state.openai_base_url
+        if offline:
+            if provider != 'ollama' or body.openai_api_key:
                 raise AccessError(400, 'OFFLINE_MODE', 'Offline mode supports local Ollama models only.')
-            validate_offline_endpoint(body.qa_url)
+            validate_offline_endpoint(qa_url)
+        if base != app.state.openai_base_url and app.state.openai_api_key and not body.openai_api_key:
+            raise AccessError(400, 'PROVIDER_KEY_REQUIRED', 'Re-enter the API key when changing the provider base URL.')
+        if not offline and provider == 'openai':
+            from backend.image_understanding import safe_endpoint
+            safe_endpoint(base, 'openai')
         # Validation finishes before any mutation. Omitted values remain unchanged.
         for key, value in body.model_dump(exclude_unset=True).items():
             if key == 'openai_api_key' and not value:
@@ -206,7 +219,7 @@ def create_app(
         return await get_settings(response)
 
     @app.post("/api/v1/settings/models", dependencies=[Depends(authenticated_actor)])
-    async def list_models(body: ProviderEndpoint, response: Response):
+    async def list_models(body: ProviderEndpoint, response: Response, request: Request):
         response.headers["Cache-Control"] = "no-store"
         provider = body.qa_provider if 'qa_provider' in body.model_fields_set else app.state.qa_provider
         if app.state.offline_mode:
@@ -219,6 +232,10 @@ def create_app(
                 raise AccessError(400, 'OPENAI_KEY_REQUIRED', 'Enter an API key before testing the connection.')
             base_url = (body.openai_base_url if 'openai_base_url' in body.model_fields_set
                         else app.state.openai_base_url)
+            if base_url != app.state.openai_base_url and not body.openai_api_key:
+                raise AccessError(400, 'PROVIDER_KEY_REQUIRED', 'Enter a key explicitly when testing another provider URL.')
+            from backend.image_understanding import safe_endpoint
+            safe_endpoint(base_url, 'openai')
             url, field, name = base_url + '/models', 'data', 'id'
         else:
             url = (body.qa_url if 'qa_url' in body.model_fields_set else app.state.qa_url) + '/api/tags'
@@ -246,6 +263,7 @@ def create_app(
 
     app.include_router(router)
     app.include_router(evidence_router)
+    app.include_router(image_understanding_router)
     app.include_router(audit_router)
     app.include_router(processing_router)
     app.include_router(observations_router)

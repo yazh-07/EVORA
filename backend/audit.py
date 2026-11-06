@@ -17,7 +17,7 @@ INTAKE_RECORD_VERSION = "intake-source.v1"
 # Public diagnostics are application codes, never exception messages or source
 # values. Unknown future adapter codes fail closed to the generic diagnostic.
 _PROCESSING_ERRORS = frozenset({
-    "PROCESSING_FAILED", "PROCESSING_INTERRUPTED", "SOURCE_UNAVAILABLE",
+    "PROCESSING_FAILED", "PROCESSING_INTERRUPTED", "SOURCE_UNAVAILABLE", "IMAGE_UNDERSTANDING_FAILED",
     *("CSV_" + code for code in (
         "INVALID_SOURCE", "INVALID_CONTEXT", "BYTE_LIMIT", "INVALID_UTF8",
         "MALFORMED_CSV", "INVALID_HEADER", "ROW_LIMIT", "INVALID_ROW",

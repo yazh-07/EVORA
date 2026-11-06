@@ -77,7 +77,7 @@ test('overview finds a brief on later pages, pins every request, and clears it o
     assert.ok(requests.every(url => url.searchParams.get('analysis_run_id') === id(2)));
     assert.deepEqual(controller.getSnapshot().findings, [items.at(-1)]);
     const html = renderToStaticMarkup(createElement(ExecutiveBriefPanel, { findings: controller.getSnapshot().findings }));
-    assert.match(html, /AI Forensic Executive Brief/); assert.match(html, /Review the timeline/);
+    assert.match(html, /Investigative hypotheses/); assert.match(html, /Review the timeline/);
     assert.match(html, /&lt;script&gt;untrusted/); assert.doesNotMatch(html, /<script>/);
     client.clearToken();
     assert.equal(controller.getSnapshot().status, 'error');

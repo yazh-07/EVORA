@@ -21,7 +21,7 @@ export function TimelineWorkspace({ caseId, inspectEvidence }: { caseId: string;
   const names = new Map(data?.evidence.map(item => [item.id, item.source_label || item.filename]));
   const reset = () => { setQuery(''); setSource(''); setFrom(''); setTo(''); setLimit(50); };
   return <section className="panel timeline-workspace" aria-label="Case timeline" aria-busy={loading}>
-    <div className="section-heading"><div><span className="section-label">RECONSTRUCT THE SEQUENCE</span><h2>What happened, and when?</h2>
+    <div className="section-heading"><div><span className="section-label">Recorded events</span><h2>Case timeline</h2>
       <p>Compare extracted events across your evidence. Open a source to verify its context.</p></div>
       <button type="button" onClick={refresh} disabled={loading}>Refresh timeline</button></div>
     <p className="scope-note">Live extracted events · normalized times shown in UTC · relative or missing times stay undated. This view is independent of the selected analysis.</p>

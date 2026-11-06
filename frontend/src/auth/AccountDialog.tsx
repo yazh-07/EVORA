@@ -1,3 +1,4 @@
+import { useDialogClose } from '../ui/useDialogClose';
 import { useEffect, useRef, useState } from 'react';
 import { useApiClient } from '../api/ApiProvider';
 import type { LocalUser } from '../api/client';
@@ -21,6 +22,7 @@ export function PasswordChange({ required = false }: { required?: boolean }) {
 }
 export function AccountDialog({onClose}:{onClose:()=>void}) {
   const client=useApiClient(),dialog=useRef<HTMLDialogElement>(null);
+  const closeDialog=useDialogClose(dialog,onClose);
   const [users,setUsers]=useState<LocalUser[]>([]),[cases,setCases]=useState<{id:string;title:string}[]>([]);
   const [selectedCase,setSelectedCase]=useState(''),[members,setMembers]=useState<string[]>([]);
   const memberScope=useRef('');
@@ -55,8 +57,8 @@ export function AccountDialog({onClose}:{onClose:()=>void}) {
     setBusy(true);setMessage('');
     try{await client.request('put','/api/v1/accounts/{userId}',{path:{userId:user.id},body});if(user.id===client.getUser()?.id)client.clearToken();else {setRevision(value=>value+1);setMessage('Account updated. Existing sessions for this account were revoked.');setResetUser(undefined);setResetPassword('');}}catch(error){setMessage(authMessage(error));}finally{setBusy(false);}
   };
-  return <dialog ref={dialog} className="account-dialog" aria-labelledby="accounts-title" onCancel={event=>{if(busy)event.preventDefault();else onClose();}}>
-    <header className="section-heading"><div><span className="section-label">LOCAL WORKSTATION</span><h2 id="accounts-title">{isAdmin?'Accounts and case access':'Your account'}</h2></div><button type="button" disabled={busy} onClick={onClose}>Close accounts</button></header>
+  return <dialog ref={dialog} className="account-dialog" aria-labelledby="accounts-title" onCancel={event=>{event.preventDefault();if(!busy)closeDialog();}}>
+    <header className="section-heading"><div><span className="section-label">LOCAL WORKSTATION</span><h2 id="accounts-title">{isAdmin?'Accounts and case access':'Your account'}</h2></div><button type="button" disabled={busy} onClick={closeDialog}>Close accounts</button></header>
     {message&&<p role="status">{message}</p>}
     <PasswordChange />
     {isAdmin&&<>

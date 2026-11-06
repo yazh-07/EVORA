@@ -125,17 +125,17 @@ export function CaseEvidenceWorkspace({ caseId, caseTitle = 'Investigation' }: {
     ['questions', 'Ask about the case', 'Ask focused questions and verify every answer against its citations.'],
   ] as const;
   return <div className="investigation-layout">
-    <aside className="workspace-sidebar"><span className="section-label">CASE WORKSPACE</span><InvestigationTabs activeTab={activeTab} onSelect={navigate} /><div className="sidebar-note"><strong>Keep the source in sight</strong><p>Every finding is a lead until you verify its supporting evidence.</p></div></aside>
+    <aside className="workspace-sidebar"><span className="section-label">Workspace</span><InvestigationTabs activeTab={activeTab} onSelect={navigate} /><div className="sidebar-note"><strong>Source verification</strong><p>Every finding is a lead until you verify its supporting evidence.</p></div></aside>
     <div className="investigation-content">
       {(['overview', 'evidence', 'timeline', 'investigation', 'report'] as const).map(tab => <div key={tab} id={`panel-${tab}`} role="tabpanel" aria-labelledby={`tab-${tab}`} tabIndex={0} hidden={activeTab !== tab}>
         {visited.has(tab) && <>
           {tab === 'overview' && <InvestigationOverview caseId={caseId} navigate={navigate} addEvidence={addEvidence} />}
-          {tab === 'evidence' && <><header className="workspace-section-heading"><span className="section-label">START WITH THE SOURCE</span><h2>Your evidence library</h2><p>Add original files, extract their contents, and inspect the records behind each finding.</p></header><EvidenceWorkspace caseId={caseId} sourceSelection={selection} intakeRequest={intakeRequest} /></>}
+          {tab === 'evidence' && <><header className="workspace-section-heading"><span className="section-label">Evidence</span><h2>Your evidence library</h2><p>Add original files, extract their contents, and inspect the records behind each finding.</p></header><EvidenceWorkspace caseId={caseId} sourceSelection={selection} intakeRequest={intakeRequest} /></>}
           {tab === 'timeline' && <TimelineWorkspace caseId={caseId} inspectEvidence={inspectEvidence} />}
           {tab === 'investigation' && <>
-            <header className="workspace-section-heading"><span className="section-label">FOLLOW THE EVIDENCE</span><h2>Investigate and verify</h2><p>{tools.find(item => item[0] === tool)?.[2]}</p></header>
+            <header className="workspace-section-heading"><span className="section-label">Review</span><h2>Investigate and verify</h2><p>{tools.find(item => item[0] === tool)?.[2]}</p></header>
             <div className="investigation-tool-switch" role="group" aria-label="Investigation tools">{tools.map(([id, label]) => <button key={id} type="button" aria-pressed={tool === id} onClick={() => { setTool(id); setVisitedTools(value => new Set([...value, id])); }}>{label}</button>)}</div>
-            {tools.map(([id]) => <div key={id} hidden={tool !== id}>{visitedTools.has(id) && <>
+            {tools.map(([id]) => <div key={id} className="workspace-tool-panel" hidden={tool !== id}>{visitedTools.has(id) && <>
               {id === 'findings' && <FindingInspector inspectEvidence={inspectEvidence} />}
               {id === 'graph' && <GraphView inspectEvidence={inspectEvidence} />}
               {id === 'entities' && <EntityEventInspector caseId={caseId} inspectEvidence={inspectEvidence} />}

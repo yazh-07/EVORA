@@ -48,7 +48,7 @@ export function EvidenceIntake({ upload, submitting }: { upload: (file: File | n
   };
   return <div className="batch-intake" aria-busy={busy}>
     <div className={`drop-zone ${dragging ? 'dragging' : ''}`} onDragOver={event => { event.preventDefault(); if (!busy) setDragging(true); }} onDragLeave={() => setDragging(false)} onDrop={event => { event.preventDefault(); setDragging(false); add(Array.from(event.dataTransfer.files)); }}>
-      <span className="drop-icon" aria-hidden="true">＋</span><h3>Bring your evidence together</h3><p>Drop original files here, or choose files from your device.</p>
+      <span className="drop-icon" aria-hidden="true">＋</span><h3>Add original files</h3><p>Drop original files here, or choose files from your device.</p>
       <label className="file-picker">Choose files<input id="batch-evidence-files" type="file" multiple disabled={busy || submitting} onChange={event => { add(Array.from(event.target.files ?? [])); event.target.value = ''; }} /></label>
       <small>Original bytes and SHA-256 are recorded on intake. Extraction is a separate step.</small>
     </div>

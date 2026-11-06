@@ -1,0 +1,73 @@
+/* Brief, finite motion preserves the pace of evidence review. */
+:root {
+  --motion-fast: 140ms;
+  --motion-normal: 240ms;
+  --motion-ease: cubic-bezier(.2, .7, .2, 1);
+}
+button, .file-picker, input, select, textarea {
+  transition: background-color var(--motion-fast) ease, border-color var(--motion-fast) ease,
+    color var(--motion-fast) ease, box-shadow var(--motion-fast) ease, transform var(--motion-fast) var(--motion-ease);
+}
+button:active:not(:disabled), .file-picker:active { transform: translateY(1px); }
+input:focus-visible, textarea:focus-visible, select:focus-visible {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 10%, transparent);
+}
+body, .app-header, .panel, .workspace-sidebar, footer {
+  transition: background-color 180ms ease, color 180ms ease, border-color 180ms ease;
+}
+[role="tabpanel"]:not([hidden]), .workspace-tool-panel:not([hidden]) {
+  animation: workspace-enter var(--motion-normal) var(--motion-ease) both;
+}
+.case-header-active, .local-login, .case-creation, .case-browser {
+  animation: workspace-enter var(--motion-normal) var(--motion-ease) both;
+}
+.case-list > li { animation: workspace-enter 260ms var(--motion-ease) backwards; }
+.case-list > li:nth-child(2) { animation-delay: 25ms; }
+.case-list > li:nth-child(3) { animation-delay: 50ms; }
+.case-list > li:nth-child(4) { animation-delay: 75ms; }
+.case-list > li:nth-child(n+5) { animation-delay: 90ms; }
+.case-list > li, .overview-stats button {
+  transition: background-color var(--motion-fast) ease, border-color var(--motion-fast) ease,
+    box-shadow var(--motion-normal) ease, transform var(--motion-normal) var(--motion-ease);
+}
+@media (hover: hover) and (pointer: fine) {
+  .case-list > li:hover, .overview-stats button:hover {
+    transform: translateY(-2px);
+    border-color: color-mix(in srgb, var(--color-accent) 35%, var(--color-border));
+    box-shadow: 0 4px 12px #101d1808;
+  }
+}
+.overview-stats button:active { transform: translateY(0); }
+.evidence-table tr { transition: background-color var(--motion-fast) ease; }
+.drop-zone { transition: border-color var(--motion-fast) ease, background-color var(--motion-fast) ease; }
+.upload-confirmation, .question-result, .original-text-preview pre {
+  animation: workspace-enter 200ms var(--motion-ease) both;
+}
+.settings-modal[open], .account-dialog[open] { animation: dialog-enter 220ms var(--motion-ease) both; }
+.settings-modal[open]::backdrop, .account-dialog[open]::backdrop { animation: backdrop-enter 180ms ease both; }
+@supports (interpolate-size: allow-keywords) {
+  details { interpolate-size: allow-keywords; }
+  details::details-content {
+    block-size: 0; opacity: 0; overflow: clip;
+    transition: block-size var(--motion-normal) var(--motion-ease), opacity 180ms ease,
+      content-visibility var(--motion-normal) allow-discrete;
+  }
+  details[open]::details-content { block-size: auto; opacity: 1; }
+}
+/* Plain labels and restrained surfaces throughout the workstation. */
+.section-label { letter-spacing: .07em; font-size: .6875rem; text-transform: none; }
+.panel, .next-action, .overview-stats button, .workflow-map { border-radius: 7px; }
+.next-action { background: var(--color-surface); border-color: var(--color-border); border-left: 3px solid var(--color-accent); }
+.workflow-map .step-number { border-radius: 4px; background: transparent; }
+.executive-brief { border-left-color: var(--color-border); }
+.auto-detect-badge { background: var(--color-neutral); color: var(--color-secondary); border-color: var(--color-border); font-size: .75rem; }
+.knowledge-graph .graph-node > rect, .knowledge-graph .graph-node > ellipse, .knowledge-graph .graph-node > polygon { filter: none; }
+@keyframes workspace-enter { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes dialog-enter { from { opacity: 0; transform: translateY(10px) scale(.99); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@keyframes backdrop-enter { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation: none !important; transition: none !important; scroll-behavior: auto !important;
+  }
+  button:active:not(:disabled), .file-picker:active, .case-list > li:hover, .overview-stats button:hover { transform: none; }
+}

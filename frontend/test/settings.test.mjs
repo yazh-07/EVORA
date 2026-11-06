@@ -114,7 +114,7 @@ test('cross-tab settings changes notify mounted views and unsubscribe cleans up'
 test('settings dialog exposes labeled controls, slider bounds and actions', () => {
   const client = createApiClient({ baseUrl: 'http://backend.test', fetch: async () => { throw Error('No rendering requests'); } });
   const html = renderToStaticMarkup(createElement(ApiProvider, { client }, createElement(SettingsModal, { onClose() {} })));
-  for (const text of ['aria-labelledby="settings-title"', 'AI Copilot Configuration', 'Visual Forensics &amp; Media Settings',
+  for (const text of ['aria-labelledby="settings-title"', 'Model configuration', 'Visual Forensics &amp; Media Settings',
     'Knowledge Graph Settings', 'Source Description', 'Filename', 'Show Bounding Boxes', 'Show Provenance Rays',
     'Test Connection &amp; Fetch Models', 'Save Settings', 'Reset to Defaults', 'Cancel', 'min="50" max="95"',
     'Local (Ollama)', 'Cloud / Custom (OpenAI-compatible)', 'Ollama Endpoint URL']) assert.ok(html.includes(text), text);

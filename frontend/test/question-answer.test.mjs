@@ -61,7 +61,7 @@ test('supported inquiry posts the typed wire contract, renders every citation an
   const { controller: c, calls } = setup(t, () => new Promise(resolve => { finish = resolve; }));
   assert.equal(calls.length, 0, 'Opening the panel must not submit an inquiry');
   const initial = render(c);
-  assert.match(initial, /<label for="case-question">Inquire about case evidence<\/label>/);
+  assert.match(initial, /<label for="case-question">Question about the evidence<\/label>/);
   assert.match(initial, /<textarea id="case-question" name="question" maxLength="2000"/);
   assert.match(initial, /placeholder="Ask a question about extracted entities or events\.\.\."/);
   change(c, `  ${question}  `); submit(c); submit(c);

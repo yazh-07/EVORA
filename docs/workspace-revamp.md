@@ -16,7 +16,7 @@ The workspace now opens on an actionable overview and groups work into Overview,
 
 ## Boundaries
 
-Report scope and notes are held in memory for the open case; export before leaving, reloading, signing out, or changing the selected analysis. Shared persistent notebooks, assignments, tags, identity reconciliation, and versioned report storage are not implemented in this change. Evidence library search remains page-scoped and labeled as such. The timeline covers extracted Event records, not every Observation or media-relative offset. No new PDF/DOCX, packet capture, OCR, or speech extraction adapters are claimed. The existing provider credential and synchronous AI brief concerns from the repository review are separate backend work.
+Report scope and notes are held in memory for the open case; export before leaving, reloading, signing out, or changing the selected analysis. Shared persistent notebooks, assignments, tags, identity reconciliation, and versioned report storage are not implemented in this change. Evidence library search remains page-scoped and labeled as such. The timeline covers extracted Event records, not every Observation or media-relative offset. PDF/DOCX, packet capture, and automatic speech extraction remain outside the revamp. A subsequent update adds explicit vision-model image descriptions and model-assisted OCR; see [Image descriptions and OCR](image-description-and-ocr.md). The existing provider credential and synchronous AI brief concerns from the repository review are separate backend work.
 
 ## Verification
 
