@@ -58,6 +58,8 @@ jobs:
         env:
           EVORA_CONTRACT_BUNDLE: ${{ runner.temp }}/evora-openapi.json
         run: python -m unittest discover -s scripts -p 'test_contract_examples.py' -v
+      - name: Install local video audio tools for media regressions
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
       - name: Test backend and validation mapping
         env:
           EVORA_CONTRACT_BUNDLE: ${{ runner.temp }}/evora-openapi.json
