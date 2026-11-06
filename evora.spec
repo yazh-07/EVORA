@@ -1,4 +1,5 @@
 # -*- mode: python ; coding: utf-8 -*-
+import sys
 from PyInstaller.utils.hooks import collect_data_files, copy_metadata
 
 model_data = collect_data_files('en_core_web_sm', include_py_files=True)
@@ -28,7 +29,7 @@ exe = EXE(
     name='evora',
     debug=False,
     bootloader_ignore_signals=False,
-    strip=True,
+    strip=sys.platform != "win32",
     upx=False,
     console=True,
     disable_windowed_traceback=False,
@@ -41,7 +42,7 @@ coll = COLLECT(
     exe,
     a.binaries,
     a.datas,
-    strip=True,
+    strip=sys.platform != "win32",
     upx=False,
     name='evora',
 )

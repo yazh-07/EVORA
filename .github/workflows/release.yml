@@ -109,6 +109,15 @@ jobs:
       - name: Smoke test frozen application
         run: python scripts/smoke_release.py dist/evora/evora.exe
 
+      - name: Retain failed Windows bundle for diagnosis
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-bundle-diagnostics
+          path: |
+            dist/evora/
+            build/evora/warn-evora.txt
+
       - uses: actions/setup-go@v5
         with:
           go-version: '1.23'
