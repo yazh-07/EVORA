@@ -1,3 +1,4 @@
+import { ImageUnderstanding } from './ImageUnderstanding';
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { useApiClient } from '../api/ApiProvider';
 import type { components } from '../api/schema';
@@ -21,7 +22,8 @@ function storedImageSize(image: HTMLImageElement) {
   probe.remove();
   return size;
 }
-export function MediaInspector({ item, processingRunId, refreshKey, focus }: {
+export function MediaInspector({ item, processingRunId, refreshKey, focus, onDerivedRun }: {
+  onDerivedRun?: (id: string) => void;
   item: Evidence; processingRunId?: string; refreshKey?: string; focus?: SourceFocus;
 }) {
   const client = useApiClient();
@@ -66,6 +68,7 @@ export function MediaInspector({ item, processingRunId, refreshKey, focus }: {
     {observationState.error && <p role="alert">Could not load the complete source observations. The cited output may be unavailable. Retry detections.</p>}
     {!observationState.loading && !observationState.error && <p>{observationState.items.length} source observations loaded across all pages.{observationState.items[0] && <span className="identifier"> Processing run: {observationState.items[0].processing_run_id}</span>}</p>}
     <button type="button" onClick={() => setRefresh(value => value + 1)}>Refresh detections</button>
+    {item.kind === 'image' && <ImageUnderstanding item={item} observations={observationState.items} onCompleted={onDerivedRun} />}
   </section>;
 }
 

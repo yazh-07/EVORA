@@ -126,7 +126,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')
         with:
-          name: EVORA ${{ github.ref_name }} — Forensic Evidence Fusion Workstation
+          name: EVORA ${{ github.ref_name }}
           body: |
             ## EVORA — Forensic Evidence Fusion & Adaptive Investigation Platform
 

@@ -96,7 +96,7 @@ export function EvidencePanels({ state, load, select, upload, sourceFocus, intak
               kind.value = value; setDetectedKind(value);
             }, () => setDetecting(false));
           }} />
-          {detectedKind && <span className="auto-detect-badge" role="status">✨ Auto-detected: {detectedKind}</span>}
+          {detectedKind && <span className="auto-detect-badge" role="status">Detected type: {detectedKind}</span>}
           <label htmlFor="evidence-kind">Kind (required)</label><select id="evidence-kind" name="kind" required defaultValue="document" onChange={() => {
             cancelDetection.current?.(); setDetecting(false); setDetectedKind(undefined);
           }}>
@@ -150,7 +150,7 @@ export function EvidencePanels({ state, load, select, upload, sourceFocus, intak
       </section>
       <aside className="panel inspector" aria-labelledby="evidence-inspector" aria-busy={state.detailStatus === 'loading'}>
         <h2 id="evidence-inspector" ref={heading} tabIndex={-1}>Inspect the source</h2>
-        {state.detailStatus === 'idle' && <div className="inspector-empty"><span aria-hidden="true">↗</span><h3>Follow the source</h3><p>Select evidence to inspect its metadata.</p><p>Original file, integrity hash, processing controls and extracted observations appear here.</p></div>}
+        {state.detailStatus === 'idle' && <div className="inspector-empty"><span aria-hidden="true">↗</span><h3>Select a source</h3><p>Select evidence to inspect its metadata.</p><p>Original file, integrity hash, processing controls and extracted observations appear here.</p></div>}
         {state.detailStatus === 'loading' && <p role="status">Loading evidence metadata...</p>}
         {state.detailStatus === 'error' && <p role="alert">{state.detailMessage} Select evidence again to retry.</p>}
         {state.detail && <><h3>{state.detail.source_label}</h3><p className="format-support">{formatSupport(state.detail.filename, state.detail.kind)}</p><details className="source-integrity"><summary>Integrity and acquisition details</summary><Metadata item={state.detail} detailed /></details><OriginalDownload key={state.detail.id} item={state.detail} />
@@ -176,7 +176,7 @@ export function EvidenceProcessingInspection({ item, sourceFocus }: { item: Evid
       Pin observations to completed run {pinnedRunId ?? completedRunId}
     </label>}
     {sourceFocus && <p className="source-focus">Citation locator: <strong>{sourceFocus.source_locator}</strong>{sourceFocus.observation_id && <span className="identifier"> · {sourceFocus.observation_id}</span>}</p>}
-    {(item.kind === 'image' || item.kind === 'video') && <MediaInspector item={item} processingRunId={pinnedRunId} refreshKey={completedRunId} focus={sourceFocus} />}
+    {(item.kind === 'image' || item.kind === 'video') && <MediaInspector item={item} onDerivedRun={onProcessingCompleted} processingRunId={pinnedRunId} refreshKey={completedRunId} focus={sourceFocus} />}
     <ObservationInspector focus={sourceFocus} caseId={item.case_id} evidenceId={item.id}
       processingRunId={pinnedRunId} refreshKey={pinnedRunId ?? completedRunId} />
     {(item.kind === 'audio' || item.kind === 'video') && <TranscriptViewer item={item}

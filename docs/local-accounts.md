@@ -8,7 +8,7 @@ npm --prefix frontend run build
 python -m backend.run
 ```
 
-Install dependencies and download the chosen local AI model before disconnecting the workstation. Normal account setup, login, password changes, recovery, evidence review, and account administration do not require internet access. The launcher binds to `127.0.0.1:8000`, serves the interface and API on one origin, and enforces offline model settings. `--database`, `--storage`, and `--port` select another local installation. Store the database and evidence directory on a protected local disk.
+Install dependencies and download the chosen local AI model before disconnecting the workstation. Normal account setup, login, password changes, recovery, evidence review, and account administration do not require internet access. The launcher binds to `127.0.0.1:8000`, serves the interface and API on one origin, and starts with offline model settings. Administrators can explicitly enable online mode in Settings; `--online` also enables hosted providers at startup. `--database`, `--storage`, and `--port` select another local installation. Store the database and evidence directory on a protected local disk.
 
 ## First use
 
@@ -38,7 +38,7 @@ Login, recovery, setup, and password verification are throttled using persisted 
 
 ## Offline models
 
-Local deployments default to offline mode. Cloud API keys are ignored at startup, cloud providers are rejected, and Ollama URLs must use `localhost` or a literal loopback IP address. Model-list requests obey the same restriction. Ollama itself and the desired models must already be installed. A direct `create_app(..., offline_mode=False)` deployment is a deliberate developer configuration, outside the offline launcher.
+Local deployments default to offline mode. Cloud API keys are ignored at startup, cloud providers are rejected, and Ollama URLs must use `localhost` or a literal loopback IP address. Model-list requests obey the same restriction. Ollama itself and the desired models must already be installed. Administrators can explicitly disable offline mode in Settings or start with `python -m backend.run --online`. Hosted image requests require separate destination confirmation. See [Image descriptions and OCR](image-description-and-ocr.md).
 
 Application login does not encrypt evidence or defend against an operating-system administrator who can modify the application/database. Use filesystem permissions and disk encryption for stored evidence and backups. Back up the complete SQLite database consistently along with the evidence directory.
 

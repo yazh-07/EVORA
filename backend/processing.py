@@ -191,8 +191,14 @@ def process_run(app, run_id):
         config = json.loads(run['config_json'])
         policy = deeper_metadata(config)
         adapter = adapter_for(config['kind'])
-        if adapter is None or any(config.get(key) != value for key, value in
-                                  _versions(adapter, deeper=policy is not None).items()):
+        expected = _versions(adapter, deeper=policy is not None) if adapter else {}
+        if 'image_understanding' in config:
+            from backend.image_understanding import validate_config, PROCESSOR_VERSION as VISION_VERSION
+            validate_config(config['image_understanding'])
+            if config['kind'] != 'image':
+                raise ValueError('Image enrichment requires an image')
+            expected['processor_version'] = VISION_VERSION
+        if adapter is None or any(config.get(key) != value for key, value in expected.items()):
             # Never execute changed configuration under an older frozen version.
             raise ValueError('processing configuration changed')
         grant = CaseAccessGrant(Actor(run['actor_id']), case_id)
@@ -204,6 +210,10 @@ def process_run(app, run_id):
         observations = adapter.parse(data, case_id=case_id, evidence_id=evidence_id, processing_run_id=UUID(run_id))
         if adapter.kind in ('image', 'video'):
             normalized, entities, events = observations.observations, observations.entities, observations.events
+            if 'image_understanding' in config:
+                from backend.image_understanding import extract
+                normalized = tuple(normalized) + extract(app, data, config['image_understanding'],
+                    case_id=case_id, evidence_id=evidence_id, processing_run_id=UUID(run_id))
         elif adapter.kind == 'transaction':
             transactions = project_transaction_records(observations, case_id=case_id)
             normalized, entities, events = transactions.observations, transactions.entities, transactions.events
@@ -242,7 +252,8 @@ def process_run(app, run_id):
                 raise AccessError(404, 'SOURCE_UNAVAILABLE', 'Source unavailable.')
             publish_outputs(connection, run, output)
     except Exception as error:
-        code = ('MEDIA_' + error.code if isinstance(error, media_detection.MediaDetectionError) else
+        code = ('IMAGE_UNDERSTANDING_FAILED' if 'config' in locals() and 'image_understanding' in config else
+                'MEDIA_' + error.code if isinstance(error, media_detection.MediaDetectionError) else
                 'NLP_' + error.code if isinstance(error, TextNERError) else
                 'TEXT_' + error.code if isinstance(error, TextDocumentError) else
                 'CSV_' + error.code if isinstance(error, (NetworkCSVError, GPSCSVError, MessageCSVError, MobileCSVError, TransactionCSVError)) else

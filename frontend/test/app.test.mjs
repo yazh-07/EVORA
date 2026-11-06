@@ -34,7 +34,7 @@ test('task navigation starts at overview and defers unused tools while keeping a
     assert.match(html, new RegExp(`role="tab" id="tab-${tab}" aria-controls="panel-${tab}" aria-selected="${tab === 'overview'}"`));
     assert.match(html, new RegExp(`id="panel-${tab}" role="tabpanel" aria-labelledby="tab-${tab}" tabindex="0"${tab === 'overview' ? '>' : ' hidden=""'}`));
   }
-  assert.match(html, /A clear path through the evidence/);
+  assert.match(html, /Case overview/);
   assert.doesNotMatch(html, /id="evidence-file"|class="knowledge-graph"|id="case-question"/);
   assert.equal(calls, 0);
 });

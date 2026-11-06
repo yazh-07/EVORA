@@ -4,11 +4,13 @@ import type { ProcessingRun } from './processingController';
 import { createProcessingStatusController } from './processingStatusController';
 import type { ProcessingStatusState } from './processingStatusController';
 
-export function ProcessingStatus({ run, pollIntervalMs = 750, onCompleted }: { run: ProcessingRun; pollIntervalMs?: number; onCompleted?: (runId: string) => void }) {
+export function ProcessingStatus({ run, pollIntervalMs = 750, onCompleted, onStatusChange }: {
+  onStatusChange?: (run: ProcessingRun) => void; run: ProcessingRun; pollIntervalMs?: number; onCompleted?: (runId: string) => void }) {
   const client = useApiClient();
   const controller = useMemo(() => createProcessingStatusController(client, run, pollIntervalMs), [client, run, pollIntervalMs]);
   const state = useSyncExternalStore(controller.subscribe, controller.getSnapshot, controller.getSnapshot);
   useEffect(() => { controller.start(); return () => controller.dispose(); }, [controller]);
+  useEffect(() => { if (state.run) onStatusChange?.(state.run); }, [state.run, onStatusChange]);
   useEffect(() => { if (state.run?.status === 'completed') onCompleted?.(state.run.id); }, [state.run, onCompleted]);
   return <ProcessingStatusPanel state={state} retry={controller.refresh} />;
 }

@@ -53,7 +53,7 @@ function ReportDraft({ caseId, runId, caseTitle, investigate }: { caseId: string
     popup.document.head.append(style); popup.document.body.append(pre); popup.focus(); popup.print();
   };
   return <section className="report-workspace" aria-label="Report builder" aria-busy={loading}>
-    <header className="workspace-section-heading"><span className="section-label">FROM EVIDENCE TO A REVIEWABLE RECORD</span><h2>Prepare your report</h2><p>Select findings, explain your scope, and add your own assessment.</p></header>
+    <header className="workspace-section-heading"><span className="section-label">Report draft</span><h2>Prepare your report</h2><p>Select findings, explain your scope, and add your own assessment.</p></header>
     <p className="scope-note">Draft text stays in this open case only. Export it before leaving the case, signing out, reloading, or selecting another analysis.</p>
     {loading && <p role="status">Loading the selected analysis, source manifest, and review decisions…</p>}
     {error && <p role="alert">{error}</p>}

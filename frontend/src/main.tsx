@@ -5,6 +5,7 @@ import { ApiProvider } from './api/ApiProvider';
 import { createApiClient } from './api/client';
 import './styles.css';
 import './workspace.css';
+import './motion.css';
 
 const root = document.getElementById('root');
 if (!root) throw new Error('EVORA root element is missing.');

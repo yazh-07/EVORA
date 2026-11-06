@@ -182,3 +182,23 @@ class LocalAuthTests(unittest.IsolatedAsyncioTestCase):
         with self.app.state.database.connect() as c:
             self.assertEqual(c.execute('SELECT actor_id FROM audit_events').fetchone()[0],result['user']['id'])
             self.assertIsNotNone(c.execute("SELECT 1 FROM case_members WHERE actor_id='investigator-1'").fetchone())
+
+    async def test_administrator_can_enable_online_and_return_to_offline_mode(self):
+        await self.setup_admin()
+        response=await self.client.put('/api/v1/settings',json={'offline_mode':False,'qa_provider':'openai','openai_api_key':'synthetic-key','vision_model':'vision-capable-model'})
+        self.assertEqual(response.status_code,200,response.text)
+        self.assertFalse(response.json()['offline_mode'])
+        self.assertEqual(response.json()['vision_model'],'vision-capable-model')
+        response=await self.client.put('/api/v1/settings',json={'offline_mode':True,'qa_provider':'ollama'})
+        self.assertEqual(response.status_code,200,response.text)
+        self.assertTrue(response.json()['offline_mode'])
+
+    async def test_saved_provider_key_cannot_be_redirected_to_another_url(self):
+        await self.setup_admin()
+        await self.client.put('/api/v1/settings',json={'offline_mode':False,'qa_provider':'openai','openai_api_key':'synthetic-key'})
+        with patch('backend.app.httpx.AsyncClient.get') as outbound:
+            response=await self.client.post('/api/v1/settings/models',json={'qa_provider':'openai','openai_base_url':'https://untrusted.example/v1'})
+            self.assertEqual(response.status_code,400)
+            response=await self.client.put('/api/v1/settings',json={'openai_base_url':'https://untrusted.example/v1'})
+            self.assertEqual(response.status_code,400)
+            outbound.assert_not_called()

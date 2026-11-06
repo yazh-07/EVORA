@@ -1,3 +1,4 @@
+import { useDialogClose } from '../ui/useDialogClose';
 import { useEffect, useRef, useState } from 'react';
 import { useApiClient } from '../api/ApiProvider';
 import { defaultSettings, readSettings, saveSettings, type Settings } from './settings';
@@ -18,6 +19,7 @@ const modelsFor = (provider: Settings['qa_provider']) => provider === 'openai' ?
 export function SettingsModal({ onClose }: { onClose: () => void }) {
   const client = useApiClient();
   const dialog = useRef<HTMLDialogElement>(null);
+  const closeDialog = useDialogClose(dialog, onClose);
   const [draft, setDraft] = useState(readSettings);
   const popularModels = modelsFor(draft.qa_provider);
   const [apiKey, setApiKey] = useState('');
@@ -92,7 +94,7 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
       if (!request.signal.aborted) {
         setDraft(saved); setApiKey('');
         setCustom(!modelsFor(saved.qa_provider).some(([model]) => model === saved.qa_model));
-        if (close) onClose();
+        if (close) closeDialog();
       }
     }
     catch (cause) {
@@ -101,16 +103,22 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
     } finally { if (!request.signal.aborted) setSaving(false); }
   }
   const disabled = loading || saving || loadFailed;
-  return <dialog ref={dialog} className="settings-modal" aria-labelledby="settings-title" onCancel={event => { event.preventDefault(); if (!saving) onClose(); }}>
+  return <dialog ref={dialog} className="settings-modal" aria-labelledby="settings-title" onCancel={event => { event.preventDefault(); if (!saving) closeDialog(); }}>
     <form onSubmit={event => { event.preventDefault(); if (!disabled) void save(); }}>
       <header className="settings-heading"><div><span className="section-label">WORKSTATION PREFERENCES</span><h2 id="settings-title">Settings</h2></div>
-        <button type="button" aria-label="Close settings" disabled={saving} onClick={onClose}>✕</button></header>
+        <button type="button" aria-label="Close settings" disabled={saving} onClick={closeDialog}>✕</button></header>
       <div className="settings-content">
         {loading && <p role="status">Loading current settings…</p>}
         {error && <p role="alert">{error}</p>}
         {loadFailed && <button type="button" onClick={() => setReload(value => value + 1)}>Retry loading settings</button>}
-        <fieldset disabled={disabled}><legend>AI Copilot Configuration</legend>
-          <p>{draft.offline_mode ? 'Offline mode: evidence questions use an installed local Ollama model. Cloud providers are disabled.' : 'Choose the provider and model used to answer questions about your evidence.'}</p>
+        <fieldset disabled={disabled}><legend>Model configuration</legend>
+          <label className="settings-toggle"><span>Offline mode — local models only</span><input type="checkbox" role="switch" checked={draft.offline_mode !== false} onChange={event => {
+            const offline = event.target.checked; update('offline_mode', offline);
+            if (offline) { update('qa_provider', 'ollama'); setApiKey(''); update('qa_model', defaultSettings.qa_model); }
+            clearConnection();
+          }} /></label>
+          <p className="settings-hint">Online mode permits the configured hosted provider. Image transmission requires a separate action and confirmation on the image.</p>
+          <p>{draft.offline_mode !== false ? 'Offline mode: evidence questions use an installed local Ollama model. Cloud providers are disabled.' : 'Choose the provider and model used to answer questions about your evidence.'}</p>
           <label>Provider<select value={draft.qa_provider} onChange={event => {
             const provider = event.target.value as Settings['qa_provider'];
             update('qa_provider', provider);
@@ -134,6 +142,9 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
             <label>Base URL<input required type="url" value={draft.openai_base_url} onChange={event => update('openai_base_url', event.target.value)} placeholder="https://api.openai.com/v1" /></label>
             <p className="settings-hint">Supports OpenAI, Groq, OpenRouter and custom compatible endpoints. Include the API path, such as /v1.</p>
           </> : <label>Ollama Endpoint URL<input required type="url" value={draft.qa_url} onChange={event => update('qa_url', event.target.value)} placeholder="http://127.0.0.1:11434" /></label>}
+          <label htmlFor="vision-model">Vision model</label>
+          <input id="vision-model" value={draft.vision_model ?? ''} maxLength={200} pattern="\S*" onChange={event => update('vision_model', event.target.value)} placeholder="Vision-capable model ID from your provider" />
+          <p className="settings-hint">Used for image descriptions and model-assisted OCR. The selected provider and endpoint are shared with Q&amp;A, but the vision model can be different. Leave blank to disable image understanding. The model must support image input.</p>
           <p className="settings-hint">The endpoint is reached from the backend workstation.</p>
           <div className="settings-connection"><button type="button" disabled={connection === 'testing'} onClick={() => void testConnection()}>{connection === 'testing' ? 'Connecting…' : 'Test Connection & Fetch Models'}</button>
             {connection === 'connected' && <span className="settings-connected" role="status">● Connected</span>}</div>
@@ -154,8 +165,8 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
       </div>
       <footer className="settings-actions"><button type="button" disabled={disabled} onClick={() => {
         clearConnection();
-        void save({ ...defaultSettings, has_openai_key: draft.has_openai_key }, false, '');
-      }}>Reset to Defaults</button><div><button type="button" disabled={saving} onClick={onClose}>Cancel</button><button type="submit" className="settings-save" disabled={disabled}>{saving ? 'Saving…' : 'Save Settings'}</button></div></footer>
+        void save({ ...defaultSettings, offline_mode: true, vision_model: '', has_openai_key: draft.has_openai_key }, false, '');
+      }}>Reset to Defaults</button><div><button type="button" disabled={saving} onClick={closeDialog}>Cancel</button><button type="submit" className="settings-save" disabled={disabled}>{saving ? 'Saving…' : 'Save Settings'}</button></div></footer>
     </form>
   </dialog>;
 }

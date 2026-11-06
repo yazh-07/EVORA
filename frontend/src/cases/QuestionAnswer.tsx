@@ -25,13 +25,13 @@ export function QuestionAnswerPanel({ state, setQuestion, submit, inspectEvidenc
 }) {
   const busy = state.status === 'submitting';
   const answers = state.history?.length ? state.history : state.answer ? [state.answer] : [];
-  const prompts = ['Summarize key suspects & vehicles', 'Identify temporal or location conflicts', 'Trace financial transactions', 'Show high-priority forensic leads'];
+  const prompts = ['Summarize recorded devices and vehicles', 'Identify temporal or location conflicts', 'Trace financial transactions', 'Show high-priority forensic leads'];
   return <section className="panel question-answer" aria-label="Case questions and answers" aria-busy={busy}>
-    <div className="copilot-heading"><span className="copilot-mark" aria-hidden="true">✧</span><div><span className="section-label">FORENSIC AI COPILOT</span><h2>Questions &amp; Answers</h2></div><span className="kind-badge">Evidence grounded</span></div>
+    <div className="question-heading"><h2>Questions &amp; Answers</h2><span className="scope-note">Local model · source citations</span></div>
     <p>Ask about recorded entities or events. Answers depend on available case evidence; missing evidence does not establish that an event did not occur.</p>
     <div className="quick-prompts" aria-label="Suggested investigative questions">{prompts.map(prompt => <button key={prompt} type="button" disabled={busy} onClick={() => setQuestion(prompt)}>{prompt}<span aria-hidden="true"> ↗</span></button>)}</div>
     <form noValidate aria-busy={busy} onSubmit={event => { event.preventDefault(); void submit(); }}>
-      <label htmlFor="case-question">Inquire about case evidence</label>
+      <label htmlFor="case-question">Question about the evidence</label>
       <textarea id="case-question" name="question" maxLength={2000} rows={4} required
         placeholder="Ask a question about extracted entities or events..." value={state.question} disabled={busy}
         aria-invalid={state.status === 'error'} aria-describedby={state.message ? 'case-question-message' : undefined}
@@ -42,7 +42,7 @@ export function QuestionAnswerPanel({ state, setQuestion, submit, inspectEvidenc
     {state.message && <p id="case-question-message" role="alert">{state.message}</p>}
     {state.status === 'error' && <button type="button" onClick={() => { void submit(); }}>Retry question</button>}
     <div className="conversation-stream" role="log" aria-label="Investigation conversation" aria-live="polite">{answers.map((answer, turn) => <article className="question-result" key={turn}>
-      <div className="chat-question"><span className="section-label">INVESTIGATOR</span><h3>Question</h3><p className="question-text">{answer.question}</p></div><div className="chat-answer"><span className="section-label">EVORA COPILOT</span>
+      <div className="chat-question"><span className="section-label">INVESTIGATOR</span><h3>Question</h3><p className="question-text">{answer.question}</p></div><div className="chat-answer"><span className="section-label">Generated response</span>
       <p role="status"><strong className={`question-badge ${answer.supported ? 'question-supported' : 'question-unsupported'}`}>
         {answer.supported ? 'Supported by Evidence' : 'Insufficient Evidence'}
       </strong></p>
