@@ -57,32 +57,39 @@ def safe_endpoint(endpoint, provider):
 
 def validate_config(config):
     expected = {'version','provider','model','endpoint','prompt_sha256','max_edge','external_authorized'}
+    if isinstance(config,dict) and config.get('provider')=='chatgpt':expected.add('connection_id')
     if (not isinstance(config, dict) or set(config) != expected or config['version'] != VERSION or
-        config['provider'] not in ('ollama', 'openai') or not isinstance(config['model'], str) or
+        config['provider'] not in ('ollama', 'openai', 'chatgpt') or not isinstance(config['model'], str) or
         not config['model'].strip() or len(config['model']) > 200 or any(c.isspace() for c in config['model']) or
         config['prompt_sha256'] != PROMPT_HASH or type(config['max_edge']) is not int or config['max_edge'] != MAX_EDGE or
         type(config['external_authorized']) is not bool or
-        (config['provider'] == 'openai' and not config['external_authorized'])):
+        (config['provider'] != 'ollama' and not config['external_authorized'])):
         raise ValueError('Invalid image understanding configuration')
     safe_endpoint(config['endpoint'], config['provider'])
+    if config['provider']=='chatgpt' and (config['endpoint']!='https://api.openai.com/v1' or not isinstance(config['connection_id'],str) or not re.fullmatch('[0-9a-f]{64}',config['connection_id'])):
+        raise ValueError('Invalid ChatGPT destination')
     return config
 
 
 def freeze_config(app, consent):
     provider = app.state.qa_provider
-    if provider == 'openai' and app.state.offline_mode:
+    if provider != 'ollama' and app.state.offline_mode:
         raise AccessError(400, 'OFFLINE_MODE', 'Enable online mode in Settings before selecting a hosted provider.')
-    if provider == 'openai' and not consent:
+    if provider != 'ollama' and not consent:
         raise AccessError(400, 'IMAGE_CONSENT_REQUIRED', 'Confirm sending this image to the configured provider.')
     if provider == 'openai' and not app.state.openai_api_key:
         raise AccessError(400, 'OPENAI_KEY_REQUIRED', 'Configure a provider API key in Settings.')
-    model = getattr(app.state, 'vision_model', '')
+    model = app.state.qa_model if getattr(app.state, 'vision_use_qa_model', False) else getattr(app.state, 'vision_model', '')
     if not model:
         raise AccessError(400, 'VISION_MODEL_REQUIRED', 'Configure a vision-capable model in Settings first.')
-    endpoint = app.state.qa_url if provider == 'ollama' else app.state.openai_base_url
+    endpoint = app.state.qa_url if provider == 'ollama' else 'https://api.openai.com/v1' if provider=='chatgpt' else app.state.openai_base_url
+    binding={}
+    if provider=='chatgpt':
+        if not app.state.chatgpt_connection.status()['sharing']:raise AccessError(400,'CHATGPT_REQUIRED','Connect ChatGPT and authorize plan usage first.')
+        binding['connection_id']=app.state.chatgpt_connection.binding()
     return validate_config(dict(version=VERSION, provider=provider, model=model,
         endpoint=safe_endpoint(endpoint, provider), prompt_sha256=PROMPT_HASH, max_edge=MAX_EDGE,
-        external_authorized=bool(consent)))
+        external_authorized=bool(consent),**binding))
 
 
 def read_json(client, method, url, **kwargs):
@@ -139,7 +146,12 @@ def extract(app, source, config, *, case_id, evidence_id, processing_run_id):
     encoded = base64.b64encode(image).decode('ascii')
     actual_digest = None
     with httpx.Client(timeout=httpx.Timeout(90.0, connect=5.0), follow_redirects=False, trust_env=False) as client:
-        if provider == 'ollama':
+        if provider=='chatgpt':
+            if app.state.offline_mode or app.state.chatgpt_connection.binding()!=config['connection_id']:
+                raise ValueError('ChatGPT connection changed before execution')
+            raw,actual=app.state.chatgpt_connection.infer(model,PROMPT,[dict(type='input_text',text='Describe this image and transcribe its visible text.'),dict(type='input_image',image_url='data:image/png;base64,'+encoded)],90,connection_id=config['connection_id'])
+            body=dict(model=actual)
+        elif provider == 'ollama':
             catalog = read_json(client, 'GET', endpoint + '/api/tags')
             installed = local_model(catalog, model)
             capabilities = installed.get('capabilities')
@@ -204,7 +216,7 @@ class ImageRequest(BaseModel):
 @router.post('/api/v1/cases/{caseId}/evidence/{evidenceId}/image-analysis', operation_id='analyzeImage', status_code=202)
 def start_image_analysis(caseId: UUID, evidenceId: UUID, body: ImageRequest, request: Request, background: BackgroundTasks,
                          grant: Annotated[CaseAccessGrant, Depends(require_case_access)]):
-    from backend.processing import _versions, _json, _now, _wire, run_job
+    from backend.processing import _versions, _json, _now, _wire, run_job, preflight_image
     from backend.processing_dispatch import adapter_for
     from uuid import uuid4
     keys = request.headers.getlist('idempotency-key')
@@ -228,6 +240,7 @@ def start_image_analysis(caseId: UUID, evidenceId: UUID, body: ImageRequest, req
             raise AccessError(404,'NOT_FOUND','Evidence unavailable.')
         if evidence['kind'] != 'image':
             raise AccessError(415,'IMAGE_REQUIRED','Select an image source for image description and text extraction.')
+        preflight_image(request,grant,evidence,understanding=True)
         vision = freeze_config(request.app, body.confirm_external_processing)
         if (body.expected_provider, body.expected_model, body.expected_endpoint.rstrip('/')) != (vision['provider'],vision['model'],vision['endpoint']):
             raise AccessError(409,'VISION_SETTINGS_CHANGED','Vision settings changed. Refresh the image settings and confirm the destination again.')

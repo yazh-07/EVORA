@@ -5,6 +5,7 @@
 *.pem
 *.key
 secrets.json
+*.chatgpt/
 
 # Local evidence and generated outputs
 /storage/

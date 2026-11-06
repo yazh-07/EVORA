@@ -176,6 +176,12 @@ Source extraction produces candidates and observations that still require invest
 
 ## 10. Media and transcript inspection
 
+- Explicit video analysis adds timestamped descriptions and OCR of capped, sampled frames.
+- Candidate tracks associate nearby visual detection boxes within the clip without verifying identity.
+- Optional Faster Whisper speech transcription runs locally and feeds the transcript viewer and correction history.
+- Hosted frame processing requires consent; audio remains local. Failed runs preserve earlier completed results.
+- See [Video analysis setup and limits](docs/video-analysis.md).
+
 - Inspect supported original images and videos.
 - Display available detection boxes over the media.
 - Toggle detection overlays and apply the configured detection-score threshold.
@@ -189,9 +195,15 @@ Source extraction produces candidates and observations that still require invest
 - Preserve corrections as a new derived processing output.
 - Run a new analysis to include revised transcript evidence.
 
-Transcript review and correction tools do not imply that automatic speech transcription is installed. Visual candidates do not identify a person or establish vehicle ownership.
+Automatic video speech transcription requires the optional local speech engine, downloaded model and audio tools. Visual candidates and tracks do not identify a person or establish vehicle ownership.
 
 ### Image descriptions and model-assisted OCR
+
+- **ChatGPT plan** connects eligible accounts through **Continue with ChatGPT**, without a manually supplied API key. Local EVORA accounts remain separate. Text, image and sampled-video requests use the official plan-specific Responses API; speech stays local. See [ChatGPT connection](docs/chatgpt-connection.md) for setup, eligibility, credential storage and verification limits.
+
+- Image processing can reuse the selected Q&A model when it supports images, or use a separate vision model.
+- **Fetch image-capable models** provides a searchable provider list for choosing a separate image model while preserving a text-only Q&A model.
+- OpenRouter model discovery supports unsaved online settings, labels advertised image-capable models, and shows specific connection errors. Use `https://openrouter.ai/api/v1` and full provider/model IDs.
 
 - Configure a separate vision-capable model using local Ollama or a hosted OpenAI-compatible provider.
 - Explicitly request a scene description and visible-text transcription for a selected image.
@@ -382,7 +394,7 @@ The update does not yet provide:
 - Versioned report storage or a complete case/chain-of-custody export package.
 - Automatic identity reconciliation or a verified identification system.
 - General PDF/DOCX text extraction, dedicated OCR-engine confidence/text boxes, or packet-capture analysis.
-- Newly implemented automatic speech transcription.
+- Automatic audio-only evidence transcription, speaker diarization and speaker identification. Video speech transcription is available with the optional local engine configured.
 - Case-wide evidence-library search; the library's search, category filter, and sorting apply to the current page.
 - A timeline of every observation or a conversion of all media-relative offsets to absolute time.
 - Evidence encryption through the login password.

@@ -92,6 +92,20 @@ test('failed OpenAI saves never persist draft credentials or preferences', async
   assert.deepEqual(parseSettings(JSON.stringify({ ...defaultSettings, openai_api_key: 'sk-secret' })), defaultSettings);
 });
 
+test('shared vision model preference round-trips independently of a separate model', async t => {
+  browser(t);
+  const client = createApiClient({ baseUrl: 'http://backend.test', fetch: async (_url, options) => {
+    const body = JSON.parse(options.body);
+    assert.equal(body.vision_use_qa_model, true);
+    assert.equal(body.vision_model, '');
+    return Response.json(body);
+  } });
+  client.setToken('synthetic-settings');
+  const settings = { ...defaultSettings, qa_model: 'provider/multimodal', vision_model: '', vision_use_qa_model: true };
+  await saveSettings(client, settings);
+  assert.deepEqual(readSettings(), settings);
+});
+
 test('storage failures after backend success are reported without claiming complete persistence', async t => {
   const window = browser(t);
   window.localStorage.setItem = () => { throw Error('Quota'); };

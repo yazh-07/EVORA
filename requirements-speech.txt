@@ -1,0 +1,2 @@
+# Optional local video speech transcription. Download a CTranslate2 Whisper model separately.
+faster-whisper==1.2.1

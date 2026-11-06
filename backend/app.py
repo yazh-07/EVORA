@@ -30,6 +30,9 @@ from backend.triage_endpoints import router as triage_router
 from backend.questions import router as questions_router
 from backend.transcripts import initialize_transcripts, router as transcripts_router
 from backend.image_understanding import router as image_understanding_router
+from backend.video_understanding import router as video_understanding_router
+from backend.chatgpt_connection import Connection, router as chatgpt_router
+from starlette.concurrency import run_in_threadpool
 from backend.local_auth import initialize_auth, router as local_auth_router
 from backend.errors import AccessError, access_error, invalid_request
 
@@ -64,7 +67,8 @@ class OllamaEndpoint(BaseModel):
 
 
 class ProviderEndpoint(OllamaEndpoint):
-    qa_provider: Literal['ollama', 'openai'] = 'ollama'
+    offline_mode: bool = True
+    qa_provider: Literal['ollama', 'openai', 'chatgpt'] = 'ollama'
     openai_api_key: Optional[str] = Field(default=None, repr=False)
     openai_base_url: str = 'https://api.openai.com/v1'
 
@@ -91,7 +95,7 @@ class ProviderEndpoint(OllamaEndpoint):
 
 
 class Settings(ProviderEndpoint):
-    offline_mode: bool = True
+    vision_use_qa_model: bool = False
     vision_model: str = Field(default='', max_length=200)
     qa_model: str = Field(default="deepseek-r1:8b", min_length=1, max_length=200)
     detection_threshold: float = Field(default=0.7, ge=0.1, le=1.0, allow_inf_nan=False)
@@ -139,6 +143,7 @@ def create_app(
             await recover_analysis_runs(_app)
             yield
         finally:
+            _app.state.chatgpt_connection.cancel()
             if _app.state.graph_database is not None:
                 _app.state.graph_database.close()
 
@@ -151,6 +156,7 @@ def create_app(
         redoc_url=None,
     )
     app.state.local_auth = token_verifier is None
+    app.state.chatgpt_connection = Connection(app,database.path)
     app.state.offline_mode = (app.state.local_auth if offline_mode is None else offline_mode)
     if app.state.local_auth:
         from starlette.middleware.trustedhost import TrustedHostMiddleware
@@ -174,6 +180,7 @@ def create_app(
         app.state.openai_api_key = None
         validate_offline_endpoint(app.state.qa_url)
     app.state.vision_model = os.environ.get('EVORA_VISION_MODEL', '')
+    app.state.vision_use_qa_model = False
     app.state.detection_threshold = 0.7
     app.state.show_provenance_rays = True
     app.state.database = database
@@ -190,8 +197,9 @@ def create_app(
     @app.get("/api/v1/settings", dependencies=[Depends(authenticated_actor)])
     async def get_settings(response: Response):
         response.headers["Cache-Control"] = "no-store"
-        return {**{key: getattr(app.state, key) for key in Settings.model_fields if key not in ('openai_api_key', 'offline_mode', 'vision_model')},
-                'has_openai_key': bool(app.state.openai_api_key), **({'offline_mode': app.state.offline_mode, 'vision_model': app.state.vision_model} if app.state.local_auth or app.state.vision_model else {})}
+        return {**{key: getattr(app.state, key) for key in Settings.model_fields if key not in ('openai_api_key', 'offline_mode', 'vision_model', 'vision_use_qa_model')},
+                'has_openai_key': bool(app.state.openai_api_key), **({'has_chatgpt_connection':app.state.chatgpt_connection.status()['sharing']} if app.state.local_auth or app.state.qa_provider=='chatgpt' else {}), **({'offline_mode': app.state.offline_mode, 'vision_model': app.state.vision_model,
+                'vision_use_qa_model': app.state.vision_use_qa_model} if app.state.local_auth or app.state.vision_model or app.state.vision_use_qa_model else {})}
 
     @app.put("/api/v1/settings", dependencies=[Depends(authenticated_actor)])
     async def put_settings(body: Settings, response: Response, request: Request):
@@ -216,16 +224,26 @@ def create_app(
             if key == 'openai_api_key' and not value:
                 continue
             setattr(app.state, key, value)
+        if 'offline_mode' in body.model_fields_set and offline:
+            app.state.chatgpt_connection.cancel()
         return await get_settings(response)
 
     @app.post("/api/v1/settings/models", dependencies=[Depends(authenticated_actor)])
     async def list_models(body: ProviderEndpoint, response: Response, request: Request):
         response.headers["Cache-Control"] = "no-store"
         provider = body.qa_provider if 'qa_provider' in body.model_fields_set else app.state.qa_provider
-        if app.state.offline_mode:
+        if app.state.local_auth and 'offline_mode' in body.model_fields_set:
+            from backend.local_auth import admin
+            admin(authenticated_actor(request))
+        offline = body.offline_mode if 'offline_mode' in body.model_fields_set else app.state.offline_mode
+        if offline:
             if provider != 'ollama':
                 raise AccessError(400, 'OFFLINE_MODE', 'Cloud providers are disabled in offline mode.')
             validate_offline_endpoint(body.qa_url if 'qa_url' in body.model_fields_set else app.state.qa_url)
+        if provider == 'chatgpt':
+            try:return await run_in_threadpool(app.state.chatgpt_connection.models,True)
+            except (ValueError,KeyError,httpx.HTTPError,OSError):
+                raise AccessError(502,'CHATGPT_UNAVAILABLE','Connect ChatGPT and authorize plan usage, then retry fetching models. Account limits may apply.') from None
         if provider == 'openai':
             api_key = body.openai_api_key or app.state.openai_api_key
             if not api_key:
@@ -241,7 +259,7 @@ def create_app(
             url = (body.qa_url if 'qa_url' in body.model_fields_set else app.state.qa_url) + '/api/tags'
             field, name = 'models', 'name'
         try:
-            async with httpx.AsyncClient(timeout=5.0, trust_env=False, follow_redirects=False) as client:
+            async with httpx.AsyncClient(timeout=httpx.Timeout(20.0, connect=5.0), trust_env=False, follow_redirects=False) as client:
                 if provider == 'openai':
                     result = await client.get(url, headers={'Authorization': f'Bearer {api_key}'})
                 else:
@@ -254,7 +272,26 @@ def create_app(
                 or not item[name].strip() for item in models
             ):
                 raise ValueError("Invalid model list")
-            return {"models": sorted({item[name] for item in models})}
+            catalog = {"models": sorted({item[name] for item in models})}
+            if provider == 'openai' and any(isinstance(item.get('architecture'), dict) and
+                    isinstance(item['architecture'].get('input_modalities'), list) for item in models):
+                catalog['vision_models'] = sorted({item[name] for item in models
+                    if isinstance(item.get('architecture'), dict) and
+                    isinstance(item['architecture'].get('input_modalities'), list) and
+                    'image' in item['architecture']['input_modalities']})
+            return catalog
+        except httpx.HTTPStatusError as error:
+            if provider == 'openai':
+                messages = {401: 'The provider rejected the API key (HTTP 401). Check that it is a key for this provider.',
+                    403: 'The provider denied access (HTTP 403). Check API key permissions and account access.',
+                    404: 'The provider model-list URL was not found (HTTP 404). Check the base URL and API path.',
+                    429: 'The provider rate-limited the request (HTTP 429). Wait and retry; check your account limits.'}
+                raise AccessError(502, 'OPENAI_UNAVAILABLE', messages.get(error.response.status_code,
+                    'The provider could not return its model list. Retry or check the provider service status.')) from None
+            raise AccessError(502, 'OLLAMA_UNAVAILABLE', 'Could not connect to Ollama or read its models.') from None
+        except httpx.TimeoutException:
+            raise AccessError(502, 'OPENAI_UNAVAILABLE' if provider == 'openai' else 'OLLAMA_UNAVAILABLE',
+                'The model-list request timed out. Check connectivity and retry.') from None
         except (httpx.HTTPError, ValueError, KeyError, TypeError):
             if provider == 'openai':
                 raise AccessError(502, 'OPENAI_UNAVAILABLE',
@@ -264,6 +301,8 @@ def create_app(
     app.include_router(router)
     app.include_router(evidence_router)
     app.include_router(image_understanding_router)
+    app.include_router(video_understanding_router)
+    app.include_router(chatgpt_router)
     app.include_router(audit_router)
     app.include_router(processing_router)
     app.include_router(observations_router)

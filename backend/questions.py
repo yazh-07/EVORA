@@ -192,7 +192,8 @@ def ask_case_question(
                 citations, actual, verification = synthesize(body.question, context, model,
                     qa_url=request.app.state.qa_url, qa_provider=provider,
                     openai_api_key=request.app.state.openai_api_key,
-                    openai_base_url=request.app.state.openai_base_url)
+                    openai_base_url=request.app.state.openai_base_url,
+                    **({'chatgpt_connection':request.app.state.chatgpt_connection} if provider=='chatgpt' else {}))
                 model_version = provider + ':' + actual
             except (SynthesisError, httpx.HTTPError, ValueError, KeyError, TypeError):
                 citations = []

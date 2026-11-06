@@ -1,5 +1,15 @@
 # Image descriptions and model-assisted OCR
 
+## Shared model and OpenRouter
+
+In Settings, enable **Use selected model for image description and OCR** to use the Q&A model for both text questions and explicit image processing. The model must support image input. Future image requests follow changes to the selected Q&A model; completed results retain their original model provenance. Turn the option off to specify a separate vision model, or leave that separate field blank to disable image processing.
+
+For OpenRouter, turn off Offline mode, select **Cloud / Custom (OpenAI-compatible)**, enter `https://openrouter.ai/api/v1` and your OpenRouter API key, then fetch models. Use a full `provider/model` ID from that catalog. Models advertising image input are marked **Image input**. An unknown capability is not proof that a model accepts images.
+
+If the Q&A model is text-only, click **Fetch image-capable models**. Search the filtered list and select a model to use for images. This fills the separate vision model and turns off shared-model mode while keeping the Q&A model unchanged. Click **Save Settings** to apply. If the provider does not publish capabilities, the picker explains that a supported model must be entered manually; an empty advertised list has its own message. Fetching this list does not run inference or transmit evidence.
+
+Connection tests honor the administrator's unsaved online/offline selection without saving it. Offline operation still blocks hosted requests until online settings are saved. The catalog may be publicly accessible: a successful model listing is not proof of valid credentials, credits, inference access, or OCR accuracy. Authentication, permission, URL, rate-limit, and timeout failures have specific messages; raw provider error bodies and keys are not shown.
+
 EVORA can send an image to a configured vision-capable model and save two derived outputs: a scene description and a transcription of visible text. It supports local Ollama and hosted providers using the OpenAI-compatible Chat Completions image format. A text-only model cannot inspect image pixels.
 
 ## Configure a model

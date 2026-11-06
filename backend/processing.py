@@ -59,6 +59,32 @@ def _not_found():
     return AccessError(404, 'NOT_FOUND', 'Resource not found.')
 
 
+def preflight_image(request, grant, evidence, *, understanding=False):
+    """Upload preserves arbitrary originals; image acceptance requires actual decodable bytes."""
+    from io import BytesIO
+    from PIL import Image, UnidentifiedImageError
+    if evidence['size_bytes'] > media_detection.MAX_SOURCE_BYTES:
+        raise AccessError(415, 'UNSUPPORTED_MEDIA', 'Image exceeds the processing byte limit.')
+    original = download_evidence(UUID(evidence['case_id']), UUID(evidence['id']), request, grant)
+    with Path(original.path).open('rb') as stream:
+        data = stream.read(media_detection.MAX_SOURCE_BYTES + 1)
+    if len(data) != evidence['size_bytes'] or hashlib.sha256(data).hexdigest() != evidence['sha256']:
+        raise _not_found()
+    try:
+        if len(data) > media_detection.MAX_SOURCE_BYTES:
+            raise ValueError('Image byte limit')
+        with Image.open(BytesIO(data)) as picture:
+            if picture.width * picture.height > media_detection.MAX_PIXELS:
+                raise ValueError('Image pixel limit')
+            if understanding and getattr(picture,'n_frames',1) != 1:
+                raise ValueError('Vision requires a single-frame image')
+            picture.verify()
+        with Image.open(BytesIO(data)) as picture:
+            picture.load()
+    except (UnidentifiedImageError, OSError, ValueError, SyntaxError, Image.DecompressionBombError):
+        raise AccessError(415, 'UNSUPPORTED_MEDIA', 'Stored bytes are not a supported decodable image.') from None
+
+
 def _versions(adapter, *, deeper=False):
     if adapter.kind in ('image', 'video'):
         return dict(parser_version=adapter.parser_version, normalizer_version=media_detection.PARSER_VERSION,
@@ -198,6 +224,12 @@ def process_run(app, run_id):
             if config['kind'] != 'image':
                 raise ValueError('Image enrichment requires an image')
             expected['processor_version'] = VISION_VERSION
+        if 'video_understanding' in config:
+            from backend.video_understanding import validate_config as validate_video, PROCESSOR_VERSION as VIDEO_VERSION
+            validate_video(config['video_understanding'])
+            if config['kind'] != 'video' or 'image_understanding' in config:
+                raise ValueError('Video enrichment requires a video')
+            expected['processor_version'] = VIDEO_VERSION
         if adapter is None or any(config.get(key) != value for key, value in expected.items()):
             # Never execute changed configuration under an older frozen version.
             raise ValueError('processing configuration changed')
@@ -214,6 +246,10 @@ def process_run(app, run_id):
                 from backend.image_understanding import extract
                 normalized = tuple(normalized) + extract(app, data, config['image_understanding'],
                     case_id=case_id, evidence_id=evidence_id, processing_run_id=UUID(run_id))
+            if 'video_understanding' in config:
+                from backend.video_understanding import extract as extract_video
+                normalized = tuple(normalized) + extract_video(app,data,config['video_understanding'],normalized,
+                    actor_id=run['actor_id'],case_id=case_id,evidence_id=evidence_id,processing_run_id=UUID(run_id))
         elif adapter.kind == 'transaction':
             transactions = project_transaction_records(observations, case_id=case_id)
             normalized, entities, events = transactions.observations, transactions.entities, transactions.events
@@ -252,7 +288,8 @@ def process_run(app, run_id):
                 raise AccessError(404, 'SOURCE_UNAVAILABLE', 'Source unavailable.')
             publish_outputs(connection, run, output)
     except Exception as error:
-        code = ('IMAGE_UNDERSTANDING_FAILED' if 'config' in locals() and 'image_understanding' in config else
+        code = ('VIDEO_UNDERSTANDING_FAILED' if 'config' in locals() and 'video_understanding' in config else
+                'IMAGE_UNDERSTANDING_FAILED' if 'config' in locals() and 'image_understanding' in config else
                 'MEDIA_' + error.code if isinstance(error, media_detection.MediaDetectionError) else
                 'NLP_' + error.code if isinstance(error, TextNERError) else
                 'TEXT_' + error.code if isinstance(error, TextDocumentError) else
@@ -301,6 +338,8 @@ async def start_processing(caseId: UUID, evidenceId: UUID, request: Request, bac
         adapter = adapter_for(evidence['kind'])
         if adapter is None:
             raise AccessError(415, 'UNSUPPORTED_MEDIA', 'File cannot be processed as declared.')
+        if evidence['kind'] == 'image':
+            preflight_image(request, grant, evidence)
         config = {key: evidence[key] for key in ('kind', 'sha256', 'size_bytes')}
         policy = select_deeper_processing(connection, str(caseId), str(evidenceId), evidence['kind'])
         config.update(_versions(adapter, deeper=bool(policy)))

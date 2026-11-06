@@ -4,7 +4,9 @@ import type { ApiClient } from '../api/client';
 export type Settings = {
   offline_mode?: boolean;
   vision_model?: string;
-  qa_provider: 'ollama' | 'openai';
+  vision_use_qa_model?: boolean;
+  qa_provider: 'ollama' | 'openai' | 'chatgpt';
+  has_chatgpt_connection?: boolean;
   openai_base_url: string;
   has_openai_key: boolean;
   qa_model: string;
@@ -33,7 +35,10 @@ export function parseSettings(raw: string | null): Settings {
     if (!saved || typeof saved !== 'object') return settings;
     if (typeof saved.offline_mode === 'boolean') settings.offline_mode = saved.offline_mode;
     if (typeof saved.vision_model === 'string' && saved.vision_model.length <= 200) settings.vision_model = saved.vision_model;
+    if (typeof saved.vision_use_qa_model === 'boolean') settings.vision_use_qa_model = saved.vision_use_qa_model;
     if (saved.qa_provider === 'openai') settings.qa_provider = 'openai';
+    if (saved.qa_provider === 'chatgpt') settings.qa_provider = 'chatgpt';
+    if (typeof saved.has_chatgpt_connection === 'boolean') settings.has_chatgpt_connection=saved.has_chatgpt_connection;
     if (typeof saved.openai_base_url === 'string' && /^https?:\/\//.test(saved.openai_base_url)) settings.openai_base_url = saved.openai_base_url;
     if (typeof saved.has_openai_key === 'boolean') settings.has_openai_key = saved.has_openai_key;
     if (typeof saved.qa_model === 'string' && saved.qa_model.trim()) settings.qa_model = saved.qa_model;
@@ -63,6 +68,7 @@ export async function saveSettings(client: ApiClient, settings: Settings, signal
     body: { qa_provider, qa_model, qa_url, openai_base_url, detection_threshold, show_provenance_rays,
       ...(settings.offline_mode !== undefined ? { offline_mode: settings.offline_mode } : {}),
       ...(settings.vision_model !== undefined ? { vision_model: settings.vision_model } : {}),
+      ...(settings.vision_use_qa_model !== undefined ? { vision_use_qa_model: settings.vision_use_qa_model } : {}),
       ...(apiKey?.trim() ? { openai_api_key: apiKey.trim() } : {}) }, signal,
   });
   // Persist only known, non-secret preferences, even if a server returns extra fields.

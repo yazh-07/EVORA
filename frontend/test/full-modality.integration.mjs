@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 import { setTimeout as delay } from 'node:timers/promises';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
+import { verifyGraphLineage } from './graph-lineage.mjs';
 
 // Real HTTP client, FastAPI, SQLite, registered producers and analysis. The
 // shared harness doubles Neo4j. Audio dispatch is an honest 415 control; an
@@ -341,7 +342,7 @@ try {
         assert.deepEqual(run.input_snapshot.evidence_ids, ids(processed.map(item => item.evidence)));
         assert.deepEqual(run.input_snapshot.processing_run_ids, ids(processed.map(item => item.run)));
         assert.deepEqual(run.input_snapshot.observation_ids, ids(observations.items));
-        assert.deepEqual(ids(output.graph.nodes), sorted([...run.input_snapshot.evidence_ids, ...ids(entities.items), ...ids(events.items)]));
+        verifyGraphLineage({ graph:output.graph, caseId, evidence:processed.map(item=>item.evidence), entities:entities.items, events:events.items, observations:observations.items });
         assert.ok(output.graph.edges.length > 0); assert.ok(output.findings.total > 0);
         const nodeIds = new Set(ids(output.graph.nodes));
         const observationIds = new Set(ids(observations.items));
@@ -419,7 +420,7 @@ try {
     assert.deepEqual(analysisRun.input_snapshot.observation_ids, ids(observations.items));
     const { graph, findings, triage } = snapshot;
     assert.equal(graph.case_id, caseId); assert.equal(graph.analysis_run_id, analysisRun.id);
-    assert.deepEqual(ids(graph.nodes), sorted([...processed.map(item => item.evidence.id), ...ids(entities.items), ...ids(events.items)]));
+    verifyGraphLineage({ graph, caseId, evidence:processed.map(item=>item.evidence), entities:entities.items, events:events.items, observations:observations.items });
     const nodes = new Map(graph.nodes.map(node => [node.id, node]));
     assert.ok(graph.edges.length > 0); assert.ok(findings.total > 0);
     const linkedEvidence = new Set();

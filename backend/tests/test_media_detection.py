@@ -102,7 +102,7 @@ class MediaPublicationTests(unittest.IsolatedAsyncioTestCase):
             content = await self.client.get(f"/api/v1/cases/{self.case}/evidence/{evidence['id']}/content")
             self.assertEqual(content.content, data)
 
-    async def test_media_graph_publishes_exact_detection_relations(self):
+    async def test_media_graph_preserves_detection_lineage_without_provenance_edges(self):
         from backend.tests.test_graph_projection import SyntheticNeo4j
         self.app.state.graph_database = SyntheticNeo4j()
         self.app.state.graph_database.close = lambda: None
@@ -117,17 +117,37 @@ class MediaPublicationTests(unittest.IsolatedAsyncioTestCase):
             graph = json.loads(connection.execute('SELECT graph_json FROM analysis_outputs WHERE run_id=?',
                                                  (run['id'],)).fetchone()[0])
         self.validate('Graph', graph)
-        edges = [e for e in graph['edges'] if e['kind'] == 'detected_in_frame']
-        self.assertTrue(edges)
-        self.assertEqual(edges[0]['from_id'], evidence['id'])
-        self.assertTrue(edges[0]['observation_ids'])
+        # This fixture has detections but no relationship between distinct subjects.
+        # The consumer draws source rays from node.evidence_ids, not graph.edges.
+        self.assertEqual(graph['edges'],[])
+        base=f'/api/v1/cases/{self.case}'
+        entities=(await self.client.get(base+'/entities',params={'limit':100})).json()['items']
+        observations={item['id']:item for item in (await self.client.get(base+'/observations',params={'limit':100})).json()['items']}
+        nodes={item['id']:item for item in graph['nodes']}
+        self.assertTrue(entities)
+        for entity in entities:
+            node=nodes[entity['id']]
+            self.assertEqual(node['evidence_ids'],[evidence['id']])
+            self.assertEqual(node['properties']['observation_ids'],entity['observation_ids'])
+            for oid in entity['observation_ids']:
+                source=observations[oid]
+                self.assertEqual(source['evidence_id'],evidence['id'])
+                self.assertEqual(source['entity_key'],entity['candidate_key'])
+                self.assertEqual(source['kind'],'image.detection')
+                self.assertIn('frame=0;',source['source_locator'])
+                self.assertIn('box=',source['source_locator'])
         self.assertIn('person', {n['entity_type'] for n in graph['nodes']})
 
-    async def test_corrupt_registered_media_fails_honestly_instead_of_415(self):
+    async def test_corrupt_image_rejects_before_run_and_video_decode_failure_is_atomic(self):
         for kind in ('image', 'video'):
             evidence = await self.upload(kind, b'not valid media')
             url = self.base(self.case, evidence['id'])
             response = await self.start(str(uuid4()), url)
+            if kind=='image':
+                self.assertEqual(response.status_code,415,response.text)
+                self.assertEqual(response.json()['code'],'UNSUPPORTED_MEDIA')
+                self.assertEqual((await self.client.get(url)).json(),[])
+                continue
             self.assertEqual(response.status_code, 202)
             failed = await self.poll(response.json(), url)
             self.assertEqual(failed['status'], 'failed')

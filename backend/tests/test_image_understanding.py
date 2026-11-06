@@ -80,6 +80,45 @@ class VisionProcessingTests(unittest.IsolatedAsyncioTestCase):
             _outputs(c,fake_run,context)
             self.assertIn('image.description',{item['kind'] for item in context['observations']})
 
+    async def test_shared_model_publishes_images_without_separate_vision_model(self):
+        evidence=await self.upload('image',picture(),filename='image.png',media='image/png')
+        body=self.settings()
+        self.app.state.vision_model=''
+        self.app.state.vision_use_qa_model=True
+        self.app.state.qa_model='test-vision'
+        requests=[]
+        with self.transport(requests):response=await self.invoke(evidence,body)
+        self.assertEqual(response.status_code,202,response.text)
+        status=(await self.client.get(self.base(self.case,evidence['id'])+'/'+response.json()['id'])).json()
+        self.assertEqual(status['status'],'completed',status)
+        payload=json.loads(next(request for request in requests if request.url.path=='/api/chat').content)
+        self.assertEqual(payload['model'],'test-vision')
+        self.app.state.qa_model='different-model'
+        self.assertEqual((await self.invoke(evidence,body)).status_code,409)
+
+    async def test_chatgpt_image_uses_responses_and_binds_the_connected_account(self):
+        import time
+        evidence=await self.upload('image',picture(),filename='image.png',media='image/png')
+        self.settings('openai');self.app.state.qa_provider='chatgpt'
+        connection=self.app.state.chatgpt_connection
+        record=dict(client_id='oaiapp_test',subject='test-user',access_token='private-access',expires_at=time.time()+3600,scopes=['chatgpt.tokens.use.direct'])
+        connection._write(record)
+        body=dict(expected_provider='chatgpt',expected_model='test-vision',expected_endpoint='https://api.openai.com/v1',confirm_external_processing=True)
+        answer=json.dumps(dict(description='A test frame.',visible_text='NOTICE',limitations=[]))
+        with patch.object(connection,'infer',return_value=(answer,'actual-model')) as infer:
+            response=await self.invoke(evidence,body)
+        self.assertEqual(response.status_code,202,response.text)
+        run=response.json()
+        status=(await self.client.get(self.base(self.case,evidence['id'])+'/'+run['id'])).json()
+        self.assertEqual(status['status'],'completed',status)
+        content=infer.call_args.args[2]
+        self.assertEqual(content[1]['type'],'input_image')
+        self.assertTrue(content[1]['image_url'].startswith('data:image/png;base64,'))
+        frozen=self.read(run,evidence)['execution']['image_understanding']
+        self.assertNotIn('private-access',json.dumps(frozen))
+        connection._write({**record,'subject':'different-user'})
+        with self.assertRaises(ValueError):vision.extract(self.app,picture(),frozen,case_id=uuid4(),evidence_id=uuid4(),processing_run_id=uuid4())
+
     async def test_hosted_request_is_explicit_and_uses_image_content_blocks(self):
         evidence=await self.upload('image',picture(),filename='image.png',media='image/png');body=self.settings('openai')
         requests=[]

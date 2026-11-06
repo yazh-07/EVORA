@@ -11,6 +11,7 @@ from backend.parsers.transaction_events import project_transaction_records
 from backend.parsers.gps_csv import parse_gps_csv
 from backend.parsers.normalization import normalize_observations
 from backend.parsers.candidate_entities import project_candidate_entities
+from backend.parsers.network_csv import parse_network_csv
 
 
 class SemanticGraphTests(unittest.TestCase):
@@ -68,3 +69,39 @@ class SemanticGraphTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             derive_semantic_links(str(uuid4()), str(self.analysis), [], [],
                                  [x.observation.to_wire() for x in projection.observations])
+
+    def test_network_assigned_ip_retains_each_rows_exact_source_lineage(self):
+        projection=project_candidate_entities(normalize_observations(parse_network_csv(
+            b'timestamp,device_id,ip_address,event\n2026-01-01T00:00:00Z,D-1,203.0.113.1,connected\n'
+            b'2026-01-01T00:00:01Z,D-2,203.0.113.2,connected\n',**self.context)),case_id=self.case)
+        nodes,edges=self.graph(projection,'network_log')
+        self.assertEqual(len(edges),2)
+        labels={node.id:node.label for node in nodes}
+        self.assertEqual({(labels[edge.from_id],labels[edge.to_id]) for edge in edges},
+            {('D-1','203.0.113.1'),('D-2','203.0.113.2')})
+        observations={str(item.observation.id):item.observation for item in projection.observations}
+        for edge in edges:
+            self.assertEqual(edge.kind,'assigned_ip')
+            self.assertEqual(set(edge.evidence_ids),{str(self.evidence)})
+            cited=[observations[oid] for oid in edge.observation_ids]
+            self.assertEqual({item.kind for item in cited},{'network.device','network.ip','network.event'})
+            self.assertEqual(len({item.source_locator.split(', ')[0] for item in cited}),1)
+
+    def test_document_and_media_membership_remains_node_provenance_only(self):
+        from backend.parsers.media_detection import parse_image
+        from backend.parsers.text_document import parse_text_document
+        from backend.parsers.text_entities import project_text_entities
+        from backend.tests.test_media_detection import FACE
+        document=parse_text_document(b'Device D-7 was recorded.\n',**self.context)
+        projection=project_text_entities(document,[dict(line=0,start=7,end=10,kind='device')],case_id=self.case,max_mentions=100)
+        nodes,edges=self.graph(projection,'document')
+        self.assertTrue(projection.entities)
+        self.assertEqual(edges,[])
+        image=parse_image(FACE.read_bytes(),**self.context)
+        nodes,edges=self.graph(image,'image')
+        self.assertTrue(image.entities)
+        self.assertEqual(edges,[])
+        for projection in [projection,image]:
+            for entity in projection.entities:
+                self.assertEqual(entity.evidence_ids,(self.evidence,))
+                self.assertTrue(entity.observation_ids)

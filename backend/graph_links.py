@@ -216,7 +216,7 @@ def derive_candidate_links(
     return sorted(edges, key=lambda item: item.id), sorted(findings, key=lambda item: item.id)
 
 
-SEMANTIC_RULE = "source_semantic_relations/1"
+SEMANTIC_RULE = "source_semantic_relations/2"
 
 
 def derive_semantic_links(case_id, analysis_run_id, evidence, entities, observations):
@@ -254,12 +254,8 @@ def derive_semantic_links(case_id, analysis_run_id, evidence, entities, observat
     groups = defaultdict(list)
     for item in observations:
         groups[source_group(item)].append(item)
-        if item["kind"] in ("image.detection", "video.frame_detection"):
-            for target in by_observation[item["id"]]:
-                add("detected_in_frame", item["evidence_id"], target, [item])
-        if allowed[item["evidence_id"]].get("kind") == "document":
-            for target in by_observation[item["id"]]:
-                add("referenced_in", target, item["evidence_id"], [item])
+        # Source membership is already carried by node.evidence_ids and rendered
+        # as provenance rays. It is not a relationship between forensic subjects.
     locations = {oid: node.id for node in location_nodes(case_id, observations)
                  for oid in node.properties["observation_ids"]}
     for items in groups.values():

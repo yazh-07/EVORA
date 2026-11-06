@@ -9,12 +9,17 @@ import { fileURLToPath } from 'node:url';
 const { chromium } = await import(process.env.EVORA_PLAYWRIGHT_MODULE ?? 'playwright');
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const scratch = await mkdtemp(join(tmpdir(), 'evora-image-understanding-'));
-const calls=[];let failNext=false;
+const calls=[];let failNext=false;let catalogMode='normal';
 const provider=createServer(async(req,res)=>{
  try{
   const chunks=[];for await(const chunk of req)chunks.push(chunk);
   const body=JSON.parse(Buffer.concat(chunks).toString()||'{}');
-  if(req.url==='/v1/models'){res.setHeader('Content-Type','application/json');res.end(JSON.stringify({data:[{id:'synthetic-vision'}]}));return;}
+  if(req.url==='/v1/models'){
+   res.setHeader('Content-Type','application/json');
+   if(req.headers.authorization==='Bearer synthetic-rejected-key'){res.writeHead(401);res.end(JSON.stringify({error:'private provider response'}));return;}
+   const text={id:'synthetic-text',architecture:{input_modalities:['text']}};
+   res.end(JSON.stringify({data:catalogMode==='unknown' ? [{id:'synthetic-text'}] : catalogMode==='empty' ? [text] : [text,{id:'synthetic-vision',architecture:{input_modalities:['text','image']}}]}));return;
+  }
   if(req.url!=='/v1/chat/completions'){res.writeHead(404).end();return;}
   calls.push({body,authorization:req.headers.authorization});
   if(failNext){failNext=false;res.setHeader('Content-Type','application/json');res.end(JSON.stringify({choices:[{finish_reason:'length',message:{content:'{}'}}]}));return;}
@@ -39,7 +44,36 @@ try{
  await dialog.getByRole('switch',{name:'Offline mode — local models only',exact:true}).uncheck();
  await dialog.getByLabel('Provider').selectOption('openai');
  await dialog.getByLabel('API Key',{exact:true}).fill('synthetic-key');await dialog.getByLabel('Base URL',{exact:true}).fill(endpoint);
- await dialog.getByLabel('Vision model',{exact:true}).fill('synthetic-vision');
+ // Test the unsaved online draft while the backend is still in offline mode.
+ await dialog.getByRole('button',{name:'Test Connection & Fetch Models',exact:true}).click();
+ await dialog.getByRole('button',{name:'synthetic-text',exact:true}).click();
+ await dialog.getByRole('button',{name:'Fetch image-capable models',exact:true}).click();
+ const picker=dialog.getByRole('region',{name:'Image-capable models',exact:true});
+ await picker.getByRole('button',{name:'Use synthetic-vision for images',exact:true}).waitFor();
+ assert.equal(await picker.getByRole('button',{name:'Use synthetic-text for images',exact:true}).count(),0);
+ await picker.getByLabel('Filter image-capable models',{exact:true}).fill('no-such-model');
+ await picker.getByText('No image-capable models match this search.',{exact:true}).waitFor();
+ await picker.getByLabel('Filter image-capable models',{exact:true}).fill('vision');
+ await picker.getByRole('button',{name:'Use synthetic-vision for images',exact:true}).click();
+ assert.equal(await dialog.getByLabel('Custom model name',{exact:true}).inputValue(),'synthetic-text');
+ assert.equal(await dialog.getByLabel('Vision model',{exact:true}).inputValue(),'synthetic-vision');
+ assert.equal(await dialog.getByRole('switch',{name:'Use selected model for image description and OCR',exact:true}).isChecked(),false);
+ catalogMode='unknown';await dialog.getByRole('button',{name:'Fetch image-capable models',exact:true}).click();
+ await picker.getByText('The provider does not publish image capabilities in its model list. Enter a supported vision model manually.',{exact:true}).waitFor();
+ catalogMode='empty';await dialog.getByRole('button',{name:'Fetch image-capable models',exact:true}).click();
+ await picker.getByText('No image-capable models were advertised by this provider.',{exact:true}).waitFor();
+ await dialog.getByRole('button',{name:'Save Settings',exact:true}).click();await dialog.waitFor({state:'detached'});
+ await page.getByRole('button',{name:'Settings',exact:true}).click();dialog=page.getByRole('dialog');
+ assert.equal(await dialog.getByLabel('Custom model name',{exact:true}).inputValue(),'synthetic-text');
+ assert.equal(await dialog.getByLabel('Vision model',{exact:true}).inputValue(),'synthetic-vision');
+ catalogMode='normal';await dialog.getByRole('button',{name:'Test Connection & Fetch Models',exact:true}).click();
+ await dialog.getByRole('button',{name:'synthetic-vision · Image input',exact:true}).click();
+ await dialog.getByRole('switch',{name:'Use selected model for image description and OCR',exact:true}).check();
+ assert.equal(await dialog.getByLabel('Vision model',{exact:true}).count(),0);
+ await dialog.getByLabel('API Key',{exact:true}).fill('synthetic-rejected-key');
+ await dialog.getByRole('button',{name:'Test Connection & Fetch Models',exact:true}).click();
+ await dialog.getByText('The provider rejected the API key (HTTP 401). Check that it is a key for this provider.',{exact:true}).waitFor();
+ await dialog.getByLabel('API Key',{exact:true}).fill('synthetic-key');
  await dialog.getByRole('button',{name:'Save Settings',exact:true}).click();await dialog.waitFor({state:'detached'});
  await page.locator('.case-creation summary').click();await page.getByLabel('Title (required)',{exact:true}).fill('Vision protocol acceptance');await page.getByRole('button',{name:'Create case',exact:true}).click();
  await page.getByRole('tab',{name:'Evidence',exact:true}).click();await page.getByRole('button',{name:'＋ Add evidence',exact:true}).click();
@@ -54,6 +88,7 @@ try{
  assert.ok(!(await image.getByRole('button',{name:'Describe image and extract text',exact:true}).isDisabled()),'Successful processing must release the image action');
  assert.equal(calls.length,1);assert.equal(calls[0].authorization,'Bearer synthetic-key');
  const dataUrl=calls[0].body.messages[1].content[1].image_url.url;assert.ok(dataUrl.startsWith('data:image/png;base64,'));assert.ok(Buffer.from(dataUrl.split(',')[1],'base64').length>1000);
+ assert.equal(calls[0].body.model,'synthetic-vision','Shared model must be used without a separate vision model');
  assert.equal(await page.evaluate(()=>JSON.stringify(localStorage).includes('synthetic-key')),false);
  await page.getByRole('button',{name:'Open media inspector',exact:true}).click();
  await page.locator('.media-viewer img').waitFor();
