@@ -167,7 +167,7 @@ jobs:
           path: release-assets/
 
       - name: Generate checksums
-        run: sha256sum release-assets/* | sed 's@release-assets/@@' > release-assets/SHA256SUMS
+        run: sha256sum release-assets/evora-linux-x86_64.tar.gz release-assets/evora-windows-x64.zip release-assets/EVORA-Setup-Windows-x64.exe | sed 's@release-assets/@@' > release-assets/SHA256SUMS
 
       - name: Create GitHub Release and attach binaries
         uses: softprops/action-gh-release@v2
