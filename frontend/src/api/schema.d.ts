@@ -11,6 +11,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** Read the workstation ChatGPT connection status */
         get: operations["getChatGPTStatus"];
         put?: never;
         post?: never;
@@ -29,6 +30,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** Start ChatGPT authorization for this workstation */
         post: operations["connectChatGPT"];
         delete?: never;
         options?: never;
@@ -45,6 +47,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** Disconnect the workstation ChatGPT account */
         post: operations["disconnectChatGPT"];
         delete?: never;
         options?: never;
@@ -79,6 +82,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** Read locally available video and speech capabilities */
         get: operations["getMediaCapabilities"];
         put?: never;
         post?: never;
@@ -1763,6 +1767,7 @@ export interface operations {
                     };
                 };
             };
+            401: components["responses"]["Unauthorized"];
         };
     };
     analyzeImage: {
