@@ -78,6 +78,7 @@ var
   AIPage: TWizardPage;
   OllamaRadio: TRadioButton;
   CloudRadio: TRadioButton;
+  CustomRadio: TRadioButton;
   OllamaURLEdit: TNewEdit;
   OllamaModelEdit: TNewEdit;
   CloudURLEdit: TNewEdit;
@@ -87,18 +88,63 @@ var
   CloudLabel1, CloudLabel2, CloudLabel3: TLabel;
 
 procedure OnAIRadioClick(Sender: TObject);
+var
+  UseCloudSettings: Boolean;
 begin
+  UseCloudSettings := CloudRadio.Checked or CustomRadio.Checked;
+
   OllamaURLEdit.Enabled := OllamaRadio.Checked;
   OllamaModelEdit.Enabled := OllamaRadio.Checked;
   OllamaLabel1.Enabled := OllamaRadio.Checked;
   OllamaLabel2.Enabled := OllamaRadio.Checked;
 
-  CloudURLEdit.Enabled := CloudRadio.Checked;
-  CloudModelEdit.Enabled := CloudRadio.Checked;
-  CloudKeyEdit.Enabled := CloudRadio.Checked;
-  CloudLabel1.Enabled := CloudRadio.Checked;
-  CloudLabel2.Enabled := CloudRadio.Checked;
-  CloudLabel3.Enabled := CloudRadio.Checked;
+  CloudURLEdit.Enabled := UseCloudSettings;
+  CloudModelEdit.Enabled := UseCloudSettings;
+  CloudKeyEdit.Enabled := UseCloudSettings;
+  CloudLabel1.Enabled := UseCloudSettings;
+  CloudLabel2.Enabled := UseCloudSettings;
+  CloudLabel3.Enabled := UseCloudSettings;
+
+  if CustomRadio.Checked then
+  begin
+    CloudLabel1.Caption := 'Custom API Base URL:';
+    CloudLabel2.Caption := 'Provider Model ID:';
+    if CloudURLEdit.Text = 'https://openrouter.ai/api/v1' then
+      CloudURLEdit.Text := '';
+    if CloudModelEdit.Text = 'openai/gpt-4o-mini' then
+      CloudModelEdit.Text := '';
+  end
+  else
+  begin
+    CloudLabel1.Caption := 'API Base URL:';
+    CloudLabel2.Caption := 'Model Name:';
+    if CloudRadio.Checked then
+    begin
+      if Trim(CloudURLEdit.Text) = '' then
+        CloudURLEdit.Text := 'https://openrouter.ai/api/v1';
+      if Trim(CloudModelEdit.Text) = '' then
+        CloudModelEdit.Text := 'openai/gpt-4o-mini';
+    end;
+  end;
+end;
+
+function NextButtonClick(CurPageID: Integer): Boolean;
+begin
+  Result := True;
+  if (CurPageID = AIPage.ID) and (CloudRadio.Checked or CustomRadio.Checked) then
+  begin
+    if (Trim(CloudURLEdit.Text) = '') or (Trim(CloudModelEdit.Text) = '') then
+    begin
+      MsgBox('Enter the provider API base URL and model ID before continuing.', mbError, MB_OK);
+      Result := False;
+    end
+    else if (Pos('https://', Lowercase(Trim(CloudURLEdit.Text))) <> 1) and
+            (Pos('http://', Lowercase(Trim(CloudURLEdit.Text))) <> 1) then
+    begin
+      MsgBox('The provider API base URL must start with http:// or https://.', mbError, MB_OK);
+      Result := False;
+    end;
+  end;
 end;
 
 procedure InitializeWizard;
@@ -106,7 +152,7 @@ begin
   // Create Custom Page for AI Assistant Selection
   AIPage := CreateCustomPage(wpSelectDir,
     'Forensic AI Assistant Configuration',
-    'Choose how EVORA generates executive briefs and evidence Q&A synthesis.');
+    'Choose local Ollama, a hosted provider, or a custom OpenAI-compatible endpoint.');
 
   OllamaRadio := TRadioButton.Create(AIPage);
   OllamaRadio.Parent := AIPage.Surface;
@@ -120,26 +166,26 @@ begin
 
   OllamaLabel1 := TLabel.Create(AIPage);
   OllamaLabel1.Parent := AIPage.Surface;
-  OllamaLabel1.Top := ScaleY(38);
+  OllamaLabel1.Top := ScaleY(116);
   OllamaLabel1.Left := ScaleX(30);
   OllamaLabel1.Caption := 'Ollama Endpoint URL:';
 
   OllamaURLEdit := TNewEdit.Create(AIPage);
   OllamaURLEdit.Parent := AIPage.Surface;
-  OllamaURLEdit.Top := ScaleY(35);
+  OllamaURLEdit.Top := ScaleY(113);
   OllamaURLEdit.Left := ScaleX(160);
   OllamaURLEdit.Width := ScaleX(240);
   OllamaURLEdit.Text := 'http://127.0.0.1:11434';
 
   OllamaLabel2 := TLabel.Create(AIPage);
   OllamaLabel2.Parent := AIPage.Surface;
-  OllamaLabel2.Top := ScaleY(68);
+  OllamaLabel2.Top := ScaleY(146);
   OllamaLabel2.Left := ScaleX(30);
   OllamaLabel2.Caption := 'Model Name:';
 
   OllamaModelEdit := TNewEdit.Create(AIPage);
   OllamaModelEdit.Parent := AIPage.Surface;
-  OllamaModelEdit.Top := ScaleY(65);
+  OllamaModelEdit.Top := ScaleY(143);
   OllamaModelEdit.Left := ScaleX(160);
   OllamaModelEdit.Width := ScaleX(240);
   OllamaModelEdit.Text := 'llama3.1:8b';
@@ -147,49 +193,59 @@ begin
   // Cloud AI Radio Option
   CloudRadio := TRadioButton.Create(AIPage);
   CloudRadio.Parent := AIPage.Surface;
-  CloudRadio.Top := ScaleY(110);
+  CloudRadio.Top := ScaleY(44);
   CloudRadio.Left := ScaleX(10);
   CloudRadio.Width := ScaleX(400);
-  CloudRadio.Caption := 'Online Cloud Model (OpenAI, OpenRouter, Groq, OmniRoute)';
+  CloudRadio.Caption := 'Hosted Provider (OpenAI, OpenRouter, Groq, OmniRoute)';
   CloudRadio.Font.Style := [fsBold];
   CloudRadio.Checked := False;
   CloudRadio.OnClick := @OnAIRadioClick;
 
+  CustomRadio := TRadioButton.Create(AIPage);
+  CustomRadio.Parent := AIPage.Surface;
+  CustomRadio.Top := ScaleY(78);
+  CustomRadio.Left := ScaleX(10);
+  CustomRadio.Width := ScaleX(400);
+  CustomRadio.Caption := 'Custom OpenAI-Compatible API';
+  CustomRadio.Font.Style := [fsBold];
+  CustomRadio.Checked := False;
+  CustomRadio.OnClick := @OnAIRadioClick;
+
   CloudLabel1 := TLabel.Create(AIPage);
   CloudLabel1.Parent := AIPage.Surface;
-  CloudLabel1.Top := ScaleY(138);
+  CloudLabel1.Top := ScaleY(166);
   CloudLabel1.Left := ScaleX(30);
   CloudLabel1.Caption := 'API Base URL:';
 
   CloudURLEdit := TNewEdit.Create(AIPage);
   CloudURLEdit.Parent := AIPage.Surface;
-  CloudURLEdit.Top := ScaleY(135);
+  CloudURLEdit.Top := ScaleY(163);
   CloudURLEdit.Left := ScaleX(160);
   CloudURLEdit.Width := ScaleX(240);
   CloudURLEdit.Text := 'https://openrouter.ai/api/v1';
 
   CloudLabel2 := TLabel.Create(AIPage);
   CloudLabel2.Parent := AIPage.Surface;
-  CloudLabel2.Top := ScaleY(168);
+  CloudLabel2.Top := ScaleY(196);
   CloudLabel2.Left := ScaleX(30);
   CloudLabel2.Caption := 'Model Name:';
 
   CloudModelEdit := TNewEdit.Create(AIPage);
   CloudModelEdit.Parent := AIPage.Surface;
-  CloudModelEdit.Top := ScaleY(165);
+  CloudModelEdit.Top := ScaleY(193);
   CloudModelEdit.Left := ScaleX(160);
   CloudModelEdit.Width := ScaleX(240);
   CloudModelEdit.Text := 'openai/gpt-4o-mini';
 
   CloudLabel3 := TLabel.Create(AIPage);
   CloudLabel3.Parent := AIPage.Surface;
-  CloudLabel3.Top := ScaleY(198);
+  CloudLabel3.Top := ScaleY(226);
   CloudLabel3.Left := ScaleX(30);
   CloudLabel3.Caption := 'API Key:';
 
   CloudKeyEdit := TPasswordEdit.Create(AIPage);
   CloudKeyEdit.Parent := AIPage.Surface;
-  CloudKeyEdit.Top := ScaleY(195);
+  CloudKeyEdit.Top := ScaleY(223);
   CloudKeyEdit.Left := ScaleX(160);
   CloudKeyEdit.Width := ScaleX(240);
   CloudKeyEdit.Text := '';
