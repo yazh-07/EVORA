@@ -8,7 +8,7 @@ Basic processing extracts documents/CSV records and runs local image/video detec
 
 Images with only basic completed output can still receive description/OCR enrichment. Existing completed vision output is skipped. Inspect a source's individual controls to intentionally request a new analysis or change sampling. Batch video uses a 5-second sample interval, a 12-frame cap and no speech transcription. Standalone audio is marked skipped and retains its individual transcription workflow.
 
-Progress shows completed, failed, skipped and unconfirmed items, with individual run IDs when available. **Stop queue**, leaving the case, unmounting the view or changing local sessions stops future queue requests. It does not cancel work already accepted by the server. Keep the case open while the browser queue runs. Run case analysis after processing to include the new outputs; the batch does not silently start an investigation analysis.
+Progress shows completed, failed, skipped and unconfirmed items, with individual run IDs when available. **Stop queue**, leaving the case, unmounting the view or changing local sessions stops future queue requests. It does not cancel work already accepted by the server. Keep the Evidence tab open while the browser queue runs. Switching tabs also unmounts this queue and stops future requests. Run case analysis after processing to include the new outputs; the batch does not silently start an investigation analysis.
 
 Reviewers cannot start the batch. Existing backend case access checks, file preflight, immutable output publication and original-file integrity remain authoritative. This update adds no backend endpoint or schema change.
 

@@ -50,7 +50,7 @@ export function BulkProcessing({ caseId }: { caseId: string }) {
         {busy && <button type="button" onClick={controller.stop}>Stop queue</button>}
       </div>
       <BulkProcessingResults state={state} />
-      <p className="scope-note">Keep this case open while the queue runs. Stopping or leaving the case stops future requests; server work already started may continue. After processing, run case analysis to include the new outputs.</p>
+      <p className="scope-note">Keep the Evidence tab open while the queue runs. Stopping or leaving this tab stops future requests; server work already started may continue. After processing, run case analysis to include the new outputs.</p>
     </>}
   </section>;
 }
