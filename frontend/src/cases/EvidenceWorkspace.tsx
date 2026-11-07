@@ -172,7 +172,7 @@ export function EvidenceProcessingInspection({ item, sourceFocus }: { item: Evid
   }, []);
   return <>
     <div className="extraction-heading"><h3>Extract and inspect</h3><p>Processing derives observations from the original. Review the source before relying on an extraction.</p></div>
-    <StartProcessing caseId={item.case_id} evidenceId={item.id} onCompleted={onProcessingCompleted} />
+    <StartProcessing caseId={item.case_id} evidenceId={item.id} sourceKind={item.kind} filename={item.filename} onCompleted={onProcessingCompleted} />
     {completedRunId && <label><input type="checkbox" checked={pinnedRunId !== undefined} onChange={event => setPinnedRunId(event.target.checked ? completedRunId : undefined)} />
       Pin observations to completed run {pinnedRunId ?? completedRunId}
     </label>}

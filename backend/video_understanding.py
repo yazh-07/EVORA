@@ -27,7 +27,7 @@ from backend.errors import AccessError
 from backend.parsers.normalization import NormalizedObservation, NormalizationResult, TimeNormalization
 
 VERSION = 'video-understanding/1'
-PROCESSOR_VERSION = 'processing-lifecycle/10'
+PROCESSOR_VERSION = 'processing-lifecycle/13'
 router = APIRouter()
 
 

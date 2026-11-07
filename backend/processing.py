@@ -52,7 +52,12 @@ def _json(value):
 
 
 def _wire(row):
-    return {key: row[key] for key in _WIRE if row[key] is not None}
+    result = {key: row[key] for key in _WIRE if row[key] is not None}
+    if 'config_json' in row.keys():
+        config = json.loads(row['config_json'])
+        if 'source_kind' in config:
+            result.update(source_kind=config['source_kind'], processing_kind=config['kind'])
+    return result
 
 
 def _not_found():
@@ -315,14 +320,32 @@ async def run_job(app, run_id):
 @router.post('/api/v1/cases/{caseId}/evidence/{evidenceId}/processing-runs', operation_id='startProcessing')
 async def start_processing(caseId: UUID, evidenceId: UUID, request: Request, background: BackgroundTasks,
                            grant: Annotated[CaseAccessGrant, Depends(require_case_access)]):
+    return await _accept_processing(caseId, evidenceId, request, background, grant)
+
+
+@router.post('/api/v1/cases/{caseId}/evidence/{evidenceId}/processing-runs/interpret-as', operation_id='interpretEvidence')
+async def interpret_evidence(caseId: UUID, evidenceId: UUID, request: Request, background: BackgroundTasks,
+                             grant: Annotated[CaseAccessGrant, Depends(require_case_access)]):
+    try:
+        body = await request.json()
+    except (ValueError, UnicodeError):
+        raise invalid_input() from None
+    if (not isinstance(body, dict) or set(body) != {'kind'} or
+            body['kind'] not in ('mobile_log', 'network_log', 'gps', 'message', 'transaction')):
+        raise invalid_input()
+    return await _accept_processing(caseId, evidenceId, request, background, grant, body['kind'])
+
+
+async def _accept_processing(caseId, evidenceId, request, background, grant, interpretation=None):
     keys = request.headers.getlist('idempotency-key')
     if len(keys) != 1 or not 1 <= len(keys[0]) <= 128 or request.query_params:
         raise invalid_input()
-    async for chunk in request.stream():
-        if chunk:
-            raise invalid_input()
+    if interpretation is None:
+        async for chunk in request.stream():
+            if chunk:
+                raise invalid_input()
     digest = hashlib.sha256(keys[0].encode('utf-8')).hexdigest()
-    fingerprint = hashlib.sha256(_json({'method': 'POST', 'path': request.url.path, 'query': [], 'body': None}).encode('utf-8')).hexdigest()
+    fingerprint = hashlib.sha256(_json({'method': 'POST', 'path': request.url.path, 'query': [], 'body': {'kind': interpretation} if interpretation else None}).encode('utf-8')).hexdigest()
     with request.app.state.database.connect() as connection:
         connection.execute('BEGIN IMMEDIATE')
         existing = connection.execute('SELECT * FROM processing_runs WHERE actor_id=? AND case_id=? AND key_digest=?',
@@ -335,13 +358,17 @@ async def start_processing(caseId: UUID, evidenceId: UUID, request: Request, bac
                                       (str(evidenceId), str(caseId))).fetchone()
         if evidence is None:
             raise _not_found()
-        adapter = adapter_for(evidence['kind'])
+        if interpretation and evidence['kind'] != 'document':
+            raise invalid_input()
+        adapter = adapter_for(interpretation or evidence['kind'])
         if adapter is None:
             raise AccessError(415, 'UNSUPPORTED_MEDIA', 'File cannot be processed as declared.')
         if evidence['kind'] == 'image':
             preflight_image(request, grant, evidence)
         config = {key: evidence[key] for key in ('kind', 'sha256', 'size_bytes')}
-        policy = select_deeper_processing(connection, str(caseId), str(evidenceId), evidence['kind'])
+        if interpretation:
+            config.update(kind=interpretation, source_kind=evidence['kind'])
+        policy = select_deeper_processing(connection, str(caseId), str(evidenceId), config['kind'])
         config.update(_versions(adapter, deeper=bool(policy)))
         config.update(policy)
         run_id = str(uuid4())

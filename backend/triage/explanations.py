@@ -91,7 +91,7 @@ def generate_triage_explanation(triage_result: dict, observations_by_id: dict | 
 def generate_finding_explanation(finding: dict, observations_by_id: dict) -> str:
     """Explain A02 only, failing closed on unsupported rules or broken joins."""
     case_id = _uuid(finding['case_id'], 'case_id')
-    if finding['rule'] != RULE or finding['kind'] != 'relationship':
+    if finding['rule'] not in (RULE, 'candidate_identifier_group:v1') or finding['kind'] != 'relationship':
         raise ValueError('Unsupported finding rule/kind')
     sources = _sources(observations_by_id, case_id)
     oids, eids = finding['observation_ids'], finding['evidence_ids']
@@ -102,12 +102,12 @@ def generate_finding_explanation(finding: dict, observations_by_id: dict) -> str
     cited = [sources[oid] for oid in sorted(oids)]
     if {source['evidence_id'] for source in cited} != set(eids) or len(eids) < 2:
         raise ValueError('Finding evidence must equal its cross-source observation sources')
-    keys = {_text(source.get('entity_key'), 'Observation.entity_key') for source in cited}
-    if len(keys) != 1:
-        raise ValueError('Shared-identifier rule requires one exact candidate key')
+    keys = {_text(source['entity_key'], 'Observation.entity_key') for source in cited if source.get('entity_key') is not None}
+    if len(keys) != 1 or {source['evidence_id'] for source in cited if source.get('entity_key') in keys} != set(eids):
+        raise ValueError('Shared-identifier rule requires one exact candidate key per source')
     if finding['confidence'] != 0 or isinstance(finding['confidence'], bool):
         raise ValueError('A02 candidate confidence must be unassessed (0)')
-    return (f"{RULE}: candidate match on exact namespaced identifier {next(iter(keys))!r} "
+    return (f"{finding['rule']}: candidate match on exact namespaced identifier {next(iter(keys))!r} "
             'across distinct evidence items. Supported by '
             + '; '.join(_citation(source) for source in cited)
             + '. Confidence 0 is unassessed association, not a measured probability or extraction score. '

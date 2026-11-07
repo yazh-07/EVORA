@@ -2,6 +2,7 @@
 import hashlib
 from importlib import metadata
 import json
+import re
 from pathlib import Path, PurePosixPath
 import platform
 import sys
@@ -60,11 +61,21 @@ def run():
             if (len(lines)>100000 or any(not isinstance(x,str) or len(x)>limits['max_line_chars'] for x in lines)
                     or sum(map(len,lines))>limits['max_source_chars']):raise ModelFailure('INPUT_LIMIT')
             found=[]
+            # Explicit role statements outrank an uncertain model category.
+            names = set()
+            name = r"([A-Z][a-z]+(?:[ '-][A-Z][a-z]+){1,2})"
+            for line in lines:
+                for pattern in (r'allocated to '+name, name+r' (?:uses device|is the custodian|is assigned)'):
+                    names.update(match[1] for match in re.finditer(pattern, line) if not re.search(r'\b(?:Inc|Ltd|LLC|Corp|Corporation|Company|Labs|Group|Team)$',match[1]))
             # Even genuinely empty input exercises the loaded pipeline, never a rules-only success.
             if not lines:model('')
             for index,doc in enumerate(model.pipe(lines,batch_size=16)):
                 spans=[dict(start=ent.start_char,end=ent.end_char,kind=LABELS[ent.label_])
                        for ent in doc.ents if ent.label_ in LABELS]
+                for name in sorted(names):
+                    for match in re.finditer(r'(?<!\w)'+re.escape(name)+r'(?!\w)',lines[index]):
+                        spans=[span for span in spans if not (span['start'] < match.end() and match.start() < span['end'])]
+                        spans.append(dict(start=match.start(),end=match.end(),kind='person'))
                 for span in merge_spans(lines[index],spans):
                     found.append(dict(line=index,**span))
                     if len(found)>limits['max_mentions']:raise ModelFailure('MENTION_LIMIT')

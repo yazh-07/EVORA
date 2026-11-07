@@ -257,6 +257,41 @@ paths:
         '400': { $ref: '#/components/responses/BadRequest' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '404': { $ref: '#/components/responses/NotFound' }
+  /api/v1/cases/{caseId}/evidence/{evidenceId}/processing-runs/interpret-as:
+    post:
+      tags: [Processing]
+      operationId: interpretEvidence
+      summary: Interpret an existing document as a structured CSV export
+      description: >-
+        Creates a new immutable processing run using the selected CSV adapter.
+        Preserves original bytes, uploaded document kind, hashes and all earlier runs.
+        The frozen configuration records the original source kind and selected parser.
+        Normal case authorization, parser validation and idempotency checks apply.
+      parameters:
+        - { $ref: '#/components/parameters/CaseId' }
+        - { $ref: '#/components/parameters/EvidenceId' }
+        - { $ref: '#/components/parameters/IdempotencyKey' }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [kind]
+              properties:
+                kind: { type: string, enum: [mobile_log, network_log, gps, message, transaction] }
+      responses:
+        '202':
+          description: Structured interpretation queued
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ProcessingRun' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '415': { $ref: '#/components/responses/UnsupportedMedia' }
   /api/v1/cases/{caseId}/evidence/{evidenceId}/processing-runs:
     parameters:
       - { $ref: '#/components/parameters/CaseId' }
@@ -942,6 +977,8 @@ components:
         evidence_id: { type: string, format: uuid }
         status: { $ref: '#/components/schemas/RunStatus' }
         processor_version: { type: string }
+        source_kind: { type: string, enum: [document], description: Original uploaded kind retained when using structured interpretation. }
+        processing_kind: { type: string, enum: [mobile_log, network_log, gps, message, transaction], description: Adapter selected for this immutable interpretation run. }
         created_at: { type: string, format: date-time }
         finished_at: { type: string, format: date-time }
         error: { type: string }

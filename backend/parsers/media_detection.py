@@ -20,8 +20,8 @@ from backend.parsers.candidate_entities import CandidateEntity, CandidateObserva
 from backend.parsers.normalization import NormalizationResult, TimeNormalization, normalize_timestamp
 from backend.parsers.source_events import SourceEvent, SourceEventResult
 
-PARSER_VERSION = 'media-detection/1'
-PROCESSOR_VERSION = 'processing-lifecycle/8'
+PARSER_VERSION = 'media-detection/2'
+PROCESSOR_VERSION = 'processing-lifecycle/11'
 MAX_SOURCE_BYTES = 50 * 1024 * 1024
 MAX_DATA_ROWS = 10000  # detections
 MAX_FRAMES = 3600
@@ -179,7 +179,7 @@ def parse_media(source, *, kind, case_id, evidence_id, processing_run_id):
                 locator = f'frame={index}; time_offset={offset:.6f}s; box={x},{y},{w},{h}'
                 oid = uuid5(processing_run_id, label + ':' + locator)
                 entity_id = uuid5(oid, 'candidate')
-                entity_kind = label.split(':')[0]
+                entity_kind = 'visual_candidate'
                 # Source-scoped labels prevent fabricated cross-evidence identity matches.
                 name = f'{evidence_id}:frame-{index}:{entity_kind}-{len(entities)+1}'
                 key = f'{entity_kind}:{name}'

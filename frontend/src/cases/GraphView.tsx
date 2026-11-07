@@ -1,4 +1,5 @@
 import type { CSSProperties } from 'react';
+import { compactGraph, isVisualCandidate } from './graphPresentation';
 import { forensicTypes, graphAppearance, isRawLogEvent } from './graphAppearance';
 import type { SourceFocus } from './mediaLocators';
 import './GraphView.css';
@@ -10,14 +11,15 @@ import type { Graph, GraphSelection, GraphState } from './graphController';
 import { defaultSettings, useSettings, type Settings } from '../settings/settings';
 
 // A01 currently preserves source subkinds in the free-form wire kind. Unknown kinds stay explicit.
-const nodeShape = (kind: string) => ['person', 'face', 'vehicle', 'plate', 'device', 'ip', 'location', 'account', 'document', 'video', 'camera', 'entity'].includes(kind) ? 'entity' :
-  ['network.activity', 'gps.location', 'event'].includes(kind) ? 'event' : kind === 'evidence' ? 'evidence' : 'other';
+const nodeShape = (kind: string) => ['person', 'face', 'vehicle', 'plate', 'device', 'ip', 'location', 'account', 'document', 'video', 'camera', 'entity', 'visual_candidate'].includes(kind) ? 'entity' :
+  ['network.activity', 'gps.location', 'visual.detected', 'transaction.record', 'mobile.activity', 'event'].includes(kind) ? 'event' : kind === 'evidence' ? 'evidence' : 'other';
 
 type Point = { x: number; y: number };
-type GraphViewOptions = { filter: 'All' | 'Evidence' | 'Entities' | 'Events'; query: string; zoom: number; hideRawEvents?: boolean; focusSelection?: boolean };
-const defaultView: GraphViewOptions = { filter: 'All', query: '', zoom: 1 };
+type GraphViewOptions = { filter: 'All' | 'Evidence' | 'Entities' | 'Events'; query: string; zoom: number; hideRawEvents?: boolean; focusSelection?: boolean; compact?: boolean };
+const defaultView: GraphViewOptions = { filter: 'All', query: '', zoom: 1, compact: true };
 const shortLabel = (label: string, length = 28) => label.length > length ? `${label.slice(0, length - 1)}…` : label;
 const byId = (a: { id: string }, b: { id: string }) => a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+const nodeCategory = (n: Graph['nodes'][number]) => isVisualCandidate(n) ? (n.kind === 'visual.detected' ? 'visual detection event' : 'unverified visual candidate') : n.properties?.filename && n.properties.kind === 'image' ? 'image file' : n.properties?.filename && n.properties.kind === 'video' ? 'video file' : n.kind;
 const isEvidence = (n: Graph['nodes'][number]) => ['evidence', 'camera', 'document'].includes(n.kind);
 
 function displayLabels(nodes: Graph['nodes'], preference: Settings['default_node_label'] = 'source_description') {
@@ -164,7 +166,7 @@ function GraphMotion({ graph, view, onViewChange, selection }: { graph: Graph; v
   const current = useRef({ view, onViewChange, selection });
   const runtime = useRef<{ redraw: () => void; zoom: (value: number) => void; highlight: () => void } | null>(null);
   current.current = { view, onViewChange, selection };
-  useEffect(() => {
+  useLayoutEffect(() => {
     const svg = anchor.current!.ownerSVGElement!;
     const world = svg.querySelector<SVGGElement>('.graph-world')!;
     const canvas = svg.parentElement!;
@@ -375,9 +377,9 @@ export function GraphPanel({ state, load, select, inspectEvidence, view = defaul
   dismiss?: () => void; view?: GraphViewOptions; onViewChange?: (view: GraphViewOptions) => void;
   settings?: Settings;
 }) {
-  const graph = state.graph;
+  const graph = state.graph && view.compact ? compactGraph(state.graph) : state.graph;
   const selection = state.selection;
-  const node = selection?.kind === 'node' ? graph?.nodes.find(n => n.id === selection.id) : undefined;
+  const node = selection?.kind === 'node' ? (graph?.nodes.find(n => n.id === selection.id) ?? state.graph?.nodes.find(n => n.id === selection.id)) : undefined;
   const edge = selection?.kind === 'edge' ? graph?.edges.find(e => e.id === selection.id) : undefined;
   const record = node ?? edge;
   const layout = clusteredLayout(graph);
@@ -411,6 +413,7 @@ export function GraphPanel({ state, load, select, inspectEvidence, view = defaul
     <button type="button" className="identifier" onClick={() => inspectEvidence(id, focus)} aria-label={`Inspect source evidence ${id}: ${label}`}>{label}</button> : <span className="identifier">{label}</span>;
   return <section className="panel knowledge-graph" aria-label="Knowledge Graph" aria-busy={state.status === 'loading'}>
     <span className="section-label">RELATIONSHIPS AND THEIR SOURCES</span><h2>Explore connections</h2>
+    {view.compact && <p className="scope-note">Grouped by exact identifier or reported coordinates, not verified real-world identity. Raw events, file nodes and unverified visual detections are available under Show all source records.</p>}
     <p>Candidate relationships require human verification; confidence does not establish identity, source reliability or guilt.</p>
     {state.status === 'loading' && <p role="status">Loading graph...</p>}
     {state.message && <p role="alert">{state.message}</p>}
@@ -419,8 +422,9 @@ export function GraphPanel({ state, load, select, inspectEvidence, view = defaul
       {graph.analysis_run_id && <p className="identifier">Selected completed analysis: {graph.analysis_run_id}</p>}
       <div className="graph-layout" data-inspecting={!!record}><div className="graph-primary">
       {!graph.analysis_run_id ? <p>No analysis run completed yet. Start analysis to generate graph.</p> :
-        graph.nodes.length === 0 ? <p>No graph nodes in this completed analysis. Available inputs may not contain extracted relationships.</p> : <>
+        state.graph?.nodes.length === 0 ? <p>No graph nodes in this completed analysis. Available inputs may not contain extracted relationships.</p> : <>
           <div className="graph-toolbar" role="group" aria-label="Graph controls">
+            <button type="button" aria-pressed={!!view.compact} onClick={() => changeView({ compact: !view.compact, ...(!view.compact ? { filter: 'All' } : {}) })}>{view.compact ? 'Show all source records' : 'Group identifiers and hide raw candidates'}</button>
             <div className="graph-view-controls" role="group" aria-label="View controls">
               <button type="button" aria-label="Zoom in" disabled={view.zoom >= 2.4} onClick={() => changeView({ zoom: Math.min(2.4, view.zoom + .2) })}>+</button>
               <output aria-label="Graph zoom">{Math.round(view.zoom * 100)}%</output>
@@ -434,7 +438,7 @@ export function GraphPanel({ state, load, select, inspectEvidence, view = defaul
             </div>
             <div className="graph-filters" role="group" aria-label="Filter node types">
               {(['All', 'Evidence', 'Entities', 'Events'] as const).map(filter =>
-                <button type="button" key={filter} aria-pressed={view.filter === filter} onClick={() => changeView({ filter })}>{filter}</button>)}
+                <button type="button" key={filter} aria-pressed={view.filter === filter} onClick={() => changeView({ filter, ...(['Evidence','Events'].includes(filter) ? { compact: false } : {}), ...(filter === 'Events' ? { hideRawEvents: false } : {}) })}>{filter}</button>)}
             </div>
             <button type="button" disabled={!node && !view.focusSelection} aria-pressed={!!view.focusSelection} onClick={() => changeView({ focusSelection: !view.focusSelection })}>Focus on selected node</button>
             <button type="button" aria-pressed={!!view.hideRawEvents} onClick={() => changeView({ hideRawEvents: !view.hideRawEvents })}>Hide raw log events</button>
@@ -443,10 +447,11 @@ export function GraphPanel({ state, load, select, inspectEvidence, view = defaul
                 onChange={event => changeView({ query: event.target.value })} />
             </label>
           </div>
+          {view.compact && graph.nodes.length === 0 && <p className="scope-note">No grouped subjects in this view. Use Show all source records to inspect files, raw events and unverified candidates.</p>}
           <div className="graph-summary"><span>{graph.nodes.length} nodes; {graph.edges.length} candidate relationships</span>
             <span>{layout.clusters.length} evidence sources · {layout.shared.length} multi-source nodes</span></div>
           <p className="graph-provenance-note">Source evidence binds each cluster. Only labeled lines represent candidate relationships.</p>
-          {graph.edges.length === 0 && <p className="graph-unlinked">No candidate relationships in this snapshot. Source clusters remain available for inspection.</p>}
+          {graph.edges.length === 0 && <p className="graph-unlinked">{view.compact ? 'No subject-to-subject relationships in this grouped view. Exact-identifier matches are summarized on nodes.' : 'No candidate relationships in this snapshot. Source clusters remain available for inspection.'}</p>}
           <p className="graph-filter-status" role="status">{visibleNodes.length} nodes shown{query && ` · ${visibleNodes.filter(matches).length} search matches`}{visibleNodes.length === 0 && ' · No nodes match this filter.'}</p>
           <div className="graph-scroll" role="region" aria-label="Case graph diagram" tabIndex={0}>
             <svg width="100%" height="100%" viewBox={`${layout.minX} ${layout.minY} ${layout.width} ${layout.height}`}
@@ -456,11 +461,11 @@ export function GraphPanel({ state, load, select, inspectEvidence, view = defaul
               </marker></defs>
               <g className="graph-world">
               <g className="graph-clusters" aria-label="Source evidence clusters">
-                {layout.clusters.map(c => <g key={c.id} className="graph-cluster" data-evidence-id={c.id}>
+                {(view.compact ? [] : layout.clusters).map(c => <g key={c.id} className="graph-cluster" data-evidence-id={c.id}>
                   <title>{`${labels.get(c.id) ?? c.label} · ${c.id} · Source evidence · ${c.members.length} local nodes`}</title>
                 </g>)}
               </g>
-              <g className="graph-provenance-rays" aria-label="Evidence lineage" display={settings.show_provenance_rays ? undefined : 'none'} aria-hidden={!settings.show_provenance_rays}>
+              <g className="graph-provenance-rays" aria-label="Evidence lineage" display={settings.show_provenance_rays && !view.compact ? undefined : 'none'} aria-hidden={!settings.show_provenance_rays}>
                 {layout.clusters.flatMap(c => {
                   const anchor = positions.get(c.id);
                   if (!anchor || !visibleIds.has(c.id)) return [];
@@ -507,7 +512,7 @@ export function GraphPanel({ state, load, select, inspectEvidence, view = defaul
                 const { x, y } = positions.get(n.id)!;
                 const label = labels.get(n.id)!;
                 const appearance = graphAppearance(n.kind, n.entity_type);
-                return <g key={n.id} role="button" tabIndex={0} aria-label={`Inspect node ${n.kind}: ${label}`} aria-pressed={node?.id === n.id}
+                return <g key={n.id} role="button" tabIndex={0} aria-label={`Inspect node ${nodeCategory(n)}: ${label}`} aria-pressed={node?.id === n.id}
                   style={{ '--particle': appearance.color } as CSSProperties} data-entity-type={n.entity_type || n.kind}
                   data-node-id={n.id} data-evidence-ids={n.evidence_ids.join(' ')} data-cross-source={n.evidence_ids.length > 1}
                   data-search-match={query ? matches(n) : undefined}
@@ -519,7 +524,7 @@ export function GraphPanel({ state, load, select, inspectEvidence, view = defaul
                   <path className="graph-node-icon" d={appearance.path} transform={`translate(${x - 8} ${y - 8}) scale(.667)`} />
                   <circle className="graph-node-hit" cx={x} cy={y} r="22" />
                   <text x={x + 18} y={y + 4} textAnchor="start"><title>{label}</title>{shortLabel(label, 27)}</text>
-                  <text className="graph-node-kind" x={x + 18} y={y + 20} textAnchor="start">{shortLabel(n.kind, 22)}{n.evidence_ids.length > 1 ? ` · ${n.evidence_ids.length} sources` : ''}</text>
+                  <text className="graph-node-kind" x={x + 18} y={y + 20} textAnchor="start">{shortLabel(nodeCategory(n), 22)}{n.evidence_ids.length > 1 ? ` · ${n.evidence_ids.length} sources` : ''}</text>
                   {n.evidence_ids.length > 1 && <text className="graph-shared-label" x={x + 18} y={y + 35} textAnchor="start">Cross-source correlation</text>}
                 </g>;
               })}
@@ -548,8 +553,10 @@ export function GraphPanel({ state, load, select, inspectEvidence, view = defaul
           <h3>{node ? 'Node details' : 'Candidate relationship details'}</h3>
           {node && !visibleIds.has(node.id) && <p>Selected node is hidden by the current filter.</p>}
           {edge && !visibleEdges.some(e => e.id === edge.id) && <p>Selected relationship is hidden by the current filter.</p>}
-          <dl><dt>ID</dt><dd className="identifier">{record.id}</dd><dt>Kind</dt><dd>{record.kind}</dd>
-            {node && <><dt>Label</dt><dd>{labels.get(node.id)}</dd><dt>Entity type</dt><dd>{node.entity_type || node.kind}</dd></>}
+          {node && Array.isArray(node.properties?.source_node_ids) && node.properties.source_node_ids.length > 1 && <p>Grouped view of {node.properties.source_node_ids.length} source candidates. Each source record is retained; grouping is not identity verification.</p>}
+          {node && isVisualCandidate(node) && <p className="scope-note">Unverified classifier candidate. A matching image region does not establish an object type, identity or real-world event. Detector scores are uncalibrated.</p>}
+          <dl><dt>ID</dt><dd className="identifier">{record.id}</dd><dt>Kind</dt><dd>{node ? nodeCategory(node) : record.kind}</dd>
+            {node && <><dt>Label</dt><dd>{labels.get(node.id)}</dd><dt>Entity type</dt><dd>{node.properties?.filename && ['image', 'video'].includes(String(node.properties.kind)) ? `${node.properties.kind} file` : node.entity_type || node.kind}</dd></>}
             {edge && <><dt>From → to</dt><dd className="identifier">{edge.from_id} → {edge.to_id}</dd><dt>Relationship confidence</dt><dd>{edge.confidence.toFixed(2)}</dd></>}
           </dl>
           {node?.properties && <dl>{Object.entries(node.properties).map(([key, value]) => <div key={key}><dt>{key}</dt><dd>{typeof value === 'string' ? value : JSON.stringify(value)}</dd></div>)}</dl>}

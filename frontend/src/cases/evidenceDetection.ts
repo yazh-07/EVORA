@@ -23,9 +23,11 @@ export function detectEvidenceKind(file: File, detected: (kind: Evidence['kind']
   reader.onload = () => {
     if (!active || typeof reader.result !== 'string') return;
     const header = reader.result.split(/\r?\n|\r/, 1)[0]?.toLowerCase() ?? '';
+    const columns = header.replace(/^\uFEFF/, '').split(',').map(value => value.trim().replace(/^"([^"]*)"$/, '$1'));
     // Short keys must be column words: "recipient" contains "ip", and "plate" contains "lat".
     if (/(?:^|[^a-z0-9])lat(?:$|[^a-z0-9])/.test(header) || ['latitude', 'longitude'].some(key => header.includes(key))) detected('gps');
     else if (/(?:^|[^a-z0-9])ip(?:$|[^a-z0-9])/.test(header) || ['ip_address', 'packet', 'firewall'].some(key => header.includes(key))) detected('network_log');
+    else if (columns.join(',') === 'timestamp,device_id,event,detail') detected('mobile_log');
     else if (['amount', 'currency', 'account_id'].some(key => header.includes(key))) detected('transaction');
     else if (['sender', 'recipient', 'message_id', 'body'].some(key => header.includes(key))) detected('message');
   };

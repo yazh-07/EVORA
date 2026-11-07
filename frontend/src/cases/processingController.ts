@@ -11,7 +11,7 @@ export type ProcessingState = {
 const initial = (): ProcessingState => ({ status: 'idle', run: null, message: '' });
 
 /** One selected evidence item. Disposal cancels delivery, not server processing. */
-export function createProcessingController(client: ApiClient, caseId: string, evidenceId: string) {
+export function createProcessingController(client: ApiClient, caseId: string, evidenceId: string, interpretation?: 'mobile_log' | 'network_log' | 'gps' | 'message' | 'transaction') {
   let state = initial();
   let disposed = false;
   let request: AbortController | undefined;
@@ -29,9 +29,9 @@ export function createProcessingController(client: ApiClient, caseId: string, ev
       publish({ ...initial(), status: 'submitting' });
       try {
         const key = crypto.randomUUID();
-        const run = await client.request('post', '/api/v1/cases/{caseId}/evidence/{evidenceId}/processing-runs', {
-          path: { caseId, evidenceId }, header: { 'Idempotency-Key': key }, signal: pending.signal,
-        });
+        const common = { path: { caseId, evidenceId }, header: { 'Idempotency-Key': key }, signal: pending.signal };
+        const run = interpretation ? await client.request('post', '/api/v1/cases/{caseId}/evidence/{evidenceId}/processing-runs/interpret-as', { ...common, body: { kind: interpretation } }) :
+          await client.request('post', '/api/v1/cases/{caseId}/evidence/{evidenceId}/processing-runs', common);
         if (!current()) return;
         if (!validRun(run, caseId, evidenceId)) throw new Error('Invalid processing response.');
         publish({ status: 'accepted', run, message: '' });
@@ -63,7 +63,9 @@ function processingError(error: unknown): string {
 
 export function validRun(run: ProcessingRun, caseId: string, evidenceId: string): boolean {
   const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-  return !!run && typeof run.id === 'string' && uuid.test(run.id) && run.case_id === caseId && run.evidence_id === evidenceId &&
+  const interpretationValid = !!run && ((run.source_kind === undefined && run.processing_kind === undefined) ||
+    (run.source_kind === 'document' && ['mobile_log','network_log','gps','message','transaction'].includes(run.processing_kind ?? '')));
+  return !!run && interpretationValid && typeof run.id === 'string' && uuid.test(run.id) && run.case_id === caseId && run.evidence_id === evidenceId &&
     ['queued', 'running', 'completed', 'failed'].includes(run.status) && typeof run.processor_version === 'string' &&
     typeof run.created_at === 'string' && Number.isFinite(Date.parse(run.created_at)) &&
     (!['completed', 'failed'].includes(run.status) || (typeof run.finished_at === 'string' && Number.isFinite(Date.parse(run.finished_at)))) &&

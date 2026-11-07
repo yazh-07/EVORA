@@ -229,3 +229,7 @@ export { BulkProcessingResults } from './BulkProcessing';
 
 export { createActivityStore } from './activityStore';
 export { ActivityEntryPanel } from './ActivityCenter';
+
+export { compactGraph, isVisualCandidate } from './graphPresentation';
+
+export { groupFindingViews } from './findingPresentation';

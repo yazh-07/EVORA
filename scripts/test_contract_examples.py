@@ -184,7 +184,7 @@ class WireExamples(unittest.TestCase):
             "derived_observation_id": "00000000-0000-4000-8000-000000000007",
         }
 
-    def test_draft_preserves_original_operations_and_adds_only_revision_pair(self):
+    def test_contract_preserves_existing_operations_and_adds_structured_interpretation(self):
         original = {
             "createCase", "listCases", "getCase", "uploadEvidence", "listEvidence",
             "getEvidence", "downloadEvidence", "startProcessing", "listProcessingRuns",
@@ -202,10 +202,23 @@ class WireExamples(unittest.TestCase):
         actual = [operation["operationId"] for path in self.spec["paths"].values()
                   for method, operation in path.items()
                   if method in {"get", "post", "put", "patch", "delete"}]
-        expected = original | {"appendTranscriptRevision", "listTranscriptRevisions"}
+        expected = original | {"appendTranscriptRevision", "listTranscriptRevisions", "interpretEvidence"}
         self.assertEqual(set(actual), expected)
         self.assertEqual(len(actual), len(expected))
         self.assertEqual(self.spec["info"]["version"], "0.3.0")
+
+    def test_structured_interpretation_request_and_run_metadata(self):
+        operation=self.spec['paths']['/api/v1/cases/{caseId}/evidence/{evidenceId}/processing-runs/interpret-as']['post']
+        schema=operation['requestBody']['content']['application/json']['schema']
+        validator=Draft202012Validator(schema)
+        validator.validate({'kind':'mobile_log'})
+        for invalid in ({'kind':'audio'},{'kind':'mobile_log','extra':True},{}):
+            self.assertFalse(validator.is_valid(invalid))
+        run={'id':RUN_ID,'case_id':CASE_ID,'evidence_id':EVIDENCE_ID,'status':'queued','processor_version':'processing-lifecycle/5',
+             'created_at':'2026-01-12T10:04:00Z','source_kind':'document','processing_kind':'mobile_log'}
+        self.validator('ProcessingRun').validate(run)
+        run['processing_kind']='audio'
+        self.assertFalse(self.validator('ProcessingRun').is_valid(run))
 
     def test_audio_kind_and_existing_video_kind_are_valid(self):
         for kind in ("audio", "video"):

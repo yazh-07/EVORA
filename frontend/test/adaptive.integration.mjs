@@ -149,7 +149,7 @@ try {
     assert.deepEqual(snapshot, { ...manifest,
       sha256: createHash('sha256').update(JSON.stringify(manifest)).digest('hex') });
     assert.equal(run.algorithm_version,
-      'evora-analysis/3;source_semantic_relations/2;candidate_link_shared_identifier:v1;candidate_link_co_mention:v1;g02-triage-v1;multi-modal-detectors/1');
+      'evora-analysis/4;source_semantic_relations/2;candidate_link_shared_identifier:v1;candidate_link_co_mention:v1;g02-triage-v1;multi-modal-detectors/1');
   }
   async function outputs(run) {
     const query = { analysis_run_id: run.id };

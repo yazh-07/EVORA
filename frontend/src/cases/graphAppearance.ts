@@ -10,7 +10,7 @@ const styles = {
 };
 export const forensicTypes = Object.keys(styles) as (keyof typeof styles)[];
 export const isRawLogEvent = (kind: string, entityType?: string) =>
-  kind === 'event' || entityType === 'event' || kind.includes('activity') || kind === 'gps.location';
+  kind === 'event' || entityType === 'event' || kind.includes('activity') || kind === 'gps.location' || kind === 'visual.detected' || kind === 'transaction.record';
 export function graphAppearance(kind: string, entityType?: string) {
   const type = (entityType || kind).toLowerCase();
   const key = type === 'video' || type === 'image' ? 'camera' : type === 'face' ? 'person' : type === 'plate' ? 'vehicle' : type;

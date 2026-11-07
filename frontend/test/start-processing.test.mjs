@@ -127,3 +127,20 @@ test('selected evidence inspector contains the start action', () => {
   })));
   assert.match(markup, />Start processing<\/button>/);
 });
+
+test('explicit structured interpretation uses the dedicated endpoint and validates returned source/processing kinds', async () => {
+  for (const processingKind of ['mobile_log','audio']) {
+    const calls=[];
+    const { client, controller: unused }=setup(async (url,options)=>{
+      calls.push({url:String(url),...options});
+      return accepted({...run,source_kind:'document',processing_kind:processingKind});
+    });
+    unused.dispose();
+    const controller=createProcessingController(client,caseId,evidenceId,'mobile_log');
+    await controller.submit();
+    assert.ok(calls[0].url.endsWith('/processing-runs/interpret-as'));
+    assert.deepEqual(JSON.parse(calls[0].body),{kind:'mobile_log'});
+    assert.equal(controller.getSnapshot().status,processingKind==='mobile_log'?'accepted':'error');
+    controller.dispose();
+  }
+});

@@ -10,6 +10,7 @@ import { GapPanel } from './GapPanel';
 import { ClusterPanel } from './ClusterPanel';
 import { AnomalyPanel } from './AnomalyPanel';
 import { HypothesisPanel } from './HypothesisPanel';
+import { groupFindingViews } from './findingPresentation';
 import { ReliabilityInspector } from './ReliabilityInspector';
 
 type ReviewActions = Partial<Pick<ReturnType<typeof createFindingController>, 'loadReviews' | 'updateReview' | 'submitReview'>>;
@@ -38,6 +39,7 @@ export function FindingPanel({ state, load, select, inspectEvidence, loadReviews
 } & ReviewActions) {
   const page = state.page;
   const findings = page?.items.filter(f => findingKind === 'all' || f.kind === findingKind) ?? [];
+  const cards = findingKind === 'all' ? groupFindingViews(findings) : findings.map(primary => ({ primary, related: [] }));
   const selectedFinding = findings.find(f => f.id === state.selectedId);
   const source = (id: string, index = 0) => inspectEvidence ? <button type="button" className="identifier"
     onClick={() => inspectEvidence(id)} aria-label={`Inspect source evidence ${id}`}>Open source {index + 1} ↗</button> : <span className="identifier">{id}</span>;
@@ -106,7 +108,8 @@ export function FindingPanel({ state, load, select, inspectEvidence, loadReviews
         'No findings in this completed analysis. This does not establish absence of relevant relationships.' : 'No findings on this page. Return to the previous page.'}</p>}
       {findingKind !== 'all' && <p role="status">{findings.length} {findingKind} findings on this page.
         {findings.length === 0 && ' No findings of this kind on this page.'}</p>}
-      <ul className="findings-list">{findings.map(f => <li key={f.id}>
+      {cards.length < findings.length && <p className="scope-note">{cards.length} finding cards on this page. Alternate detector views with identical subjects and citations are folded below; each record retains its own sources and review.</p>}
+      <ul className="findings-list">{cards.map(({ primary: f, related }) => <li key={f.id}>
         <strong className="finding-kind-badge">{f.kind}</strong>
         <h3>{f.summary}</h3>
         <details className="technical-details"><summary>Rule, score, and finding reference</summary><p className="identifier">Finding ID: {f.id}</p>
@@ -127,6 +130,11 @@ export function FindingPanel({ state, load, select, inspectEvidence, loadReviews
         </details>}
         <button type="button" aria-pressed={state.selectedId === f.id} onClick={() => { void select(f.id); }} aria-label={`Inspect finding sources ${f.id}`}>Inspect supporting records</button>
         {reviewDetails(f.id)}
+        {related.length > 0 && <details><summary>Related detector views ({related.length})</summary>{related.map(item => <article key={item.id}>
+          <strong>{item.kind}</strong><p>{item.summary}</p>
+          <button type="button" onClick={() => { void select(item.id); }} aria-label={`Inspect finding sources ${item.id}`}>Inspect supporting records</button>
+          {reviewDetails(item.id)}
+        </article>)}</details>}
       </li>)}</ul>
       {selectedFinding && <aside aria-label="Finding source details" aria-busy={state.citationStatus === 'loading'}>
         <h3>Selected finding sources</h3>

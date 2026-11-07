@@ -44,7 +44,8 @@ class MediaDetectionTests(unittest.TestCase):
         self.assertTrue(math.isfinite(face.detector_weight))
         self.assertAlmostEqual(face.extraction_confidence, 1 / (1 + math.exp(-face.detector_weight)))
         self.assertIsNone(face.observed_at_utc)
-        self.assertEqual(result.entities[0].kind, 'person')
+        self.assertEqual(result.entities[0].kind, 'visual_candidate')
+        self.assertTrue(face.raw_value.startswith('person:face'))
         self.assertEqual(result.events[0].event.entity_ids, (result.entities[0].id,))
 
     def test_real_video_samples_one_frame_per_second_with_original_frame_numbers(self):
@@ -68,7 +69,9 @@ class MediaDetectionTests(unittest.TestCase):
         with patch.object(media, 'detect_frame', return_value=iter([
                 ('vehicle:license_plate', (5, 10, 70, 25), 2.0, 'test-classifier')])):
             result = media.parse_image(buf.getvalue(), **self.context())
-        self.assertEqual(result.entities[0].kind, 'vehicle')
+        self.assertEqual(result.entities[0].kind, 'visual_candidate')
+        self.assertTrue(result.observations[0].observation.raw_value.startswith('vehicle:license_plate'))
+        self.assertNotIn('vehicle', {entity.kind for entity in result.entities})
         self.assertEqual(result.events[0].event.kind, 'visual.detected')
 
 
@@ -136,7 +139,8 @@ class MediaPublicationTests(unittest.IsolatedAsyncioTestCase):
                 self.assertEqual(source['kind'],'image.detection')
                 self.assertIn('frame=0;',source['source_locator'])
                 self.assertIn('box=',source['source_locator'])
-        self.assertIn('person', {n['entity_type'] for n in graph['nodes']})
+        self.assertIn('visual_candidate', {n['entity_type'] for n in graph['nodes']})
+        self.assertNotIn('person', {n['entity_type'] for n in graph['nodes']})
 
     async def test_corrupt_image_rejects_before_run_and_video_decode_failure_is_atomic(self):
         for kind in ('image', 'video'):

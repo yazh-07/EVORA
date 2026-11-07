@@ -498,6 +498,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/cases/{caseId}/evidence/{evidenceId}/processing-runs/interpret-as": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Interpret an existing document as a structured CSV export
+         * @description Creates a new immutable processing run using the selected CSV adapter. Preserves original bytes, uploaded document kind, hashes and all earlier runs. The frozen configuration records the original source kind and selected parser. Normal case authorization, parser validation and idempotency checks apply.
+         */
+        post: operations["interpretEvidence"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/cases/{caseId}/evidence/{evidenceId}/processing-runs": {
         parameters: {
             query?: never;
@@ -1048,6 +1068,16 @@ export interface components {
             evidence_id: string;
             status: components["schemas"]["RunStatus"];
             processor_version: string;
+            /**
+             * @description Original uploaded kind retained when using structured interpretation.
+             * @enum {string}
+             */
+            source_kind?: "document";
+            /**
+             * @description Adapter selected for this immutable interpretation run.
+             * @enum {string}
+             */
+            processing_kind?: "mobile_log" | "network_log" | "gps" | "message" | "transaction";
             /** Format: date-time */
             created_at: string;
             /** Format: date-time */
@@ -3212,6 +3242,44 @@ export interface operations {
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
             404: components["responses"]["NotFound"];
+        };
+    };
+    interpretEvidence: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Scope to authenticated actor, case and operation. Fingerprint method, target path and explicit request parameters/body, not mutable server state. Same key with identical request returns the stored run; changed request returns 409. New data/configuration requires a new key to select a fresh snapshot. Enforce case access again on every replay. */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                caseId: components["parameters"]["CaseId"];
+                evidenceId: components["parameters"]["EvidenceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @enum {string} */
+                    kind: "mobile_log" | "network_log" | "gps" | "message" | "transaction";
+                };
+            };
+        };
+        responses: {
+            /** @description Structured interpretation queued */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProcessingRun"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            415: components["responses"]["UnsupportedMedia"];
         };
     };
     listProcessingRuns: {

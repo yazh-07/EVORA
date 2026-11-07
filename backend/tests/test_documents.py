@@ -147,7 +147,7 @@ class DocumentProcessingTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_real_publication_wire_source_spans_private_versions_and_original(self):
         run = await self.start(); complete = await self.poll(run)
-        self.assertEqual((complete['status'],complete['processor_version']),('completed','processing-lifecycle/7'))
+        self.assertEqual((complete['status'],complete['processor_version']),('completed','processing-lifecycle/14'))
         self.validate('ProcessingRun',complete)
         page = await self.page('observations'); self.validate('ObservationPage',page)
         self.assertEqual(page['total'],5)
@@ -162,8 +162,8 @@ class DocumentProcessingTests(unittest.IsolatedAsyncioTestCase):
         private = self.private(run)
         from backend.text_ner import LIMITS, model_info
         self.assertEqual(private['execution']['parameters'],{'max_source_bytes':52428800,'max_source_lines':100000,**LIMITS})
-        self.assertEqual(private['execution']['versions'],dict(parser_version='document-text/1',normalizer_version='text-identifiers/1',
-            entity_version='text-candidates/1',event_version='not-used',processor_version='processing-lifecycle/7'))
+        self.assertEqual(private['execution']['versions'],dict(parser_version='document-text/1',normalizer_version='text-identifiers/2',
+            entity_version='text-candidates/2',event_version='not-used',processor_version='processing-lifecycle/14'))
         self.assertEqual(private['execution']['model'],model_info())
         self.assertEqual(len(private['outputs']['entity_ids']),1)
         self.assertEqual(private['input']['sha256'],hashlib.sha256(SOURCE).hexdigest())
@@ -254,7 +254,7 @@ class DocumentProcessingTests(unittest.IsolatedAsyncioTestCase):
             for name in ('processing_provenance_context','processing_completion_provenance'):
                 sql=connection.execute('SELECT sql FROM sqlite_master WHERE name=?',(name,)).fetchone()[0]
                 connection.execute('DROP TRIGGER '+name)
-                connection.execute(sql.replace(",'processing-lifecycle/4'",'').replace(",'processing-lifecycle/5'",'').replace(",'processing-lifecycle/6'",'').replace(",'processing-lifecycle/7'",''))
+                connection.execute(sql.replace(",'processing-lifecycle/4'",'').replace(",'processing-lifecycle/5'",'').replace(",'processing-lifecycle/6'",'').replace(",'processing-lifecycle/7'",'').replace(",'processing-lifecycle/14'",''))
         initialize_processing(self.app.state.database)
         run=await self.start('after-upgrade');self.assertEqual((await self.poll(run))['status'],'completed')
         for old,evidence,private in saved:self.assertEqual(self.private(old,evidence),private)

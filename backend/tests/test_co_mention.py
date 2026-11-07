@@ -226,7 +226,7 @@ class CoMentionAnalysisLifecycleTests(unittest.IsolatedAsyncioTestCase):
         run = await self.get('/analysis-runs/' + response.json()['id'])
         self.assertEqual(run['status'], 'completed', run)
         self.assertEqual(run['algorithm_version'],
-                         f'evora-analysis/3;source_semantic_relations/2;{RULE};{CO_MENTION_RULE};{POLICY_VERSION};{DETECTOR_VERSION}')
+                         f'evora-analysis/4;source_semantic_relations/2;{RULE};{CO_MENTION_RULE};{POLICY_VERSION};{DETECTOR_VERSION}')
         validator('AnalysisRun').validate(run)
         return run
 

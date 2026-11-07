@@ -15,7 +15,7 @@ MANIFEST_PATH=Path(__file__).with_name('models')/'text_ner.json'
 _MANIFEST=json.loads(MANIFEST_PATH.read_text(encoding='utf-8'))
 LIMITS=_MANIFEST['limits'].copy()
 MODEL=_MANIFEST['model']
-PROCESSOR_VERSION='processing-lifecycle/7'
+PROCESSOR_VERSION='processing-lifecycle/14'
 _LOCK=threading.Lock()
 
 

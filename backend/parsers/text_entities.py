@@ -9,10 +9,11 @@ from backend.parsers.candidate_entities import CandidateEntity
 from backend.parsers.normalization import TimeNormalization
 from backend.parsers.text_document import TextLineResult, TextObservation
 
-ENTITY_VERSION = 'text-candidates/1'
-NORMALIZER_VERSION = 'text-identifiers/1'
+ENTITY_VERSION = 'text-candidates/2'
+NORMALIZER_VERSION = 'text-identifiers/2'
 KINDS = frozenset(('person','organization','location','date','device','account','phone','ip'))
 _IDENTIFIER = re.compile(r'(?<![\w-])(?:D|AC)-[0-9]+(?![\w-])')
+_ISO_DATE = re.compile(r'(?<![0-9])\d{4}-\d{2}-\d{2}(?:T\d{2}:\d{2}:\d{2}(?:Z|[+-]\d{2}:\d{2}))?(?![0-9])')
 _PHONE = re.compile(r'(?<![\w+\-])\+[0-9]{8,15}(?![\w\-])')
 _IP = re.compile(r'(?<![\w:.%])[0-9A-Fa-f:.%]+(?![\w:.%])')
 _LOCATOR = re.compile(r'line ([1-9][0-9]*); chars=(0|[1-9][0-9]*):(0|[1-9][0-9]*)')
@@ -33,6 +34,8 @@ def identifier_spans(text):
     for match in _IDENTIFIER.finditer(text):
         spans.append(dict(start=match.start(), end=match.end(),
                           kind='device' if match.group().startswith('D-') else 'account'))
+    for match in _ISO_DATE.finditer(text):
+        spans.append(dict(start=match.start(),end=match.end(),kind='date'))
     for match in _PHONE.finditer(text):
         spans.append(dict(start=match.start(), end=match.end(), kind='phone'))
     for match in _IP.finditer(text):
@@ -56,7 +59,11 @@ def merge_spans(text, model_spans):
     for span in literals:
         maximum_end.append(max(span['end'], maximum_end[-1] if maximum_end else 0))
     combined = identifiers.copy()
+    filenames = list(re.finditer(r'\b[\w.-]+\.(?:txt|csv|png|jpg|jpeg|mp4|pdf|json|log)\b', text, re.I))
     for span in model_spans:
+        raw = text[span['start']:span['end']]
+        if raw in {'UTC', 'GMT', 'IP'} or any(m.start() <= span['start'] and span['end'] <= m.end() for m in filenames):
+            continue
         preceding = bisect_left(starts, span['end']) - 1
         if preceding < 0 or maximum_end[preceding] <= span['start']:
             combined.append(span)

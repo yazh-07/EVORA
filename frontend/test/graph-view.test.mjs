@@ -22,8 +22,8 @@ const page = items => ({ items, total: items.length, limit: 100, offset: 0 });
 const pause = () => new Promise(r => setTimeout(r, 1));
 async function until(predicate) { for (let i = 0; i < 300; i++) { if (predicate()) return; await pause(); } assert.fail('Graph request did not settle'); }
 const ready = c => until(() => ['ready', 'error'].includes(c.getSnapshot().status));
-const render = c => renderToStaticMarkup(createElement(GraphPanel, { state: c.getSnapshot(), load: c.load, select: c.select }));
-const tree = (c, inspectEvidence) => GraphPanel({ state: c.getSnapshot(), load: c.load, select: c.select, inspectEvidence });
+const render = c => renderToStaticMarkup(createElement(GraphPanel, { state: c.getSnapshot(), load: c.load, select: c.select, view:{filter:'All',query:'',zoom:1,compact:false} }));
+const tree = (c, inspectEvidence) => GraphPanel({ state: c.getSnapshot(), load: c.load, select: c.select, inspectEvidence, view: {filter:'All',query:'',zoom:1,compact:false} });
 function elements(value) {
   if (!value || typeof value !== 'object') return [];
   if (Array.isArray(value)) return value.flatMap(elements);
@@ -219,7 +219,7 @@ function clusteredGraph() {
   return g;
 }
 const panelState = g => ({ status: 'ready', graph: g, selection: null, message: '', citations: [], citationStatus: 'idle', citationMessage: '' });
-const panel = (g, props = {}) => GraphPanel({ state: panelState(g), load: async () => {}, select: async () => {}, ...props });
+const panel = (g, props = {}) => GraphPanel({ state: panelState(g), load: async () => {}, select: async () => {}, view: {filter:'All',query:'',zoom:1,compact:false}, ...props });
 const diagramNodes = value => elements(value).filter(e => e.type === 'g' && e.props.className?.startsWith('graph-node '));
 const nodePoint = element => {
   const shape = element.props.children[0];
@@ -294,7 +294,7 @@ test('unlinked provenance clusters seed compact particles and put a shared entit
   assert.equal(shared.x, (primary.x + comparison.x) / 2);
   assert.equal(shared.y, (primary.y + comparison.y) / 2);
   assert.ok(Math.abs(point('entity: D-7 <script>untrusted</script>').x - primary.x) < Math.abs(primary.x - comparison.x) / 2);
-  const html = renderToStaticMarkup(createElement(GraphPanel, { state: panelState(g), load: async () => {}, select: async () => {} }));
+  const html = renderToStaticMarkup(createElement(GraphPanel, { state: panelState(g), load: async () => {}, select: async () => {}, view:{filter:'All',query:'',zoom:1,compact:false} }));
   for (const text of ['No candidate relationships in this snapshot', 'Source evidence', 'Cross-source correlation', 'Synthetic network · primary', 'Synthetic network · comparison']) assert.ok(html.includes(text), text);
   assert.equal(elements(value).filter(e => e.props?.className === 'graph-edge').length, 0, 'provenance grouping never fabricates edges');
   assert.deepEqual(pointsByLabel(panel({ ...g, nodes: [...g.nodes].reverse() })), points, 'wire order does not move nodes');

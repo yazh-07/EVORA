@@ -30,7 +30,7 @@ test('intake reads only the first KB and header, handles errors, and discards ca
     abort() { this.aborted = true; this.onloadend?.(); }
     async finish() { this.result = await this.blob.text(); this.onload?.(); this.onloadend?.(); }
   };
-  for (const [header, kind] of [['timestamp,lat,longitude', 'gps'], ['ip_address,packet', 'network_log'],
+  for (const [header, kind] of [['timestamp,lat,longitude', 'gps'], ['ip_address,packet', 'network_log'], ['timestamp,device_id,event,detail', 'mobile_log'], ['"timestamp","device_id","event","detail"', 'mobile_log'],
     ['amount,currency,account_id', 'transaction'], ['sender,recipient,message_id,body', 'message'],
     ['notes\nlatitude,ip,amount', 'document']]) {
     let detected, settled = false;
