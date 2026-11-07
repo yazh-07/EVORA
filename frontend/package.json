@@ -16,6 +16,7 @@
     "test:qa": "node test/qa-tracer.integration.mjs",
     "test:full-modality": "node test/full-modality.integration.mjs",
     "test:detector-feedback": "node test/detector-feedback.integration.mjs",
+    "test:activity-browser": "node test/activity-center-browser.integration.mjs",
     "test:bulk-processing": "node test/bulk-processing.integration.mjs",
     "test:deeper-processing": "node test/deeper-processing.integration.mjs",
     "build": "npm run check:api && npm run typecheck && node scripts/build.mjs"

@@ -239,3 +239,15 @@ footer { padding: 16px 36px; }
 .bulk-processing ul { max-height: 320px; overflow-y: auto; padding-left: 22px; }
 .bulk-processing li { margin-block: 10px; overflow-wrap: anywhere; }
 .bulk-processing li > span { color: var(--color-secondary); }
+
+.activity-center { position: relative; }
+.activity-trigger { position: relative; display: inline-flex; align-items: center; justify-content: center; min-width: 42px; min-height: 42px; }
+.activity-count { position: absolute; top: -5px; right: -5px; min-width: 19px; height: 19px; padding-inline: 4px; border-radius: 10px; background: var(--color-accent); color: var(--color-surface); font-size: 11px; line-height: 19px; }
+.activity-popover { position: absolute; top: calc(100% + 12px); right: 0; z-index: 60; width: min(410px, calc(100vw - 32px)); max-height: 75vh; overflow-y: auto; box-shadow: 0 8px 28px rgba(0,0,0,.12); }
+.activity-popover h2 { margin: 0; }
+.activity-popover .section-heading { gap: 12px; }
+.activity-entry { border-top: 1px solid var(--color-border); padding-block: 14px; overflow-wrap: anywhere; }
+.activity-entry h3 { margin-block: 4px; }
+.activity-entry p { white-space: normal; font-size: .875rem; }
+.activity-entry progress { width: 100%; accent-color: var(--color-accent); }
+@media (max-width: 600px) { .activity-popover { position: fixed; top: 100px; right: 16px; } }

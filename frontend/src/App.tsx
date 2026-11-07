@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { CaseWorkspace, SessionStatus } from './cases/CaseWorkspace';
 import { useApiClient } from './api/ApiProvider';
+import { ActivityProvider, ActivityCenter } from './cases/ActivityCenter';
 import { SettingsModal } from './settings/SettingsModal';
 
 export function ThemeToggle() {
@@ -34,6 +35,10 @@ export function ThemeToggle() {
 }
 
 export function App() {
+  return <ActivityProvider><Application /></ActivityProvider>;
+}
+
+function Application() {
   const client = useApiClient();
   const [caseNavigation, setCaseNavigation] = useState(0);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -54,6 +59,7 @@ export function App() {
             <a href="#workspace" aria-current="page" onClick={event => { event.preventDefault(); setCaseNavigation(value => value + 1); }}>Cases</a>
           </nav>
           <div className="header-actions">
+            <ActivityCenter />
             <ThemeToggle />
             {(!client.isLocalAuth() || client.getUser()?.role === 'administrator') && <button type="button" onClick={() => setSettingsOpen(true)} aria-haspopup="dialog">Settings</button>}
             <SessionStatus />

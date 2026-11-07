@@ -2,18 +2,18 @@ import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import { useApiClient } from '../api/ApiProvider';
 import type { components } from '../api/schema';
 import { useSettings } from '../settings/settings';
-import { createBulkProcessingController } from './bulkProcessingController';
+import { useActivity } from './ActivityCenter';
 import type { BulkState } from './bulkProcessingController';
 
 type Settings = components['schemas']['Settings'];
-export function BulkProcessing({ caseId }: { caseId: string }) {
+export function BulkProcessing({ caseId, caseTitle }: { caseId: string; caseTitle?: string }) {
   const client = useApiClient(), preferences = useSettings();
-  const controller = useMemo(() => createBulkProcessingController(client, caseId), [client, caseId]);
+  const activity = useActivity();
+  const controller = useMemo(() => activity.getBatch(caseId, caseTitle), [activity, caseId, caseTitle]);
   const state = useSyncExternalStore(controller.subscribe, controller.getSnapshot, controller.getSnapshot);
   const [open, setOpen] = useState(false), [vision, setVision] = useState(false), [consent, setConsent] = useState(false);
   const [settings, setSettings] = useState<Settings>();
   const [message, setMessage] = useState(''), [refresh, setRefresh] = useState(0);
-  useEffect(() => { controller.start(); return () => controller.dispose(); }, [controller]);
   useEffect(() => {
     if (!open) return;
     const request = new AbortController(); setSettings(undefined); setConsent(false); setMessage('');
@@ -50,7 +50,7 @@ export function BulkProcessing({ caseId }: { caseId: string }) {
         {busy && <button type="button" onClick={controller.stop}>Stop queue</button>}
       </div>
       <BulkProcessingResults state={state} />
-      <p className="scope-note">Keep the Evidence tab open while the queue runs. Stopping or leaving this tab stops future requests; server work already started may continue. After processing, run case analysis to include the new outputs.</p>
+      <p className="scope-note">You can switch tabs or cases while this queue runs. Use the header activity icon to check progress or stop the remaining queue. Keep this app window open; server work already started may continue after the queue stops. After processing, run case analysis to include the new outputs.</p>
     </>}
   </section>;
 }

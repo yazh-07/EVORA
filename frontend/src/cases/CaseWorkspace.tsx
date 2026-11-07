@@ -130,7 +130,7 @@ export function CaseEvidenceWorkspace({ caseId, caseTitle = 'Investigation' }: {
       {(['overview', 'evidence', 'timeline', 'investigation', 'report'] as const).map(tab => <div key={tab} id={`panel-${tab}`} role="tabpanel" aria-labelledby={`tab-${tab}`} tabIndex={0} hidden={activeTab !== tab}>
         {visited.has(tab) && <>
           {tab === 'overview' && <InvestigationOverview caseId={caseId} navigate={navigate} addEvidence={addEvidence} />}
-          {tab === 'evidence' && <><header className="workspace-section-heading"><span className="section-label">Evidence</span><h2>Your evidence library</h2><p>Add original files, extract their contents, and inspect the records behind each finding.</p></header><EvidenceWorkspace caseId={caseId} sourceSelection={selection} intakeRequest={intakeRequest} /></>}
+          {tab === 'evidence' && <><header className="workspace-section-heading"><span className="section-label">Evidence</span><h2>Your evidence library</h2><p>Add original files, extract their contents, and inspect the records behind each finding.</p></header><EvidenceWorkspace caseId={caseId} caseTitle={caseTitle} sourceSelection={selection} intakeRequest={intakeRequest} /></>}
           {tab === 'timeline' && <TimelineWorkspace caseId={caseId} inspectEvidence={inspectEvidence} />}
           {tab === 'investigation' && <>
             <header className="workspace-section-heading"><span className="section-label">Review</span><h2>Investigate and verify</h2><p>{tools.find(item => item[0] === tool)?.[2]}</p></header>
@@ -226,3 +226,6 @@ export function CaseCreation({ state, create }: { state: CaseState; create: (tit
 
 export { createBulkProcessingController } from './bulkProcessingController';
 export { BulkProcessingResults } from './BulkProcessing';
+
+export { createActivityStore } from './activityStore';
+export { ActivityEntryPanel } from './ActivityCenter';

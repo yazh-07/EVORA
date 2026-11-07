@@ -9,7 +9,7 @@ on:
       version:
         description: 'Release version tag (e.g. v1.0.0)'
         required: true
-        default: 'v1.2.2'
+        default: 'v1.2.3'
 
 permissions:
   contents: write
@@ -193,7 +193,7 @@ jobs:
           name: EVORA ${{ github.event.inputs.version || github.ref_name }}
           tag_name: ${{ github.event.inputs.version || github.ref_name }}
           target_commitish: ${{ github.sha }}
-          body_path: docs/releases/v1.2.2.md
+          body_path: docs/releases/v1.2.3.md
           files: |
             release-assets/evora-linux-x86_64.tar.gz
             release-assets/evora-windows-x64.zip

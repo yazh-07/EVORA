@@ -13,13 +13,13 @@ import { detectEvidenceKind } from './evidenceDetection';
 import { EvidenceIntake, formatSupport } from './EvidenceIntake';
 import { OriginalTextPreview } from './OriginalTextPreview';
 
-export function EvidenceWorkspace({ caseId, sourceSelection, intakeRequest = 0 }: { caseId: string; intakeRequest?: number; sourceSelection?: { id: string; focus?: SourceFocus } }) {
+export function EvidenceWorkspace({ caseId, caseTitle, sourceSelection, intakeRequest = 0 }: { caseId: string; caseTitle?: string; intakeRequest?: number; sourceSelection?: { id: string; focus?: SourceFocus } }) {
   const client = useApiClient();
   const store = useMemo(() => createEvidenceStore(client, caseId), [client, caseId]);
   const state = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot);
   useEffect(() => { void store.start(); return () => store.dispose(); }, [store]);
   useEffect(() => { if (sourceSelection) void store.select(sourceSelection.id); }, [store, sourceSelection]);
-  return <>{client.getUser()?.role !== 'reviewer' && <BulkProcessing key={caseId} caseId={caseId} />}{sourceSelection && <p role="status">Source evidence inspection shows live metadata. Citation locators select their referenced processing output when available; other processing controls show live outputs.</p>}<EvidencePanels readOnly={client.getUser()?.role === 'reviewer'} intakeRequest={intakeRequest} sourceFocus={sourceSelection?.id === state.detail?.id ? sourceSelection?.focus : undefined} state={state} load={offset => { void store.load(offset); }} select={id => { void store.select(id); }} upload={store.upload} /></>;
+  return <>{client.getUser()?.role !== 'reviewer' && <BulkProcessing key={caseId} caseId={caseId} caseTitle={caseTitle} />}{sourceSelection && <p role="status">Source evidence inspection shows live metadata. Citation locators select their referenced processing output when available; other processing controls show live outputs.</p>}<EvidencePanels readOnly={client.getUser()?.role === 'reviewer'} intakeRequest={intakeRequest} sourceFocus={sourceSelection?.id === state.detail?.id ? sourceSelection?.focus : undefined} state={state} load={offset => { void store.load(offset); }} select={id => { void store.select(id); }} upload={store.upload} /></>;
 }
 function Metadata({ item, detailed = false }: { item: Evidence; detailed?: boolean }) {
   return <>
