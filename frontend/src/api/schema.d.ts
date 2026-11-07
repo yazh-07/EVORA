@@ -837,6 +837,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/cases/{caseId}/reports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                caseId: components["parameters"]["CaseId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Generate a model-written draft from a completed analysis
+         * @description Uses frozen processing outputs, validates source references and performs a model entailment check. Records private provenance. Human review remains required. Hosted providers require explicit sharing consent and online mode.
+         */
+        post: operations["generateReport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/cases/{caseId}/audit-events": {
         parameters: {
             query?: never;
@@ -911,10 +933,16 @@ export interface components {
         AuthStatus: {
             setup_required: boolean;
             offline_mode: boolean;
+            /** @description The local SQLite database uses SQLCipher encryption at rest. */
+            database_encrypted?: boolean;
+            /** @description Password or recovery-code unlock is required before database access. */
+            database_locked?: boolean;
         };
         AuthSession: {
             user: components["schemas"]["LocalUser"];
             offline_mode?: boolean;
+            /** @description Shown once when an existing administrator account migrates to database encryption. Replaces the previous code. */
+            recovery_code?: string;
         };
         AuthSetupResult: {
             user: components["schemas"]["LocalUser"];
@@ -1362,6 +1390,46 @@ export interface components {
             reason: string;
             /** Format: date-time */
             created_at: string;
+        };
+        ReportRequest: {
+            /** Format: uuid */
+            analysis_run_id: string;
+            finding_ids: string[];
+            /** @default  */
+            scope: string;
+            /** @default  */
+            notes: string;
+            /** @default false */
+            allow_remote: boolean;
+        };
+        ReportClaim: {
+            text: string;
+            observation_ids: string[];
+        };
+        GeneratedReport: {
+            /** Format: uuid */
+            case_id: string;
+            /** Format: uuid */
+            analysis_run_id: string;
+            /** Format: uuid */
+            provenance_id: string;
+            model_version: string;
+            prompt_template_version: string;
+            /** Format: date-time */
+            created_at: string;
+            sections: {
+                /** @enum {string} */
+                heading: "Executive summary" | "Recorded chronology" | "Evidence assessment" | "Uncertainties and follow-up";
+                claims: components["schemas"]["ReportClaim"][];
+            }[];
+            citations: components["schemas"]["AnswerCitation"][];
+            coverage: {
+                observations_included: number;
+                observations_total: number;
+                sources_included: number;
+                sources_total: number;
+                truncated_observations: number;
+            };
         };
         CaseQuestion: {
             question: string;
@@ -2033,6 +2101,15 @@ export interface operations {
                     "application/json": components["schemas"]["ApiError"];
                 };
             };
+            /** @description Database encryption could not complete; retry after checking local storage permissions. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
         };
     };
     loginLocalAccount: {
@@ -2104,6 +2181,15 @@ export interface operations {
             };
             /** @description Request rejected */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Database encryption could not complete; retry after checking local storage permissions. */
+            500: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -2408,6 +2494,15 @@ export interface operations {
             };
             /** @description Request rejected */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Database encryption could not complete; retry after checking local storage permissions. */
+            500: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -3820,6 +3915,35 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CaseAnswer"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    generateReport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                caseId: components["parameters"]["CaseId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReportRequest"];
+            };
+        };
+        responses: {
+            /** @description Source-checked report draft, citations and bounded context coverage */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GeneratedReport"];
                 };
             };
             400: components["responses"]["BadRequest"];

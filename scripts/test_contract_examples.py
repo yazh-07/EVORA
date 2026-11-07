@@ -202,7 +202,7 @@ class WireExamples(unittest.TestCase):
         actual = [operation["operationId"] for path in self.spec["paths"].values()
                   for method, operation in path.items()
                   if method in {"get", "post", "put", "patch", "delete"}]
-        expected = original | {"appendTranscriptRevision", "listTranscriptRevisions", "interpretEvidence"}
+        expected = original | {"appendTranscriptRevision", "listTranscriptRevisions", "interpretEvidence", "generateReport"}
         self.assertEqual(set(actual), expected)
         self.assertEqual(len(actual), len(expected))
         self.assertEqual(self.spec["info"]["version"], "0.3.0")

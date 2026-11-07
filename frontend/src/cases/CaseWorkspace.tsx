@@ -36,7 +36,7 @@ import { InvestigationOverview } from './InvestigationOverview';
 import { TimelineWorkspace } from './TimelineWorkspace';
 import { ReportWorkspace } from './ReportWorkspace';
 export { filterTimeline } from './TimelineWorkspace';
-export { buildReportText } from './ReportWorkspace';
+export { buildReportText, reportNarrative, reportModelAppendix } from './ReportWorkspace';
 export { collectPages, loadTimeline, loadReport } from './workspaceData';
 export { ExecutiveBriefPanel, createExecutiveBriefController } from './ExecutiveBrief';
 export { detectEvidenceKind } from './evidenceDetection';

@@ -154,12 +154,18 @@ def synthesize(question, context, model, qa_url=None, *, qa_provider='ollama',
     claims = result['claims']
     if result['supported'] is not True or not isinstance(claims, list) or not 1 <= len(claims) <= 32:
         raise SynthesisError('Invalid claims')
+    citations, verification = validate_claims(question, context, claims, model, provider_options)
+    return citations, actual_model, verification
+
+
+def validate_claims(question, context, claims, model, provider_options, generation_prompt=SYSTEM_PROMPT):
+    """Shared exact-reference, literal-value and model-entailment checks."""
     observations = {item['id']: item for item in context['observations']}
     citations = []
     for claim in claims:
         if (not isinstance(claim, dict) or set(claim) != {'text', 'observation_ids'} or
                 not isinstance(claim['text'], str) or not claim['text'].strip() or len(claim['text']) > 4000 or
-                not isinstance(claim['observation_ids'], list) or not claim['observation_ids']):
+                not isinstance(claim['observation_ids'], list) or not 1 <= len(claim['observation_ids']) <= 32):
             raise SynthesisError('Ungrounded claim')
         if any(not isinstance(oid, str) or oid not in observations for oid in claim['observation_ids']):
             raise SynthesisError('Ungrounded claim: unknown observation ID')
@@ -193,6 +199,6 @@ def synthesize(question, context, model, qa_url=None, *, qa_provider='ollama',
         context=context, cited_observations={c['observation_id']: observations[c['observation_id']] for c in citations}), **provider_options)
     if not isinstance(verification, dict) or set(verification) != {'supported'} or verification['supported'] is not True:
         raise SynthesisError('Unsupported model claim')
-    return citations, actual_model, dict(status='verified', checks=['exact_source_ids', 'literal_identifiers_numbers_times', 'model_entailment'],
-        generation_prompt_sha256=hashlib.sha256(SYSTEM_PROMPT.encode()).hexdigest(),
+    return citations, dict(status='verified', checks=['exact_source_ids', 'literal_identifiers_numbers_times', 'model_entailment'],
+        generation_prompt_sha256=hashlib.sha256(generation_prompt.encode()).hexdigest(),
         verification_prompt_sha256=hashlib.sha256(VERIFY_PROMPT.encode()).hexdigest())

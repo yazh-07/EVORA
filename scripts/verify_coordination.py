@@ -7,7 +7,7 @@ from pathlib import Path
 import re
 
 ADDED_OPERATIONS = {
-    "interpretEvidence",
+    "interpretEvidence", "generateReport",
     'getChatGPTStatus', 'connectChatGPT', 'disconnectChatGPT', 'analyzeVideo',
     'getMediaCapabilities', 'analyzeImage', 'getAuthStatus', 'setupLocalAdministrator',
     'loginLocalAccount', 'getLocalSession', 'logoutLocalAccount', 'changeLocalPassword',

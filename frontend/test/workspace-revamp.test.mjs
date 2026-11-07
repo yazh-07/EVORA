@@ -53,3 +53,14 @@ test('report export retains review, provenance, AI labels and limitations withou
   assert.match(text,/Unknown clock alignment/);assert.match(text,/Snapshot SHA-256: b{64}/);assert.match(text,/SHA-256: a{64}/);
   assert.doesNotMatch(text,/1\. Device connection/);assert.match(text,/not a complete export/);
 });
+
+test('model report narrative preserves exact claim citations and shows partial coverage and draft provenance',async()=>{
+  const {reportNarrative,reportModelAppendix}=await import('../.test-build/src/cases/CaseWorkspace.mjs');
+  const report={model_version:'chatgpt:test-model',created_at:'2026-11-07T00:00:00Z',provenance_id:'provenance',prompt_template_version:'forensic-report/1',sections:[{heading:'Executive summary',claims:[{text:'Model-derived, unverified: a notice appears.',observation_ids:['obs-a','obs-b']}]},{heading:'Recorded chronology',claims:[]}],citations:[{claim:'Model-derived, unverified: a notice appears.',observation_id:'obs-a',evidence_id:'source-a',source_locator:'frame=3'}],coverage:{observations_included:2,observations_total:100,sources_included:1,sources_total:12,truncated_observations:1}};
+  const narrative=reportNarrative(report),appendix=reportModelAppendix(report);
+  assert.match(narrative,/unverified: a notice appears\. \[obs-a, obs-b\]/);
+  assert.match(narrative,/Insufficient source support/);
+  assert.match(appendix,/2\/100 observations; 1\/12 sources; 1 shortened/);
+  assert.match(appendix,/obs-a · Evidence source-a · frame=3/);
+  assert.match(appendix,/chatgpt:test-model/);assert.match(appendix,/do not prove factual accuracy/);
+});

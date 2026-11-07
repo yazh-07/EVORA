@@ -28,6 +28,7 @@ from backend.reviews import initialize_reviews, router as reviews_router
 from backend.overrides import initialize_overrides, router as overrides_router
 from backend.triage_endpoints import router as triage_router
 from backend.questions import router as questions_router
+from backend.reports import router as reports_router
 from backend.transcripts import initialize_transcripts, router as transcripts_router
 from backend.image_understanding import router as image_understanding_router
 from backend.video_understanding import router as video_understanding_router
@@ -125,27 +126,44 @@ def create_app(
     )
     if not str(configured_path).strip() or str(configured_path) == ":memory:":
         raise ValueError("EVORA_DATABASE_PATH must name a SQLite file.")
-    database = SQLiteDatabase(Path(configured_path))
+    database = SQLiteDatabase(Path(configured_path), protect=token_verifier is None)
+
+    def initialize_database():
+        with database.guard():
+            if app.state.database_ready:
+                return
+            initialize_cases(database)
+            if app.state.local_auth:
+                initialize_auth(database)
+            initialize_evidence(database)
+            initialize_audit(database)
+            initialize_processing(database)
+            initialize_analysis(database)
+            initialize_reviews(database)
+            initialize_overrides(database)
+            initialize_transcripts(database)
+            app.state.database_ready = True
 
     @asynccontextmanager
     async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
-        initialize_cases(database)
-        if _app.state.local_auth:
-            initialize_auth(database)
-        initialize_evidence(database)
-        initialize_audit(database)
-        initialize_processing(database)
-        initialize_analysis(database)
-        initialize_reviews(database)
-        initialize_overrides(database)
-        initialize_transcripts(database)
+        database.acquire_process()
         try:
-            await recover_analysis_runs(_app)
+            if not database.locked:
+                initialize_database()
+                if _app.state.local_auth and not database.encrypted:
+                    # Legacy cookies must not skip the first password-based migration.
+                    with database.connect() as connection:
+                        connection.execute('DELETE FROM local_sessions')
+                await recover_analysis_runs(_app)
             yield
         finally:
-            _app.state.chatgpt_connection.cancel()
-            if _app.state.graph_database is not None:
-                _app.state.graph_database.close()
+            try:
+                _app.state.chatgpt_connection.cancel()
+                if _app.state.graph_database is not None:
+                    _app.state.graph_database.close()
+            finally:
+                database.forget_key()
+                database.release_process()
 
     app = FastAPI(
         title="EVORA backend skeleton",
@@ -155,6 +173,12 @@ def create_app(
         docs_url=None,
         redoc_url=None,
     )
+    import threading
+    from collections import defaultdict
+    app.state.unlock_throttle_lock = threading.Lock()
+    app.state.unlock_attempts = defaultdict(list)
+    app.state.database_ready = False
+    app.state.initialize_database = initialize_database
     app.state.local_auth = token_verifier is None
     app.state.chatgpt_connection = Connection(app,database.path)
     app.state.offline_mode = (app.state.local_auth if offline_mode is None else offline_mode)
@@ -314,6 +338,7 @@ def create_app(
     app.include_router(overrides_router)
     app.include_router(triage_router)
     app.include_router(questions_router)
+    app.include_router(reports_router)
     app.include_router(transcripts_router)
     return app
 

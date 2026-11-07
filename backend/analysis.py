@@ -9,6 +9,7 @@ import hashlib
 import json
 import os
 import sqlite3
+from sqlcipher3 import dbapi2 as encrypted_sqlite
 from typing import Annotated, TypedDict
 from uuid import UUID, uuid4
 
@@ -184,7 +185,7 @@ def freeze_analysis_input_snapshot(db, case_id) -> AnalysisInputSnapshot:
     Use the caller's acceptance transaction, or a standalone consistent read.
     """
     case_id = str(UUID(str(case_id)))
-    if isinstance(db, sqlite3.Connection):
+    if isinstance(db, (sqlite3.Connection, encrypted_sqlite.Connection)):
         return _freeze(db, case_id)
     with db.connect() as connection:
         connection.execute('BEGIN')
@@ -279,7 +280,10 @@ def process_analysis_run(app, run_id):
         if not app.state.case_access.allows(run['actor_id'], UUID(run['case_id'])):
             raise ValueError('Source unavailable')
         if app.state.graph_database is None:
-            app.state.graph_database = Neo4jGraphDatabase()
+            try:
+                app.state.graph_database = Neo4jGraphDatabase()
+            except Exception:
+                app.state.graph_database = None
         project_analysis_run(db, app.state.graph_database, case_id=run['case_id'],
             analysis_run_id=run_id, graph=graph, findings=findings, triage=triage)
     except Exception:

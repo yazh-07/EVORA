@@ -14,11 +14,13 @@ export function LocalLogin() {
   const [busy, setBusy] = useState(false), [message, setMessage] = useState('');
   const [recovery, setRecovery] = useState<{ code: string; user?: LocalUser }>();
   const [retry, setRetry] = useState(0);
+  const [databaseEncrypted, setDatabaseEncrypted] = useState(false);
   useEffect(() => {
     const request = new AbortController();
     setMode('loading'); setMessage('');
     void client.authRequest('get','/api/v1/auth/status',{signal:request.signal}).then(async status => {
       if(request.signal.aborted) return;
+      setDatabaseEncrypted(status.database_encrypted ?? false);
       if(status.setup_required) {setMode('setup');return;}
       try {
         const session = await client.authRequest('get','/api/v1/auth/me',{signal:request.signal});
@@ -44,7 +46,8 @@ export function LocalLogin() {
         setRecovery({code:result.recovery_code});
       } else {
         const result=await client.authRequest('post','/api/v1/auth/login',{body:{username,password}});
-        client.activateUser(result.user);
+        if(result.recovery_code) setRecovery({code:result.recovery_code,user:result.user});
+        else client.activateUser(result.user);
       }
       setPassword('');setConfirm('');setCode('');
     } catch(error){setMessage(authMessage(error));}finally{setBusy(false);}
@@ -54,8 +57,9 @@ export function LocalLogin() {
     <h2 id="session-heading">{recovery?'Save your recovery code':mode==='setup'?'Set up this workstation':mode==='recover'?'Recover administrator access':'Sign in to EVORA'}</h2>
     {mode==='loading' && <p role="status">Checking local accounts…</p>}
     {mode==='error' && <button type="button" onClick={()=>setRetry(value=>value+1)}>Retry connection</button>}
-    {recovery ? <div className="recovery-code"><p>Keep this code somewhere safe outside this workstation. It resets the administrator password without internet access. It is shown only once; recovery replaces the previous code.</p><pre tabIndex={0}>{recovery.code}</pre><button className="button-primary" type="button" onClick={()=>{const user=recovery.user;setRecovery(undefined);if(user)client.activateUser(user);else {setMode('login');setMessage('Password reset. Sign in with your new password.');}}}>I saved the recovery code</button></div> : ['setup','login','recover'].includes(mode) && <>
+    {recovery ? <div className="recovery-code"><p>Keep this code somewhere safe outside this workstation. It recovers your password and unlocks the encrypted database without internet access. A replacement code also replaces any older code saved before database encryption. It is shown only once; recovery replaces the previous code.</p><pre tabIndex={0}>{recovery.code}</pre><button className="button-primary" type="button" onClick={()=>{const user=recovery.user;setRecovery(undefined);if(user)client.activateUser(user);else {setMode('login');setMessage('Password reset. Sign in with your new password.');}}}>I saved the recovery code</button></div> : ['setup','login','recover'].includes(mode) && <>
       <p>{mode==='setup'?'Create the first administrator account. Accounts and passwords stay on this workstation.':mode==='recover'?'Use the recovery code created during setup. Other investigators can ask an administrator to reset their password.':'Use the local account created for you on this workstation.'}</p>
+      <p className="scope-note">{databaseEncrypted ? 'Your account password also unlocks the encrypted database. There is no separate database password.' : 'The database is encrypted during setup or your next administrator sign-in, using your account password. Original evidence files are stored separately.'}</p>
       <form onSubmit={event=>{event.preventDefault();void submit();}}>
         <fieldset disabled={busy}>
           <label htmlFor="login-username">Username</label><input id="login-username" required autoComplete="username" maxLength={64} pattern="[A-Za-z0-9][A-Za-z0-9_.-]*" value={username} onChange={event=>setUsername(event.target.value)} />

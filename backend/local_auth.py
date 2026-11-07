@@ -6,9 +6,10 @@ import time
 from typing import Annotated, Literal
 from uuid import UUID, uuid4
 
+from sqlcipher3 import dbapi2 as encrypted_sqlite
 from argon2 import PasswordHasher
 from argon2.exceptions import VerificationError, InvalidHashError
-from fastapi import APIRouter, Depends, Request, Response
+from fastapi import APIRouter, BackgroundTasks, Depends, Request, Response
 from pydantic import BaseModel, ConfigDict, Field
 
 from backend.auth import Actor, authenticated_actor, require_case_access, CaseAccessGrant
@@ -21,6 +22,7 @@ HASHER = PasswordHasher(time_cost=3, memory_cost=65536, parallelism=1)
 # Equal-cost verification for unknown usernames; never log submitted secrets.
 DUMMY_HASH = HASHER.hash(secrets.token_urlsafe(32))
 router = APIRouter(prefix='/api/v1')
+
 
 
 def initialize_auth(db):
@@ -88,6 +90,17 @@ def throttle(request, username):
     host = request.client.host if request.client else 'local'
     buckets = [('host:' + digest(host), 30), ('account:' + digest(username.casefold()), 8)]
     now = time.time()
+    if request.app.state.database.locked:
+        # The encrypted throttle table cannot be read before a valid password.
+        with request.app.state.unlock_throttle_lock:
+            attempts = request.app.state.unlock_attempts
+            for bucket, maximum in buckets:
+                attempts[bucket] = [stamp for stamp in attempts[bucket] if stamp > now - 300]
+                if len(attempts[bucket]) >= maximum:
+                    raise AccessError(429, 'TRY_LATER', 'Too many attempts. Wait five minutes before trying again.')
+            for bucket, _ in buckets:
+                attempts[bucket].append(now)
+        return
     with request.app.state.database.connect() as c:
         c.execute('BEGIN IMMEDIATE')
         c.execute('DELETE FROM auth_attempts WHERE attempted_at<?', (now - 300,))
@@ -110,6 +123,8 @@ def issue(c, request, response, user):
 
 
 def session_actor(request):
+    if request.app.state.database.locked:
+        return None
     token = request.cookies.get(COOKIE)
     if not token or len(token) > 200:
         return None
@@ -174,13 +189,19 @@ def admin(actor):
 def status(request: Request, response: Response):
     require_local(request)
     response.headers['Cache-Control'] = 'no-store'
-    with request.app.state.database.connect() as c:
-        needed = c.execute('SELECT 1 FROM local_users LIMIT 1').fetchone() is None
-    return dict(setup_required=needed, offline_mode=request.app.state.offline_mode)
+    database = request.app.state.database
+    if database.locked:
+        needed = False
+    else:
+        with database.connect() as c:
+            needed = c.execute('SELECT 1 FROM local_users LIMIT 1').fetchone() is None
+    return dict(setup_required=needed, offline_mode=request.app.state.offline_mode, database_encrypted=database.encrypted, database_locked=database.locked)
 
 
 @router.post('/auth/setup', dependencies=[Depends(csrf)])
 def setup(body: NewAccount, request: Request, response: Response):
+    if request.app.state.database.locked:
+        raise AccessError(409, 'ALREADY_CONFIGURED', 'An administrator already exists. Sign in instead.')
     throttle(request, body.username)
     encoded, recovery = HASHER.hash(body.password), secrets.token_urlsafe(32)
     uid = str(uuid4())
@@ -191,24 +212,53 @@ def setup(body: NewAccount, request: Request, response: Response):
         c.execute('INSERT INTO local_users VALUES (?,?,?,?,?,0,0,?,?)', (uid, body.username, body.display_name, encoded, 'administrator', digest(recovery), time.time()))
         audit(c, uid, 'setupAdministrator', uid)
         user = c.execute('SELECT * FROM local_users WHERE id=?', (uid,)).fetchone()
-        return dict(user=issue(c, request, response, user), recovery_code=recovery)
+        result = dict(user=issue(c, request, response, user), recovery_code=recovery)
+    protect_database(request, body.username, body.password, recovery)
+    return result
+
+
+def protect_database(request, username, password, recovery):
+    try:
+        request.app.state.database.enable(username, password, recovery)
+    except Exception:
+        raise AccessError(500, 'ENCRYPTION_FAILED', 'Database encryption could not complete. Your original data is preserved. Check local storage permissions and retry signing in.') from None
+
+
+def unlock_database(request, background, username, secret, *, recovery=False):
+    database = request.app.state.database
+    unlocked = database.unlock(username, secret, recovery=recovery)
+    if not request.app.state.database_ready:
+        request.app.state.initialize_database()
+    if unlocked:
+        from backend.analysis import recover_analysis_runs
+        background.add_task(recover_analysis_runs, request.app)
 
 
 @router.post('/auth/login', dependencies=[Depends(csrf)])
-def login(body: Credentials, request: Request, response: Response):
+def login(body: Credentials, request: Request, response: Response, background: BackgroundTasks):
     throttle(request, body.username)
-    with request.app.state.database.connect() as c:
-        user = c.execute('SELECT * FROM local_users WHERE username=? COLLATE NOCASE', (body.username,)).fetchone()
-        valid = verify(user['password_hash'] if user else DUMMY_HASH, body.password)
-        if not valid or user['disabled']:
-            raise AccessError(401, 'INVALID_LOGIN', 'Username or password is incorrect.')
-        # Recheck after hashing so a concurrent disable/reset cannot issue a valid session.
-        c.execute('BEGIN IMMEDIATE')
-        current = c.execute('SELECT * FROM local_users WHERE id=?', (user['id'],)).fetchone()
-        if current['disabled'] or current['password_hash'] != user['password_hash']:
-            raise AccessError(401, 'INVALID_LOGIN', 'Username or password is incorrect.')
-        audit(c, user['id'], 'login', user['id'])
-        return dict(user=issue(c, request, response, current))
+    unlock_database(request, background, body.username, body.password)
+    database = request.app.state.database
+    with database.guard():
+        with database.connect() as c:
+            user = c.execute('SELECT * FROM local_users WHERE username=? COLLATE NOCASE', (body.username,)).fetchone()
+            valid = verify(user['password_hash'] if user else DUMMY_HASH, body.password)
+            if not valid or user['disabled']:
+                raise AccessError(401, 'INVALID_LOGIN', 'Username or password is incorrect.')
+        migrating = database.protect and not database.encrypted and user['role'] == 'administrator'
+        # Existing recovery hashes cannot wrap a key; migration supplies a replacement.
+        replacement = secrets.token_urlsafe(32) if migrating else None
+        with database.credentials(user['username'], body.password):
+            with database.connect() as c:
+                c.execute('BEGIN IMMEDIATE')
+                if replacement:
+                    c.execute('UPDATE local_users SET recovery_hash=? WHERE id=?', (digest(replacement), user['id']))
+                audit(c, user['id'], 'login', user['id'])
+                result = dict(user=issue(c, request, response, user))
+        if migrating:
+            protect_database(request, user['username'], body.password, replacement)
+            result['recovery_code'] = replacement
+        return result
 
 
 @router.get('/auth/me')
@@ -223,6 +273,9 @@ def me(request: Request, response: Response, actor: Annotated[Actor, Depends(aut
 
 @router.post('/auth/logout', dependencies=[Depends(csrf)])
 def logout(request: Request, response: Response):
+    if request.app.state.database.locked:
+        response.delete_cookie(COOKIE, path='/')
+        return dict(ok=True)
     with request.app.state.database.connect() as c:
         token = request.cookies.get(COOKIE, '')
         row = c.execute('SELECT user_id FROM local_sessions WHERE digest=?', (digest(token),)).fetchone()
@@ -236,29 +289,37 @@ def logout(request: Request, response: Response):
 @router.post('/auth/password')
 def password(body: PasswordChange, request: Request, response: Response, actor: Annotated[Actor, Depends(authenticated_actor)]):
     throttle(request, actor.id)
-    with request.app.state.database.connect() as c:
-        c.execute('BEGIN IMMEDIATE')
-        user = c.execute('SELECT * FROM local_users WHERE id=?', (actor.id,)).fetchone()
-        if not verify(user['password_hash'], body.current_password):
-            raise AccessError(400, 'INVALID_PASSWORD', 'Current password is incorrect.')
-        c.execute('UPDATE local_users SET password_hash=?,must_change_password=0 WHERE id=?', (HASHER.hash(body.new_password), actor.id))
-        c.execute('DELETE FROM local_sessions WHERE user_id=?', (actor.id,))
-        audit(c, actor.id, 'changePassword', actor.id)
-        return dict(user=issue(c, request, response, c.execute('SELECT * FROM local_users WHERE id=?', (actor.id,)).fetchone()))
+    database = request.app.state.database
+    with database.guard():
+        with database.connect() as c:
+            user = c.execute('SELECT * FROM local_users WHERE id=?', (actor.id,)).fetchone()
+            if not verify(user['password_hash'], body.current_password):
+                raise AccessError(400, 'INVALID_PASSWORD', 'Current password is incorrect.')
+        with database.credentials(user['username'], body.new_password):
+            with database.connect() as c:
+                c.execute('UPDATE local_users SET password_hash=?,must_change_password=0 WHERE id=?', (HASHER.hash(body.new_password), actor.id))
+                c.execute('DELETE FROM local_sessions WHERE user_id=?', (actor.id,))
+                audit(c, actor.id, 'changePassword', actor.id)
+                return dict(user=issue(c, request, response, c.execute('SELECT * FROM local_users WHERE id=?', (actor.id,)).fetchone()))
 
 
 @router.post('/auth/recover', dependencies=[Depends(csrf)])
-def recover(body: Recovery, request: Request):
+def recover(body: Recovery, request: Request, background: BackgroundTasks):
     throttle(request, body.username)
-    with request.app.state.database.connect() as c:
-        c.execute('BEGIN IMMEDIATE')
-        user = c.execute('SELECT * FROM local_users WHERE username=? COLLATE NOCASE', (body.username,)).fetchone()
-        if not user or user['disabled'] or not user['recovery_hash'] or not secrets.compare_digest(user['recovery_hash'], digest(body.recovery_code)):
-            raise AccessError(400, 'INVALID_RECOVERY', 'Username or recovery code is incorrect.')
+    unlock_database(request, background, body.username, body.recovery_code, recovery=True)
+    database = request.app.state.database
+    with database.guard():
+        with database.connect() as c:
+            user = c.execute('SELECT * FROM local_users WHERE username=? COLLATE NOCASE', (body.username,)).fetchone()
+            if not user or user['disabled'] or not user['recovery_hash'] or not secrets.compare_digest(user['recovery_hash'], digest(body.recovery_code)):
+                raise AccessError(400, 'INVALID_RECOVERY', 'Username or recovery code is incorrect.')
         replacement = secrets.token_urlsafe(32)
-        c.execute('UPDATE local_users SET password_hash=?,must_change_password=0,recovery_hash=? WHERE id=?', (HASHER.hash(body.new_password), digest(replacement), user['id']))
-        c.execute('DELETE FROM local_sessions WHERE user_id=?', (user['id'],))
-        audit(c, user['id'], 'recoverAccount', user['id'])
+        with database.credentials(user['username'], body.new_password, replacement):
+            with database.connect() as c:
+                c.execute('UPDATE local_users SET password_hash=?,must_change_password=0,recovery_hash=? WHERE id=?', (HASHER.hash(body.new_password), digest(replacement), user['id']))
+                c.execute('DELETE FROM local_sessions WHERE user_id=?', (user['id'],))
+                audit(c, user['id'], 'recoverAccount', user['id'])
+        protect_database(request, user['username'], body.new_password, replacement)
     return dict(recovery_code=replacement)
 
 
@@ -273,13 +334,14 @@ def users(request: Request, actor: Annotated[Actor, Depends(authenticated_actor)
 def create_user(body: CreateUser, request: Request, actor: Annotated[Actor, Depends(authenticated_actor)]):
     admin(actor)
     encoded, uid = HASHER.hash(body.password), str(uuid4())
-    with request.app.state.database.connect() as c:
-        try:
-            c.execute('INSERT INTO local_users VALUES (?,?,?,?,?,0,1,NULL,?)', (uid, body.username, body.display_name, encoded, body.role, time.time()))
-        except sqlite3.IntegrityError:
-            raise AccessError(409, 'USERNAME_EXISTS', 'That username is already in use.') from None
-        audit(c, actor.id, 'createAccount', uid)
-        return dict(user=wire(c.execute('SELECT * FROM local_users WHERE id=?', (uid,)).fetchone()))
+    with request.app.state.database.credentials(body.username, body.password):
+        with request.app.state.database.connect() as c:
+            try:
+                c.execute('INSERT INTO local_users VALUES (?,?,?,?,?,0,1,NULL,?)', (uid, body.username, body.display_name, encoded, body.role, time.time()))
+            except (sqlite3.IntegrityError, encrypted_sqlite.IntegrityError):
+                raise AccessError(409, 'USERNAME_EXISTS', 'That username is already in use.') from None
+            audit(c, actor.id, 'createAccount', uid)
+            return dict(user=wire(c.execute('SELECT * FROM local_users WHERE id=?', (uid,)).fetchone()))
 
 
 @router.put('/accounts/{userId}')
@@ -287,22 +349,29 @@ def update_user(userId: UUID, body: UserUpdate, request: Request, actor: Annotat
     admin(actor)
     uid = str(userId)
     encoded = HASHER.hash(body.new_password) if body.new_password else None
-    with request.app.state.database.connect() as c:
-        c.execute('BEGIN IMMEDIATE')
-        user = c.execute('SELECT * FROM local_users WHERE id=?', (uid,)).fetchone()
-        if not user:
-            raise AccessError(404, 'NOT_FOUND', 'Account not found.')
-        role = body.role or user['role']
-        disabled = body.disabled if body.disabled is not None else bool(user['disabled'])
-        if user['role'] == 'administrator' and not user['disabled'] and (role != 'administrator' or disabled):
-            if c.execute("SELECT count(*) FROM local_users WHERE role='administrator' AND disabled=0").fetchone()[0] <= 1:
-                raise AccessError(409, 'LAST_ADMIN', 'Keep at least one active administrator.')
-        c.execute('UPDATE local_users SET role=?,disabled=? WHERE id=?', (role, disabled, uid))
-        if encoded:
-            c.execute('UPDATE local_users SET password_hash=?,must_change_password=1 WHERE id=?', (encoded, uid))
-        c.execute('DELETE FROM local_sessions WHERE user_id=?', (uid,))
-        audit(c, actor.id, 'updateAccount', uid)
-        return dict(user=wire(c.execute('SELECT * FROM local_users WHERE id=?', (uid,)).fetchone()))
+    database = request.app.state.database
+    with database.guard():
+        with database.connect() as c:
+            current = c.execute('SELECT username FROM local_users WHERE id=?', (uid,)).fetchone()
+            if current is None:
+                raise AccessError(404, 'NOT_FOUND', 'Account not found.')
+        with database.credentials(current['username'], body.new_password):
+            with request.app.state.database.connect() as c:
+                c.execute('BEGIN IMMEDIATE')
+                user = c.execute('SELECT * FROM local_users WHERE id=?', (uid,)).fetchone()
+                if not user:
+                    raise AccessError(404, 'NOT_FOUND', 'Account not found.')
+                role = body.role or user['role']
+                disabled = body.disabled if body.disabled is not None else bool(user['disabled'])
+                if user['role'] == 'administrator' and not user['disabled'] and (role != 'administrator' or disabled):
+                    if c.execute("SELECT count(*) FROM local_users WHERE role='administrator' AND disabled=0").fetchone()[0] <= 1:
+                        raise AccessError(409, 'LAST_ADMIN', 'Keep at least one active administrator.')
+                c.execute('UPDATE local_users SET role=?,disabled=? WHERE id=?', (role, disabled, uid))
+                if encoded:
+                    c.execute('UPDATE local_users SET password_hash=?,must_change_password=1 WHERE id=?', (encoded, uid))
+                c.execute('DELETE FROM local_sessions WHERE user_id=?', (uid,))
+                audit(c, actor.id, 'updateAccount', uid)
+                return dict(user=wire(c.execute('SELECT * FROM local_users WHERE id=?', (uid,)).fetchone()))
 
 
 class Membership(Input):

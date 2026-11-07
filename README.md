@@ -64,7 +64,7 @@ The React application communicates exclusively with the FastAPI backend. Only th
 
 1. **Ingestion & vault.** Evidence receives an ID, cryptographic SHA-256 integrity information, and private original storage. Append-only SQLite audit trails record authorized activity without copying source contents into public logs.
 2. **Multimodal normalization.** Supported adapters retain raw values and source locators while applying deterministic UTC timestamp and coordinate normalization. Candidate entity and event resolution connects compatible observations without asserting verified identity.
-3. **Knowledge graph projection.** Two-phase SQL/Neo4j publication first persists pending outputs in SQLite, then writes an idempotent, versioned case/run graph partition. Verification precedes the SQL completion pointer. Failed or partial partitions remain hidden and can be rebuilt safely; no distributed transaction is assumed.
+3. **Knowledge graph projection.** Validated graph snapshots are published in SQLite without requiring Neo4j. If an external projector is explicitly configured, it must pass verification before completion. Failed or partial output remains hidden.
 4. **Adaptive triage scoring.** The versioned [G02 mathematical policy](backend/triage/policy.py) defines relevance, connectivity, corroboration, temporal proximity, and other factors. The integrated initial scorer uses relevance and connectivity; remaining factors enter as their producers are integrated. Available weights are normalized explicitly, and evidence without supporting observations remains unscored. Scores express investigative priority, with separate treatment of extraction confidence, source reliability, corroboration, and uncertainty.
 5. **Explainable findings.** Grounded factor explanations expose the scoring basis. Findings cite supporting observations and their source locators. Counterfactual sensitivity helpers show how removing a candidate entity changes a diagnostic score without rewriting published history.
 
@@ -162,3 +162,7 @@ Generate frontend declarations with `npm --prefix frontend run generate:api`; va
 EVORA is developed by [whale2186](https://github.com/whale2186), [yazh-07](https://github.com/yazh-07), [JebasJ](https://github.com/JebasJ), and [sharmelas-925](https://github.com/sharmelas-925).
 
 Contributions should preserve source provenance, case isolation, immutable history, and explainable results. Use synthetic or publicly permitted fixtures and include behavior tests for changed APIs or processing logic.
+
+Model-assisted report generation, source checks, sharing controls and export behavior are documented in [Model reports](docs/model-reports.md).
+
+The local SQLite database is encrypted and unlocks with the account password. See [Database encryption](docs/database-encryption.md) for migration, recovery and backup requirements.

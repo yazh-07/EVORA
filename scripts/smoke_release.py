@@ -30,7 +30,7 @@ with TemporaryDirectory(prefix='evora-release-smoke-') as directory:
             for attempt in range(120):
                 try:
                     with urlopen(f'http://127.0.0.1:{port}/api/v1/auth/status', timeout=2) as response:
-                        assert json.load(response) == {'setup_required': True, 'offline_mode': True}
+                        assert json.load(response) == {'setup_required': True, 'offline_mode': True, 'database_encrypted': False, 'database_locked': False}
                     with urlopen(f'http://127.0.0.1:{port}/', timeout=2) as response:
                         assert response.status == 200
                     browser=build_opener(HTTPCookieProcessor(http.cookiejar.CookieJar()))

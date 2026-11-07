@@ -353,7 +353,7 @@ Report drafts remain in memory for the open case. Switching sections preserves t
 - Keep original-source access available throughout investigative workflows.
 - Keep internal identifiers available through expandable details and provenance references.
 
-Application login does not encrypt stored evidence. Filesystem permissions, disk encryption, and appropriate backups remain workstation administration responsibilities.
+Account passwords now unlock the encrypted SQLite database; see [Database encryption](database-encryption.md). Original evidence files and Neo4j storage remain separate.
 
 ## 18. Runtime requirements and startup
 
@@ -397,7 +397,7 @@ The update does not yet provide:
 - Automatic audio-only evidence transcription, speaker diarization and speaker identification. Video speech transcription is available with the optional local engine configured.
 - Case-wide evidence-library search; the library's search, category filter, and sorting apply to the current page.
 - A timeline of every observation or a conversion of all media-relative offsets to absolute time.
-- Evidence encryption through the login password.
+- Encryption of original evidence files through the login password (SQLite encryption is implemented separately).
 - Email-based password recovery or a hidden administrator recovery bypass.
 
 Unsupported extraction formats can still be preserved as originals when intake accepts them. Stored originals and successfully extracted records are distinct capabilities.

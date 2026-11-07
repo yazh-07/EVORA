@@ -251,3 +251,9 @@ footer { padding: 16px 36px; }
 .activity-entry p { white-space: normal; font-size: .875rem; }
 .activity-entry progress { width: 100%; accent-color: var(--color-accent); }
 @media (max-width: 600px) { .activity-popover { position: fixed; top: 100px; right: 16px; } }
+
+.report-generation-controls { display: grid; gap: 12px; margin: 20px 0; padding: 18px; border: 1px solid var(--color-border); border-radius: 8px; }
+.report-generation-controls > p { margin: 0; font-size: .8rem; line-height: 1.6; }
+.report-generation-controls > label { display: flex; align-items: flex-start; gap: 10px; font-size: .8rem; line-height: 1.6; }
+.report-generation-controls > label input { flex-shrink: 0; margin-top: 4px; }
+.report-generation-controls .report-actions { margin: 0; }

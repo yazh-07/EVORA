@@ -40,7 +40,7 @@ Login, recovery, setup, and password verification are throttled using persisted 
 
 Local deployments default to offline mode. Cloud API keys are ignored at startup, cloud providers are rejected, and Ollama URLs must use `localhost` or a literal loopback IP address. Model-list requests obey the same restriction. Ollama itself and the desired models must already be installed. Administrators can explicitly disable offline mode in Settings or start with `python -m backend.run --online`. Hosted image requests require separate destination confirmation. See [Image descriptions and OCR](image-description-and-ocr.md).
 
-Application login does not encrypt evidence or defend against an operating-system administrator who can modify the application/database. Use filesystem permissions and disk encryption for stored evidence and backups. Back up the complete SQLite database consistently along with the evidence directory.
+Account passwords now unlock the encrypted SQLite case database. See [Database encryption](database-encryption.md) for migration and recovery details. Back up the database and its matching `.keys.json` file together while EVORA is stopped, along with the original evidence directory. Original files and Neo4j storage are separate from SQLite encryption.
 
 ## Verification
 

@@ -327,7 +327,8 @@ def project_analysis_run(db, neo4j_db, *, case_id: str, analysis_run_id: str,
             run = _run(connection, case_id, analysis_run_id)
             if run["status"] not in {"running", "completed"}:
                 raise ValueError("Analysis run is no longer projectable")
-            _project(neo4j_db, graph, rewrite=run["status"] == "running")
+            if neo4j_db is not None:
+                _project(neo4j_db, graph, rewrite=run["status"] == "running")
             if run["status"] == "running":
                 finished_at = _now()
                 connection.execute("UPDATE analysis_runs SET status='completed',finished_at=? WHERE id=?",
@@ -353,20 +354,17 @@ def project_analysis_run(db, neo4j_db, *, case_id: str, analysis_run_id: str,
 
 
 def rebuild_graph_partition(db, neo4j_db, *, case_id: str, analysis_run_id: str) -> bool:
-    """Restore exactly the immutable SQL version; never change run publication.
-
-    False means Neo4j could not be restored. Missing/foreign resources raise the
-    same 404. Failed/running partitions can be repaired but remain hidden.
-    """
+    """Validate the frozen SQL partition even when external projection is disabled."""
     with db.connect() as connection:
         connection.execute("BEGIN IMMEDIATE")
         run = _run(connection, case_id, analysis_run_id)
         graph, findings, triage = map(json.loads, _stored(connection, run))
         _validate(connection, run, graph, findings, triage)
-        try:
-            _project(neo4j_db, graph, rewrite=True)
-        except ProjectionError:
-            return False
+        if neo4j_db is not None:
+            try:
+                _project(neo4j_db, graph, rewrite=True)
+            except ProjectionError:
+                return False
     return True
 
 
@@ -383,5 +381,6 @@ def get_projected_graph(db, neo4j_db, *, case_id: str, analysis_run_id: str) -> 
             raise AccessError(404, "NOT_FOUND", "Resource not found.")
         graph, findings, triage = map(json.loads, _stored(connection, run))
         _validate(connection, run, graph, findings, triage)
-        _project(neo4j_db, graph, rewrite=False)
+        if neo4j_db is not None:
+            _project(neo4j_db, graph, rewrite=False)
         return graph
