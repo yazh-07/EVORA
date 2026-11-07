@@ -38,7 +38,13 @@ class Connection:
 
     def _read(self):
         if not self.path.exists():return {}
-        if self.path.is_symlink() or self.path.stat().st_mode & 0o077:
+        if self.directory.is_symlink() or self.path.is_symlink():
+            raise ValueError('Credential paths must not be symlinks')
+        if os.name == 'nt':
+            from backend.windows_credentials import secure_path
+            secure_path(self.directory,directory=True)
+            secure_path(self.path)
+        elif self.path.stat().st_mode & 0o077:
             raise ValueError('Credential file must be private')
         record=json.loads(self.path.read_text())
         if not isinstance(record,dict):raise ValueError('Invalid credential record')
@@ -47,10 +53,15 @@ class Connection:
     def _write(self,record):
         if self.directory.is_symlink():raise ValueError('Credential directory must not be a symlink')
         self.directory.mkdir(parents=True,mode=0o700,exist_ok=True)
-        os.chmod(self.directory,0o700)
+        if os.name == 'nt':
+            from backend.windows_credentials import secure_path
+            secure_path(self.directory,directory=True)
+        else:
+            os.chmod(self.directory,0o700)
         temporary=self.directory/(secrets.token_hex(16)+'.tmp')
         try:
             with os.fdopen(os.open(temporary,os.O_CREAT|os.O_EXCL|os.O_WRONLY,0o600),'w') as stream:
+                if os.name == 'nt':secure_path(temporary)
                 json.dump(record,stream);stream.flush();os.fsync(stream.fileno())
             os.replace(temporary,self.path)
         finally:temporary.unlink(missing_ok=True)

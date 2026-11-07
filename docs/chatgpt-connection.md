@@ -30,6 +30,8 @@ Rotating token refresh is serialized. Access tokens are sent only to the fixed o
 
 Use **Disconnect ChatGPT** to clear local tokens. Online disconnect attempts remote revocation; offline or failed revocation is explicitly reported, with a link to [ChatGPT usage and app access](https://chatgpt.com/settings/usage). A registration identifier and account label remain for reconnecting. **Use another ChatGPT account** starts a new registration and only replaces the connection after verified authorization. One active connection is supported; a full multi-profile manager is not implemented. Review older app registrations in ChatGPT Settings when switching accounts.
 
+On Windows, v1.2.1 and later use a protected NTFS ACL granting access to the current Windows user and SYSTEM. Unix mode bits are not used to judge Windows file privacy. Existing credential files are secured in place on access, preserving their host registration and any saved account credentials. This fixes the v1.2.0 Windows sign-in startup error; upgrade and retry without deleting the workstation database.
+
 The connection survives backend restarts. Existing non-secret provider/model preferences are still runtime settings: select online ChatGPT mode again after restarting. You do not need to enter an API key, but expired/revoked sessions may require signing in again. Local EVORA sign-out does not disconnect the workstation model provider; a pending OAuth callback requires the initiating local administrator session to remain valid.
 
 ## Verification

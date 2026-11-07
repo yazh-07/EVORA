@@ -9,7 +9,7 @@ on:
       version:
         description: 'Release version tag (e.g. v1.0.0)'
         required: true
-        default: 'v1.2.0'
+        default: 'v1.2.1'
 
 permissions:
   contents: write
@@ -102,6 +102,14 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -r requirements.txt pyinstaller
 
+      - name: Test native Windows credential protection and OAuth callback
+        env:
+          EVORA_CONTRACT_BUNDLE: ${{ runner.temp }}/evora-openapi.json
+        run: |
+          node scripts/bundle-openapi.mjs specs/openapi.yaml "$env:EVORA_CONTRACT_BUNDLE" frontend
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python -m unittest backend.tests.test_chatgpt_connection -v
+
       - name: Build standalone executable with PyInstaller
         run: |
           pyinstaller --noconfirm evora.spec
@@ -185,7 +193,7 @@ jobs:
           name: EVORA ${{ github.event.inputs.version || github.ref_name }}
           tag_name: ${{ github.event.inputs.version || github.ref_name }}
           target_commitish: ${{ github.sha }}
-          body_path: docs/releases/v1.2.0.md
+          body_path: docs/releases/v1.2.1.md
           files: |
             release-assets/evora-linux-x86_64.tar.gz
             release-assets/evora-windows-x64.zip

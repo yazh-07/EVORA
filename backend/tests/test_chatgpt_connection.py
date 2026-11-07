@@ -1,6 +1,11 @@
 """Real OAuth state/PKCE, RSA JWT validation and loopback callback; OpenAI protocol doubles."""
 from concurrent.futures import ThreadPoolExecutor
 import json
+import os
+import re
+from pathlib import Path
+from tempfile import TemporaryDirectory
+from types import SimpleNamespace
 import unittest
 import time
 from urllib.parse import parse_qs,urlsplit
@@ -63,7 +68,8 @@ class ChatGPTTests(unittest.IsolatedAsyncioTestCase):
         token=parse_qs(requests[0].content.decode())
         self.assertEqual(token['client_id'],['oaiapp_test'])
         self.assertEqual(token['redirect_uri'],authorization['redirect_uri'])
-        self.assertEqual(connection.path.stat().st_mode&0o777,0o600)
+        if os.name != 'nt':self.assertEqual(connection.path.stat().st_mode&0o777,0o600)
+        else:assert_windows_private(self,connection.path)
         status=(await self.client.get('/api/v1/chatgpt/status')).json()
         self.assertTrue(status['sharing']);self.assertNotIn('private-access',json.dumps(status))
         _,mock,_,_=self.provider()
@@ -78,6 +84,16 @@ class ChatGPTTests(unittest.IsolatedAsyncioTestCase):
         requests,mock,_,_=self.provider(nonce='wrong-nonce')
         with mock,self.assertRaises(ValueError):connection.complete(dict(state=connection.pending['state'],code='x',client_id='oaiapp_test'))
         self.assertFalse(connection.status()['connected'])
+
+    async def test_restarting_sign_in_preserves_host_and_can_reread_its_own_file(self):
+        await self.begin()
+        connection=self.app.state.chatgpt_connection
+        host=connection._read()['host_id']
+        response=await self.client.post('/api/v1/chatgpt/connect',json={'offline_mode':False})
+        self.assertEqual(response.status_code,200,response.text)
+        self.assertEqual(connection._read()['host_id'],host)
+        self.assertTrue(connection.status()['pending'])
+        self.assertEqual(connection.status()['error'],'')
 
     async def test_missing_plan_permission_and_offline_block_inference(self):
         connection,_,_=await self.authorized(scope='openid')
@@ -154,6 +170,7 @@ class ChatGPTTests(unittest.IsolatedAsyncioTestCase):
                 with patch.object(cg.httpx,'Client',side_effect=lambda **kwargs:real(transport=httpx.MockTransport(respond),**kwargs)),self.assertRaises(ValueError):
                     connection.infer('test-model','Return JSON','public arithmetic fixture')
 
+
     async def test_empty_partial_or_refused_completed_output_is_rejected(self):
         connection,_,_=await self.authorized();self.app.state.offline_mode=False
         terminal=dict(type='response.completed',response=dict(status='completed',output=[]))
@@ -164,3 +181,49 @@ class ChatGPTTests(unittest.IsolatedAsyncioTestCase):
                 _,_,real,respond=self.provider(stream=''.join('data: '+json.dumps(event)+'\n\n' for event in [*prefix,terminal]))
                 with patch.object(cg.httpx,'Client',side_effect=lambda **kwargs:real(transport=httpx.MockTransport(respond),**kwargs)),self.assertRaises(ValueError):
                     connection.infer('test-model','Return JSON','public arithmetic fixture')
+
+
+def assert_windows_private(test,path):
+    from backend.windows_credentials import security_descriptor,current_user_sid
+    sddl=security_descriptor(path)
+    test.assertTrue(sddl.startswith('D:P'),'credential ACL inheritance must be disabled')
+    entries=[entry.split(';') for entry in re.findall(r'\(([^)]+)\)',sddl)]
+    test.assertEqual({entry[5] for entry in entries},{current_user_sid(),'SY'})
+    test.assertEqual(len(entries),2)
+    for entry in entries:
+        test.assertEqual(entry[0],'A')
+        test.assertEqual(entry[2],'FA')
+
+
+class CredentialFilesystemTests(unittest.TestCase):
+    def setUp(self):
+        root=Path(self.enterContext(TemporaryDirectory(prefix='evora-credentials-')))
+        self.connection=cg.Connection(SimpleNamespace(),root/'workstation Ω.sqlite3')
+
+    @unittest.skipUnless(os.name=='nt','Native Windows ACL regression')
+    def test_windows_round_trip_and_atomic_replacement_use_private_acls(self):
+        connection=self.connection
+        for number in range(2):
+            record={'host_id':'unchanged-host','test_sequence':number}
+            connection._write(record)
+            self.assertEqual(connection._read(),record)
+            assert_windows_private(self,connection.directory)
+            assert_windows_private(self,connection.path)
+        self.assertEqual(list(connection.directory.glob('*.tmp')),[])
+
+    @unittest.skipUnless(os.name=='nt','Native Windows legacy credential regression')
+    def test_windows_repairs_legacy_acl_without_resetting_credentials(self):
+        from backend.windows_credentials import set_dacl
+        connection=self.connection
+        record={'host_id':'preserved-host','access_token':'synthetic-test-only'}
+        connection._write(record)
+        set_dacl(connection.path,'D:P(A;;FA;;;WD)')
+        self.assertNotEqual(connection.path.stat().st_mode&0o077,0,'Windows mode bits do not describe its DACL')
+        self.assertEqual(connection._read(),record)
+        assert_windows_private(self,connection.path)
+
+    @unittest.skipIf(os.name=='nt','Unix permission regression')
+    def test_unix_group_or_world_readable_credentials_remain_rejected(self):
+        connection=self.connection;connection._write({'host_id':'private-host'})
+        os.chmod(connection.path,0o644)
+        with self.assertRaisesRegex(ValueError,'must be private'):connection._read()

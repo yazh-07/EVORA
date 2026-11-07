@@ -1,12 +1,14 @@
 """Verify a newly frozen executable using an isolated local workstation."""
 import json
+import http.cookiejar
 from pathlib import Path
 import socket
 import subprocess
 import sys
 from tempfile import TemporaryDirectory
 import time
-from urllib.request import urlopen
+from urllib.request import urlopen,build_opener,HTTPCookieProcessor,Request
+from urllib.error import HTTPError
 
 binary = Path(sys.argv[1]).resolve()
 subprocess.run([str(binary), '--help'], check=True, timeout=60)
@@ -31,6 +33,24 @@ with TemporaryDirectory(prefix='evora-release-smoke-') as directory:
                         assert json.load(response) == {'setup_required': True, 'offline_mode': True}
                     with urlopen(f'http://127.0.0.1:{port}/', timeout=2) as response:
                         assert response.status == 200
+                    browser=build_opener(HTTPCookieProcessor(http.cookiejar.CookieJar()))
+                    def post(path,payload):
+                        request=Request(f'http://127.0.0.1:{port}/api/v1'+path,
+                            data=json.dumps(payload).encode(),method='POST',
+                            headers={'Content-Type':'application/json','X-Evora-Request':'1'})
+                        try:
+                            with browser.open(request,timeout=10) as result:
+                                assert result.status==200
+                                return json.load(result)
+                        except HTTPError as error:
+                            raise AssertionError(f'{path}: HTTP {error.code}: {error.read().decode()}') from None
+                    post('/auth/setup',{'username':'release-smoke','display_name':'Release Smoke',
+                        'password':'isolated release smoke passphrase'})
+                    # No provider requests: prove the frozen Windows store can be
+                    # reread on retry, using only the real local OAuth starter.
+                    for _ in range(2):
+                        result=post('/chatgpt/connect',{'offline_mode':False})
+                        assert result['authorization_url'].startswith('https://auth.openai.com/')
                     break
                 except OSError:
                     if child.poll() is not None or attempt == 119:
@@ -40,4 +60,4 @@ with TemporaryDirectory(prefix='evora-release-smoke-') as directory:
         finally:
             child.terminate()
             child.wait(timeout=20)
-print('PASS frozen worker/model integrity, isolated startup, local auth and frontend')
+print('PASS frozen worker/model integrity, startup, local auth, frontend and repeated ChatGPT sign-in startup')
