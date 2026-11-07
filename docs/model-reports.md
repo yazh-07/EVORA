@@ -17,11 +17,20 @@ Hosted generation requires online mode and explicit sharing consent in the repor
 
 The context is bounded and balanced across sources. The preview and export state included/total observation and source counts, plus the number of shortened observations. Detection regions, provenance records and repeated extracted mentions are excluded from the prose context where primary source text is available. An omitted or empty section is labelled insufficient source support. Image descriptions, OCR, video scenes and transcripts remain labelled model-derived and unverified.
 
-Edit the narrative and check the investigator-review box before downloading or printing. Editing the narrative clears that confirmation. Changing the analysis, selected findings, scope, notes or loaded review decisions invalidates the generated narrative. A late response cannot restore a draft made from different inputs. Reviewers retain the existing read-only server permissions.
+Edit the narrative and check the investigator-review box before downloading. Editing the narrative clears that confirmation. Changing the analysis, selected findings, scope, notes or loaded review decisions invalidates the generated narrative. A late response cannot restore a draft made from different inputs. Reviewers retain the existing read-only server permissions.
 
-The export includes the narrative, scope, investigator notes, selected findings and review decisions, complete evidence manifest for the selected analysis, source hashes, analysis snapshot hash, source appendix, coverage counts, model/template details and private provenance reference. Download produces a text report; **Print / Save PDF** uses the browser print dialog. Original files and a full chain-of-custody export are not embedded.
+The export includes the narrative, scope, investigator notes, selected findings and review decisions, complete evidence manifest for the selected analysis, source hashes, analysis snapshot hash, source appendix, coverage counts, model/template details and private provenance reference. **Download PDF** creates a formatted A4 document directly in the browser. The PDF includes a cover page, clear narrative headings, selected findings, an evidence register with full hashes, numbered source references, technical provenance, repeating headers and page numbers. **Download text** retains the plain-text alternative. Original files and a full chain-of-custody export are not embedded.
 
 Generation records the original model output, context, scope, notes, prompt hashes, checking results and actor in private backend provenance and adds an audit event. Investigator edits remain in the open report workspace and exported document; they are not saved back to that generation record. Export before reloading, signing out or leaving the case.
+
+## Download a formatted PDF
+
+1. Open **Report** from a completed analysis and enter the report title and scope.
+2. Select findings and choose **Generate with model**. Provide sharing consent if prompted for a hosted provider.
+3. Review the narrative, source references and findings; edit as needed and confirm investigator review.
+4. Choose **Download PDF** to save the formatted document directly. No browser print dialog is required. Use **Download text** for a plain-text copy.
+
+Export the draft before leaving or refreshing the workspace. Exported PDFs are ordinary files outside the encrypted application database; store them appropriately.
 
 ## Verification
 
@@ -38,3 +47,5 @@ npm --prefix frontend run build
 Set `EVORA_TEST_PYTHON` to the project interpreter and `EVORA_CONTRACT_BUNDLE` to the regenerated bundle for the full-modality, detector-feedback and deeper-processing integration scripts in `frontend/test`. Browser checks additionally require Playwright and Chrome; set `EVORA_PLAYWRIGHT_MODULE` and `EVORA_CHROME_PATH` when they are installed outside the default locations.
 
 Frozen builds can be checked with `python scripts/smoke_release.py <executable>` and `python scripts/smoke_standalone.py <executable>`. The standalone smoke test covers encrypted storage, CSV processing, analysis without Neo4j, report generation with a model protocol double, preserved source bytes and password unlock after restart. Model protocol doubles do not establish live account or model availability.
+
+PDF generation is local and uses bundled fonts; it does not send report contents to a PDF service. Long text and tables paginate automatically. Supported Unicode is embedded in the document; characters outside the font coverage are preserved as explicit `[U+XXXX]` codes with a note in the document. Export still requires confirmation after reviewing a generated model draft. An export started before logout, navigation or changed report inputs is discarded.

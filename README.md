@@ -23,7 +23,7 @@ EVORA organizes each case into five primary sections:
 | **Evidence** | Batch upload via drag-and-drop with auto type detection, SHA-256 verification, and UTF-8 plain text/media inspection. |
 | **Timeline** | Chronologically compare extracted events across sources with normalized UTC ordering and date range filters. |
 | **Investigation** | Human review of findings, interactive knowledge graph (40 nodes, 35 relationships), candidate entities, and grounded AI Copilot Q&A. |
-| **Report** | Assemble accepted findings, investigator notes, and source manifests into plain text or browser Print/PDF reports. |
+| **Report** | Generate and review model-assisted narratives, then download formatted A4 PDF reports or plain text with findings, evidence manifests and source references. |
 
 ### Offline Workstation & Local Accounts
 - **Standalone execution:** Start with `python -m backend.run` on `127.0.0.1:8000` with zero internet required.
@@ -57,6 +57,8 @@ See [NEW_UPDATE_FEATURES.md](docs/NEW_UPDATE_FEATURES.md) and [docs/local-accoun
 
 ### 8. Investigative Report Generator & PDF Export
 ![Investigative Report Generator](docs/images/07-case-report.png)
+
+Open a completed analysis and choose **Report**. Set the scope, select findings, and choose **Generate with model** using your connection from Settings. Review and edit the draft, confirm investigator review, then choose **Download PDF**. The file downloads directly with a cover page, narrative sections, findings, evidence tables, citations and numbered pages. PDF export runs locally with bundled fonts; model generation follows your configured provider and sharing consent. See [Model reports](docs/model-reports.md) for coverage, provenance and limitations.
 
 ## Core architecture & investigation pipeline
 

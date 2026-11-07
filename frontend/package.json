@@ -3,7 +3,10 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "engines": { "node": "22.23.3", "npm": "12.2.0" },
+  "engines": {
+    "node": "22.23.3",
+    "npm": "12.2.0"
+  },
   "packageManager": "npm@12.2.0",
   "scripts": {
     "dev": "node scripts/build.mjs --serve",
@@ -22,6 +25,8 @@
     "build": "npm run check:api && npm run typecheck && node scripts/build.mjs"
   },
   "dependencies": {
+    "jspdf": "4.2.1",
+    "jspdf-autotable": "5.0.9",
     "react": "19.3.0",
     "react-dom": "19.3.0"
   },

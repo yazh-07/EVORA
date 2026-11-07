@@ -6,6 +6,7 @@ await build({
   outdir: '.test-build',
   outExtension: { '.js': '.mjs' },
   bundle: true,
+  loader: { '.ttf': 'base64' },
   packages: 'external',
   platform: 'node',
   format: 'esm',

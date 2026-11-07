@@ -9,6 +9,7 @@ const options = {
   entryPoints: ['src/main.tsx'],
   outfile: 'dist/assets/main.js',
   bundle: true,
+  loader: { '.ttf': 'base64' },
   format: 'esm',
   platform: 'browser',
   target: ['es2022'],

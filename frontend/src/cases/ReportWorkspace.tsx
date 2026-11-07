@@ -59,6 +59,8 @@ function ReportDraft({ caseId, runId, caseTitle, investigate }: { caseId: string
   const [title, setTitle] = useState(caseTitle), [scope, setScope] = useState(''), [notes, setNotes] = useState('');
   const [choices, setChoices] = useState<Record<string, boolean>>({});
   const [message, setMessage] = useState('');
+  const [pdfBusy, setPdfBusy] = useState(false);
+  const mounted = useRef(true);
   const selected = useMemo(() => data?.findings.filter(item => choices[item.id] ?? data.reviews[item.id]?.decision === 'accepted').map(item => item.id) ?? [], [data, choices]);
   const [modelDraft, setModelDraft] = useState<{ report: GeneratedReport; input: string }>();
   const [narrative, setNarrative] = useState(''), [reviewed, setReviewed] = useState(false);
@@ -68,9 +70,12 @@ function ReportDraft({ caseId, runId, caseTitle, investigate }: { caseId: string
   const fingerprint = JSON.stringify({ runId, selected, scope, notes, reviews: data?.reviews });
   const current = useRef(fingerprint); current.current = fingerprint;
   const draft = modelDraft?.input === fingerprint ? modelDraft.report : undefined;
+  const exportKey = JSON.stringify([fingerprint, title, narrative, reviewed, draft?.provenance_id]);
+  const currentExport = useRef(exportKey); currentExport.current = exportKey;
   useEffect(() => {
+    mounted.current = true;
     const unsubscribe = client.subscribeSession(() => { pending.current?.abort(); setModelDraft(undefined); setNarrative(''); setReviewed(false); });
-    return () => { pending.current?.abort(); unsubscribe(); };
+    return () => { mounted.current = false; pending.current?.abort(); unsubscribe(); };
   }, [client]);
   const generate = async () => {
     if (pending.current) return;
@@ -93,16 +98,25 @@ function ReportDraft({ caseId, runId, caseTitle, investigate }: { caseId: string
   const baseText = data ? buildReportText(data, selected, title || caseTitle, scope, notes, preparedAt, draft ? narrative : undefined) : '';
   const text = draft ? `${baseText}\n\n${reportModelAppendix(draft)}` : baseText;
   const exportReport = () => { try { saveOriginal(new Blob([text], { type: 'text/plain;charset=utf-8' }), `${title || 'Investigation'}-report.txt`); setMessage('Report download requested. Check your browser downloads.'); } catch { setMessage('Download unavailable. Copy the report preview to save your draft.'); } };
-  const printReport = () => {
-    const popup = window.open('', '_blank');
-    if (!popup) { setMessage('Allow pop-ups to print, or download the text report.'); return; }
-    popup.opener = null;
-    popup.document.title = title || caseTitle;
-    const style = popup.document.createElement('style'); style.textContent = 'body{margin:40px;font:12px/1.65 system-ui;color:#17212b}pre{font:inherit;white-space:pre-wrap;overflow-wrap:anywhere}@page{margin:20mm}';
-    const pre = popup.document.createElement('pre'); pre.textContent = text;
-    popup.document.head.append(style); popup.document.body.append(pre); popup.focus(); popup.print();
+  const exportPdf = async () => {
+    if (!data || pdfBusy || generating || (draft && !reviewed)) return;
+    const identity = currentExport.current, session = client.getSessionVersion();
+    const active = () => mounted.current && identity === currentExport.current && session === client.getSessionVersion();
+    setPdfBusy(true); setMessage('Preparing your PDF…');
+    try {
+      const { createReportPdf } = await import('./reportPdf');
+      if (!active()) return;
+      const blob = createReportPdf({ data, selected, title: title || caseTitle, scope, notes,
+        preparedAt: new Date().toISOString(), narrative: draft ? narrative : undefined, modelReport: draft,
+        reviewed, reviewer: client.getUser() });
+      if (!active()) return;
+      saveOriginal(blob, `${title || 'Investigation'}-report.pdf`);
+      setMessage('Formatted PDF download requested. Check your browser downloads.');
+    } catch {
+      if (active()) setMessage('Could not prepare the PDF. Try again or download the text report.');
+    } finally { if (mounted.current) setPdfBusy(false); }
   };
-  return <section className="report-workspace" aria-label="Report builder" aria-busy={loading}>
+  return <section className="report-workspace" aria-label="Report builder" aria-busy={loading || pdfBusy}>
     <header className="workspace-section-heading"><span className="section-label">Report draft</span><h2>Prepare your report</h2><p>Generate a source-cited narrative with your configured model, review it, and export your report.</p></header>
     <p className="scope-note">Your editable draft stays in this open case. Model output and source context are recorded in private provenance. Export your edits before leaving the case, signing out, reloading, or selecting another analysis.</p>
     {loading && <p role="status">Loading the selected analysis, source manifest, and review decisions…</p>}
@@ -130,7 +144,8 @@ function ReportDraft({ caseId, runId, caseTitle, investigate }: { caseId: string
       {generating && <p role="status">Generating the narrative and checking its claims against the sources. This may take a few minutes.</p>}
       {generationError && <p role="alert">{generationError}</p>}
       </div>
-      <div className="report-actions"><button className="button-primary" type="button" onClick={exportReport} disabled={generating || Boolean(draft && !reviewed)}>Download report</button><button type="button" onClick={printReport} disabled={generating || Boolean(draft && !reviewed)}>Print / Save PDF</button></div>
+      <div className="report-actions"><button className="button-primary" type="button" onClick={() => void exportPdf()} disabled={pdfBusy || generating || Boolean(draft && !reviewed)}>{pdfBusy ? 'Preparing PDF…' : 'Download PDF'}</button><button type="button" onClick={exportReport} disabled={generating || Boolean(draft && !reviewed)}>Download text</button></div>
+      <p className="scope-note">PDF includes a cover page, formatted narrative, findings, evidence tables, source references and page numbers.</p>
       {message && <p role="status">{message}</p>}<pre tabIndex={0} aria-label="Report text">{text}</pre></div></div>}
   </section>;
 }
