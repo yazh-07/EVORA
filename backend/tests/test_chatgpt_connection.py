@@ -188,7 +188,11 @@ def assert_windows_private(test,path):
     sddl=security_descriptor(path)
     test.assertTrue(sddl.startswith('D:P'),'credential ACL inheritance must be disabled')
     entries=[entry.split(';') for entry in re.findall(r'\(([^)]+)\)',sddl)]
-    test.assertEqual({entry[5] for entry in entries},{current_user_sid(),'SY'})
+    user=current_user_sid()
+    # Windows renders the RID-500 Administrator SID using its SDDL alias.
+    # This is the same account, not an extra allowed principal.
+    user_alias='LA' if re.fullmatch(r'S-1-5-21-\d+-\d+-\d+-500',user) else user
+    test.assertEqual({entry[5] for entry in entries},{user_alias,'SY'})
     test.assertEqual(len(entries),2)
     for entry in entries:
         test.assertEqual(entry[0],'A')
