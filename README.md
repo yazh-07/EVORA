@@ -1,6 +1,5 @@
 # EVORA — Forensic Evidence Fusion & Adaptive Investigation Platform
 
-[![Build passing](https://github.com/yazh-07/EVORA/actions/workflows/contract.yml/badge.svg?branch=main)](https://github.com/yazh-07/EVORA/actions/workflows/contract.yml)
 ![Python 3.14](https://img.shields.io/badge/Python-3.14-3776AB?logo=python&logoColor=white)
 ![React 19](https://img.shields.io/badge/React-19-149ECA?logo=react&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript&logoColor=white)
