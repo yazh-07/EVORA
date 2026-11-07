@@ -1,0 +1,15 @@
+# Process all evidence
+
+Open a case's Evidence tab and click **Process all**, then **Start batch**. The queue includes all case evidence pages, regardless of the library's current search or kind filter. Uploads added after discovery are picked up by the next batch.
+
+The browser sends one source at a time through the existing authorized processing endpoints. Completed sources are skipped. Existing queued/running work is monitored instead of duplicated. Each new request has its own idempotency key. Individual failures remain visible and do not conceal successful sources. A request with an unconfirmed outcome is labeled unconfirmed and is never automatically posted again. The next explicit batch checks processing history first.
+
+Basic processing extracts documents/CSV records and runs local image/video detection. To include scene descriptions and model-assisted OCR, enable **Include image descriptions, OCR and video scene analysis**. The panel displays the selected image model and destination. Hosted providers require a connected provider, online mode and explicit batch consent before any normalized image or sampled frame is sent. Provider/model/endpoint expectations are fixed for the batch and verified by existing backend endpoints; changing settings cannot silently redirect queued media to a different destination.
+
+Images with only basic completed output can still receive description/OCR enrichment. Existing completed vision output is skipped. Inspect a source's individual controls to intentionally request a new analysis or change sampling. Batch video uses a 5-second sample interval, a 12-frame cap and no speech transcription. Standalone audio is marked skipped and retains its individual transcription workflow.
+
+Progress shows completed, failed, skipped and unconfirmed items, with individual run IDs when available. **Stop queue**, leaving the case, unmounting the view or changing local sessions stops future queue requests. It does not cancel work already accepted by the server. Keep the case open while the browser queue runs. Run case analysis after processing to include the new outputs; the batch does not silently start an investigation analysis.
+
+Reviewers cannot start the batch. Existing backend case access checks, file preflight, immutable output publication and original-file integrity remain authoritative. This update adds no backend endpoint or schema change.
+
+Validation: the frontend regression suite covers pagination, active/completed run reconciliation, errors, consent, fixed provider expectations, cancellation, session changes and response lineage. `npm --prefix frontend run test:bulk-processing` uses an isolated real FastAPI/SQLite server, the project test interpreter via `EVORA_TEST_PYTHON`, and a regenerated OpenAPI bundle. It verifies 105 stored originals across two evidence pages, extraction lineage, malformed-input isolation and no duplicate completed runs. It does not contact a model provider or prove model accuracy.

@@ -70,6 +70,11 @@ jobs:
         run: npm --prefix frontend run typecheck
       - name: Test frontend
         run: npm --prefix frontend run test
+      - name: Test case-wide bulk processing
+        env:
+          EVORA_TEST_PYTHON: python
+          EVORA_CONTRACT_BUNDLE: ${{ runner.temp }}/evora-openapi.json
+        run: npm --prefix frontend run test:bulk-processing
       - name: Build frontend
         run: npm --prefix frontend run build
       - name: Validate design tokens and contrast

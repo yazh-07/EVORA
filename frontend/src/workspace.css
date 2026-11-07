@@ -232,3 +232,10 @@ footer { padding: 16px 36px; }
 .image-model-destination label { display: flex; gap: 12px; align-items: flex-start; margin: 16px 0; line-height: 1.7; overflow-wrap: anywhere; }
 .image-model-destination label input { flex-shrink: 0; margin-top: 5px; }
 .image-model-destination button { margin-top: 12px; }
+
+.bulk-processing { margin-bottom: 20px; }
+.bulk-processing > label { display: flex; gap: 10px; align-items: flex-start; margin-block: 14px; }
+.bulk-processing progress { width: 100%; accent-color: var(--color-accent); }
+.bulk-processing ul { max-height: 320px; overflow-y: auto; padding-left: 22px; }
+.bulk-processing li { margin-block: 10px; overflow-wrap: anywhere; }
+.bulk-processing li > span { color: var(--color-secondary); }

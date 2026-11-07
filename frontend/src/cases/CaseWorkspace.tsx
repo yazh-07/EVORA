@@ -223,3 +223,6 @@ export function CaseCreation({ state, create }: { state: CaseState; create: (tit
     </details>
   </section>;
 }
+
+export { createBulkProcessingController } from './bulkProcessingController';
+export { BulkProcessingResults } from './BulkProcessing';

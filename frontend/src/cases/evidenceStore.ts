@@ -12,7 +12,7 @@ export type EvidenceState = {
 };
 const initial = (): EvidenceState => ({ page: null, status: 'loading', message: '', detail: null, detailStatus: 'idle', detailMessage: '', submitting: false, uploadMessage: '', uploaded: false });
 const errorMessage = (error: unknown) => error instanceof ApiHttpError && error.apiError ? error.apiError.message : 'Could not access evidence. Check your connection and try again.';
-function validEvidence(item: Evidence, caseId: string): boolean {
+export function validEvidence(item: Evidence, caseId: string): boolean {
   return !!item && item.case_id === caseId && typeof item.id === 'string' &&
     /^[0-9a-f-]{36}$/i.test(item.id) && /^[0-9a-f]{64}$/.test(item.sha256) &&
     Number.isSafeInteger(item.size_bytes) && item.size_bytes >= 0 && evidenceKinds.includes(item.kind) &&

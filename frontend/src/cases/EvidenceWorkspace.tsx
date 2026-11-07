@@ -3,6 +3,7 @@ import { MediaInspector } from './MediaInspector';
 import type { SourceFocus } from './mediaLocators';
 import { ObservationInspector } from './ObservationInspector';
 import { OriginalDownload } from './OriginalDownload';
+import { BulkProcessing } from './BulkProcessing';
 import { StartProcessing } from './StartProcessing';
 import { TranscriptViewer } from './TranscriptViewer';
 import { useApiClient } from '../api/ApiProvider';
@@ -18,7 +19,7 @@ export function EvidenceWorkspace({ caseId, sourceSelection, intakeRequest = 0 }
   const state = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot);
   useEffect(() => { void store.start(); return () => store.dispose(); }, [store]);
   useEffect(() => { if (sourceSelection) void store.select(sourceSelection.id); }, [store, sourceSelection]);
-  return <>{sourceSelection && <p role="status">Source evidence inspection shows live metadata. Citation locators select their referenced processing output when available; other processing controls show live outputs.</p>}<EvidencePanels readOnly={client.getUser()?.role === 'reviewer'} intakeRequest={intakeRequest} sourceFocus={sourceSelection?.id === state.detail?.id ? sourceSelection?.focus : undefined} state={state} load={offset => { void store.load(offset); }} select={id => { void store.select(id); }} upload={store.upload} /></>;
+  return <>{client.getUser()?.role !== 'reviewer' && <BulkProcessing key={caseId} caseId={caseId} />}{sourceSelection && <p role="status">Source evidence inspection shows live metadata. Citation locators select their referenced processing output when available; other processing controls show live outputs.</p>}<EvidencePanels readOnly={client.getUser()?.role === 'reviewer'} intakeRequest={intakeRequest} sourceFocus={sourceSelection?.id === state.detail?.id ? sourceSelection?.focus : undefined} state={state} load={offset => { void store.load(offset); }} select={id => { void store.select(id); }} upload={store.upload} /></>;
 }
 function Metadata({ item, detailed = false }: { item: Evidence; detailed?: boolean }) {
   return <>
