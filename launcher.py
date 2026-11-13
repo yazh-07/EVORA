@@ -9,6 +9,7 @@ import sys
 import threading
 import time
 import webbrowser
+from contextlib import ExitStack
 from pathlib import Path
 
 import uvicorn
@@ -61,6 +62,10 @@ def main():
         action="store_true",
         help="Do not automatically launch the web browser",
     )
+    parser.add_argument('--graph-mode', choices=['auto', 'bundled', 'external'], default='auto')
+    parser.add_argument('--graph-data', help='Private bundled graph data directory')
+    parser.add_argument('--shutdown-file', help=argparse.SUPPRESS)
+    parser.add_argument('--parent-pid', type=int, default=0, help=argparse.SUPPRESS)
     args = parser.parse_args()
 
     frontend_dist = BUNDLE_DIR / "frontend" / "dist"
@@ -87,14 +92,36 @@ def main():
     print("=" * 60)
     print("  Press Ctrl+C to stop the workstation server.\n")
 
-    app = create_app(str(db_path), storage_dir=str(vault_path), offline_mode=True)
-    app.mount("/", StaticFiles(directory=str(frontend_dist), html=True), name="workstation")
+    with ExitStack() as resources:
+        runtime = BUNDLE_DIR / 'graph-runtime'
+        bundled = args.graph_mode == 'bundled' or (args.graph_mode == 'auto' and
+            (runtime.exists() or (os.name == 'nt' and getattr(sys, 'frozen', False))))
+        if bundled:
+            from backend.managed_graph import ManagedGraph
+            graph_home = Path(args.graph_data) if args.graph_data else (
+                Path(os.environ['LOCALAPPDATA']) / 'EVORA/graph' if os.name == 'nt' and os.environ.get('LOCALAPPDATA')
+                else db_path.parent / 'graph')
+            graph = ManagedGraph(runtime, graph_home, owner_pid=args.parent_pid or None)
+            resources.callback(graph.close)
+            os.environ.update(graph.start())
+        app = create_app(str(db_path), storage_dir=str(vault_path), offline_mode=True)
+        app.mount("/", StaticFiles(directory=str(frontend_dist), html=True), name="workstation")
 
-    if not args.no_browser:
-        target_url = f"http://127.0.0.1:{args.port}"
-        threading.Thread(target=open_browser, args=(target_url,), daemon=True).start()
+        if not args.no_browser:
+            target_url = f"http://127.0.0.1:{args.port}"
+            threading.Thread(target=open_browser, args=(target_url,), daemon=True).start()
 
-    uvicorn.run(app, host="127.0.0.1", port=args.port, access_log=False)
+        server = uvicorn.Server(uvicorn.Config(app, host='127.0.0.1', port=args.port, access_log=False))
+        if args.shutdown_file or args.parent_pid:
+            def watch_shutdown():
+                from backend.process_owner import alive
+                while not server.should_exit:
+                    if (args.shutdown_file and Path(args.shutdown_file).exists()) or not alive(args.parent_pid):
+                        server.should_exit = True
+                        return
+                    time.sleep(.25)
+            threading.Thread(target=watch_shutdown, daemon=True).start()
+        server.run()
 
 
 if __name__ == "__main__":

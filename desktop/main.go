@@ -29,12 +29,13 @@ var (
 func main() {
 	appConfig = LoadConfig()
 	backendMgr = NewBackendManager(appConfig)
+	defer backendMgr.Stop()
 
 	// Attempt to start backend server
 	_ = backendMgr.Start(appConfig)
 
 	// Wait up to 6 seconds for backend readiness
-	ready := backendMgr.WaitReady(6 * time.Second)
+	ready := backendMgr.WaitReady(180 * time.Second)
 
 	// Run system tray in parallel
 	go systray.Run(onTrayReady, onTrayExit)
@@ -83,7 +84,7 @@ func openNativeWindow(targetURL string, initialReady bool) {
 		})
 		go func() {
 			_ = backendMgr.Start(appConfig)
-			if backendMgr.WaitReady(6 * time.Second) {
+			if backendMgr.WaitReady(180 * time.Second) {
 				wv.Dispatch(func() {
 					wv.Navigate(targetURL)
 				})

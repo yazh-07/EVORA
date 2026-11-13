@@ -1,0 +1,17 @@
+# Windows bundled graph runtime
+
+Windows packages include Neo4j Community 5.26.30, Eclipse Temurin Java 21.0.13+9 and EVORA's graph host. No Docker, separate Java installation, database service or runtime download is needed. Linux/source launches retain the external Neo4j configuration.
+
+The Windows PyInstaller specification invokes `scripts/prepare_windows_graph.py`. All distributions and corresponding source archives are pinned by URL and SHA-256 in `desktop/graph/runtime-lock.json`. Original license/legal files and the source archives are installed with the runtime. `GraphHost.java` is provided under GPL-3.0-only and its source is included. Build downloads happen before packaging, never during investigation.
+
+The desktop starts the Python backend, which starts its own graph JVM and verifies authenticated Bolt access before serving the workspace. Startup allows up to three minutes for a cold store. The graph uses a dynamically selected loopback port; HTTP/HTTPS and usage reporting are disabled. It never connects to or stops a machine's independently installed Neo4j server.
+
+Graph files live in `%LOCALAPPDATA%\EVORA\graph`, outside the installation. The directory has a private Windows ACL and contains generated credentials, configuration, graph data and diagnostics. Credentials are generated once and retained on restart. They are separate from the investigator's account password. The derived graph store is protected by filesystem permissions; it is not encrypted with the account password. Existing SQLite/evidence paths remain unchanged.
+
+The graph home is locked while owned. A second launch cannot start another JVM against it. Desktop exit requests backend shutdown, then the JVM's shutdown hook closes Neo4j. A JVM watcher also checks the backend and desktop owner processes; owner death requests clean graph shutdown. A bounded forced-stop fallback remains for a hung process, followed by Neo4j recovery on the next launch. Logs do not intentionally include graph passwords.
+
+Application upgrades replace runtime files, preserving the graph directory. Normal uninstall leaves user graph data intact. The pinned version remains in the Neo4j 5.26 line; future major-version upgrades require a migration plan. Back up user data before migrating a store.
+
+Existing external graph databases are not imported automatically. For an existing external deployment, launch the backend with `--graph-mode external` and its `NEO4J_*` environment. Otherwise new analysis runs populate the private graph from case evidence. Historical external graph partitions stay on the original server. `--graph-data <directory>` supplies a separate graph home for tests/portable deployments; `--graph-mode bundled` explicitly requires packaged runtime files.
+
+Verification includes real-JVM authentication, retained data/credentials on restart, exclusion of a second owner, clean owner-death shutdown and archive checksum/path checks. The Windows frozen smoke test additionally creates a local account, processes synthetic GPS evidence, completes analysis and reads graph nodes, then requests graceful shutdown. Cross-platform JVM tests and Windows cross-compilation do not replace a native Windows build/smoke result.

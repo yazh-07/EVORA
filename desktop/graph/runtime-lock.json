@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "neo4j": {
+    "url": "https://dist.neo4j.org/neo4j-community-5.26.30-windows.zip",
+    "sha256": "b2c2932b16f810adcc54560e90ee35847047d2d52f78cfbfabbae133be8f82cd"
+  },
+  "java": {
+    "url": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.13%2B9/OpenJDK21U-jdk_x64_windows_hotspot_21.0.13_9.zip",
+    "sha256": "a4dbaa05fca4bd89d84584e58c459bd732efebb1722af80ab13c6516832004f9"
+  },
+  "neo4j-source": {
+    "url": "https://codeload.github.com/neo4j/neo4j/tar.gz/refs/tags/5.26.30",
+    "sha256": "a9b22b41d54a08e4d30cdabccf4110b41008074647c4ce54508518448161f7c9"
+  },
+  "java-source": {
+    "url": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.13%2B9/OpenJDK21U-jdk-sources_21.0.13_9.tar.gz",
+    "sha256": "b5232c9980d8a0f0459676c084c41c6e2c771ed9e785890b03c6a438406ad1ca"
+  }
+}

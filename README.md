@@ -91,6 +91,8 @@ Run the following commands from the repository root. The local demo uses synthet
 
 ### Backend setup
 
+Windows installer builds bundle a private Neo4j and Java runtime and manage them automatically. Graph data is retained under `%LOCALAPPDATA%\EVORA\graph` across application upgrades. See [bundled graph setup and lifecycle](docs/bundled-graph.md), including existing external deployments. The source setup below still uses an external Neo4j server.
+
 Use Python **3.14.8**: the local text model verifies the exact runtime, including the Python patch version. Create and activate the environment, then install the pinned dependencies:
 
 ```sh

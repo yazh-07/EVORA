@@ -1,8 +1,14 @@
 # -*- mode: python ; coding: utf-8 -*-
 import sys
+from pathlib import Path
 from PyInstaller.utils.hooks import collect_data_files, copy_metadata
 
 model_data = collect_data_files('en_core_web_sm', include_py_files=True)
+graph_data = []
+if sys.platform == 'win32':
+    import runpy
+    builder = runpy.run_path(str(Path(SPECPATH) / 'scripts/prepare_windows_graph.py'))
+    graph_data = [(str(builder['prepare']()), 'graph-runtime')]
 for distribution in ('en-core-web-sm', 'spacy', 'thinc', 'numpy'):
     model_data += copy_metadata(distribution)
 
@@ -10,7 +16,7 @@ a = Analysis(
     ['launcher.py'],
     pathex=[],
     binaries=[],
-    datas=[('frontend/dist', 'frontend/dist'), ('specs/openapi.yaml', 'specs'), ('backend/models', 'backend/models'), ('backend/geodata', 'backend/geodata')] + model_data,
+    datas=[('frontend/dist', 'frontend/dist'), ('specs/openapi.yaml', 'specs'), ('backend/models', 'backend/models'), ('backend/geodata', 'backend/geodata')] + model_data + graph_data,
     hiddenimports=['uvicorn.logging', 'uvicorn.loops.auto', 'uvicorn.protocols.http.auto', 'uvicorn.protocols.websockets.auto', 'uvicorn.lifespan.on', 'argon2', 'argon2.low_level', 'sqlcipher3', 'sqlcipher3.dbapi2', 'sqlcipher3._sqlite3'],
     hookspath=[],
     hooksconfig={},

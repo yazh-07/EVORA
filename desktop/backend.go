@@ -35,6 +35,8 @@ type BackendManager struct {
 	logPath   string
 	binPath   string
 	lastError string
+	done      chan error
+	stopPath  string
 }
 
 func NewBackendManager(cfg Config) *BackendManager {
@@ -100,6 +102,14 @@ func (b *BackendManager) Start(cfg Config) error {
 	defer b.mu.Unlock()
 
 	b.lastError = ""
+	if b.cmd != nil && b.done != nil {
+		select {
+		case <-b.done:
+			b.cmd = nil
+		default:
+			return nil
+		}
+	}
 	binPath, err := b.findExecutable()
 	if err != nil {
 		b.lastError = err.Error()
@@ -115,11 +125,15 @@ func (b *BackendManager) Start(cfg Config) error {
 		fmt.Printf("[EVORA] Warning: could not open log file: %v\n", err)
 	}
 
+	b.stopPath = filepath.Join(filepath.Dir(b.dbPath), fmt.Sprintf("stop-%d", os.Getpid()))
+	_ = os.Remove(b.stopPath)
 	args := []string{
 		"--no-browser",
 		"--port", strconv.Itoa(b.port),
 		"--database", b.dbPath,
 		"--storage", b.vault,
+		"--shutdown-file", b.stopPath,
+		"--parent-pid", strconv.Itoa(os.Getpid()),
 	}
 
 	cmd := exec.Command(binPath, args...)
@@ -150,10 +164,21 @@ func (b *BackendManager) Start(cfg Config) error {
 	hideWindow(cmd)
 
 	if err := cmd.Start(); err != nil {
+		if logFile != nil {
+			_ = logFile.Close()
+		}
 		b.lastError = fmt.Sprintf("Failed to launch '%s': %v", binPath, err)
 		return fmt.Errorf("failed to start backend process: %w", err)
 	}
 	b.cmd = cmd
+	b.done = make(chan error, 1)
+	done := b.done
+	go func() {
+		done <- cmd.Wait()
+		if logFile != nil {
+			_ = logFile.Close()
+		}
+	}()
 	return nil
 }
 
@@ -176,8 +201,14 @@ func (b *BackendManager) Stop() {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 	if b.cmd != nil && b.cmd.Process != nil {
-		_ = b.cmd.Process.Kill()
-		_ = b.cmd.Wait()
+		_ = os.WriteFile(b.stopPath, []byte("stop\n"), 0600)
+		select {
+		case <-b.done:
+		case <-time.After(60 * time.Second):
+			_ = b.cmd.Process.Kill()
+			<-b.done
+		}
+		_ = os.Remove(b.stopPath)
 		b.cmd = nil
 	}
 }
