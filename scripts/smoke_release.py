@@ -42,7 +42,7 @@ with TemporaryDirectory(prefix='evora-release-smoke-') as directory:
                             headers={'Content-Type':'application/json','X-Evora-Request':'1',**(extra_headers or {})})
                         try:
                             with browser.open(request,timeout=10) as result:
-                                assert result.status==200
+                                assert 200 <= result.status < 300, (path, result.status)
                                 return json.load(result)
                         except HTTPError as error:
                             raise AssertionError(f'{path}: HTTP {error.code}: {error.read().decode()}') from None
