@@ -8,6 +8,8 @@ from collections.abc import Mapping
 from dataclasses import dataclass, field
 import math
 import os
+import logging
+import re
 from urllib.parse import urlsplit
 
 from neo4j import Driver, GraphDatabase, Query, Session
@@ -22,6 +24,12 @@ class Neo4jUnavailableError(GraphDatabaseError):
     """Connection, authentication or configured-database access failed closed."""
 
 
+def report_graph_error(phase, error):
+    code = getattr(error, 'code', '')
+    safe_code = code if isinstance(code, str) and re.fullmatch(r'Neo\.[A-Za-z.]{1,100}', code) else 'unavailable'
+    logging.getLogger(__name__).warning('Graph %s failed: %s (%s)', phase, type(error).__name__, safe_code)
+
+
 @dataclass(frozen=True, kw_only=True)
 class Neo4jConfig:
     """Backend-only configuration. Load explicitly; imports never open sockets."""
@@ -31,6 +39,7 @@ class Neo4jConfig:
     user: str = "neo4j"
     database: str = "neo4j"
     connection_timeout: float = 1.0
+    query_timeout: float = 30.0
 
     def __post_init__(self) -> None:
         # No credentials, query parameters or paths in the URI. Values are never
@@ -59,12 +68,15 @@ class Neo4jConfig:
                 or not 0 < self.connection_timeout <= 2.0
                 or not math.isfinite(self.connection_timeout)):
             raise GraphDatabaseError("Neo4j timeout must be finite and in (0, 2] seconds.")
+        if isinstance(self.query_timeout, bool) or not isinstance(self.query_timeout, (int, float)) or not math.isfinite(self.query_timeout) or not 0 < self.query_timeout <= 120:
+            raise GraphDatabaseError('Neo4j query timeout must be finite and in (0, 120] seconds.')
 
     @classmethod
     def from_env(cls, environ: Mapping[str, str] | None = None) -> "Neo4jConfig":
         env = os.environ if environ is None else environ
         try:
             timeout = float(env.get("NEO4J_CONNECTION_TIMEOUT", "1.0"))
+            query_timeout = float(env.get('NEO4J_QUERY_TIMEOUT', '30'))
         except (TypeError, ValueError):
             raise GraphDatabaseError("Invalid Neo4j timeout configuration.") from None
         return cls(
@@ -73,6 +85,7 @@ class Neo4jConfig:
             password=env.get("NEO4J_PASSWORD", ""),
             database=env.get("NEO4J_DATABASE", "neo4j"),
             connection_timeout=timeout,
+            query_timeout=query_timeout,
         )
 
 
@@ -156,8 +169,10 @@ class Neo4jGraphDatabase:
         """
         try:
             for statement in SCHEMA_STATEMENTS:
-                session.run(Query(statement, timeout=self.config.connection_timeout)).consume()
-        except (DriverError, OSError):
+                session.run(Query(statement, timeout=self.config.query_timeout)).consume()
+        except (DriverError, OSError) as error:
+            report_graph_error('schema', error)
             raise Neo4jUnavailableError("Graph database is unavailable.") from None
-        except Neo4jError:
+        except Neo4jError as error:
+            report_graph_error('schema', error)
             raise GraphDatabaseError("Graph schema setup failed.") from None

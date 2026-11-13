@@ -83,6 +83,14 @@ with TemporaryDirectory(prefix='evora-release-smoke-') as directory:
                         log.seek(0)
                         raise RuntimeError(log.read()[-4000:])
                     time.sleep(.5)
+        except BaseException:
+            log.flush()
+            log.seek(0)
+            print(log.read()[-8000:])
+            graph_log=root/'graph/runtime.log'
+            if graph_log.is_file():
+                print(graph_log.read_text(encoding='utf-8',errors='replace')[-4000:])
+            raise
         finally:
             (root / 'stop').touch()
             try:child.wait(timeout=75)

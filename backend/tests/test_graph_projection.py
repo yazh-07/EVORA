@@ -129,7 +129,7 @@ class SyntheticTransaction:
 
 class SyntheticNeo4j:
     def __init__(self):
-        self.config = SimpleNamespace(database='synthetic-private-db', connection_timeout=1.)
+        self.config = SimpleNamespace(database='synthetic-private-db', connection_timeout=1., query_timeout=30.)
         self.partitions, self.calls = {}, []
         self.fail = self.corrupt = self.before_query = self.after_commit = None
 
@@ -148,7 +148,7 @@ class SyntheticNeo4j:
             raise OSError('synthetic-private-driver-detail')
 
     def begin_transaction(self, *, timeout):
-        assert timeout == self.config.connection_timeout
+        assert timeout == self.config.query_timeout
         return SyntheticTransaction(self)
 
 

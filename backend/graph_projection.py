@@ -10,7 +10,7 @@ import math
 
 from backend.audit import initialize_audit, record_analysis_event
 from backend.errors import AccessError
-from backend.graph_db import GraphDatabaseError
+from backend.graph_db import GraphDatabaseError, report_graph_error
 from backend.graph_nodes import _uuid, build_graph_nodes
 from backend.triage.aggregation import sort_triage_results
 
@@ -275,7 +275,7 @@ def _project(neo4j_db, graph, *, rewrite):
         with neo4j_db.get_driver().session(database=neo4j_db.config.database) as session:
             if rewrite:
                 neo4j_db.setup_schema(session)
-            with session.begin_transaction(timeout=neo4j_db.config.connection_timeout) as tx:
+            with session.begin_transaction(timeout=neo4j_db.config.query_timeout) as tx:
                 params = dict(case_id=graph["case_id"], run_id=graph["analysis_run_id"])
                 if rewrite:
                     # Replace only this partition, atomically removing stale data.
@@ -287,7 +287,8 @@ def _project(neo4j_db, graph, *, rewrite):
                     tx.run(_WRITE_EDGE, **params, edges=graph["edges"]).consume()
                 _verify(tx, graph)
                 tx.commit()
-    except Exception:
+    except Exception as error:
+        report_graph_error('projection', error)
         raise ProjectionError("Graph projection unavailable or incoherent.") from None
 
 

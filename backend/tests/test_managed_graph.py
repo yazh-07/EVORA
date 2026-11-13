@@ -14,6 +14,18 @@ from backend.managed_graph import ManagedGraph
 
 
 class GraphPackagingTests(unittest.TestCase):
+    def test_query_deadline_is_independent_and_diagnostics_exclude_exception_text(self):
+        from backend.graph_db import Neo4jConfig, GraphDatabaseError, report_graph_error
+        config = Neo4jConfig.from_env({'NEO4J_PASSWORD': 'private', 'NEO4J_QUERY_TIMEOUT': '60'})
+        self.assertEqual(config.connection_timeout, 1)
+        self.assertEqual(config.query_timeout, 60)
+        for value in ('0', '121', 'nan', 'inf'):
+            with self.assertRaises(GraphDatabaseError):
+                Neo4jConfig.from_env({'NEO4J_PASSWORD': 'private', 'NEO4J_QUERY_TIMEOUT': value})
+        with self.assertLogs('backend.graph_db', level='WARNING') as captured:
+            report_graph_error('projection', RuntimeError('private evidence and credentials'))
+        self.assertNotIn('private', '\n'.join(captured.output))
+
     def test_initialization_failure_does_not_log_the_password_and_releases_lock(self):
         with TemporaryDirectory() as directory:
             root = Path(directory)

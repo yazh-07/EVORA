@@ -164,7 +164,7 @@ class SchemaTests(unittest.TestCase):
             self.assertTrue(any(f"ON ({variable}.case_id, {variable}.id)" in q for q in first))
         for call in session.run.call_args_list:
             self.assertIn("IF NOT EXISTS", call.args[0].text)
-            self.assertEqual(call.args[0].timeout, 1.0)
+            self.assertEqual(call.args[0].timeout, db.config.query_timeout)
             self.assertNotIn(db.config.password, call.args[0].text)
         db.setup_schema(session)
         self.assertEqual([call.args[0].text for call in session.run.call_args_list], first * 2)
