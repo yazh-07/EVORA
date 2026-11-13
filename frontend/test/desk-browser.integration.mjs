@@ -75,8 +75,8 @@ try {
  await button('Settings').click(); await page.getByLabel('Hex code', { exact: true }).fill('#ffffff');
  await page.getByText('Color adjusted for readable text.').waitFor();
  await page.getByLabel('Hex code', { exact: true }).fill('bad'); assert.ok(await button('Apply appearance').isDisabled());
- await button('Purple').click(); await button('Apply appearance').click(); await page.reload();
- assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('evora-appearance')).accent), '#7c3aed');
+ await button('Blue').click(); await button('Apply appearance').click(); await page.reload();
+ assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('evora-appearance')).accent), '#2859b8');
  await button(`Open case ${record.title}`).click();
  assert.equal(await page.locator('.case-details').count(), 0);
  await button('Run case analysis').click(); await button('Review findings').waitFor();

@@ -35,6 +35,8 @@ try {
       contents: `import React from 'react'; import {createRoot} from 'react-dom/client';
         import {ApiProvider} from './src/api/ApiProvider'; import {createApiClient} from './src/api/client';
         import {LocationsWorkspace} from './src/cases/LocationsWorkspace';
+        import {applyAppearance} from './src/appearance/appearance';
+        applyAppearance({version:1,mode:'light',accent:'#2859b8'});
         const client=createApiClient({baseUrl:'${origin}'}); client.setToken('synthetic-map-test');
         createRoot(document.getElementById('root')).render(<ApiProvider client={client}>
           <LocationsWorkspace caseId='${id(9)}' inspectEvidence={(id,focus)=>{window.inspected={id,focus};}}/>
