@@ -63,7 +63,7 @@ test('supported inquiry posts the typed wire contract, renders every citation an
   const initial = render(c);
   assert.match(initial, /<label for="case-question">Question about the evidence<\/label>/);
   assert.match(initial, /<textarea id="case-question" name="question" maxLength="2000"/);
-  assert.match(initial, /placeholder="Ask a question about extracted entities or events\.\.\."/);
+  assert.match(initial, /placeholder="e\.g\. Which records mention this device\?"/);
   change(c, `  ${question}  `); submit(c); submit(c);
   assert.equal(c.getSnapshot().status, 'submitting');
   assert.match(render(c), /aria-busy="true"/);

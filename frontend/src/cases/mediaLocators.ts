@@ -4,6 +4,8 @@ export type MediaLocator = { box?: { x: number; y: number; width: number; height
 /** Phase 1 boxes use original-image pixels; offsets are elapsed seconds, never capture times. */
 export function parseMediaLocator(source: string): MediaLocator {
   const result: MediaLocator = {};
+  const segment = source.match(/^media:start_ms=(\d+);end_ms=(\d+)$/);
+  if (segment && Number.isSafeInteger(Number(segment[1]))) result.seconds = Number(segment[1]) / 1000;
   const number = '(\\d+(?:\\.\\d+)?)';
   const box = source.match(new RegExp(`(?:^|[;\\s])box=${number},${number},${number},${number}(?=;|\\s|$)`));
   if (box) {
@@ -17,8 +19,11 @@ export function parseMediaLocator(source: string): MediaLocator {
   return result;
 }
 export function detectionStyle(value: string) {
-  if (/\b(person|face)\b/i.test(value)) return { label: 'Person / Face', color: '#f59e0b' };
-  if (/\b(vehicle|plate|car)\b/i.test(value)) return { label: 'Vehicle / Plate', color: '#06b6d4' };
+  if (/person:face|\bface\b/i.test(value)) return { label: 'Face region · identity unknown', color: '#f59e0b' };
+  if (/person:fullbody|^person$/i.test(value)) return { label: 'Person detection · identity unknown', color: '#f59e0b' };
+  if (/person:upperbody/i.test(value)) return { label: 'Upper-body detection · identity unknown', color: '#f59e0b' };
+  if (/license_plate|\bplate\b/i.test(value)) return { label: 'License plate region', color: '#06b6d4' };
+  if (/\b(vehicle|car)\b/i.test(value)) return { label: 'Vehicle detection', color: '#06b6d4' };
   return { label: 'Object', color: '#8b5cf6' };
 }
 export function detectionVisible(locator: MediaLocator, seconds: number, isVideo: boolean, fps?: number) {

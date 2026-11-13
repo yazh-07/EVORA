@@ -412,17 +412,17 @@ export function GraphPanel({ state, load, select, inspectEvidence, view = defaul
   const source = (id: string, label = id, focus?: SourceFocus) => inspectEvidence ?
     <button type="button" className="identifier" onClick={() => inspectEvidence(id, focus)} aria-label={`Inspect source evidence ${id}: ${label}`}>{label}</button> : <span className="identifier">{label}</span>;
   return <section className="panel knowledge-graph" aria-label="Knowledge Graph" aria-busy={state.status === 'loading'}>
-    <span className="section-label">RELATIONSHIPS AND THEIR SOURCES</span><h2>Explore connections</h2>
-    {view.compact && <p className="scope-note">Grouped by exact identifier or reported coordinates, not verified real-world identity. Raw events, file nodes and unverified visual detections are available under Show all source records.</p>}
-    <p>Candidate relationships require human verification; confidence does not establish identity, source reliability or guilt.</p>
+    <h2>Connections</h2>
+    {view.compact && <span className="kind-badge">Grouped candidates · unverified</span>}
+    <details className="context-help"><summary>About connections</summary><p>Groups share exact identifiers or reported coordinates; identity is unverified. Use Show all source records for raw events, files and visual candidates. Source evidence binds each cluster. Only labeled lines represent candidate relationships.</p><p>Candidate relationships require human verification; confidence does not establish identity, source reliability or guilt.</p></details>
     {state.status === 'loading' && <p role="status">Loading graph...</p>}
     {state.message && <p role="alert">{state.message}</p>}
     {state.status === 'error' && <button type="button" onClick={() => { void load(); }}>Retry graph</button>}
     {state.status === 'ready' && graph && <>
-      {graph.analysis_run_id && <p className="identifier">Selected completed analysis: {graph.analysis_run_id}</p>}
+      {graph.analysis_run_id && <details className="technical-details"><summary>Analysis reference</summary><p className="identifier">{graph.analysis_run_id}</p></details>}
       <div className="graph-layout" data-inspecting={!!record}><div className="graph-primary">
       {!graph.analysis_run_id ? <p>No analysis run completed yet. Start analysis to generate graph.</p> :
-        state.graph?.nodes.length === 0 ? <p>No graph nodes in this completed analysis. Available inputs may not contain extracted relationships.</p> : <>
+        state.graph?.nodes.length === 0 ? <p>No graph nodes in this completed analysis.</p> : <>
           <div className="graph-toolbar" role="group" aria-label="Graph controls">
             <button type="button" aria-pressed={!!view.compact} onClick={() => changeView({ compact: !view.compact, ...(!view.compact ? { filter: 'All' } : {}) })}>{view.compact ? 'Show all source records' : 'Group identifiers and hide raw candidates'}</button>
             <div className="graph-view-controls" role="group" aria-label="View controls">
@@ -450,7 +450,6 @@ export function GraphPanel({ state, load, select, inspectEvidence, view = defaul
           {view.compact && graph.nodes.length === 0 && <p className="scope-note">No grouped subjects in this view. Use Show all source records to inspect files, raw events and unverified candidates.</p>}
           <div className="graph-summary"><span>{graph.nodes.length} nodes; {graph.edges.length} candidate relationships</span>
             <span>{layout.clusters.length} evidence sources · {layout.shared.length} multi-source nodes</span></div>
-          <p className="graph-provenance-note">Source evidence binds each cluster. Only labeled lines represent candidate relationships.</p>
           {graph.edges.length === 0 && <p className="graph-unlinked">{view.compact ? 'No subject-to-subject relationships in this grouped view. Exact-identifier matches are summarized on nodes.' : 'No candidate relationships in this snapshot. Source clusters remain available for inspection.'}</p>}
           <p className="graph-filter-status" role="status">{visibleNodes.length} nodes shown{query && ` · ${visibleNodes.filter(matches).length} search matches`}{visibleNodes.length === 0 && ' · No nodes match this filter.'}</p>
           <div className="graph-scroll" role="region" aria-label="Case graph diagram" tabIndex={0}>
@@ -539,7 +538,7 @@ export function GraphPanel({ state, load, select, inspectEvidence, view = defaul
             <li><span className="graph-legend-event" aria-hidden="true" />Event (Diamond)</li>
             <li><span className="graph-legend-edge" aria-hidden="true" />Candidate Relationship</li>
           </ul>
-          <p>Select a node or line to inspect its complete label and sources. Edge direction is from → to. Drag nodes to rearrange; drag the background to pan. Scroll to zoom, or use the toolbar. Tab and Enter inspect records.</p>
+          <details className="context-help"><summary>Graph controls</summary><p>Select a node or line to inspect sources. Drag to rearrange or pan; scroll to zoom. Tab and Enter inspect records. Lines run from → to.</p></details>
           <details className="graph-record-browser"><summary>Browse graph records</summary><div className="graph-records">
             <div><h3>Nodes</h3>{visibleNodes.map(n => <button key={n.id} type="button" aria-pressed={node?.id === n.id}
               onClick={() => { void select({ kind: 'node', id: n.id }); }}>{n.kind}: {labels.get(n.id)}</button>)}</div>
@@ -548,7 +547,7 @@ export function GraphPanel({ state, load, select, inspectEvidence, view = defaul
           </div></details>
         </>}
       </div><aside className="graph-inspector" aria-label="Graph record details" aria-live="polite" onKeyDown={event => { if (event.key === 'Escape') dismiss?.(); }}>
-        {!record ? <><h3>Record inspector</h3><p>Select a node or relationship to inspect sources.</p><p>Review source evidence and observation locators before drawing conclusions.</p></> : <>
+        {!record ? <><h3>Record inspector</h3><p>Select a node or relationship to inspect sources.</p></> : <>
           <button className="graph-drawer-close" type="button" onClick={dismiss} aria-label="Close graph details">✕</button>
           <h3>{node ? 'Node details' : 'Candidate relationship details'}</h3>
           {node && !visibleIds.has(node.id) && <p>Selected node is hidden by the current filter.</p>}
@@ -567,7 +566,7 @@ export function GraphPanel({ state, load, select, inspectEvidence, view = defaul
             {state.citationStatus === 'error' && <button type="button" onClick={() => { void select({ kind: 'edge', id: edge.id }); }}>Retry citations</button>}
             {state.citations.map(item => <div key={item.id}><p className="identifier">Observation {item.id} · processing run {item.processing_run_id}</p>
               {source(item.evidence_id, item.source_locator, { source_locator: item.source_locator, observation_id: item.id, processing_run_id: item.processing_run_id })}</div>)}
-            <p>Locators refer to this analysis snapshot. Source actions open evidence metadata and the authorized original download; the separate evidence panel labels its live processing view.</p>
+            <details className="technical-details"><summary>Source references</summary><p>Locators refer to this analysis snapshot. File details and downloads use the current evidence record.</p></details>
           </>}
         </>}
       </aside></div>

@@ -95,7 +95,7 @@ export function FindingPanel({ state, load, select, inspectEvidence, loadReviews
   };
   return <section className="panel findings-panel" aria-label="Findings" aria-busy={state.status === 'loading'}>
     <h2>Findings</h2>
-    <p>Findings are investigative candidates requiring human verification. Confidence does not establish identity, source reliability or guilt. Missing information is unknown, not proof of non-occurrence.</p>
+    <details className="context-help"><summary>About findings</summary><p>Findings are investigative candidates requiring human verification. Confidence does not establish identity, source reliability or guilt. Missing information is unknown, not proof of non-occurrence.</p></details>
     <FindingKindFilter value={findingKind} onSelect={onKindChange} />
     {state.status === 'loading' && <p role="status">Loading findings...</p>}
     {state.message && <p role="alert">{state.message}</p>}
@@ -103,7 +103,7 @@ export function FindingPanel({ state, load, select, inspectEvidence, loadReviews
     {state.status === 'ready' && page && <>
       {page.analysis_run_id ? <details className="technical-details"><summary>Selected analysis reference</summary><p className="identifier">{page.analysis_run_id}</p></details> :
         <p>No completed analysis run. Start analysis to generate findings.</p>}
-      <p role="status">{page.total} findings. {page.items.length ? `Showing ${page.offset + 1}–${page.offset + page.items.length}.` : 'Showing 0 findings on this page.'}</p>
+      <p className="sr-only" role="status">{page.total} findings. {page.items.length ? `Showing ${page.offset + 1}–${page.offset + page.items.length}.` : 'Showing 0 findings on this page.'}</p>
       {page.analysis_run_id && page.items.length === 0 && <p>{page.total === 0 ?
         'No findings in this completed analysis. This does not establish absence of relevant relationships.' : 'No findings on this page. Return to the previous page.'}</p>}
       {findingKind !== 'all' && <p role="status">{findings.length} {findingKind} findings on this page.
@@ -112,11 +112,11 @@ export function FindingPanel({ state, load, select, inspectEvidence, loadReviews
       <ul className="findings-list">{cards.map(({ primary: f, related }) => <li key={f.id}>
         <strong className="finding-kind-badge">{f.kind}</strong>
         <h3>{f.summary}</h3>
-        <details className="technical-details"><summary>Rule, score, and finding reference</summary><p className="identifier">Finding ID: {f.id}</p>
+        <details className="technical-details"><summary>Details</summary><p className="identifier">Finding ID: {f.id}</p>
         <p>Confidence: {f.confidence.toFixed(2)} (reported score, 0–1)</p>
         <p>Rule: {f.rule}</p></details>
         {(f.kind === 'relationship' || f.kind === 'corroboration') && <>
-        <p>Supporting sources</p><ul className="finding-source-actions">{f.evidence_ids.map((id, index) => <li key={id}>{source(id, index)}</li>)}</ul>
+        <ul className="finding-source-actions" aria-label="Supporting sources">{f.evidence_ids.map((id, index) => <li key={id}>{source(id, index)}</li>)}</ul>
         <details className="technical-details"><summary>Observation references ({f.observation_ids.length})</summary><ul>{f.observation_ids.map(id => <li key={id} className="identifier">{id}</li>)}</ul></details>
         {!!f.contradicting_evidence_ids?.length && <><p>Contradicting evidence IDs:</p><ul>{f.contradicting_evidence_ids.map(id => <li key={id}>{source(id)}</li>)}</ul></>}
         {!!f.missing_information?.length && <><p>Missing information:</p><ul>{f.missing_information.map((text, i) => <li key={i}>{text}</li>)}</ul></>}
@@ -152,7 +152,7 @@ export function FindingPanel({ state, load, select, inspectEvidence, loadReviews
           </details>)}
         </>}
       </aside>}
-      <nav className="pagination" aria-label="Finding pages">
+      <nav hidden={!!page && page.total <= page.limit} className="pagination" aria-label="Finding pages">
         <button type="button" disabled={page.offset === 0} onClick={() => { void load(Math.max(0, page.offset - page.limit)); }}>Previous</button>
         <button type="button" disabled={page.offset + page.limit >= page.total} onClick={() => { void load(page.offset + page.limit); }}>Next</button>
         <button type="button" onClick={() => { void load(0); }}>Refresh findings</button>

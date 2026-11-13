@@ -12,6 +12,7 @@ export type Settings = {
   qa_model: string;
   qa_url: string;
   detection_threshold: number;
+  plate_detection_threshold?: number;
   show_provenance_rays: boolean;
   show_bounding_boxes: boolean;
   default_node_label: 'source_description' | 'filename';
@@ -19,7 +20,7 @@ export type Settings = {
 export const defaultSettings: Settings = {
   qa_provider: 'ollama', openai_base_url: 'https://api.openai.com/v1', has_openai_key: false,
   qa_model: 'deepseek-r1:8b', qa_url: 'http://127.0.0.1:11434',
-  detection_threshold: 0.7, show_provenance_rays: true,
+  detection_threshold: 0.7, plate_detection_threshold: .4, show_provenance_rays: true,
   show_bounding_boxes: true, default_node_label: 'source_description',
 };
 export const SETTINGS_KEY = 'evora-settings';
@@ -44,6 +45,7 @@ export function parseSettings(raw: string | null): Settings {
     if (typeof saved.qa_model === 'string' && saved.qa_model.trim()) settings.qa_model = saved.qa_model;
     if (typeof saved.qa_url === 'string' && /^https?:\/\//.test(saved.qa_url)) settings.qa_url = saved.qa_url;
     if (typeof saved.detection_threshold === 'number' && saved.detection_threshold >= .1 && saved.detection_threshold <= 1) settings.detection_threshold = saved.detection_threshold;
+    if (typeof saved.plate_detection_threshold === 'number' && saved.plate_detection_threshold >= .05 && saved.plate_detection_threshold <= .99) settings.plate_detection_threshold = saved.plate_detection_threshold;
     for (const key of ['show_provenance_rays', 'show_bounding_boxes'] as const) {
       if (typeof saved[key] === 'boolean') settings[key] = saved[key];
     }
@@ -61,6 +63,15 @@ export function subscribeSettings(listener: () => void) {
 export function useSettings() {
   const raw = useSyncExternalStore(subscribeSettings, storedSettings, () => null);
   return useMemo(() => parseSettings(raw), [raw]);
+}
+export function saveViewerSettings(settings: Settings) {
+  const preferences = parseSettings(JSON.stringify({ ...readSettings(),
+    detection_threshold: settings.detection_threshold, plate_detection_threshold: settings.plate_detection_threshold, show_provenance_rays: settings.show_provenance_rays,
+    show_bounding_boxes: settings.show_bounding_boxes, default_node_label: settings.default_node_label,
+  }));
+  window.localStorage.setItem(SETTINGS_KEY, JSON.stringify(preferences));
+  window.dispatchEvent(new Event(changeEvent));
+  return preferences;
 }
 export async function saveSettings(client: ApiClient, settings: Settings, signal?: AbortSignal, apiKey?: string) {
   const { qa_provider, qa_model, qa_url, openai_base_url, detection_threshold, show_provenance_rays } = settings;

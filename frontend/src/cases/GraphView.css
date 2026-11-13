@@ -1,25 +1,13 @@
-.knowledge-graph {
-  --graph-canvas: #0d1117;
-  --graph-surface: #161b22;
-  --graph-border: #30363d;
-  --graph-text: #f0f6fc;
-  --graph-muted: #8b949e;
-  --graph-evidence: #818cf8;
-  --graph-entity: #34d399;
-  --graph-event: #fbbf24;
-  --graph-selection: #58a6ff;
-}
-
-[data-theme="light"] .knowledge-graph, :root[data-theme="light"] .knowledge-graph {
-  --graph-canvas: #f8fafc;
-  --graph-surface: #ffffff;
-  --graph-border: #cbd5e1;
-  --graph-text: #0f172a;
-  --graph-muted: #475569;
-  --graph-evidence: #4338ca;
-  --graph-entity: #047857;
-  --graph-event: #b45309;
-  --graph-selection: #1d4ed8;
+.knowledge-graph, [data-theme="light"] .knowledge-graph, :root[data-theme="light"] .knowledge-graph {
+  --graph-canvas: var(--color-neutral);
+  --graph-surface: var(--color-surface);
+  --graph-border: var(--color-border);
+  --graph-text: var(--color-primary);
+  --graph-muted: var(--color-secondary);
+  --graph-evidence: #7561b5;
+  --graph-entity: #398a69;
+  --graph-event: #a5762d;
+  --graph-selection: var(--color-accent);
 }
 
 .graph-layout { display: grid; grid-template-columns: minmax(0, 1fr) 280px; align-items: start; gap: var(--space-md); margin-block: var(--space-lg); }
@@ -45,24 +33,24 @@
 .graph-node { --particle: var(--graph-evidence); cursor: grab; pointer-events: bounding-box; }
 .graph-node-entity { --particle: var(--graph-entity); }
 .graph-node-event { --particle: var(--graph-event); }
-.graph-node[data-cross-source="true"] { --particle: #38bdf8; }
+.graph-node[data-cross-source="true"] { --particle: var(--graph-selection); }
 .graph-node > rect, .graph-node > ellipse, .graph-node > polygon { fill: var(--particle); fill-opacity: .85; stroke: var(--particle); stroke-width: 1.5; filter: drop-shadow(0 0 5px color-mix(in srgb, var(--particle) 45%, transparent)); transition: fill-opacity .2s, stroke-width .2s, filter .2s; }
 .graph-node > .graph-node-hit { fill: transparent; stroke: none; pointer-events: all; }
-.graph-node text { fill: #f8fafc; font-size: 13px; font-weight: 700; paint-order: stroke; stroke: #090d16; stroke-width: 4px; stroke-linejoin: round; }
-.graph-node .graph-node-kind { fill: #cbd5e1; font-size: 11px; font-weight: 600; }
-.graph-node .graph-shared-label { fill: #38bdf8; font-size: 10.5px; font-weight: 700; }
+.graph-node text { fill: var(--graph-text); font-size: 13px; font-weight: 700; paint-order: stroke; stroke: var(--graph-canvas); stroke-width: 4px; stroke-linejoin: round; }
+.graph-node .graph-node-kind { fill: var(--graph-muted); font-size: 11px; font-weight: 600; }
+.graph-node .graph-shared-label { fill: var(--graph-selection); font-size: 10.5px; font-weight: 700; }
 .graph-node, .graph-edge { transition: opacity .25s ease; }
 .graph-node[data-search-match="false"] { opacity: .2; }
-.graph-node[data-search-match="true"] > :first-child { stroke: #ffffff; stroke-width: 3; }
+.graph-node[data-search-match="true"] > :first-child { stroke: var(--graph-text); stroke-width: 3; }
 .graph-node[data-neighbor="true"] > :first-child, .graph-node:hover > :first-child, .graph-node[aria-pressed="true"] > :first-child, .graph-node:focus-visible > :first-child { fill-opacity: 1; stroke-width: 3; filter: drop-shadow(0 0 12px var(--particle)); }
 .graph-node[data-dimmed="true"], .graph-edge[data-dimmed="true"] { opacity: .15; }
 .graph-node:focus-visible, .graph-edge:focus-visible { outline: none; }
 .graph-node:focus-visible text { text-decoration: underline; }
 .graph-edge { cursor: pointer; }
-.graph-edge > line:not(.graph-edge-hit) { stroke: #64748b; stroke-opacity: .8; stroke-width: 1.5; }
-.graph-edge[data-cross-source="true"] > line:not(.graph-edge-hit) { stroke: #38bdf8; stroke-opacity: .9; stroke-width: 2; }
-.graph-edge .graph-edge-label { fill: #0f172a; fill-opacity: .95; stroke: #38bdf8; stroke-width: 1; }
-.graph-edge text { fill: #f8fafc; font-size: 10px; font-weight: 600; font-variant-numeric: tabular-nums; pointer-events: none; }
+.graph-edge > line:not(.graph-edge-hit) { stroke: var(--graph-muted); stroke-opacity: .8; stroke-width: 1.5; }
+.graph-edge[data-cross-source="true"] > line:not(.graph-edge-hit) { stroke: var(--graph-selection); stroke-opacity: .9; stroke-width: 2; }
+.graph-edge .graph-edge-label { fill: var(--graph-surface); fill-opacity: .95; stroke: var(--graph-selection); stroke-width: 1; }
+.graph-edge text { fill: var(--graph-text); font-size: 10px; font-weight: 600; font-variant-numeric: tabular-nums; pointer-events: none; }
 .graph-confidence-badge { fill: color-mix(in srgb, var(--graph-selection) 15%, var(--graph-surface)); stroke: var(--graph-selection); stroke-width: 0.5px; }
 .graph-edge .graph-confidence { fill: var(--graph-selection); font-size: 8.5px; font-weight: 600; }
 .graph-provenance-ray { stroke: var(--graph-muted); stroke-opacity: .35; stroke-width: 1.25; stroke-dasharray: 4 4; pointer-events: none; transition: stroke-opacity .25s ease, stroke .25s ease; }

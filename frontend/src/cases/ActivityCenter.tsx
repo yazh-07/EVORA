@@ -38,9 +38,9 @@ export function ActivityCenter() {
     {open && <section id="activity-panel" className="activity-popover panel" aria-label="Processing activity">
       <div className="section-heading"><h2>Activity</h2><button type="button" aria-label="Close activity" onClick={() => { setOpen(false); button.current?.focus(); }}>×</button></div>
       <p role="status">{running ? `${running} evidence ${running === 1 ? 'batch' : 'batches'} running` : 'No evidence batches running'}</p>
-      {!entries.length && <p>Start Process all in a case's Evidence tab. Progress will appear here while you work elsewhere.</p>}
+      {!entries.length && <p>No processing history yet.</p>}
       {entries.map(entry => <ActivityEntryPanel key={entry.caseId} entry={entry} stop={() => store.stop(entry.caseId)} />)}
-      <p className="scope-note">This panel tracks Process all batches in this window. Stop queue prevents the remaining files from starting. A server job already accepted may still finish; this does not cancel that job.</p>
+      <details className="context-help"><summary>About activity</summary><p>Tracks batches in this window. Stop queue prevents remaining files from starting; accepted server jobs may still finish.</p></details>
     </section>}
   </div>;
 }

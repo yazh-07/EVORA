@@ -33,29 +33,28 @@ See [NEW_UPDATE_FEATURES.md](docs/NEW_UPDATE_FEATURES.md) and [docs/local-accoun
 
 ## Screenshots
 
-### 1. Case Overview & Forensic Executive Brief
-![Investigation Workspace & Case Overview](docs/images/01-case-dashboard.png)
+Screenshots use synthetic case data. The map screenshots show live provider imagery with synthetic GPS points.
 
-### 2. Forensic Knowledge Graph Visualization
-![Forensic Knowledge Graph Visualization](docs/images/02-knowledge-graph.png)
+### Case overview
+![Case overview](docs/images/01-case-dashboard.png)
 
-### 3. Chronological Case Timeline
-![Chronological Case Timeline](docs/images/06-case-timeline.png)
+### Evidence and source inspection
+![Evidence workspace](docs/images/05-evidence-intake.png)
 
-### 4. Findings Review & Human Verification Controls
-![Finding Details & Source Citation Traceability](docs/images/04-findings-inspector.png)
+### Timeline
+![Timeline and activity chart](docs/images/06-case-timeline.png)
 
-### 5. Evidence Intake & Source Verification
-![Multimodal Ingestion & Observation Inspector](docs/images/05-evidence-intake.png)
+### Street map
+![Street map with a source-linked GPS point](docs/images/10-street-map.png)
 
-### 6. Adaptive Triage & Priority Scoring
-![Adaptive Triage & Priority Scoring](docs/images/03-triage-priority.png)
+### Satellite map
+![Satellite imagery with a synthetic GPS point](docs/images/11-satellite-map.png)
 
-### 7. AI Copilot Evidence Q&A
-![AI Copilot Evidence Q&A](docs/images/08-copilot-qa.png)
+### Appearance
+![Appearance settings](docs/images/09-appearance.png)
 
-### 8. Investigative Report Generator & PDF Export
-![Investigative Report Generator](docs/images/07-case-report.png)
+### Reports
+![Report workspace](docs/images/07-case-report.png)
 
 Open a completed analysis and choose **Report**. Set the scope, select findings, and choose **Generate with model** using your connection from Settings. Review and edit the draft, confirm investigator review, then choose **Download PDF**. The file downloads directly with a cover page, narrative sections, findings, evidence tables, citations and numbered pages. PDF export runs locally with bundled fonts; model generation follows your configured provider and sharing consent. See [Model reports](docs/model-reports.md) for coverage, provenance and limitations.
 
@@ -127,6 +126,14 @@ In PowerShell, set `$env:EVORA_API_BASE_URL = 'http://127.0.0.1:8766'` and creat
 Open **http://127.0.0.1:8766** and enter the demo session token **`u02-synthetic-one`**. Create a case, upload [network.csv](fixtures/synthetic-case/network.csv) as network evidence or [gps.csv](fixtures/synthetic-case/gps.csv) as GPS evidence, and explicitly start processing. Inspect the observations, then start analysis to explore the graph, findings, and triage explanations. The second demo token, `u02-synthetic-two`, provides a separate investigator identity for access-isolation checks.
 
 This server is a local test/demo harness. Its fixed tokens and graph double are not production authentication or a live Neo4j deployment. A backend deployment must supply an authorized token verifier; the default application factory rejects tokens. See [backend setup and graph configuration](backend/README.md) for live Neo4j configuration and optional integration checks.
+
+For the complete local workstation, use a persistent `.venv` with Python 3.14.8, 3.14.9 or 3.14.10 and install `requirements.txt`. Put the existing Neo4j connection details in `.env` using `.env.example`, then run `./scripts/run-local.sh`. This checks the pinned text model and graph connection, builds the UI, and serves the application at `http://127.0.0.1:8000`. Arguments such as `--port`, `--database`, and `--storage` are forwarded to the backend. Keep `.env` private; it is ignored by Git.
+
+The Evidence toolbar processes pending files directly, or an explicit selection. Open a source to switch between Results, Original and Info; processing history and raw technical references live in Info.
+
+The case Locations view opens a street map with online OpenStreetMap tiles. Satellite imagery is available in the same basemap selector. Choose Offline map to use bundled country boundaries or a local archive without external map requests; the choice is remembered in this browser. GPS records link to their original source rows; approximate markers identify recognized place mentions, rather than a person's position. Open a `.pmtiles` file through Map actions for regional detail during the current session. Common vector geometry layers and PNG/JPEG/WebP raster tiles are supported; labels/custom archive styles are not imported. Map views have their own Offline/Street map/Satellite selector and do not change the local-model settings. For reported GPS points, Street View opens Google’s available panorama in a new tab, sending coordinates only. See [map scope and remaining work](GPS_MAP_PLAN.md).
+
+For the optional local plate detector and OCR, run `./scripts/setup-plates.sh` before starting EVORA. This creates an isolated Python 3.13 environment, installs `requirements-plates.txt`, and explicitly downloads hash-checked models into `storage/models/plates`. It does not change the main text-processing environment. Restart and reprocess selected images/videos to produce plate readings. Inference uses local files; the included sample is a smoke check, not a region-specific accuracy benchmark. See [plate scope and evaluation plan](PLATE_RECOGNITION_PLAN.md).
 
 For frontend development, `npm --prefix frontend run dev` serves the workspace at `http://127.0.0.1:5173`. `EVORA_API_BASE_URL` is read at build/start time; the demo above serves the UI and API together.
 

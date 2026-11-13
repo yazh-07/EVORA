@@ -48,11 +48,11 @@ test('explicit bodyless typed start carries UUID key; serial queued/running/comp
       assert.equal(call.method, 'GET'); assert.ok(call.url.endsWith(`/analysis-runs/${runId}`));
       assert.equal(call.body, undefined); assert.equal(call.cache, 'no-store');
     }
-    assert.ok(states.some(s => s.markup.includes('Waiting to analyze processed evidence')));
-    assert.ok(states.some(s => s.markup.includes('Analyzing case evidence...')));
+    assert.ok(states.some(s => s.markup.includes('Queued…')));
+    assert.ok(states.some(s => s.markup.includes('Analyzing…')));
     assert.ok(states.filter(s => s.status !== 'terminal').every(s => s.pinnedAnalysisRunId === null));
     assert.equal(controller.getSnapshot().pinnedAnalysisRunId, runId);
-    assert.match(render(controller), /Analysis completed/);
+    assert.doesNotMatch(render(controller), /Analysis completed|Analysis details/);
     await delay(10); assert.equal(calls.length, 3);
   } finally { controller.dispose(); }
 });

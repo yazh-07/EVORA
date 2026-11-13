@@ -126,3 +126,21 @@ test('reviewer cannot start a batch; effect cleanup/setup supports remount', asy
   fixture.controller.dispose(); fixture.controller.start(); fixture.client.getUser = () => ({ role: 'investigator' });
   await fixture.controller.submit(); assert.equal(posts(fixture.calls).length, 1); fixture.controller.dispose();
 });
+
+test('explicit selection processes only those authorized sources, including across pages', async () => {
+ const items=Array.from({length:102},(_,i)=>evidence(i+1));
+ const {controller,calls}=setup(items);
+ await controller.submit({evidenceIds:[items[1].id,items[101].id]});
+ assert.deepEqual(posts(calls).map(call=>call.options.path.evidenceId),[items[1].id,items[101].id]);
+ assert.equal(controller.getSnapshot().items.length,2);controller.dispose();
+});
+test('missing or duplicate selected IDs cannot trigger any processing request', async () => {
+ for(const evidenceIds of [[uuid(999)],[uuid(1),uuid(1)],[]]){
+  const {controller,calls}=setup([evidence(1)]);await controller.submit({evidenceIds});
+  assert.equal(posts(calls).length,0);assert.equal(controller.getSnapshot().status,'error');controller.dispose();
+ }
+});
+test('explicit reprocessing replaces the default completed-output skip',async()=>{
+ const item=evidence(1);const {controller,calls}=setup([item],(method,route)=>method==='get'&&route.endsWith('/processing-runs')?[run(item)]:undefined);
+ await controller.submit({evidenceIds:[item.id],reprocess:true});assert.equal(posts(calls).length,1);controller.dispose();
+});

@@ -118,14 +118,14 @@ test('missing authentication is a safe alert without transport; server status an
   assert.doesNotMatch(renderToStaticMarkup(createElement(StartProcessingPanel, { state: { status: 'error', run: null, message: '<script>untrusted</script>' }, submit: async () => {} })), /<script>/);
 });
 
-test('selected evidence inspector contains the start action', () => {
+test('selected evidence inspector opens on results and defers processing controls', () => {
   const client = createApiClient({ baseUrl: 'http://127.0.0.1:8000' });
   const detail = { id: evidenceId, case_id: caseId, kind: 'network_log', filename: 'network.csv', size_bytes: 0, sha256: 'a'.repeat(64), created_at: run.created_at, source_label: 'Synthetic source', media_type: 'text/csv' };
   const markup = renderToStaticMarkup(createElement(ApiProvider, { client }, createElement(EvidencePanels, {
     state: { status: 'ready', page: { items: [detail], total: 1, limit: 20, offset: 0 }, detailStatus: 'ready', detail, submitting: false },
     load() {}, select() {}, upload: async () => false,
   })));
-  assert.match(markup, />Start processing<\/button>/);
+  assert.match(markup, /Source views/); assert.match(markup, />Info<\/button>/); assert.doesNotMatch(markup, />Start processing<\/button>/);
 });
 
 test('explicit structured interpretation uses the dedicated endpoint and validates returned source/processing kinds', async () => {

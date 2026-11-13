@@ -1,3 +1,6 @@
+import { EvidenceResults } from './EvidenceResults';
+import type { ReactNode } from 'react';
+import type { components } from '../api/schema';
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { MediaInspector } from './MediaInspector';
 import type { SourceFocus } from './mediaLocators';
@@ -15,11 +18,12 @@ import { OriginalTextPreview } from './OriginalTextPreview';
 
 export function EvidenceWorkspace({ caseId, caseTitle, sourceSelection, intakeRequest = 0 }: { caseId: string; caseTitle?: string; intakeRequest?: number; sourceSelection?: { id: string; focus?: SourceFocus } }) {
   const client = useApiClient();
+  const [refreshSequence, setRefreshSequence] = useState(0);
   const store = useMemo(() => createEvidenceStore(client, caseId), [client, caseId]);
   const state = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot);
   useEffect(() => { void store.start(); return () => store.dispose(); }, [store]);
   useEffect(() => { if (sourceSelection) void store.select(sourceSelection.id); }, [store, sourceSelection]);
-  return <>{client.getUser()?.role !== 'reviewer' && <BulkProcessing key={caseId} caseId={caseId} caseTitle={caseTitle} />}{sourceSelection && <p role="status">Source evidence inspection shows live metadata. Citation locators select their referenced processing output when available; other processing controls show live outputs.</p>}<EvidencePanels readOnly={client.getUser()?.role === 'reviewer'} intakeRequest={intakeRequest} sourceFocus={sourceSelection?.id === state.detail?.id ? sourceSelection?.focus : undefined} state={state} load={offset => { void store.load(offset); }} select={id => { void store.select(id); }} upload={store.upload} /></>;
+  return <><EvidencePanels revision={refreshSequence} renderProcessing={client.getUser()?.role !== 'reviewer' ? (ids, onCount) => <BulkProcessing caseId={caseId} caseTitle={caseTitle} evidenceIds={ids} onCount={onCount} revision={state.page} onCompleted={() => { setRefreshSequence(value => value + 1); void store.load(state.page?.offset ?? 0); }} /> : undefined} closeSelection={() => { const id = store.getSnapshot().detail?.id; store.clearSelection(); requestAnimationFrame(() => document.getElementById(`evidence-source-${id}`)?.focus()); }} readOnly={client.getUser()?.role === 'reviewer'} intakeRequest={intakeRequest} sourceFocus={sourceSelection?.id === state.detail?.id ? sourceSelection?.focus : undefined} state={state} load={offset => { void store.load(offset); }} select={id => { void store.select(id); }} upload={async (...args) => { const ok = await store.upload(...args); if (ok) store.clearSelection(); return ok; }} /></>;
 }
 function Metadata({ item, detailed = false }: { item: Evidence; detailed?: boolean }) {
   return <>
@@ -36,7 +40,11 @@ function Metadata({ item, detailed = false }: { item: Evidence; detailed?: boole
     </details>}
   </>;
 }
-export function EvidencePanels({ state, load, select, upload, sourceFocus, intakeRequest = 0, readOnly = false }: {
+export function EvidencePanels({ state, load, select, upload, sourceFocus, intakeRequest = 0, readOnly = false, processingControls, renderProcessing, closeSelection, revision = 0 }: {
+  revision?: number;
+  renderProcessing?: (ids: string[], onCount: (count: number) => void) => ReactNode;
+  closeSelection?: () => void;
+  processingControls?: ReactNode;
   readOnly?: boolean;
   intakeRequest?: number;
   sourceFocus?: SourceFocus; state: EvidenceState; load: (offset: number) => void; select: (id: string) => void;
@@ -49,6 +57,8 @@ export function EvidencePanels({ state, load, select, upload, sourceFocus, intak
   useEffect(() => { if (!state.submitting && (state.detailStatus === 'ready' || state.detailStatus === 'error')) heading.current?.focus(); }, [state.detail, state.detailStatus]);
   const page = state.page;
   const [query, setQuery] = useState('');
+  const [selected, setSelected] = useState<Set<string>>(() => new Set());
+  const [pendingCount, setPendingCount] = useState(0);
   const [kind, setKind] = useState('all');
   const [sort, setSort] = useState('newest');
   const [intakeOpen, setIntakeOpen] = useState(false);
@@ -62,16 +72,15 @@ export function EvidencePanels({ state, load, select, upload, sourceFocus, intak
     `${item.source_label} ${item.filename} ${item.id} ${item.sha256}`.toLowerCase().includes(query.trim().toLowerCase())
   ).sort((a, b) => sort === 'name' ? a.source_label.localeCompare(b.source_label) : sort === 'size' ? b.size_bytes - a.size_bytes : b.created_at.localeCompare(a.created_at));
   return <div className="evidence-workspace">
-    {state.uploaded && <p className="upload-confirmation" role="status">Evidence uploaded. The original file and integrity metadata have been saved.</p>}
-    <section hidden={readOnly} className="panel intake-panel" aria-labelledby="upload-heading">
+    {state.uploaded && <p className="upload-confirmation" role="status">Evidence uploaded.</p>}
+    <section hidden={readOnly || !intakeOpen} className="panel intake-panel" aria-labelledby="upload-heading">
       <details className="intake-disclosure" id="evidence-intake" open={intakeOpen} onToggle={event => {
         setIntakeOpen(event.currentTarget.open);
         if (!event.currentTarget.open && event.currentTarget.contains(document.activeElement)) addButton.current?.focus();
       }}>
-      <summary><h2 id="upload-heading">Add evidence</h2><span>Originals are preserved</span></summary>
+      <summary><h2 id="upload-heading">Add evidence</h2></summary>
       <EvidenceIntake upload={upload} submitting={state.submitting} />
-      <details className="single-intake"><summary>Add one file with individual metadata</summary>
-      <p>Upload one original file. Intake stores its bytes and integrity metadata; content has not been verified.</p>
+      <details className="single-intake"><summary>More upload options</summary>
       <form className="upload-form" noValidate aria-busy={state.submitting} onSubmit={async event => {
         event.preventDefault();
         if (detecting) return;
@@ -111,77 +120,85 @@ export function EvidencePanels({ state, load, select, upload, sourceFocus, intak
           <button type="submit" disabled={state.submitting || detecting}>{state.submitting ? 'Uploading evidence...' : 'Upload evidence'}</button>
         </fieldset>
         {state.uploadMessage && <p role="alert" ref={error} tabIndex={-1}>{state.uploadMessage}</p>}
-        {state.uploaded && <p role="status">Evidence uploaded. Its confirmed metadata is shown in the inspector.</p>}
       </form>
       </details>
-      {state.uploadMessage && <p role="alert">{state.uploadMessage}</p>}
       </details>
     </section>
-    <div className="workspace-layout">
+    <div className={`workspace-layout ${state.detailStatus !== 'idle' ? 'evidence-has-selection' : ''}`}>
       <section className="panel" aria-labelledby="evidence-heading" aria-busy={state.status === 'loading'}>
-        <div className="section-heading"><div><span className="section-label">SOURCE LIBRARY</span><h2 id="evidence-heading">Case evidence</h2></div><button ref={addButton} hidden={readOnly} type="button" className="button-primary" aria-expanded={intakeOpen} aria-controls="evidence-intake" onClick={() => { setIntakeOpen(true); requestAnimationFrame(() => document.getElementById('batch-evidence-files')?.focus()); }}>＋ Add evidence</button></div>
-        <p>Choose a source to inspect its original, process its contents, and verify observations.</p>
-        <div className="evidence-toolbar">
-          <label className="search-field">Search evidence<input type="search" placeholder="Filename, label, ID or hash…" value={query} onChange={event => setQuery(event.target.value)} /></label>
+        <div className="section-heading evidence-actionbar"><div><h2 id="evidence-heading">Evidence</h2></div><div className="evidence-actions">{renderProcessing?.([...selected], setPendingCount)}<button ref={addButton} hidden={readOnly} type="button" className={pendingCount > 0 ? 'quiet-button' : 'button-primary'} aria-expanded={intakeOpen} aria-controls="evidence-intake" onClick={() => { setIntakeOpen(true); requestAnimationFrame(() => document.getElementById('batch-evidence-files')?.focus()); }}>＋ Add files</button><button type="button" className="icon-button" aria-label="Refresh evidence" title="Refresh evidence" disabled={state.status === 'loading'} onClick={() => load(page?.offset ?? 0)}>↻</button></div></div>{selected.size > 0 && <div className="selection-toolbar"><span>{selected.size} selected</span><button type="button" className="text-action" onClick={() => setSelected(new Set())}>Clear selection</button></div>}
+
+        {processingControls}
+<div className="contextual-workspace"><details className="context-filters" open><summary>Filters</summary><div className="evidence-toolbar">
+          <label className="search-field">Search evidence<input type="search" placeholder="Filter this page by name…" value={query} onChange={event => setQuery(event.target.value)} /></label>
           <label>Kind<select value={kind} onChange={event => setKind(event.target.value)}><option value="all">All kinds</option>{evidenceKinds.map(value => <option key={value} value={value}>{value.replaceAll('_', ' ')}</option>)}</select></label>
           <label>Sort by<select value={sort} onChange={event => setSort(event.target.value)}><option value="newest">Newest first</option><option value="name">Source name</option><option value="size">Largest first</option></select></label>
         </div>
-        <p className="filter-scope">Search, kind and sorting apply to this page.</p>
-        {state.status === 'loading' && <p role="status">Loading evidence...</p>}
+        </details><div className="context-records">
+        {page && page.total > page.items.length && <p className="filter-scope">Filters apply to this page.</p>}
+        {state.status === 'loading' && <p className={page ? 'sr-only' : 'loading-placeholder'} role="status">Loading evidence…</p>}
         {state.status === 'error' && <p role="alert">{state.message}</p>}
-        {state.status === 'ready' && page && <>
-          <p role="status">{page.total} evidence items. Showing {page.items.length} on this page.</p>
-          {page.items.length === 0 && <p>{page.total === 0 ? 'No evidence uploaded yet for this case' : 'No evidence on this page. Return to the previous page or refresh.'}</p>}
-          {page.items.length > 0 && visible.length === 0 && <div className="empty-state"><h3>No matching evidence</h3><p>Try another filename or kind, or check another page.</p><button onClick={() => { setQuery(''); setKind('all'); }}>Clear filters</button></div>}
+        {page && <>
+          <p className="sr-only" role="status">{page.total} evidence items. Showing {page.items.length} on this page.</p>
+          {page.items.length === 0 && <p>{page.total === 0 ? 'No evidence uploaded yet for this case' : 'No evidence on this page.'}</p>}
+          {page.items.length > 0 && visible.length === 0 && <div className="empty-state"><h3>No matching evidence</h3><button onClick={() => { setQuery(''); setKind('all'); }}>Clear filters</button></div>}
           {visible.length > 0 && <div className="evidence-table-scroll" role="region" aria-label="Evidence library" tabIndex={0}><table className="evidence-table">
-            <thead><tr><th scope="col">Source / filename</th><th scope="col">Kind</th><th scope="col">Size</th><th scope="col">Added</th></tr></thead>
+            <thead><tr>{!readOnly && <th className="selection-cell"><input type="checkbox" aria-label="Select visible files" checked={visible.length > 0 && visible.every(item => selected.has(item.id))} onChange={event => setSelected(previous => { const next = new Set(previous); visible.forEach(item => event.target.checked ? next.add(item.id) : next.delete(item.id)); return next; })} /></th>}<th scope="col">Source / filename</th><th scope="col">Kind</th><th scope="col">Size</th><th scope="col">Added</th></tr></thead>
             <tbody>{visible.map(item => <tr key={item.id} className={state.detail?.id === item.id ? 'selected-row' : ''}>
-              <td><button className="source-button" type="button" onClick={() => select(item.id)} aria-pressed={state.detail?.id === item.id}>{item.source_label}</button><span className="source-filename">{item.filename}</span></td>
+              {!readOnly && <td className="selection-cell"><input type="checkbox" aria-label={`Select ${item.source_label}`} checked={selected.has(item.id)} onChange={event => setSelected(previous => { const next = new Set(previous); if (event.target.checked) next.add(item.id); else next.delete(item.id); return next; })} /></td>}
+              <td className="source-cell"><button id={`evidence-source-${item.id}`} className="source-button" type="button" onClick={() => select(item.id)} aria-pressed={state.detail?.id === item.id}>{item.source_label}</button>{item.filename !== item.source_label && <span className="source-filename">{item.filename}</span>}</td>
               <td><span className="kind-badge">{item.kind.replaceAll('_', ' ')}</span></td>
               <td className="size-cell">{formatFileSize(item.size_bytes)}</td>
               <td><time dateTime={item.created_at}>{new Date(item.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' })}</time></td>
             </tr>)}</tbody>
           </table></div>}
-          <nav className="pagination" aria-label="Evidence pages">
+          <nav hidden={!!page && page.total <= page.limit} className="pagination" aria-label="Evidence pages">
             <button onClick={() => load(Math.max(0, page.offset - page.limit))} disabled={page.offset === 0 || state.submitting}>Previous</button>
             <button onClick={() => load(page.offset + page.limit)} disabled={page.offset + page.limit >= page.total || state.submitting}>Next</button>
           </nav>
         </>}
-        <button type="button" onClick={() => load(0)} disabled={state.submitting}>Refresh evidence</button>
+        </div></div>
       </section>
       <aside className="panel inspector" aria-labelledby="evidence-inspector" aria-busy={state.detailStatus === 'loading'}>
-        <h2 id="evidence-inspector" ref={heading} tabIndex={-1}>Inspect the source</h2>
-        {state.detailStatus === 'idle' && <div className="inspector-empty"><span aria-hidden="true">↗</span><h3>Select a source</h3><p>Select evidence to inspect its metadata.</p><p>Original file, integrity hash, processing controls and extracted observations appear here.</p></div>}
+        <div className="section-heading"><h2 id="evidence-inspector" ref={heading} tabIndex={-1}>{state.detail?.source_label || 'Source'}</h2>{closeSelection && state.detailStatus !== 'idle' && <button type="button" className="icon-button" aria-label="Close source" title="Back to evidence" onClick={closeSelection}>×</button>}</div>
+        {state.detailStatus === 'idle' && <p className="inspector-empty">Select a source.</p>}
         {state.detailStatus === 'loading' && <p role="status">Loading evidence metadata...</p>}
         {state.detailStatus === 'error' && <p role="alert">{state.detailMessage} Select evidence again to retry.</p>}
-        {state.detail && <><h3>{state.detail.source_label}</h3><p className="format-support">{formatSupport(state.detail.filename, state.detail.kind)}</p><details className="source-integrity"><summary>Integrity and acquisition details</summary><Metadata item={state.detail} detailed /></details><OriginalDownload key={state.detail.id} item={state.detail} />
-          <OriginalTextPreview key={`original:${state.detail.id}`} item={state.detail} />
-          <EvidenceProcessingInspection key={`${state.detail.case_id}:${state.detail.id}`} item={state.detail} sourceFocus={sourceFocus} /></>}
+        {state.detail && <EvidenceProcessingInspection key={`${state.detail.case_id}:${state.detail.id}`} item={state.detail} sourceFocus={sourceFocus} externalRevision={revision} />}
+
       </aside>
     </div>
   </div>;
 }
 
 /** Selection-keyed lifetime also discards the previous completion/pin on evidence switches. */
-export function EvidenceProcessingInspection({ item, sourceFocus }: { item: Evidence; sourceFocus?: SourceFocus }) {
+export function EvidenceProcessingInspection({ item, sourceFocus, externalRevision = 0 }: { item: Evidence; sourceFocus?: SourceFocus; externalRevision?: number }) {
+  const [view, setView] = useState<'results' | 'original' | 'info'>('results');
+  const [visited, setVisited] = useState(() => new Set(['results']));
   const [completedRunId, setCompletedRunId] = useState<string>();
-  const [transcriptRefreshKey, setTranscriptRefreshKey] = useState<string>();
-  const [pinnedRunId, setPinnedRunId] = useState<string>();
-  const onProcessingCompleted = useCallback((runId: string) => {
-    setCompletedRunId(runId); setTranscriptRefreshKey(runId);
-  }, []);
+  const [revision, setRevision] = useState(0);
+  const [focus, setFocus] = useState(sourceFocus);
+  const [selected, setSelected] = useState<components['schemas']['Observation']>();
+  const [processingOpen, setProcessingOpen] = useState(false), [rawOpen, setRawOpen] = useState(false), [transcriptOpen, setTranscriptOpen] = useState(false);
+  const changeView = (next: 'results' | 'original' | 'info') => { setView(next); setVisited(previous => new Set([...previous, next])); };
+  const onProcessingCompleted = useCallback((runId: string) => { setCompletedRunId(runId); setRevision(value => value + 1); }, []);
+  useEffect(() => { setSelected(undefined); }, [externalRevision, revision]);
+  const refreshKey = `${completedRunId ?? ''}:${revision}:${externalRevision}`;
   return <>
-    <div className="extraction-heading"><h3>Extract and inspect</h3><p>Processing derives observations from the original. Review the source before relying on an extraction.</p></div>
-    <StartProcessing caseId={item.case_id} evidenceId={item.id} sourceKind={item.kind} filename={item.filename} onCompleted={onProcessingCompleted} />
-    {completedRunId && <label><input type="checkbox" checked={pinnedRunId !== undefined} onChange={event => setPinnedRunId(event.target.checked ? completedRunId : undefined)} />
-      Pin observations to completed run {pinnedRunId ?? completedRunId}
-    </label>}
-    {sourceFocus && <p className="source-focus">Citation locator: <strong>{sourceFocus.source_locator}</strong>{sourceFocus.observation_id && <span className="identifier"> · {sourceFocus.observation_id}</span>}</p>}
-    {(item.kind === 'image' || item.kind === 'video') && <MediaInspector item={item} onDerivedRun={onProcessingCompleted} processingRunId={pinnedRunId} refreshKey={completedRunId} focus={sourceFocus} />}
-    <ObservationInspector focus={sourceFocus} caseId={item.case_id} evidenceId={item.id}
-      processingRunId={pinnedRunId} refreshKey={pinnedRunId ?? completedRunId} />
-    {(item.kind === 'audio' || item.kind === 'video') && <TranscriptViewer item={item}
-      refreshKey={transcriptRefreshKey} onDerivedRun={setCompletedRunId} />}
+    <div className="source-tabs" role="group" aria-label="Source views">{(['results', 'original', 'info'] as const).map(tab => <button key={tab} type="button" aria-pressed={view === tab} onClick={() => changeView(tab)}>{tab.charAt(0).toUpperCase() + tab.slice(1)}</button>)}
+      <details className="action-menu source-actions"><summary aria-label="Source actions" title="Source actions">⋯</summary><div className="action-popover"><OriginalDownload item={item} /><button type="button" onClick={() => setRevision(value => value + 1)}>Refresh source</button><button type="button" onClick={() => { changeView('info'); setProcessingOpen(true); }}>Processing history</button></div></details>
+    </div>
+    <div hidden={view !== 'results'}>{visited.has('results') && <EvidenceResults item={item} revision={refreshKey} focus={focus} onDerivedRun={onProcessingCompleted} onSelectResult={setSelected} onInspectOriginal={next => { setFocus(next); changeView('original'); }} />}</div>
+    <div hidden={view !== 'original'}>{visited.has('original') && (item.kind === 'image' || item.kind === 'video' ? <MediaInspector item={item} onDerivedRun={onProcessingCompleted} processingRunId={focus?.processing_run_id} refreshKey={refreshKey} focus={focus} /> : <OriginalTextPreview item={item} />)}</div>
+    <div hidden={view !== 'info'}>{visited.has('info') && <>
+      <dl className="evidence-metadata"><dt>File</dt><dd>{item.filename}</dd><dt>Type</dt><dd>{item.kind.replaceAll('_', ' ')}</dd><dt>Size</dt><dd>{formatFileSize(item.size_bytes)}</dd><dt>Added</dt><dd>{new Date(item.created_at).toLocaleString()}</dd></dl>
+      {selected && <section className="selected-result-info"><h3>Selected result</h3><p>{selected.source_locator}</p><p>Reported score: {selected.extraction_confidence}</p>{selected.raw_value !== selected.normalized_value && <p>{selected.raw_value}</p>}</section>}
+      <details className="processing-actions" open={processingOpen} onToggle={event => setProcessingOpen(event.currentTarget.open)}><summary>Processing history</summary>{processingOpen && (item.kind === 'audio' ? <p>Standalone audio transcription is unavailable.</p> : <StartProcessing caseId={item.case_id} evidenceId={item.id} sourceKind={item.kind} filename={item.filename} onCompleted={onProcessingCompleted} />)}</details>
+      <details className="technical-details"><summary>Technical</summary><Metadata item={item} detailed />{selected && <dl><dt>Observation</dt><dd className="identifier">{selected.id}</dd><dt>Processing output</dt><dd className="identifier">{selected.processing_run_id}</dd></dl>}</details>
+      <details className="raw-observations" open={rawOpen} onToggle={event => setRawOpen(event.currentTarget.open)}><summary>Raw observations</summary>{rawOpen && <ObservationInspector focus={focus} caseId={item.case_id} evidenceId={item.id} processingRunId={focus?.processing_run_id} refreshKey={refreshKey} />}</details>
+      {(item.kind === 'audio' || item.kind === 'video') && <details open={transcriptOpen} onToggle={event => setTranscriptOpen(event.currentTarget.open)}><summary>Transcript history</summary>{transcriptOpen && <TranscriptViewer item={item} refreshKey={refreshKey} onDerivedRun={onProcessingCompleted} />}</details>}
+      <p className="scope-note">{formatSupport(item.filename, item.kind)}</p>
+    </>}</div>
   </>;
 }
 

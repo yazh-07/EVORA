@@ -1,46 +1,17 @@
-import { useEffect, useState } from 'react';
-import { CaseWorkspace, SessionStatus } from './cases/CaseWorkspace';
+import { useState } from 'react';
+import { useActionMenus } from './ui/useActionMenus';
 import { useApiClient } from './api/ApiProvider';
+import { CaseWorkspace, SessionStatus } from './cases/CaseWorkspace';
 import { ActivityProvider, ActivityCenter } from './cases/ActivityCenter';
 import { SettingsModal } from './settings/SettingsModal';
-
-export function ThemeToggle() {
-  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const saved = localStorage.getItem('evora-theme');
-        if (saved === 'light' || saved === 'dark') return saved;
-      } catch {}
-    }
-    return 'light';
-  });
-
-  useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
-    document.body.setAttribute('data-theme', theme);
-    try { localStorage.setItem('evora-theme', theme); } catch {}
-  }, [theme]);
-
-  return (
-    <button
-      type="button"
-      className="theme-toggle-btn"
-      onClick={() => setTheme(curr => (curr === 'dark' ? 'light' : 'dark'))}
-      aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
-      title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
-    >
-      {theme === 'dark' ? 'Light mode' : 'Dark mode'}
-    </button>
-  );
-}
 
 export function App() {
   return <ActivityProvider><Application /></ActivityProvider>;
 }
 
 function Application() {
+  useActionMenus();
   const client = useApiClient();
-  const [caseNavigation, setCaseNavigation] = useState(0);
   const [settingsOpen, setSettingsOpen] = useState(false);
   return (
     <>
@@ -49,26 +20,19 @@ function Application() {
         <header className="app-header">
           <a className="brand" href="#workspace" aria-label="EVORA workspace">
             <svg width="28" height="30" viewBox="0 0 28 30" fill="none" aria-hidden="true">
-              <path d="M14 2 25 7v8c0 6-5 10-11 13C8 25 3 21 3 15V7L14 2Z" stroke="currentColor" strokeWidth="2" />
-              <path d="M9 10h10M9 15h8M9 20h5" stroke="currentColor" strokeWidth="2" />
+              <path d="M4 3h20M4 15h15M4 27h20M4 3v24" stroke="currentColor" strokeWidth="3" /><circle cx="23" cy="15" r="3" fill="currentColor" />
             </svg>
             EVORA
           </a>
-          <span className="platform-name">Forensic investigation workspace</span>
-          <nav className="navigation" aria-label="Workspace">
-            <a href="#workspace" aria-current="page" onClick={event => { event.preventDefault(); setCaseNavigation(value => value + 1); }}>Cases</a>
-          </nav>
           <div className="header-actions">
-            <ActivityCenter />
-            <ThemeToggle />
-            {(!client.isLocalAuth() || client.getUser()?.role === 'administrator') && <button type="button" onClick={() => setSettingsOpen(true)} aria-haspopup="dialog">Settings</button>}
+            {client.hasToken() && <ActivityCenter />}
+            <button type="button" className="header-settings" onClick={() => setSettingsOpen(true)} aria-haspopup="dialog" aria-label="Settings"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><path d="m9 3-1 3-3 1-2 3 2 2-1 3 3 2 1 4h4l1-3 3-1 3-3-2-2 1-3-3-2-1-4H9Z"/><circle cx="10" cy="12" r="3"/></svg><span>Settings</span></button>
             <SessionStatus />
           </div>
         </header>
         <main id="workspace" tabIndex={-1}>
-          <CaseWorkspace caseNavigation={caseNavigation} />
+          <CaseWorkspace />
         </main>
-        <footer>EVORA supports investigation. Findings require human verification.</footer>
       </div>
       {settingsOpen && <SettingsModal onClose={() => setSettingsOpen(false)} />}
     </>

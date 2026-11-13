@@ -5,7 +5,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { createApiClient } from '../.test-build/src/api/client.mjs';
 import { ApiProvider } from '../.test-build/src/api/ApiProvider.mjs';
 import { SettingsModal } from '../.test-build/src/settings/SettingsModal.mjs';
-import { SETTINGS_KEY, defaultSettings, parseSettings, readSettings, saveSettings, subscribeSettings } from '../.test-build/src/settings/settings.mjs';
+import { SETTINGS_KEY, defaultSettings, parseSettings, readSettings, saveSettings, saveViewerSettings, subscribeSettings } from '../.test-build/src/settings/settings.mjs';
 
 function browser(t) {
   const values = new Map();
@@ -127,10 +127,10 @@ test('cross-tab settings changes notify mounted views and unsubscribe cleans up'
 
 test('settings dialog exposes labeled controls, slider bounds and actions', () => {
   const client = createApiClient({ baseUrl: 'http://backend.test', fetch: async () => { throw Error('No rendering requests'); } });
-  const html = renderToStaticMarkup(createElement(ApiProvider, { client }, createElement(SettingsModal, { onClose() {} })));
-  for (const text of ['aria-labelledby="settings-title"', 'Model configuration', 'Visual Forensics &amp; Media Settings',
-    'Knowledge Graph Settings', 'Source Description', 'Filename', 'Show Bounding Boxes', 'Show Provenance Rays',
-    'Test Connection &amp; Fetch Models', 'Save Settings', 'Reset to Defaults', 'Cancel', 'min="50" max="95"',
+  const html = renderToStaticMarkup(createElement(ApiProvider, { client }, createElement(SettingsModal, { onClose() {}, initialSection: 'models' })));
+  for (const text of ['aria-labelledby="settings-title"', 'Models', 'Media',
+    'Connections', 'Source Description', 'Filename', 'Show Bounding Boxes', 'Show source connections',
+    'Test connection', 'Save Settings', 'Reset to Defaults', 'Cancel', 'min="50" max="95"',
     'Local (Ollama)', 'Ollama Endpoint URL']) assert.ok(html.includes(text), text);
   assert.ok(!html.includes('Cloud / Custom (OpenAI-compatible)'));
   assert.ok(!html.includes('<option value="chatgpt"'));
@@ -140,7 +140,7 @@ test('settings dialog exposes labeled controls, slider bounds and actions', () =
 test('cloud provider choices require an explicitly online settings draft', t => {
   const window=browser(t);
   const client=createApiClient({baseUrl:'http://backend.test'});
-  const render=()=>renderToStaticMarkup(createElement(ApiProvider,{client},createElement(SettingsModal,{onClose(){}})));
+  const render=()=>renderToStaticMarkup(createElement(ApiProvider,{client},createElement(SettingsModal,{onClose(){},initialSection:'models'})));
   for(const offline_mode of [undefined,true,false]){
     window.localStorage.setItem(SETTINGS_KEY,JSON.stringify({...defaultSettings,offline_mode}));
     const html=render();
@@ -154,9 +154,24 @@ test('OpenAI settings show password, base URL and model choices without revealin
   window.localStorage.setItem(SETTINGS_KEY, JSON.stringify({ ...defaultSettings, qa_provider: 'openai',
     qa_model: 'gpt-4o', has_openai_key: true, openai_api_key: 'sk-stale-secret' }));
   const client = createApiClient({ baseUrl: 'http://backend.test' });
-  const html = renderToStaticMarkup(createElement(ApiProvider, { client }, createElement(SettingsModal, { onClose() {} })));
+  const html = renderToStaticMarkup(createElement(ApiProvider, { client }, createElement(SettingsModal, { onClose() {}, initialSection: 'models' })));
   for (const text of ['type="password"', 'placeholder="sk-..."', 'Base URL', 'https://api.openai.com/v1',
-    'Recommended', 'gpt-4o-mini', 'o3-mini', 'Custom model', 'A key is saved. Leave blank to keep it.']) assert.ok(html.includes(text), text);
+    'GPT-4o', 'gpt-4o-mini', 'o3-mini', 'Custom model', 'Key saved. Leave blank to keep.']) assert.ok(html.includes(text), text);
   assert.ok(!html.includes('sk-stale-secret'));
   assert.ok(!html.includes('Ollama Endpoint URL'));
+});
+
+
+test('viewer preferences save locally without replacing model configuration or retaining secrets', t => {
+  const window = browser(t);
+  window.localStorage.setItem(SETTINGS_KEY, JSON.stringify({ ...defaultSettings, qa_model: 'local:model' }));
+  let changes = 0;
+  const unsubscribe = subscribeSettings(() => changes++);
+  const saved = saveViewerSettings({ ...defaultSettings, qa_model: 'unrelated:model', show_bounding_boxes: false, detection_threshold: .85, openai_api_key: 'must-not-save' });
+  assert.equal(saved.qa_model, 'local:model');
+  assert.equal(saved.show_bounding_boxes, false);
+  assert.equal(readSettings().detection_threshold, .85);
+  assert.equal(changes, 1);
+  assert.ok(!window.localStorage.getItem(SETTINGS_KEY).includes('must-not-save'));
+  unsubscribe();
 });

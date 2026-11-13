@@ -1,4 +1,11 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useSyncExternalStore } from 'react';
+
+const compactNavigation = () => typeof window !== 'undefined' && window.matchMedia('(max-width: 850px)').matches;
+const subscribeNavigation = (notify: () => void) => {
+  const media = window.matchMedia('(max-width: 850px)');
+  media.addEventListener('change', notify);
+  return () => media.removeEventListener('change', notify);
+};
 
 export const findingKinds = ['all', 'relationship', 'conflict', 'gap', 'cluster', 'anomaly', 'hypothesis'] as const;
 export type FindingKindFilterValue = typeof findingKinds[number];
@@ -15,7 +22,7 @@ export function FindingKindFilter({ value, onSelect }: {
       }}>
       {findingKinds.map(kind => <option key={kind} value={kind}>{kind === 'all' ? 'All kinds' : kind}</option>)}
     </select></label>
-    <span id="finding-filter-scope">Filters the current page. Use Previous and Next to inspect other pages.</span>
+    <span id="finding-filter-scope" className="sr-only">Filters the current page.</span>
   </div>;
 }
 
@@ -23,22 +30,16 @@ const tabs = [
   { id: 'overview', label: 'Overview', path: 'M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z' },
   { id: 'evidence', label: 'Evidence', path: 'M3 7h7l2 2h9v11H3V7Zm0 0V4h7l2 3' },
   { id: 'timeline', label: 'Timeline', path: 'M12 3v18M5 6h7m0 6h7M5 18h7' },
-  { id: 'investigation', label: 'Investigation', path: 'M16 10a6 6 0 1 1-12 0 6 6 0 0 1 12 0Zm-2 4 6 6M7 8h6M7 11h4' },
-  { id: 'report', label: 'Report', path: 'M5 3h10l4 4v14H5V3Zm10 0v5h4M9 12h6m-6 4h6' },
+  { id: 'locations', label: 'Locations', path: 'M20 10c0 6-8 11-8 11S4 16 4 10a8 8 0 1 1 16 0ZM12 7a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z' },
+  { id: 'investigation', label: 'Findings', path: 'M16 10a6 6 0 1 1-12 0 6 6 0 0 1 12 0Zm-2 4 6 6M7 8h6M7 11h4' },
+  { id: 'report', label: 'Report', path: 'M5 3h10v4h4v14H5zM15 3v4h4M8 11h8M8 15h8' },
 ] as const;
 export type InvestigationTab = typeof tabs[number]['id'];
 
 export function InvestigationTabs({ activeTab, onSelect }: { activeTab: InvestigationTab; onSelect: (tab: InvestigationTab) => void }) {
-  const [vertical, setVertical] = useState(false);
-  useEffect(() => {
-    const media = window.matchMedia('(min-width: 851px)');
-    const update = () => setVertical(media.matches);
-    update();
-    media.addEventListener('change', update);
-    return () => media.removeEventListener('change', update);
-  }, []);
   const buttons = useRef<(HTMLButtonElement | null)[]>([]);
-  return <div className="investigation-tabs" role="tablist" aria-orientation={vertical ? 'vertical' : 'horizontal'} aria-label="Investigation navigation">
+  const compact = useSyncExternalStore(subscribeNavigation, compactNavigation, () => false);
+  return <div className="investigation-tabs" role="tablist" aria-orientation={compact ? 'horizontal' : 'vertical'} aria-label="Investigation navigation">
     {tabs.map((tab, index) => <button key={tab.id} ref={element => { buttons.current[index] = element; }}
       type="button" role="tab" id={`tab-${tab.id}`} aria-controls={`panel-${tab.id}`} aria-selected={activeTab === tab.id}
       tabIndex={activeTab === tab.id ? 0 : -1} onClick={() => onSelect(tab.id)} onKeyDown={event => {

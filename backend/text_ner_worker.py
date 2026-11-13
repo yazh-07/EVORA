@@ -25,7 +25,7 @@ def load_model(path):
         raise ModelFailure('MODEL_UNAVAILABLE') from None
     except (ValueError,OSError,KeyError):
         raise ModelFailure('MODEL_INVALID') from None
-    if distribution.version!=expected['version'] or actual['python'] not in (expected['runtime']['python'], '3.14.9') or {k:v for k,v in actual.items() if k!='python'}!={k:v for k,v in expected['runtime'].items() if k!='python'}:
+    if distribution.version!=expected['version'] or actual['python'] not in (expected['runtime']['python'], '3.14.9', '3.14.10') or {k:v for k,v in actual.items() if k!='python'}!={k:v for k,v in expected['runtime'].items() if k!='python'}:
         raise ModelFailure('MODEL_INVALID')
     root=Path(distribution.locate_file('')).resolve();files=manifest['files']
     if hashlib.sha256(json.dumps(files,sort_keys=True,separators=(',',':')).encode()).hexdigest()!=expected['files_sha256']:

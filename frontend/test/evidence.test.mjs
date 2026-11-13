@@ -53,8 +53,8 @@ test('uploadEvidence sends actual FormData bytes; busy prevents duplicates; succ
   assert.equal(await pending, true);
   assert.equal(store.getSnapshot().submitting, false); assert.equal(store.getSnapshot().uploaded, true);
   assert.equal(store.getSnapshot().page.items[0].id, item.id);
-  assert.match(render(store), new RegExp(item.sha256)); assert.match(render(store), /Size \(bytes\)<\/dt><dd>5/);
-  assert.match(render(store), new RegExp(item.id)); assert.match(requests[1].url, /limit=20&offset=0/);
+  assert.match(render(store), /Source views/); assert.doesNotMatch(render(store), new RegExp(item.sha256));
+  assert.match(render(store), /Synthetic source/); assert.match(requests[1].url, /limit=20&offset=0/);
   store.dispose();
 });
 

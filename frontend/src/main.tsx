@@ -3,9 +3,16 @@ import { createRoot } from 'react-dom/client';
 import { App } from './App';
 import { ApiProvider } from './api/ApiProvider';
 import { createApiClient } from './api/client';
+import { initializeAppearance } from './appearance/appearance';
 import './styles.css';
 import './workspace.css';
+import './appearance/appearance.css';
 import './motion.css';
+import './dashboard.css';
+import './fluid.css';
+import 'maplibre-gl/dist/maplibre-gl.css';
+
+initializeAppearance();
 
 const root = document.getElementById('root');
 if (!root) throw new Error('EVORA root element is missing.');

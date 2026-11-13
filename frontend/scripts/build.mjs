@@ -1,13 +1,19 @@
 import { build, context } from 'esbuild';
-import { copyFile, mkdir } from 'node:fs/promises';
+import { copyFile, mkdir, cp } from 'node:fs/promises';
 
 const serve = process.argv.includes('--serve');
 await mkdir('dist', { recursive: true });
 await copyFile('index.html', 'dist/index.html');
+await cp('public', 'dist', { recursive: true });
+await mkdir('dist/assets', { recursive: true });
+await copyFile('node_modules/maplibre-gl/dist/maplibre-gl-worker.mjs', 'dist/assets/maplibre-gl-worker.mjs');
+await copyFile('node_modules/maplibre-gl/dist/maplibre-gl-shared.mjs', 'dist/assets/maplibre-gl-shared.mjs');
 
 const options = {
-  entryPoints: ['src/main.tsx'],
-  outfile: 'dist/assets/main.js',
+  entryPoints: { main: 'src/main.tsx' },
+  outdir: 'dist/assets',
+  splitting: true,
+  chunkNames: 'chunks/[name]-[hash]',
   bundle: true,
   loader: { '.ttf': 'base64' },
   format: 'esm',

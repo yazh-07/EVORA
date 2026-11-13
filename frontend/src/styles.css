@@ -1,60 +1,35 @@
+/* Shared semantic colors. Personal accents are supplied by appearance.ts. */
 :root {
-  color-scheme: dark;
-  font-family: "IBM Plex Sans", system-ui, -apple-system, sans-serif;
-  font-size: 16px;
-  font-weight: 400;
-  line-height: 1.5;
-  color: var(--color-primary);
-  background: var(--color-neutral);
-  --color-primary: #f0f6fc;
-  --color-secondary: #8b949e;
-  --color-accent: #58a6ff;
-  --color-accent-fg: #0d1117;
-  --color-neutral: #0d1117;
-  --color-surface: #161b22;
-  --color-border: #30363d;
-  --color-success: #3fb950;
-  --color-warning: #d29922;
-  --color-error: #f85149;
-  --color-button-bg: #21262d;
-  --color-button-hover: #30363d;
-  --color-input-bg: #21262d;
-  --color-card-hover: #1c2129;
-  --color-table-header: #21262d;
-  --color-tab-hover: #21262d;
-  --color-tab-active: #152a42;
-  --radius-sm: 4px;
-  --radius-md: 6px;
-  --space-xs: 4px;
-  --space-sm: 8px;
-  --space-md: 16px;
-  --space-lg: 24px;
-  --space-xl: 32px;
-}
-
-:root[data-theme="light"], body[data-theme="light"] {
   color-scheme: light;
-  --color-primary: #17212b;
-  --color-secondary: #52606d;
-  --color-accent: #175cd3;
-  --color-accent-fg: #ffffff;
-  --color-neutral: #f5f7fa;
-  --color-surface: #ffffff;
-  --color-border: #d5dce5;
-  --color-success: #17633b;
-  --color-warning: #795400;
-  --color-error: #a12b2b;
-  --color-button-bg: #f8fafc;
-  --color-button-hover: #e2e8f0;
-  --color-input-bg: #ffffff;
-  --color-card-hover: #f1f5f9;
-  --color-table-header: #f1f5f9;
-  --color-tab-hover: #f1f5f9;
-  --color-tab-active: #eff6ff;
+  font-family: Inter, "Segoe UI", system-ui, sans-serif;
+  font-size: 16px; font-weight: 400; line-height: 1.5;
+  color: var(--color-primary); background: var(--color-neutral);
+  --color-primary: #354052; --color-secondary: #657185;
+  --color-accent: var(--appearance-accent, #7c3aed);
+  --color-accent-fg: var(--appearance-accent-fg, #fff);
+  --color-neutral: #faf9ee; --color-surface: #fff; --color-border: #e6e8ee;
+  --color-success: #28633c; --color-warning: #805c12; --color-error: #b0353e;
+  --color-button-bg: #fff; --color-input-bg: #fff;
+  --color-button-hover: #f1effb; --color-card-hover: #f8f8fc;
+  --color-table-header: #fcfcfe;
+  --color-tab-hover: color-mix(in srgb, var(--color-accent) 5%, var(--color-surface));
+  --color-tab-active: color-mix(in srgb, var(--color-accent) 8%, var(--color-surface));
+  --desk-tint: color-mix(in srgb, var(--color-accent) 5%, var(--color-surface));
+  --desk-line: color-mix(in srgb, var(--color-accent) 19%, var(--color-border));
+  --radius-sm: 7px; --radius-md: 10px;
+  --space-xs: 4px; --space-sm: 8px; --space-md: 16px; --space-lg: 24px; --space-xl: 32px;
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --color-primary: #eaf1ef; --color-secondary: #a9bab6;
+  --color-neutral: #121a1c; --color-surface: #1b2528; --color-border: #39484a;
+  --color-success: #9bcc9c; --color-warning: #e5c17d; --color-error: #ffaaaa;
+  --color-button-bg: #1f2c2f; --color-button-hover: #2e3d40; --color-input-bg: #172225;
+  --color-card-hover: #233033; --color-table-header: #202d30;
 }
 
 * { box-sizing: border-box; scrollbar-color: var(--color-border) var(--color-neutral); }
-::selection { background: #264e78; color: #f0f6fc; }
+::selection { background: var(--color-accent); color: var(--color-accent-fg); }
 body { margin: 0; background: var(--color-neutral); color: var(--color-primary); }
 a { color: var(--color-accent); text-underline-offset: 3px; }
 :focus:not(:focus-visible) { outline: none; }
@@ -334,14 +309,7 @@ dialog, [role="dialog"] { background: var(--color-surface); color: var(--color-p
 dialog::backdrop { background: #010409b3; }
 
 /* Investigation workspace: navigation, working surface, and source inspector. */
-:root {
-  --color-neutral: #10151c;
-  --color-surface: #181f28;
-  --color-border: #303c4b;
-  --color-secondary: #a1adbc;
-  --color-accent: #86b7ff;
-  --radius-md: 8px;
-}
+
 .app-header { min-height: 72px; padding-inline: 28px; }
 .brand { letter-spacing: .12em; font-size: 1.1rem; }
 .platform-name { font-size: .8rem; }

@@ -1,3 +1,4 @@
+import { confirmLeaveWorkspace } from '../ui/unsavedChanges';
 import { createContext, useContext, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import type { ReactNode } from 'react';
 import { useApiClient } from '../api/ApiProvider';
@@ -6,7 +7,7 @@ import type { AnalysisState, AnalysisRun } from './analysisController';
 import type { Case } from './store';
 
 // Analytical views consume this one case-scoped pin for all reads/pages.
-const AnalysisContext = createContext<{ caseId: string; analysis_run_id: string | null; selectCompletedRun: (id: string) => void } | null>(null);
+const AnalysisContext = createContext<{ caseId: string; analysis_run_id: string | null; selectCompletedRun: (id: string) => void; startAnalysis: () => Promise<void>; analysisBusy: boolean } | null>(null);
 export function useAnalysisWorkspace() {
   const value = useContext(AnalysisContext);
   if (!value) throw new Error('Analysis views require a case analysis workspace.');
@@ -39,22 +40,27 @@ export function CaseAnalysisWorkspace({ caseId, children, caseDetails, onBack }:
       }).catch(() => { if (!request.signal.aborted && session === client.getSessionVersion()) setHistoryError(true); });
     return () => request.abort();
   }, [client, caseId, controller, state.run?.status, historyRevision]);
-  const value = useMemo(() => ({ caseId, analysis_run_id: state.pinnedAnalysisRunId, selectCompletedRun: controller.selectCompletedRun }), [caseId, state.pinnedAnalysisRunId, controller]);
+  const startAnalysis = useMemo(() => async () => {
+    if (client.getUser()?.role === 'reviewer' || !confirmLeaveWorkspace()) return;
+    await controller.submit();
+  }, [client, controller]);
+  const analysisBusy = state.status === 'submitting' || state.status === 'polling';
+  const value = useMemo(() => ({ caseId, analysis_run_id: state.pinnedAnalysisRunId, selectCompletedRun: controller.selectCompletedRun, startAnalysis, analysisBusy }), [caseId, state.pinnedAnalysisRunId, controller, startAnalysis, analysisBusy]);
   return <AnalysisContext.Provider value={value}>
     <header className={`panel case-header ${caseDetails ? 'case-header-active' : ''}`}>
       {caseDetails && <div className="case-heading">
         <button type="button" className="back-button" onClick={onBack}>← All Cases</button>
         <h1 ref={title} tabIndex={-1}>{caseDetails.title}</h1>
-        <details className="technical-details"><summary>Case reference</summary><span className="identifier">{caseDetails.id}</span></details>
-        <p>{caseDetails.description || 'Review the evidence and document your findings.'}</p>
       </div>}
-      <section className="analysis-action" aria-labelledby="analysis-heading">
-        <h2 id="analysis-heading">Connect your evidence</h2><p className="analysis-help">Process sources first, then run analysis to generate findings.</p>
-        <StartAnalysis state={state} submit={controller.submit} readOnly={client.getUser()?.role === 'reviewer'} />
-        {!!history.length && <label className="analysis-history">Results to review<select disabled={state.status === 'submitting' || state.status === 'polling'} value={state.pinnedAnalysisRunId ?? ''} onChange={event => controller.chooseCompletedRun(event.target.value)}>
+      <section className="analysis-action" aria-label="Analysis controls">
+        <StartAnalysis state={state} submit={startAnalysis} readOnly={client.getUser()?.role === 'reviewer'} />
+        <details className="analysis-history-menu"><summary>History</summary>
+        {history.length ? <label>Results<select disabled={analysisBusy} value={state.pinnedAnalysisRunId ?? ''} onChange={event => { if (confirmLeaveWorkspace()) controller.chooseCompletedRun(event.target.value); }}>
           {!state.pinnedAnalysisRunId && <option value="">Choose an analysis</option>}
           {history.map((run, index) => <option key={run.id} value={run.id}>{index === 0 ? 'Latest · ' : ''}{new Date(run.created_at).toLocaleString('en-GB', { timeZone: 'UTC' })} UTC</option>)}
-        </select></label>}
+        </select></label> : <p>No completed analysis.</p>}
+        {state.pinnedAnalysisRunId && <p className="identifier">{state.pinnedAnalysisRunId}</p>}
+        </details>
         {historyError && <p role="alert">Could not load previous analyses. <button type="button" onClick={() => setHistoryRevision(value => value + 1)}>Retry history</button></p>}
       </section>
     </header>
@@ -67,20 +73,13 @@ export function StartAnalysis({ state, submit, readOnly = false }: { state: Anal
   const run = state.run;
   const failed = state.status === 'terminal' && run?.status === 'failed';
   return <div className="analysis-controls" aria-busy={busy}>
-    <button className="button-primary" type="button" disabled={busy || readOnly} onClick={() => { void submit(); }}>
+    <button className="button-primary" type="button" title={readOnly ? 'Read-only access. An investigator can run analysis.' : undefined} disabled={busy || readOnly} onClick={() => { void submit(); }}>
       {state.status === 'submitting' ? 'Starting analysis...' : failed || state.status === 'error' ? 'Retry case analysis' : 'Run case analysis'}
     </button>
-    {readOnly && <p className="scope-note">Read-only access. An investigator can run a new analysis.</p>}
+
     {state.message && <p role="alert">{state.message}</p>}
-    {run && <p className={`analysis-status status-${run.status}`} role={failed ? 'alert' : 'status'}>{state.status === 'polling' && (run.status === 'completed' || run.status === 'failed') ? 'Confirming analysis status...' :
-        run.status === 'queued' ? 'Waiting to analyze processed evidence…' : run.status === 'running' ? 'Analyzing case evidence...' :
-          run.status === 'completed' ? 'Analysis completed' : `Analysis failed: ${run.error}`}</p>}
-    {!run && state.status === 'idle' && <p className="analysis-status" role="status">{state.pinnedAnalysisRunId ? 'Completed analysis selected' : 'No analysis selected'}</p>}
-    <details className="analysis-details">
-      <summary>Analysis details</summary>
-      {run && <p className="identifier">Analysis run: {run.id}</p>}
-      {state.pinnedAnalysisRunId && <p className="identifier">Selected completed analysis: {state.pinnedAnalysisRunId}</p>}
-      <p>Analysis supports investigation and requires human verification. A new analysis uses the latest completed extraction for each source. Previous results remain available.</p>
-    </details>
+    {run && (run.status === 'running' || run.status === 'queued') && <p className={`analysis-status status-${run.status}`} role="status">{run.status === 'queued' ? 'Queued…' : 'Analyzing…'}</p>}
+    {failed && <p role="alert">Analysis failed: {run?.error}</p>}
+
   </div>;
 }

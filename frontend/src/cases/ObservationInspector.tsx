@@ -23,14 +23,13 @@ export function ObservationPanel({ state, load, processingRunId, evidenceId, foc
   const page = state.page;
   return <section aria-label="Extracted observations" aria-busy={state.status === 'loading'}>
     <h3>Extracted observations</h3>
-    <p>Source observations are unverified. Extraction confidence is not source reliability or proof of a conclusion.</p>
-    <p>{processingRunId ? `Completed processing run: ${processingRunId}` : 'Latest completed observations for this evidence.'}</p>
+    <details className="context-help"><summary>About extracted observations</summary><p>Source observations are unverified. Extraction confidence is not source reliability or proof of a conclusion.</p><p>{processingRunId ? `Completed processing run: ${processingRunId}` : 'Latest completed observations for this evidence.'}</p></details>
     {state.status === 'loading' && <p role="status">Loading observations...</p>}
     {state.message && <><p role="alert">{state.message}</p><button type="button" onClick={() => { void load(); }}>Retry observations</button></>}
     {state.status === 'ready' && page && <>
       <p role="status">{page.total} observations. Showing {page.items.length} on this page.</p>
-      {evidenceId && <ReliabilityInspector evidenceId={evidenceId} observations={page.items}
-        observationScope={`Extraction scores cover ${page.items.length} of ${page.total} observations on the current observations page. Corroboration findings are available through Findings & Citations.`} />}
+      {evidenceId && page.total > 0 && <details className="context-help"><summary>Extraction scores and source reliability</summary><ReliabilityInspector evidenceId={evidenceId} observations={page.items}
+        observationScope={`Extraction scores cover ${page.items.length} of ${page.total} observations on the current observations page. Corroboration findings are available through Findings & Citations.`} /></details>}
       {page.total === 0 ? <p>No completed observations for this evidence. Start processing to extract observations.</p> : <>
         {page.items.length === 0 && <p>No observations on this page. Return to the previous page or refresh.</p>}
         <div role="region" aria-label="Observation table" tabIndex={0} style={{ overflowX: 'auto' }}>
@@ -44,7 +43,7 @@ export function ObservationPanel({ state, load, processingRunId, evidenceId, foc
           </tr>)}</tbody></table>
         </div>
       </>}
-      <nav className="pagination" aria-label="Observation pages">
+      <nav hidden={!!page && page.total <= page.limit} className="pagination" aria-label="Observation pages">
         <button type="button" disabled={page.offset === 0} onClick={() => { void load(Math.max(0, page.offset - page.limit)); }}>Previous</button>
         <button type="button" disabled={page.offset + page.limit >= page.total} onClick={() => { void load(page.offset + page.limit); }}>Next</button>
       </nav>

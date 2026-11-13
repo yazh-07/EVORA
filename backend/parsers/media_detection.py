@@ -18,10 +18,12 @@ from PIL import Image, UnidentifiedImageError
 
 from backend.parsers.candidate_entities import CandidateEntity, CandidateObservation
 from backend.parsers.normalization import NormalizationResult, TimeNormalization, normalize_timestamp
+from backend import plates
+from backend.parsers.normalization import NormalizedObservation
 from backend.parsers.source_events import SourceEvent, SourceEventResult
 
-PARSER_VERSION = 'media-detection/2'
-PROCESSOR_VERSION = 'processing-lifecycle/11'
+PARSER_VERSION = 'media-detection/3'
+PROCESSOR_VERSION = 'processing-lifecycle/15'
 MAX_SOURCE_BYTES = 50 * 1024 * 1024
 MAX_DATA_ROWS = 10000  # detections
 MAX_FRAMES = 3600
@@ -52,7 +54,7 @@ def _cascade_path(filename):
 def model_info():
     return dict(opencv=cv2.__version__, pillow=Image.__version__, numpy=np.__version__,
                 cascades={name: hashlib.sha256(_cascade_path(name).read_bytes()).hexdigest()
-                          for _, name in _CASCADES}, confidence_transform='sigmoid_uncalibrated')
+                          for _, name in _CASCADES}, confidence_transform='sigmoid_uncalibrated', plates=plates.model_info())
 
 
 def _classifiers():
@@ -166,11 +168,16 @@ def parse_media(source, *, kind, case_id, evidence_id, processing_run_id):
     if len(source) > MAX_SOURCE_BYTES:
         raise MediaDetectionError('BYTE_LIMIT')
     observations, entities, events = [], [], []
+    plate_model = plates.model_info()
     classifiers = _classifiers()
     frames = _image_frames(source) if kind == 'image' else _video_frames(source)
     try:
         for index, offset, frame, time in frames:
-            for label, box, weight, detector in detect_frame(frame, classifiers):
+            hits = plates.detect(frame) if plate_model else []
+            detections = [item for item in detect_frame(frame, classifiers) if not plate_model or item[0] != 'vehicle:license_plate']
+            detections.extend(('vehicle:license_plate', tuple(hit['box']), hit['detector_score'], 'onnx:plate-detector') for hit in hits)
+            readings = {tuple(hit['box']): hit for hit in hits}
+            for label, box, weight, detector in detections:
                 if len(observations) >= MAX_DATA_ROWS:
                     raise MediaDetectionError('DETECTION_LIMIT')
                 x, y, w, h = box
@@ -184,11 +191,17 @@ def parse_media(source, *, kind, case_id, evidence_id, processing_run_id):
                 name = f'{evidence_id}:frame-{index}:{entity_kind}-{len(entities)+1}'
                 key = f'{entity_kind}:{name}'
                 value = f'{label} [{x}, {y}, {w}, {h}]'
-                score = 1 / (1 + math.exp(-max(-700, min(700, weight))))
+                score = weight if detector == 'onnx:plate-detector' else 1 / (1 + math.exp(-max(-700, min(700, weight))))
                 observation = VisualObservation(oid, case_id, evidence_id, processing_run_id,
                     'image.detection' if kind == 'image' else 'video.frame_detection',
                     locator, value, value, time.raw_value, score, time.utc_value, key, weight, detector)
                 observations.append(NormalizationResult(observation, time, 'not_applicable'))
+                if detector == 'onnx:plate-detector':
+                    reading = readings[box]
+                    plate_text = NormalizedObservation(uuid5(oid, 'reading'), case_id, evidence_id, processing_run_id,
+                        'image.plate_reading' if kind == 'image' else 'video.plate_reading', locator,
+                        reading['text'] or 'Unreadable plate', reading['text'], time.raw_value, reading['ocr_score'], time.utc_value)
+                    observations.append(NormalizationResult(plate_text, time, 'not_applicable'))
                 entities.append(CandidateEntity(entity_id, case_id, entity_kind, name, key,
                                                 (evidence_id,), (oid,), score))
                 event = SourceEvent(uuid5(oid, 'event'), case_id, 'visual.detected',

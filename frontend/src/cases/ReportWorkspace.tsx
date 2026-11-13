@@ -1,3 +1,4 @@
+import { useUnsavedChanges } from '../ui/unsavedChanges';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useApiClient } from '../api/ApiProvider';
 import type { components } from '../api/schema';
@@ -49,7 +50,7 @@ export function buildReportText(data: ReportData, selected: string[], title: str
 }
 export function ReportWorkspace({ caseId, caseTitle, investigate }: { caseId: string; caseTitle: string; investigate: () => void }) {
   const { analysis_run_id } = useAnalysisWorkspace();
-  if (!analysis_run_id) return <section className="panel workflow-empty"><span className="section-label">DOCUMENT YOUR INVESTIGATION</span><h2>Build a report from reviewed findings</h2><p>Process your evidence and run case analysis first. Then review findings in Investigation and select what belongs in your report.</p><button type="button" onClick={investigate}>Open investigation</button></section>;
+  if (!analysis_run_id) return <section className="panel workflow-empty"><h2>No analysis yet</h2><button type="button" onClick={investigate}>Open findings</button></section>;
   return <ReportDraft key={`${caseId}:${analysis_run_id}`} caseId={caseId} runId={analysis_run_id} caseTitle={caseTitle} investigate={investigate} />;
 }
 function ReportDraft({ caseId, runId, caseTitle, investigate }: { caseId: string; runId: string; caseTitle: string; investigate: () => void }) {
@@ -64,6 +65,10 @@ function ReportDraft({ caseId, runId, caseTitle, investigate }: { caseId: string
   const selected = useMemo(() => data?.findings.filter(item => choices[item.id] ?? data.reviews[item.id]?.decision === 'accepted').map(item => item.id) ?? [], [data, choices]);
   const [modelDraft, setModelDraft] = useState<{ report: GeneratedReport; input: string }>();
   const [narrative, setNarrative] = useState(''), [reviewed, setReviewed] = useState(false);
+  const authored = JSON.stringify([title, scope, notes, choices, narrative, reviewed]);
+  const [exportedEdits, setExportedEdits] = useState(authored);
+  const dirty = authored !== exportedEdits;
+  useUnsavedChanges(dirty);
   const [allowRemote, setAllowRemote] = useState(false), [generating, setGenerating] = useState(false);
   const [generationError, setGenerationError] = useState('');
   const pending = useRef<AbortController | null>(null);
@@ -97,7 +102,7 @@ function ReportDraft({ caseId, runId, caseTitle, investigate }: { caseId: string
   const [preparedAt] = useState(() => new Date().toISOString());
   const baseText = data ? buildReportText(data, selected, title || caseTitle, scope, notes, preparedAt, draft ? narrative : undefined) : '';
   const text = draft ? `${baseText}\n\n${reportModelAppendix(draft)}` : baseText;
-  const exportReport = () => { try { saveOriginal(new Blob([text], { type: 'text/plain;charset=utf-8' }), `${title || 'Investigation'}-report.txt`); setMessage('Report download requested. Check your browser downloads.'); } catch { setMessage('Download unavailable. Copy the report preview to save your draft.'); } };
+  const exportReport = () => { try { saveOriginal(new Blob([text], { type: 'text/plain;charset=utf-8' }), `${title || 'Investigation'}-report.txt`); if (!modelDraft || draft) setExportedEdits(authored); setMessage('Report download requested. Check your browser downloads.'); } catch { setMessage('Download unavailable. Copy the report preview to save your draft.'); } };
   const exportPdf = async () => {
     if (!data || pdfBusy || generating || (draft && !reviewed)) return;
     const identity = currentExport.current, session = client.getSessionVersion();
@@ -111,41 +116,52 @@ function ReportDraft({ caseId, runId, caseTitle, investigate }: { caseId: string
         reviewed, reviewer: client.getUser() });
       if (!active()) return;
       saveOriginal(blob, `${title || 'Investigation'}-report.pdf`);
+      if (!modelDraft || draft) setExportedEdits(authored);
       setMessage('Formatted PDF download requested. Check your browser downloads.');
     } catch {
       if (active()) setMessage('Could not prepare the PDF. Try again or download the text report.');
     } finally { if (mounted.current) setPdfBusy(false); }
   };
   return <section className="report-workspace" aria-label="Report builder" aria-busy={loading || pdfBusy}>
-    <header className="workspace-section-heading"><span className="section-label">Report draft</span><h2>Prepare your report</h2><p>Generate a source-cited narrative with your configured model, review it, and export your report.</p></header>
-    <p className="scope-note">Your editable draft stays in this open case. Model output and source context are recorded in private provenance. Export your edits before leaving the case, signing out, reloading, or selecting another analysis.</p>
-    {loading && <p role="status">Loading the selected analysis, source manifest, and review decisions…</p>}
+    <header className="workspace-section-heading"><h2>Report</h2></header>
+    <p className="draft-save-status" role="status"><span className={`draft-dot ${dirty ? 'draft-dirty' : ''}`} aria-hidden="true" />{dirty ? 'Unsaved edits · export to keep' : 'Draft stored in this session only'}</p>
+    {loading && <p role="status">Loading report…</p>}
     {error && <p role="alert">{error}</p>}
     <div className="report-actions"><button type="button" onClick={refresh} disabled={loading}>Refresh review decisions</button><button type="button" onClick={investigate}>Review findings</button></div>
     {data && <div className="report-columns"><div className="panel report-editor">
-      <h3>1. Describe the investigation</h3>
+      <h3>Case details</h3>
       <div className="report-field"><label htmlFor="report-title">Report title</label><input id="report-title" value={title} onChange={event => setTitle(event.target.value)} maxLength={200} /></div>
-      <div className="report-field"><label htmlFor="report-scope">Scope and investigative questions</label><textarea id="report-scope" rows={4} maxLength={4000} value={scope} onChange={event => setScope(event.target.value)} placeholder="What did you examine? Which questions were you trying to answer?" /></div>
-      <div className="report-field"><label htmlFor="report-notes">Investigator notes</label><textarea id="report-notes" rows={6} maxLength={8000} value={notes} onChange={event => setNotes(event.target.value)} placeholder="Record your assessment, alternative explanations, limitations, and follow-up work." /></div>
-      <h3>2. Choose findings</h3><p>Accepted findings are selected by default. Other review states remain visible in the exported report.</p>
-      {!data.findings.length && <p>No findings in this analysis. You can still export your scope, notes, and evidence manifest.</p>}
+      <div className="report-field"><label htmlFor="report-scope">Scope and investigative questions</label><textarea id="report-scope" rows={4} maxLength={4000} value={scope} onChange={event => setScope(event.target.value)} /></div>
+      <div className="report-field"><label htmlFor="report-notes">Investigator notes</label><textarea id="report-notes" rows={6} maxLength={8000} value={notes} onChange={event => setNotes(event.target.value)} /></div>
+      <h3>Findings</h3>
+      {!data.findings.length && <p>No findings in this analysis.</p>}
       <ul className="report-finding-list">{data.findings.map(item => <li key={item.id}><label><input type="checkbox" checked={selected.includes(item.id)} onChange={event => setChoices(value => ({ ...value, [item.id]: event.target.checked }))} /><span>{item.summary}<small>{(data.reviews[item.id]?.decision ?? 'unreviewed').replaceAll('_', ' ')}{item.details?.ai_generated ? ' · AI-assisted' : ''}</small></span></label></li>)}</ul>
-      <h3>3. Review the narrative</h3>
-      {!draft && <p>Use Generate with model at the top of the report preview to write a draft.</p>}
-      {modelDraft && !draft && <p role="status">Report inputs changed. Generate a fresh narrative to include it in your export.</p>}
-      {draft && <><p>{draft.model_version} · {draft.coverage.observations_included}/{draft.coverage.observations_total} observations from {draft.coverage.sources_included}/{draft.coverage.sources_total} sources in model context. {draft.coverage.truncated_observations} observations shortened.</p>
-        <label htmlFor="report-narrative">Model-assisted narrative · editable</label><textarea id="report-narrative" rows={20} value={narrative} onChange={event => { setNarrative(event.target.value); setReviewed(false); }} />
-        <p>References in square brackets point to the source appendix. Edits are your assessment and have not been checked by the model.</p>
+      <h3>Draft</h3>
+      {modelDraft && !draft && <p role="status">Report inputs changed. Regenerate the draft.</p>}
+      {draft && <><details className="technical-details"><summary>Model and source coverage</summary><p>{draft.model_version} · {draft.coverage.observations_included}/{draft.coverage.observations_total} observations from {draft.coverage.sources_included}/{draft.coverage.sources_total} sources. {draft.coverage.truncated_observations} observations shortened.</p></details>{(draft.coverage.observations_included < draft.coverage.observations_total || draft.coverage.truncated_observations > 0) && <p className="scope-note">The model used incomplete or shortened source text. Check source coverage before relying on the draft.</p>}
+        <label htmlFor="report-narrative">AI-generated draft · editable</label><textarea id="report-narrative" rows={20} value={narrative} onChange={event => { setNarrative(event.target.value); setReviewed(false); }} />
+        <details className="context-help"><summary>Draft references</summary><p>References in square brackets link to the source appendix. Your edits are not checked by the model.</p></details>
         <label><input type="checkbox" checked={reviewed} onChange={event => setReviewed(event.target.checked)} /> I reviewed this draft against its cited sources and checked my edits.</label></>}
-    </div><div className="panel report-preview"><div className="section-heading"><h3>Report preview</h3><span className="kind-badge">DRAFT</span></div><p>{selected.length} findings selected · {data.evidence.length} sources in the analysis</p>
+    </div><div className="panel report-preview"><div className="section-heading"><h3>Report preview</h3><span className="kind-badge">DRAFT</span></div><p>{selected.length} findings · {data.evidence.length} sources</p>
       <div className="report-generation-controls" aria-label="Model report generation">
-      <label><input type="checkbox" checked={allowRemote} onChange={event => setAllowRemote(event.target.checked)} /> Allow sending extracted source text, selected findings, review decisions, scope and notes to the hosted provider configured in Settings. Leave unchecked for local Ollama.</label>
+      <label><input type="checkbox" checked={allowRemote} onChange={event => setAllowRemote(event.target.checked)} /> Allow hosted provider to receive source text and report inputs</label>
       <div className="report-actions"><button type="button" className="button-primary" onClick={() => void generate()} disabled={generating || loading || client.getUser()?.role === 'reviewer'}> {generating ? 'Writing and checking source citations…' : 'Generate with model'}</button></div>
-      {generating && <p role="status">Generating the narrative and checking its claims against the sources. This may take a few minutes.</p>}
+      {generating && <p className="sr-only" role="status">Generating draft and checking sources…</p>}
       {generationError && <p role="alert">{generationError}</p>}
       </div>
       <div className="report-actions"><button className="button-primary" type="button" onClick={() => void exportPdf()} disabled={pdfBusy || generating || Boolean(draft && !reviewed)}>{pdfBusy ? 'Preparing PDF…' : 'Download PDF'}</button><button type="button" onClick={exportReport} disabled={generating || Boolean(draft && !reviewed)}>Download text</button></div>
-      <p className="scope-note">PDF includes a cover page, formatted narrative, findings, evidence tables, source references and page numbers.</p>
-      {message && <p role="status">{message}</p>}<pre tabIndex={0} aria-label="Report text">{text}</pre></div></div>}
+      {message && <p role="status">{message}</p>}
+      <article className="report-document" aria-label="Report preview document">
+        <span className="section-label">Investigation report / draft</span><h3>{title || caseTitle}</h3>
+        <p className="document-date">{new Date(preparedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })} · UTC</p>
+        <h4>Scope</h4><p>{scope || 'Add the purpose of your investigation.'}</p>
+        {notes && <><h4>Investigator notes</h4><p>{notes}</p></>}
+        {draft && <><h4>Model-assisted narrative · draft</h4><p>{narrative}</p></>}
+        <h4>Selected findings</h4>
+        {selected.length ? <ol>{data.findings.filter(item => selected.includes(item.id)).map(item => <li key={item.id}><strong>{item.summary}</strong><span>{(data.reviews[item.id]?.decision ?? 'unreviewed').replaceAll('_', ' ')}{item.details?.ai_generated ? ' · AI-assisted' : ''}</span></li>)}</ol> : <p>No findings selected.</p>}
+        <h4>Sources in this analysis</h4><ol>{data.evidence.map(item => <li key={item.id}>{item.source_label || item.filename}<span>{item.filename}</span></li>)}</ol>
+        <p className="document-limitations">Draft for investigator review. Findings and generated text require verification against their sources.</p>
+      </article>
+      <details className="export-details"><summary>Export text and source references</summary><pre tabIndex={0} aria-label="Report text">{text}</pre></details></div></div>}
   </section>;
 }

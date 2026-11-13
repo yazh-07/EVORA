@@ -30,6 +30,24 @@ tags:
   - name: Investigation
     description: Human decisions, case questions and audit trail.
 paths:
+  /api/v1/cases/{caseId}/locations:
+    parameters:
+      - { name: caseId, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      operationId: listLocations
+      summary: Source-linked reported positions and approximate place mentions
+      parameters:
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 1000, default: 1000 } }
+        - { name: offset, in: query, schema: { type: integer, minimum: 0, default: 0 } }
+      responses:
+        '200':
+          description: Latest completed source outputs, with approximate places labeled separately
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LocationPage' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
   /api/v1/chatgpt/status: {"get": {"operationId": "getChatGPTStatus", "summary": "Read the workstation ChatGPT connection status", "responses": {"200": {"description": "Success", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ChatGPTStatus"}}}}, "400": {"description": "Rejected request", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}, "401": {"description": "Rejected request", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}, "403": {"description": "Rejected request", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}}}}
   /api/v1/chatgpt/connect: {"post": {"operationId": "connectChatGPT", "summary": "Start ChatGPT authorization for this workstation", "responses": {"200": {"description": "Success", "content": {"application/json": {"schema": {"type": "object", "additionalProperties": false, "required": ["authorization_url"], "properties": {"authorization_url": {"type": "string", "format": "uri"}}}}}}, "400": {"description": "Rejected request", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}, "401": {"description": "Rejected request", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}, "403": {"description": "Rejected request", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}}, "requestBody": {"required": true, "content": {"application/json": {"schema": {"type": "object", "additionalProperties": false, "properties": {"offline_mode": {"type": "boolean"}, "new_account": {"type": "boolean"}}}}}}}}
   /api/v1/chatgpt/disconnect: {"post": {"operationId": "disconnectChatGPT", "summary": "Disconnect the workstation ChatGPT account", "responses": {"200": {"description": "Success", "content": {"application/json": {"schema": {"type": "object", "additionalProperties": false, "required": ["disconnected", "revoked"], "properties": {"disconnected": {"type": "boolean"}, "revoked": {"type": "boolean"}}}}}}, "400": {"description": "Rejected request", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}, "401": {"description": "Rejected request", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}, "403": {"description": "Rejected request", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}}}}
@@ -785,6 +803,7 @@ paths:
         '400': { $ref: '#/components/responses/BadRequest' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '404': { $ref: '#/components/responses/NotFound' }
+  /api/v1/cases/{caseId}/evidence/{evidenceId}/results: {"get":{"operationId":"getEvidenceResults","summary":"Get source-linked extraction results, selected independently per operation","parameters":[{"name":"caseId","in":"path","required":true,"schema":{"type":"string","format":"uuid"}},{"name":"evidenceId","in":"path","required":true,"schema":{"type":"string","format":"uuid"}},{"name":"operation","in":"query","schema":{"type":"string","enum":["detection","description","ocr","transcript","records","plates"]}},{"name":"processing_run_id","in":"query","schema":{"type":"string","format":"uuid"}},{"name":"limit","in":"query","schema":{"type":"integer","minimum":1,"maximum":100,"default":50}},{"name":"offset","in":"query","schema":{"type":"integer","minimum":0,"default":0}}],"responses":{"200":{"description":"Operation-specific source results","content":{"application/json":{"schema":{"$ref":"#/components/schemas/EvidenceResults"}}}},"400":{"description":"Request rejected","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ApiError"}}}},"401":{"description":"Request rejected","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ApiError"}}}},"403":{"description":"Request rejected","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ApiError"}}}},"404":{"description":"Request rejected","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ApiError"}}}},"422":{"description":"Request rejected","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ApiError"}}}}}}}
 components:
   securitySchemes:
     localSession:
@@ -876,6 +895,46 @@ components:
         application/json:
           schema: { $ref: '#/components/schemas/ApiError' }
   schemas:
+    LocationRecord:
+      type: object
+      additionalProperties: false
+      required: [id, evidence_id, processing_run_id, observation_id, source_locator, basis, label, device, observed_at_raw, observed_at_utc, geometry, precision, accuracy_m]
+      properties:
+        id: { type: string }
+        evidence_id: { type: string, format: uuid }
+        processing_run_id: { type: string, format: uuid }
+        observation_id: { type: string, format: uuid }
+        source_locator: { type: string }
+        basis: { type: string, enum: [gps, place_mention] }
+        label: { type: string }
+        device: { type: [string, 'null'] }
+        observed_at_raw: { type: string }
+        observed_at_utc: { type: [string, 'null'], format: date-time }
+        precision: { type: string, enum: [reported_coordinates, city, country] }
+        accuracy_m: { type: ['null'] }
+        geometry:
+          type: object
+          additionalProperties: false
+          required: [type, coordinates]
+          properties:
+            type: { type: string, enum: [Point, Polygon, MultiPolygon] }
+            coordinates: { type: array, items: {} }
+    LocationPage:
+      type: object
+      additionalProperties: false
+      required: [case_id, items, total, limit, offset, map_detail, gazetteer, scope, revision]
+      properties:
+        case_id: { type: string, format: uuid }
+        items: { type: array, items: { $ref: '#/components/schemas/LocationRecord' } }
+        total: { type: integer, minimum: 0 }
+        limit: { type: integer, minimum: 1, maximum: 1000 }
+        offset: { type: integer, minimum: 0 }
+        revision: { type: string, pattern: "^[a-f0-9]{64}$" }
+        map_detail: { type: string, const: world_overview }
+        gazetteer: { type: string }
+        scope: { type: string, const: latest_completed_processing }
+    ExtractionOperation: {"type":"object","additionalProperties":false,"required":["operation","status","count","output_run_id","latest_run_id","updated_at","notes"],"properties":{"operation":{"type":"string","enum":["detection","description","ocr","transcript","records","plates"]},"status":{"type":"string","enum":["not_run","unsupported","queued","running","completed","failed"]},"count":{"type":["integer","null"],"minimum":0},"output_run_id":{"type":["string","null"],"format":"uuid"},"latest_run_id":{"type":["string","null"],"format":"uuid"},"updated_at":{"type":["string","null"],"format":"date-time"},"notes":{"type":"array","items":{"type":"string"}},"error":{"type":"string"}}}
+    EvidenceResults: {"type":"object","additionalProperties":false,"required":["case_id","evidence_id","operations","operation","items","total","limit","offset"],"properties":{"case_id":{"type":"string","format":"uuid"},"evidence_id":{"type":"string","format":"uuid"},"operations":{"type":"array","items":{"$ref":"#/components/schemas/ExtractionOperation"}},"operation":{"type":"string","enum":["detection","description","ocr","transcript","records","plates"]},"items":{"type":"array","items":{"$ref":"#/components/schemas/Observation"}},"total":{"type":"integer","minimum":0},"limit":{"type":"integer","minimum":1,"maximum":100},"offset":{"type":"integer","minimum":0}}}
     VideoAnalysisRequest: {"type": "object", "additionalProperties": false, "required": ["expected_provider", "expected_model", "expected_endpoint"], "properties": {"confirm_external_processing": {"type": "boolean", "default": false}, "expected_provider": {"type": "string", "enum": ["ollama", "openai", "chatgpt"]}, "expected_model": {"type": "string", "minLength": 1, "maxLength": 200}, "expected_endpoint": {"type": "string", "minLength": 1, "maxLength": 2000}, "sample_interval_seconds": {"type": "integer", "minimum": 1, "maximum": 60, "default": 5}, "max_frames": {"type": "integer", "minimum": 1, "maximum": 60, "default": 12}, "transcribe_speech": {"type": "boolean", "default": false}}}
     ChatGPTStatus: {"type": "object", "additionalProperties": false, "required": ["connected", "sharing", "pending", "email", "error"], "properties": {"connected": {"type": "boolean"}, "sharing": {"type": "boolean"}, "pending": {"type": "boolean"}, "email": {"type": "string"}, "error": {"type": "string"}}}
     ImageAnalysisRequest: {"type": "object", "additionalProperties": false, "required": ["expected_provider", "expected_model", "expected_endpoint"], "properties": {"confirm_external_processing": {"type": "boolean", "default": false}, "expected_provider": {"type": "string", "enum": ["ollama", "openai", "chatgpt"]}, "expected_model": {"type": "string", "minLength": 1, "maxLength": 200}, "expected_endpoint": {"type": "string", "minLength": 1, "maxLength": 2000}}}

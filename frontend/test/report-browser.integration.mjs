@@ -31,7 +31,7 @@ try{
  await page.getByLabel('Model-assisted narrative · editable').fill('Investigator amendment');assert.ok(await download.isDisabled());await reviewed.check();
  const file=page.waitForEvent('download');await download.click();const artifact=await file;assert.match(artifact.suggestedFilename(),/report\.pdf$/);await artifact.saveAs('/tmp/evora-formatted-report-fixture.pdf');
  await page.getByLabel('Scope and investigative questions').fill('New scope');assert.equal(await page.getByLabel('Model-assisted narrative · editable').count(),0);await page.getByText('Report inputs changed.',{exact:false}).waitFor();
- await page.getByRole('checkbox',{name:'Allow sending extracted source text',exact:false}).check();await generate.click();await page.getByLabel('Model-assisted narrative · editable').waitFor();assert.equal(await page.evaluate(()=>window.calls.at(-1).allow_remote),true);
+ await page.getByRole('checkbox',{name:'Allow hosted provider to receive source text',exact:false}).check();await generate.click();await page.getByLabel('Model-assisted narrative · editable').waitFor();assert.equal(await page.evaluate(()=>window.calls.at(-1).allow_remote),true);
  // Late model responses cannot replace a draft after its source inputs change.
  await generate.click();await page.getByLabel('Investigator notes').fill('Changed during generation');await generate.waitFor();assert.equal(await page.getByLabel('Model-assisted narrative · editable').count(),0);
  await page.evaluate(()=>window.fail=true);await generate.click();await page.getByRole('alert').waitFor();assert.deepEqual(errors,[]);

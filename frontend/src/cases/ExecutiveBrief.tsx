@@ -64,14 +64,12 @@ export function ExecutiveBriefPanel({ findings }: { findings: Finding[] }) {
   const visible = generated.length ? generated : hypotheses;
   if (!visible.length) return null;
   return <section className="panel executive-brief" aria-labelledby="executive-brief-heading">
-    <span className="section-label">INVESTIGATIVE HYPOTHESIS</span>
     <h2 id="executive-brief-heading">Investigative hypotheses</h2>
-    <p>{generated.length ? 'AI-generated hypothesis. Verify the narrative against the source evidence.' :
-      'Deterministic hypotheses from the selected analysis. These explanations require verification.'}</p>
+    <span className="kind-badge">{generated.length ? 'AI-generated · unverified' : 'Rule-based · unverified'}</span>
     {visible.map(finding => <article key={finding.id}>
       <h3>{finding.summary.replace(/^AI Forensic Executive Brief:\s*/, '')}</h3>
       {finding.details?.hypothesis && <p className="executive-hypothesis">{finding.details.hypothesis}</p>}
-      {finding.details?.ai_generated && <p className="filter-scope">Model: {finding.details.model}</p>}
+      {finding.details?.ai_generated && <details className="technical-details"><summary>Model details</summary><p>Model: {finding.details.model}</p></details>}
     </article>)}
   </section>;
 }

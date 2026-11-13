@@ -33,7 +33,7 @@ export function createEvidenceStore(client: ApiClient, caseId: string) {
     if (!active() || !Number.isSafeInteger(offset) || offset < 0) return;
     pageRequest?.abort();
     const request = pageRequest = new AbortController();
-    publish({ ...state, page: null, status: 'loading', message: '' });
+    publish({ ...state, status: 'loading', message: '' });
     try {
       const page = await client.request('get', '/api/v1/cases/{caseId}/evidence', { path: { caseId }, query: { limit: 20, offset }, signal: request.signal });
       if (!active() || request.signal.aborted) return;
@@ -50,6 +50,7 @@ export function createEvidenceStore(client: ApiClient, caseId: string) {
     subscribe(listener: () => void) { listeners.add(listener); return () => { listeners.delete(listener); }; },
     load,
     start() { disposed = false; return load(); },
+    clearSelection() { detailRequest?.abort(); publish({ ...state, detail: null, detailStatus: 'idle', detailMessage: '' }); },
     async select(evidenceId: string) {
       if (!active() || !/^[0-9a-f-]{36}$/i.test(evidenceId)) return;
       detailRequest?.abort();

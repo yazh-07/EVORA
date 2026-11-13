@@ -20,6 +20,8 @@ from backend.database import SQLiteDatabase
 from backend.cases import SQLiteCaseAccess, initialize_cases, router
 from backend.evidence import initialize_evidence, router as evidence_router
 from backend.processing import initialize_processing, router as processing_router
+from backend.results import router as results_router
+from backend.locations import router as locations_router
 from backend.observations import router as observations_router
 from backend.entities import router as entities_router
 from backend.events import router as events_router
@@ -330,6 +332,8 @@ def create_app(
     app.include_router(audit_router)
     app.include_router(processing_router)
     app.include_router(observations_router)
+    app.include_router(results_router)
+    app.include_router(locations_router)
     app.include_router(entities_router)
     app.include_router(events_router)
     app.include_router(analysis_router)

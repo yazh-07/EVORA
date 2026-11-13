@@ -43,23 +43,23 @@ export function EvidenceIntake({ upload, submitting }: { upload: (file: File | n
         if (!ok) { setMessage('Upload stopped on this source. Check the error below and retry the remaining files. Confirmed uploads will not be repeated.'); return; }
         uploaded++;
       }
-      setMessage(`${uploaded} ${uploaded === 1 ? 'source uploaded' : 'sources uploaded'}. Select a source in the library to inspect it and start extraction.`);
+      setMessage(`${uploaded} ${uploaded === 1 ? 'source uploaded' : 'sources uploaded'}.`);
     } finally { running.current = false; if (alive.current) setBusy(false); }
   };
   return <div className="batch-intake" aria-busy={busy}>
     <div className={`drop-zone ${dragging ? 'dragging' : ''}`} onDragOver={event => { event.preventDefault(); if (!busy) setDragging(true); }} onDragLeave={() => setDragging(false)} onDrop={event => { event.preventDefault(); setDragging(false); add(Array.from(event.dataTransfer.files)); }}>
-      <span className="drop-icon" aria-hidden="true">＋</span><h3>Add original files</h3><p>Drop original files here, or choose files from your device.</p>
+      <p>Drop files here</p>
       <label className="file-picker">Choose files<input id="batch-evidence-files" type="file" multiple disabled={busy || submitting} onChange={event => { add(Array.from(event.target.files ?? [])); event.target.value = ''; }} /></label>
-      <small>Original bytes and SHA-256 are recorded on intake. Extraction is a separate step.</small>
+      <details className="context-help"><summary>How files are stored</summary><p>Original bytes and SHA-256 are recorded on intake. Extraction is a separate step.</p></details>
     </div>
     {!!items.length && <>
       <ol className="intake-queue">{items.map(item => <li key={item.id}><div><strong>{item.file.name}</strong><small>{(item.file.size / 1024).toFixed(1)} KB · {item.detecting ? 'Checking file type…' : item.status}</small></div>
         <label>Source label<input maxLength={200} value={item.label} disabled={busy || item.status === 'uploaded'} onChange={event => patch(item.id, { label: event.target.value })} /></label>
         <label>Evidence kind<select value={item.kind} disabled={busy || item.status === 'uploaded'} onChange={event => { readers.current.get(item.id)?.(); patch(item.id, { kind: event.target.value as Evidence['kind'], detecting: false }); }}>{evidenceKinds.map(kind => <option key={kind} value={kind}>{kind.replaceAll('_', ' ')}</option>)}</select></label>
         <button type="button" disabled={busy} aria-label={`Remove ${item.file.name} from upload queue`} onClick={() => { readers.current.get(item.id)?.(); readers.current.delete(item.id); setItems(current => current.filter(row => row.id !== item.id)); }}>Remove</button>
-        <p className="format-support">{formatSupport(item.file.name, item.kind)}</p>
+        <details className="context-help"><summary>Format support</summary><p>{formatSupport(item.file.name, item.kind)}</p></details>
       </li>)}</ol>
-      <label className="acquisition-field">Acquired at (optional, UTC)<input type="datetime-local" value={acquired} disabled={busy} onChange={event => setAcquired(event.target.value)} /><small>Applies to remaining uploads. Leave blank if unknown.</small></label>
+      <details className="context-help"><summary>Acquisition date (optional)</summary><label className="acquisition-field">Acquired at (optional, UTC)<input type="datetime-local" value={acquired} disabled={busy} onChange={event => setAcquired(event.target.value)} /><small>Applies to remaining uploads. Leave blank if unknown.</small></label></details>
       <button className="button-primary" type="button" disabled={busy || submitting || !pending.length || items.some(item => item.detecting)} onClick={() => { void start(); }}>{busy ? 'Uploading originals…' : `Upload ${pending.length} ${pending.length === 1 ? 'source' : 'sources'}`}</button>
     </>}
     {message && <p role="status">{message}</p>}

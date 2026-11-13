@@ -19,6 +19,10 @@
     "test:qa": "node test/qa-tracer.integration.mjs",
     "test:full-modality": "node test/full-modality.integration.mjs",
     "test:detector-feedback": "node test/detector-feedback.integration.mjs",
+    "test:results-live": "node test/results-live.integration.mjs",
+    "test:results-media": "node test/results-media-browser.integration.mjs",
+    "test:desk-browser": "node test/desk-browser.integration.mjs",
+    "test:map-views": "node test/map-views-browser.integration.mjs",
     "test:activity-browser": "node test/activity-center-browser.integration.mjs",
     "test:bulk-processing": "node test/bulk-processing.integration.mjs",
     "test:deeper-processing": "node test/deeper-processing.integration.mjs",
@@ -27,6 +31,8 @@
   "dependencies": {
     "jspdf": "4.2.1",
     "jspdf-autotable": "5.0.9",
+    "maplibre-gl": "6.17.0",
+    "pmtiles": "4.4.0",
     "react": "19.3.0",
     "react-dom": "19.3.0"
   },

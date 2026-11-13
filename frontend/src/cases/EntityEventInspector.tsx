@@ -34,7 +34,6 @@ export function EntityEventPanel({ state, load, selectView, inspectEvidence }: {
       <button type="button" aria-pressed={view === 'entities'} onClick={() => selectView('entities')}>Entities</button>
       <button type="button" aria-pressed={view === 'events'} onClick={() => selectView('events')}>Events</button>
     </div>
-    <h3>{view === 'entities' ? 'Candidate entities' : 'Extracted events'}</h3>
     {current.status === 'loading' && <p role="status">Loading {view}...</p>}
     {current.status === 'error' && <><p role="alert">{current.message}</p>
       <button type="button" onClick={() => { void load(); }}>Retry {view}</button>
@@ -55,11 +54,11 @@ export function EntityEventPanel({ state, load, selectView, inspectEvidence }: {
           <span className="candidate-kind">{item.kind}</span>
           <h4 className="candidate-text">{item.summary}</h4>
           <p>Observed at (UTC): {item.observed_at_utc ? <time dateTime={item.observed_at_utc}>{item.observed_at_utc}</time> : 'Not provided'}</p>
-          <p>Confidence: {item.confidence.toFixed(2)}</p>
+          <details className="technical-details"><summary>Extraction details</summary><p>Confidence: {item.confidence.toFixed(2)}</p></details>
           {sources(item.evidence_ids, item.observation_ids)}
         </li>)}
       </ul>}
-      <nav className="pagination" aria-label={`${view === 'entities' ? 'Entity' : 'Event'} pages`}>
+      <nav hidden={!!page && page.total <= page.limit} className="pagination" aria-label={`${view === 'entities' ? 'Entity' : 'Event'} pages`}>
         <button type="button" disabled={page.offset === 0} onClick={() => { void load(Math.max(0, page.offset - page.limit)); }}>Previous</button>
         <button type="button" disabled={page.offset + page.limit >= page.total} onClick={() => { void load(page.offset + page.limit); }}>Next</button>
       </nav>

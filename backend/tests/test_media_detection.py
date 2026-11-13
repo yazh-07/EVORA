@@ -66,7 +66,7 @@ class MediaDetectionTests(unittest.TestCase):
         with patch.object(media, 'MAX_PIXELS', 1), self.assertRaisesRegex(media.MediaDetectionError, 'PIXEL_LIMIT'):
             media.parse_image(buf.getvalue(), **self.context())
         # Classifier-result injection tests vehicle projection, not plate detection accuracy.
-        with patch.object(media, 'detect_frame', return_value=iter([
+        with patch.object(media.plates, 'model_info', return_value=None), patch.object(media, 'detect_frame', return_value=iter([
                 ('vehicle:license_plate', (5, 10, 70, 25), 2.0, 'test-classifier')])):
             result = media.parse_image(buf.getvalue(), **self.context())
         self.assertEqual(result.entities[0].kind, 'visual_candidate')
@@ -95,7 +95,7 @@ class MediaPublicationTests(unittest.IsolatedAsyncioTestCase):
             run = response.json()
             completed = await self.poll(run, url)
             self.assertEqual(completed['status'], 'completed', completed)
-            self.assertEqual(self.read(run, evidence)['execution']['method'], 'local_opencv_haar')
+            self.assertEqual(self.read(run, evidence)['execution']['method'], 'local_opencv_haar_with_onnx_plates' if media.plates.model_info() else 'local_opencv_haar')
             self.assertIn('cascades', self.read(run, evidence)['execution']['model'])
             for route, schema in [('observations', 'Observation'), ('entities', 'Entity'), ('events', 'Event')]:
                 page = (await self.client.get(f'/api/v1/cases/{self.case}/{route}', params={'limit': 100})).json()

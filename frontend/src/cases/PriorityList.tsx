@@ -100,15 +100,15 @@ export function PriorityListPanel({ state, load, loadHistory, inspectEvidence, u
     </details>;
   };
   return <section className="panel priority-list" aria-label="Triage & Priority" aria-busy={state.status === 'loading'}>
-    <h2>Triage &amp; Priority</h2>
-    <p>Priority guides investigative attention; it does not establish truth, identity or guilt. Order follows computed scores; live overrides do not reorder evidence.</p>
+    <h2>Priorities</h2>
+    <details className="context-help"><summary>How priority works</summary><p>Priority guides investigative attention; it does not establish truth, identity or guilt. Order follows computed scores; live overrides do not reorder evidence.</p></details>
     {state.status === 'loading' && <p role="status">Loading priority list...</p>}
     {state.message && <p role="alert">{state.message}</p>}
     {state.status === 'error' && <button type="button" onClick={() => { void load(); }}>Retry priority list</button>}
     {state.status === 'ready' && page && <>
-      {page.analysis_run_id ? <p className="identifier">Selected completed analysis: {page.analysis_run_id}</p> :
+      {page.analysis_run_id ? <details className="technical-details"><summary>Analysis reference</summary><p className="identifier">{page.analysis_run_id}</p></details> :
         <p>No completed analysis selected. This is a live list of uploads, not a scored snapshot.</p>}
-      <p role="status">{page.total} triage items. {page.items.length ? `Showing ${page.offset + 1}–${page.offset + page.items.length}.` : 'Showing 0 items on this page.'}</p>
+      <p className="sr-only" role="status">{page.total} triage items. {page.items.length ? `Showing ${page.offset + 1}–${page.offset + page.items.length}.` : 'Showing 0 items on this page.'}</p>
       {page.items.length === 0 ? <p>{page.total === 0 ? 'No triage items exist in this selection.' : 'No triage items on this page. Return to the previous page.'}</p> :
         <div className="priority-table-region" role="region" aria-label="Evidence priority table" tabIndex={0}><table>
           <caption>Evidence priority and automated factor contributions</caption>
@@ -139,7 +139,7 @@ export function PriorityListPanel({ state, load, loadHistory, inspectEvidence, u
             </td>
           </tr>)}</tbody>
         </table></div>}
-      <nav className="pagination" aria-label="Triage pages">
+      <nav hidden={!!page && page.total <= page.limit} className="pagination" aria-label="Triage pages">
         <button type="button" disabled={page.offset === 0} onClick={() => { void load(Math.max(0, page.offset - page.limit)); }}>Previous</button>
         <button type="button" disabled={page.offset + page.limit >= page.total} onClick={() => { void load(page.offset + page.limit); }}>Next</button>
         <button type="button" onClick={() => { void load(0); }}>Refresh priorities</button>

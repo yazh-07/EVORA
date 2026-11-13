@@ -88,6 +88,6 @@ test('overview finds a brief on later pages, pins every request, and clears it o
 test('overview retains deterministic hypothesis summaries and omits cards without hypotheses', () => {
   const fallback = { ...finding(300, 'hypothesis'), details: undefined, summary: 'Competing reports require review.' };
   const html = renderToStaticMarkup(createElement(ExecutiveBriefPanel, { findings: [fallback] }));
-  assert.match(html, /Deterministic hypotheses/); assert.match(html, /Competing reports/);
+  assert.match(html, /Rule-based · unverified/); assert.match(html, /Competing reports/);
   assert.equal(renderToStaticMarkup(createElement(ExecutiveBriefPanel, { findings: [finding(300)] })), '');
 });

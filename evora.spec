@@ -10,7 +10,7 @@ a = Analysis(
     ['launcher.py'],
     pathex=[],
     binaries=[],
-    datas=[('frontend/dist', 'frontend/dist'), ('specs/openapi.yaml', 'specs'), ('backend/models', 'backend/models')] + model_data,
+    datas=[('frontend/dist', 'frontend/dist'), ('specs/openapi.yaml', 'specs'), ('backend/models', 'backend/models'), ('backend/geodata', 'backend/geodata')] + model_data,
     hiddenimports=['uvicorn.logging', 'uvicorn.loops.auto', 'uvicorn.protocols.http.auto', 'uvicorn.protocols.websockets.auto', 'uvicorn.lifespan.on', 'argon2', 'argon2.low_level', 'sqlcipher3', 'sqlcipher3.dbapi2', 'sqlcipher3._sqlite3'],
     hookspath=[],
     hooksconfig={},

@@ -1,3 +1,4 @@
+import { confirmLeaveWorkspace } from '../ui/unsavedChanges';
 import { useEffect, useState } from 'react';
 import { useApiClient } from '../api/ApiProvider';
 import { AccountDialog } from './AccountDialog';
@@ -20,6 +21,6 @@ export function SessionControls() {
     active();window.addEventListener('pointerdown',active);window.addEventListener('keydown',active);
     return()=>{clearTimeout(timer);channel?.close();window.removeEventListener('pointerdown',active);window.removeEventListener('keydown',active);};
   },[client,user]);
-  if(!user)return <span className="session-pill">Local workstation</span>;
-  return <div className="session-status"><span className="session-pill session-active">{user.display_name} · {user.role}</span><button type="button" onClick={()=>setOpen(true)}>Account</button><button type="button" disabled={busy} onClick={async()=>{setBusy(true);try{await client.authRequest('post','/api/v1/auth/logout',{});client.clearToken();}catch(error){setMessage(authMessage(error));}finally{setBusy(false);}}}>Sign out</button>{message&&<span role="alert">{message}</span>}{open&&<AccountDialog onClose={()=>setOpen(false)} />}</div>;
+  if(!user)return null;
+  return <div className="session-status"><span className="session-pill session-active">{user.display_name} · {user.role}</span><button type="button" onClick={()=>setOpen(true)}>Account</button><button type="button" disabled={busy} onClick={async()=>{if(!confirmLeaveWorkspace())return;setBusy(true);try{await client.authRequest('post','/api/v1/auth/logout',{});client.clearToken();}catch(error){setMessage(authMessage(error));}finally{setBusy(false);}}}>Sign out</button>{message&&<span role="alert">{message}</span>}{open&&<AccountDialog onClose={()=>setOpen(false)} />}</div>;
 }

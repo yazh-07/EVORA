@@ -38,8 +38,7 @@ export function ChatGPTConnection({ onSharing }: { onSharing: (sharing: boolean)
     finally{setBusy(false);}
   }
   return <section aria-label="ChatGPT model connection">
-    <p>This connection powers AI requests for this workstation. Your local EVORA login stays separate. Eligible plan access and internet are required.</p>
-    {status?.connected&&<p role="status">Connected{status.email?` as ${status.email}`:''}. {status.sharing?'Plan usage authorized. Fetch models to choose one.':'Plan usage is not authorized. Reconnect and grant that permission.'}</p>}
+    {status?.connected&&<p role="status">Connected{status.email?` as ${status.email}`:''}. {status.sharing?'Model access authorized.':'Model access not authorized. Reconnect.'}</p>}
     {status?.pending&&<p role="status">Finish sign-in in the browser window, then return here.</p>}
     <button type="button" disabled={busy||status?.pending} onClick={()=>void connect()}>Continue with ChatGPT</button>
     {status?.email&&<button type="button" disabled={busy||status.pending} onClick={()=>void connect(true)}>Use another ChatGPT account</button>}

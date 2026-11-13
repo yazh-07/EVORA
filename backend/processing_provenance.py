@@ -39,7 +39,7 @@ def initialize_provenance(connection):
       DROP TRIGGER IF EXISTS processing_provenance_context;
       CREATE TRIGGER processing_provenance_context BEFORE INSERT ON processing_provenance
         WHEN NOT EXISTS(SELECT 1 FROM processing_runs r JOIN processing_outputs o ON o.run_id=r.id
-          WHERE r.id=NEW.run_id AND r.status='running' AND r.processor_version IN ('processing-lifecycle/2','processing-lifecycle/3','processing-lifecycle/4','processing-lifecycle/5','processing-lifecycle/6','processing-lifecycle/7','processing-lifecycle/8','processing-lifecycle/9','processing-lifecycle/10','processing-lifecycle/11','processing-lifecycle/12','processing-lifecycle/13','processing-lifecycle/14','transcript-correction/1')
+          WHERE r.id=NEW.run_id AND r.status='running' AND r.processor_version IN ('processing-lifecycle/2','processing-lifecycle/3','processing-lifecycle/4','processing-lifecycle/5','processing-lifecycle/6','processing-lifecycle/7','processing-lifecycle/8','processing-lifecycle/9','processing-lifecycle/10','processing-lifecycle/11','processing-lifecycle/12','processing-lifecycle/13','processing-lifecycle/14','processing-lifecycle/15','transcript-correction/1')
           AND r.case_id=NEW.case_id AND r.evidence_id=NEW.evidence_id
           AND o.case_id=r.case_id AND o.evidence_id=r.evidence_id)
         BEGIN SELECT RAISE(ABORT,'Invalid processing provenance context'); END;
@@ -52,7 +52,7 @@ def initialize_provenance(connection):
         BEGIN SELECT RAISE(ABORT,'Immutable processing provenance'); END;
       DROP TRIGGER IF EXISTS processing_completion_provenance;
       CREATE TRIGGER processing_completion_provenance BEFORE UPDATE OF status ON processing_runs
-        WHEN NEW.status='completed' AND NEW.processor_version IN ('processing-lifecycle/2','processing-lifecycle/3','processing-lifecycle/4','processing-lifecycle/5','processing-lifecycle/6','processing-lifecycle/7','processing-lifecycle/8','processing-lifecycle/9','processing-lifecycle/10','processing-lifecycle/11','processing-lifecycle/12','processing-lifecycle/13','processing-lifecycle/14','transcript-correction/1') AND NOT EXISTS(
+        WHEN NEW.status='completed' AND NEW.processor_version IN ('processing-lifecycle/2','processing-lifecycle/3','processing-lifecycle/4','processing-lifecycle/5','processing-lifecycle/6','processing-lifecycle/7','processing-lifecycle/8','processing-lifecycle/9','processing-lifecycle/10','processing-lifecycle/11','processing-lifecycle/12','processing-lifecycle/13','processing-lifecycle/14','processing-lifecycle/15','transcript-correction/1') AND NOT EXISTS(
           SELECT 1 FROM processing_provenance p WHERE p.run_id=NEW.id AND p.case_id=NEW.case_id
           AND p.evidence_id=NEW.evidence_id AND p.record_version='processing-provenance/1'
           AND p.finished_at=NEW.finished_at)
@@ -95,7 +95,7 @@ def _payload(run, output, finished_at):
         model = config.get('model')
         if not isinstance(model, dict) or not model.get('cascades'):
             raise ValueError('Missing visual model provenance')
-        method = 'local_opencv_haar'
+        method = 'local_opencv_haar_with_onnx_plates' if config.get('model', {}).get('plates') else 'local_opencv_haar'
     vision = config.get('image_understanding')
     video = config.get('video_understanding')
     if video is not None:

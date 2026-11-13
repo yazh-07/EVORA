@@ -388,7 +388,6 @@ test('evidence inspection exposes transcript only for audio/video, with appropri
   const { client } = setup(t);
   for (const kind of ['audio', 'video', 'document']) {
     const html = renderToStaticMarkup(createElement(ApiProvider, { client }, createElement(EvidenceProcessingInspection, { item: evidence({ kind }) })));
-    if (kind === 'document') assert.doesNotMatch(html, /Search transcript|Source transcript/);
-    else { assert.match(html, /aria-label="Source transcript"/); assert.match(html, kind === 'audio' ? /Listen \/ Download audio/ : /Watch \/ Download video/); }
+    assert.match(html, /Source views/); assert.match(html, />Results<\/button>/); assert.match(html, />Info<\/button>/); assert.doesNotMatch(html, /aria-label="Source transcript"/);
   }
 });
