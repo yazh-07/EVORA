@@ -11,6 +11,37 @@ from urllib.request import Request, urlopen
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
+RUNTIME_MODULES = (
+    'java.se', 'jdk.unsupported', 'jdk.crypto.ec', 'jdk.crypto.cryptoki',
+    'jdk.management', 'jdk.management.agent', 'jdk.jfr', 'jdk.zipfs',
+    'jdk.naming.dns', 'jdk.naming.rmi', 'jdk.localedata', 'jdk.charsets',
+    'jdk.nio.mapmode', 'jdk.incubator.vector', 'jdk.security.auth',
+    'jdk.security.jgss', 'jdk.attach',
+)
+
+
+def link_runtime(jdk, output, *, linker=None):
+    """Keep Java SE/services for Neo4j, excluding compiler and development tools."""
+    linker = linker or (str(jdk / 'bin/jlink.exe') if os.name == 'nt' else shutil.which('jlink'))
+    if not linker:
+        raise RuntimeError('Java 21 jlink required to build the private runtime')
+    modules = list(RUNTIME_MODULES)
+    if (jdk / 'jmods/jdk.crypto.mscapi.jmod').exists():
+        modules.append('jdk.crypto.mscapi')
+    subprocess.run([linker, '--module-path', str(jdk / 'jmods'),
+                    '--add-modules', ','.join(modules), '--strip-debug', '--compress=2',
+                    '--no-man-pages', '--no-header-files', '--output', str(output)], check=True, timeout=180)
+    # jlink retains per-module legal notices. Retain the upstream top-level notice too.
+    for name in ('NOTICE', 'LICENSE'):
+        if (jdk / name).is_file():
+            shutil.copyfile(jdk / name, output / name)
+    return modules
+
+
+def trim_neo4j(home):
+    # HTTP is disabled; EVORA uses its own UI and the Java entry points in lib/.
+    for name in ('web', 'labs', 'bin', 'products', 'import', 'plugins'):
+        shutil.rmtree(home / name, ignore_errors=True)
 
 
 def digest(path):
@@ -69,6 +100,14 @@ def prepare(output=None):
         subprocess.run([compiler, '-proc:none', '--release', '21',
                         '-cp', str(runtime / 'neo4j/lib/*'), '-d', str(classes),
                         str(ROOT / 'desktop/graph/GraphHost.java')], check=True, timeout=120)
+        modules = link_runtime(runtime / 'java', stage / 'linked-java')
+        shutil.rmtree(runtime / 'java')
+        shutil.move(str(stage / 'linked-java'), str(runtime / 'java'))
+        trim_neo4j(runtime / 'neo4j')
+        (runtime / 'runtime-image.json').write_text(json.dumps({
+            'modules': modules, 'compiler_bundled': False,
+            'neo4j_browser_bundled': False, 'compression': 'jlink-2',
+        }, indent=2))
         sources = runtime / 'sources'
         sources.mkdir()
         for key in ('neo4j-source', 'java-source'):

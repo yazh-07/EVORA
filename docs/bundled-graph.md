@@ -1,6 +1,6 @@
 # Windows bundled graph runtime
 
-Windows packages include Neo4j Community 5.26.30, Eclipse Temurin Java 21.0.13+9 and EVORA's graph host. No Docker, separate Java installation, database service or runtime download is needed. Linux/source launches retain the external Neo4j configuration.
+Windows packages include Neo4j Community 5.26.30, a compressed runtime image built from Eclipse Temurin Java 21.0.13+9, and EVORA's graph host. The full JDK is used only while building: javac compiles the host and jlink produces the shipped runtime. Java SE, locale/charset, cryptography, management and Neo4j support modules are retained. Compiler tools, headers, jmods, duplicate Java source ZIP, Neo4j Browser and labs are omitted. Original notices and the corresponding source archives remain bundled. No Docker, separate Java installation, database service or runtime download is needed. Linux/source launches retain the external Neo4j configuration.
 
 The Windows PyInstaller specification invokes `scripts/prepare_windows_graph.py`. All distributions and corresponding source archives are pinned by URL and SHA-256 in `desktop/graph/runtime-lock.json`. Original license/legal files and the source archives are installed with the runtime. `GraphHost.java` is provided under GPL-3.0-only and its source is included. Build downloads happen before packaging, never during investigation.
 

@@ -20,10 +20,19 @@ if sys.platform == 'win32':
 subprocess.run([str(binary), '--help'], check=True, timeout=60)
 manifest = binary.parent / '_internal/backend/models/text_ner.json'
 worker = subprocess.run([str(binary), '-m', 'backend.text_ner_worker', str(manifest)],
-    input='{"lines": []}\n', text=True, capture_output=True, timeout=120)
+    input='{"lines": ["Alice Smith visited London."]}\n', text=True, capture_output=True, timeout=120)
 assert worker.returncode == 0, worker.stderr[-2000:]
 assert json.loads(worker.stdout)['ok'] is True, worker.stdout
 subprocess.run([str(binary), '--check-oauth-tls'], check=True, timeout=60)
+runtime = binary.parent / '_internal/graph-runtime'
+if runtime.is_dir():
+    assert not (runtime / 'java/bin/javac.exe').exists(), 'Compiler must stay build-only'
+    assert not (runtime / 'java/jmods').exists(), 'Development modules must stay build-only'
+    assert not (runtime / 'java/lib/src.zip').exists(), 'Duplicate Java source archive must not ship'
+    assert not (runtime / 'neo4j/web').exists(), 'Unused Neo4j Browser must not ship'
+    assert (runtime / 'java/legal').is_dir()
+    assert (runtime / 'sources/java-source.tar.gz').is_file()
+    assert (runtime / 'sources/neo4j-source.tar.gz').is_file()
 with TemporaryDirectory(prefix='evora-release-smoke-') as directory:
     root = Path(directory)
     with socket.socket() as sock:

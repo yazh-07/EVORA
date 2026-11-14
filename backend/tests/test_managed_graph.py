@@ -14,6 +14,21 @@ from backend.managed_graph import ManagedGraph
 
 
 class GraphPackagingTests(unittest.TestCase):
+    def test_trim_removes_only_unused_neo4j_payload(self):
+        from scripts.prepare_windows_graph import trim_neo4j
+        with TemporaryDirectory() as directory:
+            root=Path(directory)
+            for name in ('web','labs','bin','products','import','plugins','lib','licenses','conf'):
+                (root/name).mkdir()
+            (root/'LICENSE.txt').write_text('license')
+            trim_neo4j(root)
+            self.assertFalse((root/'web').exists())
+            self.assertFalse((root/'labs').exists())
+            self.assertTrue((root/'lib').is_dir())
+            self.assertTrue((root/'licenses').is_dir())
+            self.assertTrue((root/'conf').is_dir())
+            self.assertTrue((root/'LICENSE.txt').is_file())
+
     def test_query_deadline_is_independent_and_diagnostics_exclude_exception_text(self):
         from backend.graph_db import Neo4jConfig, GraphDatabaseError, report_graph_error
         config = Neo4jConfig.from_env({'NEO4J_PASSWORD': 'private', 'NEO4J_QUERY_TIMEOUT': '60'})

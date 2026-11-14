@@ -21,7 +21,8 @@ a = Analysis(
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=['tkinter', 'unittest', 'pydoc', 'doctest', 'test', 'tests', 'curses'],
+    excludes=['tkinter', 'unittest', 'pydoc', 'doctest', 'test', 'tests', 'curses',
+              'torch', 'tensorflow', 'cupy', 'jax', 'matplotlib', 'pandas', 'IPython', 'jupyter'],
     noarchive=False,
     optimize=2,
 )
