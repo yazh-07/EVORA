@@ -14,6 +14,7 @@ const probe = createServer(); await new Promise(resolve => probe.listen(0, '127.
 const port = probe.address().port; await new Promise(resolve => probe.close(resolve));
 const origin = `http://127.0.0.1:${port}`, headers = { 'X-Evora-Request': '1' };
 const credentials = { username: 'updates-test', display_name: 'Update Tester', password: 'disposable browser restart passphrase' };
+const incremental = process.env.EVORA_TEST_INCREMENTAL === '1';
 let child, browser, diagnostics = '';
 async function start() {
   child = spawn(process.env.EVORA_TEST_PYTHON ?? 'python', [join(root, 'frontend/test/serve-updates.py'), scratch, String(port)], { cwd: root, env: { ...process.env, PYTHONPATH: root, EVORA_AUTO_UPDATE_CHECKS: '1' }, stdio: ['ignore', 'ignore', 'pipe'] });
@@ -37,20 +38,24 @@ try {
   await page.goto(origin);
   await page.getByRole('button', { name: 'Update available', exact: true }).click();
   const panel = page.getByRole('region', { name: 'Application updates' });
-  await panel.getByText('Version 1.3.12', { exact: true }).waitFor();
+  const currentVersion = (await (await context.request.get(origin + '/api/v1/updates/health')).json()).version;
+  await panel.getByText(`Version ${currentVersion}`, { exact: true }).waitFor();
   await panel.getByText('Version 9.0.0 available', { exact: true }).waitFor();
   await Promise.all([page.waitForResponse(response => response.url().endsWith('/api/v1/updates') && response.status() === 200), panel.getByRole('switch', { name: 'Check automatically' }).uncheck()]);
   assert.equal((await (await context.request.get(origin + '/api/v1/settings')).json()).automatic_update_checks, false);
-  await panel.getByRole('button', { name: 'Download update', exact: true }).click();
+  await panel.getByRole('button', { name: incremental ? 'Download update' : 'Download installer', exact: true }).click();
+  if (!incremental) {
   await page.waitForFunction(() => document.querySelector('.updates-progress progress')?.value > 0);
   await panel.getByRole('button', { name: 'Cancel download' }).click();
   await panel.getByRole('button', { name: 'Resume download' }).click();
-  await panel.getByRole('button', { name: 'Install update', exact: true }).waitFor({ timeout: 20000 });
+  }
+  const installLabel = incremental ? 'Restart and update' : 'Install update';
+  await panel.getByRole('button', { name: installLabel, exact: true }).waitFor({ timeout: 20000 });
   await page.screenshot({ path: join(scratch, 'updates-desktop.png') });
-  await panel.getByRole('button', { name: 'Install update', exact: true }).click();
-  await panel.getByText('Finish setup in the installer.').waitFor();
+  await panel.getByRole('button', { name: installLabel, exact: true }).click();
+  await panel.getByText(incremental ? 'Restarting EVORA…' : 'Finish setup in the installer.').waitFor();
   const events = await (await context.request.get(origin + '/test/update-events')).json();
-  assert.equal(events.installs, 1); assert.ok(events.downloads.some(start => start > 0), JSON.stringify(events));
+  assert.equal(events.installs, 1); assert.ok(incremental ? events.downloads.length > 0 : events.downloads.some(start => start > 0), JSON.stringify(events));
   assert.equal(await page.evaluate(() => getComputedStyle(document.body).backgroundColor), 'rgb(244, 246, 248)');
   await page.setViewportSize({ width: 390, height: 844 });
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
@@ -72,5 +77,5 @@ try {
   await panel.getByText('Version 9.0.0 available', { exact: true }).waitFor();
   assert.equal((await (await context.request.get(origin + '/test/update-events')).json()).checks, 1);
   assert.deepEqual(errors, []);
-  console.log('PASS verified update controls, cancel/resume, installer launch, neutral light canvas, mobile layout and encrypted settings restart. Screenshots:', scratch);
+  console.log('PASS', incremental ? 'incremental download and restart controls' : 'installer download, cancel/resume and launch', 'with mobile layout and encrypted settings restart. Screenshots:', scratch);
 } finally { await browser?.close(); await stop(); }

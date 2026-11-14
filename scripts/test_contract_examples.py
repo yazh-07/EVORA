@@ -199,7 +199,7 @@ class WireExamples(unittest.TestCase):
             "updateLocalAccount", "loginLocalAccount", "getChatGPTStatus", "listLocalAccounts",
             "listCaseMembers", "getAuthStatus", "logoutLocalAccount",
             "getEvidenceResults", "listLocations",
-            "getUpdateStatus", "checkForUpdates", "downloadUpdate", "cancelUpdateDownload", "installUpdate",
+            "getUpdateHealth", "getUpdateStatus", "checkForUpdates", "downloadUpdate", "cancelUpdateDownload", "installUpdate",
         }
         actual = [operation["operationId"] for path in self.spec["paths"].values()
                   for method, operation in path.items()

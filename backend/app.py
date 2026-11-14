@@ -195,6 +195,10 @@ def create_app(
         app.add_middleware(TrustedHostMiddleware, allowed_hosts=['localhost', '127.0.0.1', '[::1]'])
     @app.middleware('http')
     async def local_session_headers(request: Request, call_next):
+        if (request.method in ('POST','PUT','PATCH','DELETE') and request.url.path.startswith('/api/v1/cases')
+                and app.state.updates.state['status']=='installing'):
+            from starlette.responses import JSONResponse
+            return JSONResponse({'code':'UPDATE_INSTALLING','message':'EVORA is restarting to update. Try again after it opens.'},status_code=503,headers={'Cache-Control':'no-store'})
         response = await call_next(request)
         if app.state.local_auth and request.url.path.startswith('/api/'):
             response.headers['Cache-Control'] = 'no-store'

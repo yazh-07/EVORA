@@ -3,7 +3,7 @@
 
 #define MyAppName "EVORA"
 #define MyAppFullName "EVORA — Forensic Evidence Fusion & Investigation Workstation"
-#define MyAppVersion "1.3.12"
+#define MyAppVersion "1.3.13"
 #define MyAppPublisher "EVORA Team"
 #define MyAppURL "https://github.com/yazh-07/EVORA"
 #define MyAppExeName "EVORA.exe"
@@ -40,6 +40,9 @@ Name: "startupicon"; Description: "Launch EVORA automatically on Windows startup
 [Files]
 ; The Go WebView2 Desktop & System Tray supervisor
 Source: "..\desktop\evora-workstation.exe"; DestDir: "{app}"; DestName: "{#MyAppExeName}"; Flags: ignoreversion
+; Incremental update helper and the exact installed file inventory
+Source: "..\desktop\evora-updater.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\dist\EVORA-Update-Windows-x64.json"; DestDir: "{app}"; DestName: "evora-install.json"; Flags: ignoreversion
 ; Application Icon
 Source: "..\desktop\icon.ico"; DestDir: "{app}"; Flags: ignoreversion
 ; The bundled PyInstaller Python + FastAPI backend & React frontend

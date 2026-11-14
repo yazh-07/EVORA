@@ -62,6 +62,21 @@ class UpdateTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(response.status_code,200,response.text)
         return await self.settled('ready')
 
+    async def test_health_check_requires_no_account_and_discloses_only_version(self):
+        await self.client.post('/api/v1/auth/logout')
+        response=await self.client.get('/api/v1/updates/health')
+        self.assertEqual(response.status_code,200,response.text)
+        self.assertEqual(response.json(),{'version':updates.APP_VERSION})
+
+    async def test_installing_blocks_new_case_work_and_releases_it_after_helper_failure(self):
+        self.service.set(status='installing')
+        response=await self.client.post('/api/v1/cases',json={'title':'During update'})
+        self.assertEqual(response.status_code,503,response.text)
+        self.assertEqual(response.json()['code'],'UPDATE_INSTALLING')
+        self.service.set(status='available')
+        response=await self.client.post('/api/v1/cases',json={'title':'After update'})
+        self.assertEqual(response.status_code,201,response.text)
+
     async def test_checks_stable_version_and_never_sends_workstation_credentials(self):
         data=await self.checked()
         self.assertTrue(data['available']);self.assertEqual(data['latest_version'],'9.0.0')

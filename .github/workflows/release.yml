@@ -9,7 +9,7 @@ on:
       version:
         description: 'Release version tag (e.g. v1.0.0)'
         required: true
-        default: 'v1.2.3'
+        default: 'v1.3.13'
 
 permissions:
   contents: write
@@ -110,6 +110,11 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           python -m unittest backend.tests.test_chatgpt_connection -v
 
+      - name: Test native Windows update downloads
+        env:
+          EVORA_CONTRACT_BUNDLE: ${{ runner.temp }}/evora-openapi.json
+        run: python -m unittest backend.tests.test_updates backend.tests.test_incremental_updates -q
+
       - name: Build standalone executable with PyInstaller
         run: |
           pyinstaller --noconfirm evora.spec
@@ -133,6 +138,23 @@ jobs:
 
       - name: Build desktop supervisor
         run: go build -C desktop -ldflags "-H windowsgui -s -w" -o evora-workstation.exe .
+
+      - name: Test incremental update transactions
+        run: go test -C desktop ./internal/patcher ./cmd/updater
+
+      - name: Build update helper
+        run: go build -C desktop -ldflags "-H windowsgui -s -w" -o evora-updater.exe ./cmd/updater
+
+      - name: Package incremental updates
+        run: python scripts/build_incremental.py
+
+      - name: Upload incremental update assets
+        uses: actions/upload-artifact@v4
+        with:
+          name: evora-windows-incremental
+          path: |
+            dist/EVORA-Update-Windows-x64.json
+            dist/EVORA-Update-Windows-x64.bin
 
       - name: Prepare installer tools and runtime
         shell: pwsh
@@ -183,8 +205,13 @@ jobs:
           name: EVORA-Setup-Windows-x64
           path: release-assets/
 
+      - uses: actions/download-artifact@v4
+        with:
+          name: evora-windows-incremental
+          path: release-assets/
+
       - name: Generate checksums
-        run: sha256sum release-assets/evora-linux-x86_64.tar.gz release-assets/evora-windows-x64.zip release-assets/EVORA-Setup-Windows-x64.exe | sed 's@release-assets/@@' > release-assets/SHA256SUMS
+        run: sha256sum release-assets/evora-linux-x86_64.tar.gz release-assets/evora-windows-x64.zip release-assets/EVORA-Setup-Windows-x64.exe release-assets/EVORA-Update-Windows-x64.json release-assets/EVORA-Update-Windows-x64.bin | sed 's@release-assets/@@' > release-assets/SHA256SUMS
 
       - name: Create GitHub Release and attach binaries
         uses: softprops/action-gh-release@v2
@@ -193,11 +220,13 @@ jobs:
           name: EVORA ${{ github.event.inputs.version || github.ref_name }}
           tag_name: ${{ github.event.inputs.version || github.ref_name }}
           target_commitish: ${{ github.sha }}
-          body_path: docs/releases/v1.2.3.md
+          body_path: docs/releases/${{ github.event.inputs.version || github.ref_name }}.md
           files: |
             release-assets/evora-linux-x86_64.tar.gz
             release-assets/evora-windows-x64.zip
             release-assets/EVORA-Setup-Windows-x64.exe
+            release-assets/EVORA-Update-Windows-x64.json
+            release-assets/EVORA-Update-Windows-x64.bin
             release-assets/SHA256SUMS
           draft: true
           prerelease: false

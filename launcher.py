@@ -105,6 +105,8 @@ def main():
             resources.callback(graph.close)
             os.environ.update(graph.start())
         app = create_app(str(db_path), storage_dir=str(vault_path))
+        app.state.update_owner_pid = args.parent_pid or 0
+        app.state.update_stop_marker = args.shutdown_file + ".update" if args.shutdown_file else ""
         app.mount("/", StaticFiles(directory=str(frontend_dist), html=True), name="workstation")
 
         if not args.no_browser:

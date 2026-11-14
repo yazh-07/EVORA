@@ -379,6 +379,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/updates/health": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Running application version for update health checks */
+        get: operations["getUpdateHealth"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/updates": {
         parameters: {
             query?: never;
@@ -1192,6 +1209,9 @@ export interface components {
             }[];
         };
         UpdateStatus: {
+            /** @enum {string} */
+            mode?: "installer" | "incremental";
+            file_count?: number;
             current_version: string;
             latest_version: string | null;
             /** @enum {string} */
@@ -3302,6 +3322,28 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    getUpdateHealth: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Running version */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        version: string;
+                    };
                 };
             };
         };

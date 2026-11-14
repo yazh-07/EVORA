@@ -55,6 +55,15 @@ jobs:
           cd desktop
           go build -ldflags "-H windowsgui -s -w" -o evora-workstation.exe .
 
+      - name: Test and build incremental updater
+        run: |
+          go test -C desktop ./internal/patcher ./cmd/updater
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          go build -C desktop -ldflags "-H windowsgui -s -w" -o evora-updater.exe ./cmd/updater
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python scripts/build_incremental.py
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
       - name: Install Inno Setup
         run: |
           choco install innosetup --no-progress

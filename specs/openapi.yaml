@@ -66,6 +66,22 @@ paths:
   /api/v1/accounts/{userId}: {"put": {"operationId": "updateLocalAccount", "summary": "updateLocalAccount", "description": "Offline local account operation. Mutations require X-Evora-Request: 1 and a same-origin request.", "responses": {"200": {"description": "Success", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/AuthSession"}}}}, "400": {"description": "Request rejected", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}, "401": {"description": "Request rejected", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}, "403": {"description": "Request rejected", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}, "404": {"description": "Request rejected", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}, "409": {"description": "Request rejected", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}, "429": {"description": "Request rejected", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}}, "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/UpdateLocalUser"}}}}, "parameters": [{"name": "userId", "in": "path", "required": true, "schema": {"type": "string", "format": "uuid"}}]}}
   /api/v1/accounts/audit: {"get": {"operationId": "listAccountAudit", "summary": "listAccountAudit", "description": "Offline local account operation. Mutations require X-Evora-Request: 1 and a same-origin request.", "responses": {"200": {"description": "Success", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/AccountAuditList"}}}}, "400": {"description": "Request rejected", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}, "401": {"description": "Request rejected", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}, "403": {"description": "Request rejected", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}, "404": {"description": "Request rejected", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}, "409": {"description": "Request rejected", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}, "429": {"description": "Request rejected", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}}}}
   /api/v1/cases/{caseId}/members: {"get": {"operationId": "listCaseMembers", "summary": "listCaseMembers", "description": "Offline local account operation. Mutations require X-Evora-Request: 1 and a same-origin request.", "responses": {"200": {"description": "Success", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/CaseMemberList"}}}}, "400": {"description": "Request rejected", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}, "401": {"description": "Request rejected", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}, "403": {"description": "Request rejected", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}, "404": {"description": "Request rejected", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}, "409": {"description": "Request rejected", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}, "429": {"description": "Request rejected", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}}, "parameters": [{"name": "caseId", "in": "path", "required": true, "schema": {"type": "string", "format": "uuid"}}]}, "put": {"operationId": "updateCaseMembership", "summary": "updateCaseMembership", "description": "Offline local account operation. Mutations require X-Evora-Request: 1 and a same-origin request.", "responses": {"200": {"description": "Success", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/AuthOK"}}}}, "400": {"description": "Request rejected", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}, "401": {"description": "Request rejected", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}, "403": {"description": "Request rejected", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}, "404": {"description": "Request rejected", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}, "409": {"description": "Request rejected", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}, "429": {"description": "Request rejected", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}}, "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/UpdateCaseMember"}}}}, "parameters": [{"name": "caseId", "in": "path", "required": true, "schema": {"type": "string", "format": "uuid"}}]}}
+  /api/v1/updates/health:
+    get:
+      operationId: getUpdateHealth
+      summary: Running application version for update health checks
+      security: []
+      responses:
+        '200':
+          description: Running version
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [version]
+                properties:
+                  version: {type: string}
   /api/v1/updates:
     get:
       operationId: getUpdateStatus
@@ -1187,6 +1203,12 @@ components:
         - can_install
         - available
       properties:
+        mode:
+          type: string
+          enum: [installer, incremental]
+        file_count:
+          type: integer
+          minimum: 0
         current_version:
           type: string
         latest_version:

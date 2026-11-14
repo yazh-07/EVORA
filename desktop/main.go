@@ -27,6 +27,9 @@ var (
 )
 
 func main() {
+	if !recoverApplicationUpdate() {
+		return
+	}
 	appConfig = LoadConfig()
 	port, err := availablePort(appConfig.Port)
 	if err != nil {
@@ -40,8 +43,12 @@ func main() {
 	// Attempt to start backend server
 	_ = backendMgr.Start(appConfig)
 
-	// Wait up to 6 seconds for backend readiness
+	// Wait for the backend, including a cold start of the bundled graph service.
 	ready := backendMgr.WaitReady(180 * time.Second)
+	if ready {
+		markApplicationHealthy()
+	}
+	go watchApplicationUpdate()
 
 	// Run system tray in parallel
 	go systray.Run(onTrayReady, onTrayExit)
@@ -58,7 +65,7 @@ func main() {
 			fmt.Printf("[EVORA] Engine offline: %s\nLogs: %s\n", diag.LastError, diag.LogPath)
 			openSystemBrowser(targetURL)
 		}
-		select {}
+		<-updateExit
 	}
 }
 
@@ -76,7 +83,7 @@ func openNativeWindow(targetURL string, initialReady bool) {
 	})
 	if wv == nil {
 		openSystemBrowser(targetURL)
-		select {}
+		<-updateExit
 		return
 	}
 

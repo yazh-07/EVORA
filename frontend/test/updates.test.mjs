@@ -62,3 +62,20 @@ test('a delayed status response cannot repopulate state after sign-out', async t
   assert.equal(controller.getSnapshot().data, null);
   assert.equal(controller.getSnapshot().error, '');
 });
+
+test('incremental update status accepts the official bundle and retains changed file sizes', async t => {
+  const { controller } = fixture(t, () => status({ mode: 'incremental', file_count: 3, available: true,
+    latest_version: '9.0.0', status: 'ready', total_bytes: 32768, downloaded_bytes: 32768,
+    download_url: 'https://github.com/yazh-07/EVORA/releases/download/v9.0.0/EVORA-Update-Windows-x64.bin' }));
+  await controller.refresh();
+  assert.equal(controller.getSnapshot().data.mode, 'incremental');
+  assert.equal(controller.getSnapshot().data.file_count, 3);
+  assert.equal(controller.getSnapshot().error, '');
+});
+
+test('invalid update modes and file counts are rejected', async t => {
+  for (const extra of [{ mode: 'unknown' }, { file_count: -1 }, { file_count: 1.5 }]) {
+    const { controller } = fixture(t, () => status(extra));
+    await controller.refresh(); assert.equal(controller.getSnapshot().data, null);
+  }
+});
