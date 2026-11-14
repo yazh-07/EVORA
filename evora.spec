@@ -4,6 +4,17 @@ from pathlib import Path
 from PyInstaller.utils.hooks import collect_data_files, copy_metadata
 
 model_data = collect_data_files('en_core_web_sm', include_py_files=True)
+# OpenCV's hook collects Python modules and decoder DLLs, but not cascades.
+detector_names = (
+    'haarcascade_frontalface_default.xml',
+    'haarcascade_fullbody.xml',
+    'haarcascade_upperbody.xml',
+    'haarcascade_russian_plate_number.xml',
+)
+detector_data = collect_data_files('cv2', includes=['data/' + name for name in detector_names])
+if len(detector_data) != len(detector_names):
+    raise RuntimeError('Required OpenCV detector files are missing from the build environment')
+model_data += detector_data
 graph_data = []
 if sys.platform == 'win32':
     import runpy

@@ -11,6 +11,9 @@ from uuid import uuid4
 from urllib.request import urlopen,build_opener,HTTPCookieProcessor,Request
 from urllib.error import HTTPError
 
+import cv2
+import numpy as np
+
 binary = Path(sys.argv[1]).resolve()
 if sys.platform == 'win32':
     import pefile
@@ -68,25 +71,48 @@ with TemporaryDirectory(prefix='evora-release-smoke-') as directory:
                     for _ in range(2):
                         result=post('/chatgpt/connect',{'offline_mode':False})
                         assert result['authorization_url'].startswith('https://auth.openai.com/')
-                    if (binary.parent / '_internal/graph-runtime').is_dir():
-                        case=post('/cases',{'title':'Bundled graph smoke'})
-                        boundary='evora-smoke-boundary'
-                        fields={'kind':'gps','source_label':'Synthetic GPS'}
-                        multipart=''.join(f'--{boundary}\r\nContent-Disposition: form-data; name="{key}"\r\n\r\n{value}\r\n' for key,value in fields.items())
-                        multipart+=f'--{boundary}\r\nContent-Disposition: form-data; name="file"; filename="gps.csv"\r\nContent-Type: text/csv\r\n\r\ntimestamp,device_id,latitude,longitude\n2026-01-01T00:00:00Z,D-1,12,77\n\r\n--{boundary}--\r\n'
-                        base='/cases/'+case['id']
-                        upload=Request(f'http://127.0.0.1:{port}/api/v1'+base+'/evidence',data=multipart.encode(),method='POST',headers={'Content-Type':'multipart/form-data; boundary='+boundary,'X-Evora-Request':'1'})
-                        with browser.open(upload,timeout=10) as response:source=json.load(response)
+                    def completed(path):
+                        for _ in range(240):
+                            with browser.open(f'http://127.0.0.1:{port}/api/v1'+path,timeout=10) as response:state=json.load(response)
+                            if state['status']=='completed':return state
+                            assert state['status']!='failed',state.get('error')
+                            time.sleep(.5)
+                        raise AssertionError('Frozen processing timed out')
+                    case=post('/cases',{'title':'Release processing checks'})
+                    base='/cases/'+case['id']
+                    def upload_source(kind,filename,media_type,data):
+                        boundary='evora-smoke-'+uuid4().hex
+                        parts=[]
+                        for key,value in {'kind':kind,'source_label':'Synthetic '+kind}.items():
+                            parts.append(f'--{boundary}\r\nContent-Disposition: form-data; name="{key}"\r\n\r\n{value}\r\n'.encode())
+                        parts.append(f'--{boundary}\r\nContent-Disposition: form-data; name="file"; filename="{filename}"\r\nContent-Type: {media_type}\r\n\r\n'.encode())
+                        parts.extend([data,f'\r\n--{boundary}--\r\n'.encode()])
+                        upload=Request(f'http://127.0.0.1:{port}/api/v1'+base+'/evidence',data=b''.join(parts),method='POST',headers={'Content-Type':'multipart/form-data; boundary='+boundary,'X-Evora-Request':'1'})
+                        with browser.open(upload,timeout=20) as response:return json.load(response)
+                    def process_source(source):
                         path=base+'/evidence/'+source['id']+'/processing-runs'
                         run=post(path,extra_headers={'Idempotency-Key':str(uuid4())})
-                        def completed(path):
-                            for _ in range(240):
-                                with browser.open(f'http://127.0.0.1:{port}/api/v1'+path,timeout=10) as response:state=json.load(response)
-                                if state['status']=='completed':return
-                                assert state['status']!='failed',state.get('error')
-                                time.sleep(.5)
-                            raise AssertionError('Bundled graph smoke timed out')
                         completed(path+'/'+run['id'])
+                    # Exercise the installed classifiers and decoder, not the
+                    # build host's OpenCV. Empty detections are valid; failure is not.
+                    frame=np.zeros((96,128,3),dtype=np.uint8)
+                    frame[:,64:]=255
+                    encoded,png=cv2.imencode('.png',frame)
+                    assert encoded
+                    process_source(upload_source('image','smoke.png','image/png',png.tobytes()))
+                    video=root/'smoke.mp4'
+                    writer=cv2.VideoWriter(str(video),cv2.VideoWriter_fourcc(*'mp4v'),4,(128,96))
+                    try:
+                        assert writer.isOpened(),'Smoke MP4 encoder unavailable on the build host'
+                        for number in range(8):
+                            frame[16:32,16:32]=(0,number*20,200)
+                            writer.write(frame)
+                    finally:writer.release()
+                    process_source(upload_source('video','smoke.mp4','video/mp4',video.read_bytes()))
+                    print('PASS frozen image and MP4 extraction: installed classifier files and video decoding')
+                    if (binary.parent / '_internal/graph-runtime').is_dir():
+                        source=upload_source('gps','gps.csv','text/csv',b'timestamp,device_id,latitude,longitude\n2026-01-01T00:00:00Z,D-1,12,77\n')
+                        process_source(source)
                         run=post(base+'/analysis-runs',extra_headers={'Idempotency-Key':str(uuid4())})
                         completed(base+'/analysis-runs/'+run['id'])
                         with browser.open(f'http://127.0.0.1:{port}/api/v1'+base+'/graph?analysis_run_id='+run['id'],timeout=10) as response:

@@ -28,6 +28,6 @@ Windows packaging stages the pinned graph runtime through `scripts/prepare_windo
 python scripts/smoke_release.py dist/evora/evora.exe
 ```
 
-The frozen smoke checks executable resources, local extraction, certificate loading, account setup and frontend serving. With a bundled graph it also processes synthetic GPS data, completes analysis and reads graph results before shutdown.
+The frozen smoke checks executable resources, text, image and MP4 extraction, certificate loading, account setup and frontend serving. With a bundled graph it also processes synthetic GPS data, completes analysis and reads graph results before shutdown.
 
 Provider-account authorization and model accuracy require separate testing with permitted data; synthetic protocol checks do not establish either.
