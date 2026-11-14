@@ -8,11 +8,13 @@ from pathlib import Path
 import secrets
 import threading
 import time
+import ssl
 from urllib.parse import urlencode, urlsplit, parse_qs
 from uuid import uuid4
 
 import httpx
 import jwt
+import certifi
 from filelock import FileLock, Timeout as FileLockTimeout
 from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel, ConfigDict
@@ -27,8 +29,33 @@ SCOPE='openid profile email offline_access resource.invoke chatgpt.tokens.use.di
 router=APIRouter(prefix='/api/v1/chatgpt')
 
 
+def tls_context():
+    # Include Windows' trusted system certificates as well as bundled public roots.
+    context=ssl.create_default_context()
+    context.load_verify_locations(certifi.where())
+    return context
+
+
 def client():
-    return httpx.Client(timeout=httpx.Timeout(20,connect=5),trust_env=False,follow_redirects=False)
+    return httpx.Client(verify=tls_context(),timeout=httpx.Timeout(20,connect=5),trust_env=False,follow_redirects=False)
+
+
+def callback_error(error, stage):
+    if isinstance(error,jwt.ImmatureSignatureError) or isinstance(error,jwt.ExpiredSignatureError):
+        return 'ChatGPT identity time validation failed. Sync the Windows date and time, then sign in again.'
+    if isinstance(error,httpx.HTTPStatusError):
+        code=''
+        try:
+            body=error.response.json();value=body.get('error')
+            value=value.get('code') if isinstance(value,dict) else value
+            if value in {'invalid_grant','invalid_client','invalid_scope','access_denied','unauthorized_client','temporarily_unavailable'}:code='; '+value
+        except (ValueError,TypeError,AttributeError):pass
+        return f'ChatGPT {stage} failed (HTTP {error.response.status_code}{code}). Start a new sign-in attempt.'
+    if isinstance(error,httpx.RequestError):
+        return f'ChatGPT {stage} could not reach OpenAI securely. Check network access, trusted certificates and the system clock.'
+    if isinstance(error,jwt.InvalidTokenError):
+        return 'ChatGPT identity validation failed. Start a new sign-in attempt.'
+    return f'ChatGPT {stage} failed. Start a new sign-in attempt; existing saved credentials were retained.'
 
 
 class Connection:
@@ -115,13 +142,13 @@ class Connection:
                         query=parse_qs(url.query,keep_blank_values=True)
                         if any(len(values)!=1 for values in query.values()):raise ValueError('Duplicate callback parameters')
                         connection.complete({key:values[0] for key,values in query.items()});valid=True
-                    except Exception:
+                    except Exception as error:
                         with connection.lock:
-                            connection.error='ChatGPT sign-in did not complete. Check plan permissions or retry.'
+                            connection.error=callback_error(error,getattr(connection,'auth_stage','callback validation'))
                     self.send_response(200 if valid else 400)
                     self.send_header('Content-Type','text/html; charset=utf-8');self.send_header('Cache-Control','no-store')
                     self.send_header('Referrer-Policy','no-referrer');self.send_header('Content-Security-Policy',"default-src 'none'; frame-ancestors 'none'")
-                    self.end_headers();self.wfile.write(('Connected. Close this window and return to EVORA.' if valid else 'Sign-in could not complete. Return to EVORA and retry.').encode())
+                    self.end_headers();self.wfile.write(('Connected. Close this window and return to EVORA.' if valid else connection.error).encode())
                     if connection.pending is None:
                         threading.Thread(target=connection.close_listener,args=(self.server,),daemon=True).start()
             listener=ThreadingHTTPServer(('127.0.0.1',0),Callback);listener.daemon_threads=True
@@ -141,6 +168,7 @@ class Connection:
 
     def complete(self,query):
         with self.lock:
+            self.auth_stage='callback validation'
             pending=self.pending
             if not pending or pending['expires']<time.time() or not secrets.compare_digest(query.get('state',''),pending['state']):
                 raise ValueError('Invalid callback state')
@@ -156,18 +184,22 @@ class Connection:
                     raise ValueError('Local session expired')
             if not pending['client_id']:
                 record=self._read();record['pending_registration']=issued;self._write(record)
+            self.auth_stage='token exchange'
             with client() as http:
                 response=http.post(TOKEN,data=dict(grant_type='authorization_code',client_id=issued,code=query['code'],code_verifier=pending['verifier'],redirect_uri=pending['redirect_uri'],resource=BASE))
                 response.raise_for_status();body=response.json()
+                self.auth_stage='identity discovery'
                 discovery=http.get(AUTH+'/.well-known/openid-configuration');discovery.raise_for_status();metadata=discovery.json()
                 if metadata['issuer']!=AUTH or metadata['jwks_uri']!=AUTH+'/.well-known/jwks.json':raise ValueError('Unexpected identity issuer')
                 keys=http.get(metadata['jwks_uri']);keys.raise_for_status()
+            self.auth_stage='identity validation'
             header=jwt.get_unverified_header(body['id_token'])
             if header.get('alg')!='RS256':raise ValueError('Unsupported identity signature')
             key=next(key for key in keys.json()['keys'] if key.get('kid')==header.get('kid') and key.get('kty')=='RSA')
             identity=jwt.decode(body['id_token'],jwt.PyJWK.from_dict(key).key,algorithms=['RS256'],issuer=AUTH,audience=issued,
                 options={'require':['exp','iat','sub','iss','aud','nonce']})
             if not secrets.compare_digest(identity['nonce'],pending['nonce']) or (pending['subject'] and identity['sub']!=pending['subject']):raise ValueError('Account mismatch')
+            self.auth_stage='credential storage'
             record=self._read()
             if (record.get('client_id'),record.get('subject'))!=(issued,identity['sub']):record={'host_id':record['host_id']}
             record.update(client_id=issued,subject=identity['sub'],email=identity.get('email',''),id_token=body['id_token'])
@@ -229,7 +261,7 @@ class Connection:
             if connection_id is not None and connection_id!=self.binding():raise ValueError('ChatGPT account changed')
             token=self.token()
         start=time.monotonic();size=0;completion=None;streamed_output={}
-        with httpx.Client(timeout=httpx.Timeout(timeout,connect=5),trust_env=False,follow_redirects=False) as http:
+        with httpx.Client(verify=tls_context(),timeout=httpx.Timeout(timeout,connect=5),trust_env=False,follow_redirects=False) as http:
             with http.stream('POST',BASE+'/responses',headers={'Authorization':'Bearer '+token},json=dict(model=model,instructions=instructions+'\nReturn only valid JSON.',
                 input=[dict(role='user',content=content)],store=False,stream=True)) as response:
                 response.raise_for_status()

@@ -50,6 +50,20 @@ class ChatGPTTests(unittest.IsolatedAsyncioTestCase):
         real=httpx.Client
         return requests,patch.object(cg,'client',side_effect=lambda:real(transport=httpx.MockTransport(respond))),real,respond
 
+    async def test_callback_returns_safe_exchange_failure_reason(self):
+        url=await self.begin();connection=self.app.state.chatgpt_connection
+        real=httpx.Client
+        transport=httpx.MockTransport(lambda request:httpx.Response(400,json={'error':'invalid_grant','error_description':'private-secret'}))
+        with patch.object(cg,'client',side_effect=lambda:real(transport=transport)):
+            async with httpx.AsyncClient(trust_env=False) as browser:
+                response=await browser.get(parse_qs(urlsplit(url).query)['redirect_uri'][0],params={
+                    'state':connection.pending['state'],'code':'private-code','client_id':'oaiapp_test'})
+        self.assertEqual(response.status_code,400)
+        self.assertIn('token exchange failed (HTTP 400; invalid_grant)',response.text)
+        self.assertNotIn('private-secret',response.text)
+        self.assertNotIn('private-code',response.text)
+        self.assertEqual(connection.status()['error'],response.text)
+
     async def authorized(self,scope='openid chatgpt.tokens.use.direct'):
         url=await self.begin();connection=self.app.state.chatgpt_connection;self.nonce=connection.pending['nonce']
         requests,mock,_,_=self.provider(scope)
@@ -231,3 +245,19 @@ class CredentialFilesystemTests(unittest.TestCase):
         connection=self.connection;connection._write({'host_id':'private-host'})
         os.chmod(connection.path,0o644)
         with self.assertRaisesRegex(ValueError,'must be private'):connection._read()
+
+class CallbackDiagnosticTests(unittest.TestCase):
+    def test_status_code_is_safe_and_provider_descriptions_are_not_exposed(self):
+        request=httpx.Request('POST',cg.TOKEN)
+        response=httpx.Response(400,json={'error':'invalid_grant','error_description':'private-secret'},request=request)
+        error=httpx.HTTPStatusError('private-secret',request=request,response=response)
+        message=cg.callback_error(error,'token exchange')
+        self.assertIn('HTTP 400; invalid_grant',message)
+        self.assertNotIn('private-secret',message)
+    def test_tls_stays_verified_and_clock_errors_are_actionable(self):
+        import ssl
+        context=cg.tls_context()
+        self.assertTrue(context.check_hostname)
+        self.assertEqual(context.verify_mode,ssl.CERT_REQUIRED)
+        self.assertIn('date and time',cg.callback_error(jwt.ImmatureSignatureError('private'),'identity validation'))
+        self.assertNotIn('private',cg.callback_error(ValueError('private'),'credential storage'))
