@@ -23,6 +23,7 @@ worker = subprocess.run([str(binary), '-m', 'backend.text_ner_worker', str(manif
     input='{"lines": []}\n', text=True, capture_output=True, timeout=120)
 assert worker.returncode == 0, worker.stderr[-2000:]
 assert json.loads(worker.stdout)['ok'] is True, worker.stdout
+subprocess.run([str(binary), '--check-oauth-tls'], check=True, timeout=60)
 with TemporaryDirectory(prefix='evora-release-smoke-') as directory:
     root = Path(directory)
     with socket.socket() as sock:

@@ -126,7 +126,14 @@ def main():
 
 if __name__ == "__main__":
     # Frozen child workers must re-enter this executable rather than argparse.
-    if sys.argv[1:3] == ['-m', 'backend.text_ner_worker']:
+    if sys.argv[1:] == ['--check-oauth-tls']:
+        import ssl
+        from backend.chatgpt_connection import tls_context
+        context = tls_context()
+        assert context.check_hostname and context.verify_mode == ssl.CERT_REQUIRED
+        assert context.cert_store_stats()['x509_ca'] > 0
+        print('OAuth TLS certificate verification ready')
+    elif sys.argv[1:3] == ['-m', 'backend.text_ner_worker']:
         sys.argv = sys.argv[2:]
         from backend.text_ner_worker import run
         run()
