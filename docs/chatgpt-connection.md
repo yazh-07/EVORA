@@ -14,9 +14,11 @@ ChatGPT plan eligibility, supported clients and account usage limits are control
 
 ## Sign-in time errors
 
-EVORA allows up to 60 seconds of clock difference when validating signed identity tokens. Larger differences still prevent sign-in. A token that is not valid yet and an expired token have separate error messages.
+EVORA allows up to 60 seconds of clock difference when validating signed identity tokens. A timestamp rejection can indicate an expired or incorrectly issued token; it does not establish that the device clock is wrong.
 
-On Windows, open **Settings → Time & language → Date & time**, enable **Set time automatically**, and select **Sync now**. Then start a fresh sign-in in EVORA. If synchronization fails, check the Windows time service or your organization's time configuration.
+Timing errors identify the rejected claim (`iat`, `nbf` or `exp`) and its offset from device UTC. When available, they also show the device clock offset from the token endpoint’s HTTPS response date. Signature, issuer, audience and account checks precede these diagnostics. The response date never changes token acceptance, and the message contains no tokens or account details.
+
+If the reported device/OpenAI offset is large, check **Windows Settings → Time & language → Date & time**. Otherwise, start a fresh sign-in and use the claim and offset to investigate the rejected token.
 
 ## Text, images, video and speech
 

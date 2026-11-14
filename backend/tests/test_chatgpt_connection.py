@@ -1,5 +1,6 @@
 """Real OAuth state/PKCE, RSA JWT validation and loopback callback; OpenAI protocol doubles."""
 from concurrent.futures import ThreadPoolExecutor
+from email.utils import formatdate
 import json
 import os
 import re
@@ -94,9 +95,9 @@ class ChatGPTTests(unittest.IsolatedAsyncioTestCase):
             (dict(iat=now+120),'not valid yet'),
             (dict(nbf=now+120),'not valid yet'),
             (dict(iat=now-3600,exp=now-120),'has expired'),
-            (dict(iat=now+30,nonce='wrong-nonce'),'identity validation failed'),
-            (dict(iat=now+30,aud='wrong-client'),'identity validation failed'),
-            (dict(iat=now+30,iss='https://example.invalid'),'identity validation failed'),
+            (dict(iat=now+120,nonce='wrong-nonce'),'identity validation failed'),
+            (dict(iat=now+120,aud='wrong-client'),'identity validation failed'),
+            (dict(iat=now+120,iss='https://example.invalid'),'identity validation failed'),
         ]
         for claims,message in cases:
             with self.subTest(claims=claims):
@@ -300,5 +301,64 @@ class CallbackDiagnosticTests(unittest.TestCase):
         context=cg.tls_context()
         self.assertTrue(context.check_hostname)
         self.assertEqual(context.verify_mode,ssl.CERT_REQUIRED)
-        self.assertIn('date and time',cg.callback_error(jwt.ImmatureSignatureError('private'),'identity validation'))
+        self.assertIn('not valid yet',cg.callback_error(jwt.ImmatureSignatureError('private'),'identity validation'))
+        self.assertNotIn('Sync',cg.callback_error(jwt.ImmatureSignatureError('private'),'identity validation'))
         self.assertNotIn('private',cg.callback_error(ValueError('private'),'credential storage'))
+
+
+class IdentityTimingTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.key=rsa.generate_private_key(public_exponent=65537,key_size=2048)
+
+    def identity(self,**claims):
+        now=int(time.time())
+        payload=dict(sub='private-subject',iss=cg.AUTH,aud='oaiapp_test',iat=now,exp=now+3600,
+            nonce='private-nonce',email='private@example.test')
+        payload.update(claims)
+        return jwt.encode(payload,self.key,algorithm='RS256')
+
+    def validate(self,token,date=None,received_at=None,key=None):
+        response=httpx.Response(200,headers={'Date':date} if date is not None else {})
+        return cg.validate_identity(token,key or self.key.public_key(),'oaiapp_test',
+            dict(nonce='private-nonce',subject=None),response,received_at or time.time())
+
+    def test_verified_time_failures_name_the_claim_and_response_clock_offset(self):
+        now=int(time.time())
+        for claim,value in [('iat',now+7200),('nbf',now+7200),('exp',now-7200)]:
+            with self.subTest(claim=claim):
+                token=self.identity(**{claim:value})
+                with self.assertRaises(cg.IdentityTimeError) as failure:
+                    self.validate(token,formatdate(now,usegmt=True),now+4)
+                message=cg.callback_error(failure.exception,'identity validation')
+                self.assertIn(claim,message)
+                self.assertIn('device/OpenAI response offset +4s',message)
+                self.assertIn('ago' if claim=='exp' else 'ahead',message)
+                for private in [token,'private-subject','private-nonce','private@example.test']:
+                    self.assertNotIn(private,message)
+                self.assertNotIn('Sync',message)
+
+    def test_missing_or_malformed_response_time_does_not_hide_the_token_failure(self):
+        for date in [None,'private-malformed-date','Wed, 01 Jan 2025 00:00:00']:
+            with self.subTest(date=date):
+                with self.assertRaises(cg.IdentityTimeError) as failure:
+                    self.validate(self.identity(iat=int(time.time())+7200),date)
+                message=str(failure.exception)
+                self.assertIn('iat',message)
+                self.assertNotIn('offset',message)
+                self.assertNotIn('private',message)
+
+    def test_response_date_cannot_override_expiration_or_not_before(self):
+        now=int(time.time())
+        for claims,date in [
+            (dict(iat=now-10800,exp=now-7200),now-7201),
+            (dict(iat=now+7200,nbf=now+7200),now+7201),
+        ]:
+            with self.subTest(claims=claims):
+                with self.assertRaises(cg.IdentityTimeError):
+                    self.validate(self.identity(**claims),formatdate(date,usegmt=True))
+
+    def test_bad_signature_never_becomes_a_verified_timing_diagnostic(self):
+        wrong_key=rsa.generate_private_key(public_exponent=65537,key_size=2048)
+        with self.assertRaises(jwt.InvalidSignatureError):
+            self.validate(self.identity(iat=int(time.time())+7200),key=wrong_key.public_key())

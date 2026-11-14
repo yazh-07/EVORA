@@ -1,5 +1,6 @@
 """ChatGPT plan OAuth: separate from local accounts; fixed official endpoints only."""
 import base64
+from email.utils import parsedate_to_datetime
 import hashlib
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
@@ -42,11 +43,47 @@ def client():
     return httpx.Client(verify=tls_context(),timeout=httpx.Timeout(20,connect=5),trust_env=False,follow_redirects=False)
 
 
+class IdentityTimeError(ValueError):
+    """Safe timing details from an identity whose signature and account match."""
+    def __init__(self,claim,delta,server_offset):
+        condition='has expired' if claim=='exp' else 'is not valid yet'
+        direction='ago' if delta<0 else 'ahead'
+        detail=f'{claim} {abs(delta)}s {direction}'
+        if server_offset is not None:detail+=f'; device/OpenAI response offset {server_offset:+d}s'
+        super().__init__(f'ChatGPT sign-in token {condition} ({detail}). Start a new sign-in.')
+
+
+def validate_identity(token,key,issued,pending,response,received_at):
+    required={'require':['exp','iat','sub','iss','aud','nonce']}
+    # First authenticate the identity so diagnostics cannot reflect untrusted claims.
+    # The second decode enforces every timestamp check before credentials can be saved.
+    identity=jwt.decode(token,key,algorithms=['RS256'],issuer=AUTH,audience=issued,
+        options={**required,'verify_exp':False,'verify_iat':False,'verify_nbf':False})
+    if not secrets.compare_digest(identity['nonce'],pending['nonce']) or (pending['subject'] and identity['sub']!=pending['subject']):
+        raise ValueError('Account mismatch')
+    try:
+        return jwt.decode(token,key,algorithms=['RS256'],issuer=AUTH,audience=issued,
+            leeway=IDENTITY_CLOCK_SKEW_SECONDS,options=required)
+    except (jwt.ImmatureSignatureError,jwt.ExpiredSignatureError) as error:
+        now=time.time()
+        claim='exp' if isinstance(error,jwt.ExpiredSignatureError) else (
+            'iat' if 'nbf' not in identity or int(identity['iat'])>now+IDENTITY_CLOCK_SKEW_SECONDS else 'nbf')
+        delta=round(int(identity.get(claim,identity['iat']))-now)
+        server_offset=None
+        try:
+            date=parsedate_to_datetime(response.headers['Date'])
+            if date.utcoffset() is not None:server_offset=round(received_at-date.timestamp())
+        except (KeyError,TypeError,ValueError,OverflowError):pass
+        # The HTTPS Date is diagnostic only; it never changes token acceptance.
+        raise IdentityTimeError(claim,delta,server_offset) from None
+
+
 def callback_error(error, stage):
+    if isinstance(error,IdentityTimeError):return str(error)
     if isinstance(error,jwt.ImmatureSignatureError):
-        return 'ChatGPT sign-in token is not valid yet. Sync your device date and time, then sign in again.'
+        return 'ChatGPT sign-in token is not valid yet. Start a new sign-in.'
     if isinstance(error,jwt.ExpiredSignatureError):
-        return 'ChatGPT sign-in token has expired. Start a new sign-in. If this repeats, sync your device date and time.'
+        return 'ChatGPT sign-in token has expired. Start a new sign-in.'
     if isinstance(error,httpx.HTTPStatusError):
         code=''
         try:
@@ -191,6 +228,7 @@ class Connection:
             self.auth_stage='token exchange'
             with client() as http:
                 response=http.post(TOKEN,data=dict(grant_type='authorization_code',client_id=issued,code=query['code'],code_verifier=pending['verifier'],redirect_uri=pending['redirect_uri'],resource=BASE))
+                received_at=time.time()
                 response.raise_for_status();body=response.json()
                 self.auth_stage='identity discovery'
                 discovery=http.get(AUTH+'/.well-known/openid-configuration');discovery.raise_for_status();metadata=discovery.json()
@@ -200,9 +238,7 @@ class Connection:
             header=jwt.get_unverified_header(body['id_token'])
             if header.get('alg')!='RS256':raise ValueError('Unsupported identity signature')
             key=next(key for key in keys.json()['keys'] if key.get('kid')==header.get('kid') and key.get('kty')=='RSA')
-            identity=jwt.decode(body['id_token'],jwt.PyJWK.from_dict(key).key,algorithms=['RS256'],issuer=AUTH,audience=issued,
-                leeway=IDENTITY_CLOCK_SKEW_SECONDS,options={'require':['exp','iat','sub','iss','aud','nonce']})
-            if not secrets.compare_digest(identity['nonce'],pending['nonce']) or (pending['subject'] and identity['sub']!=pending['subject']):raise ValueError('Account mismatch')
+            identity=validate_identity(body['id_token'],jwt.PyJWK.from_dict(key).key,issued,pending,response,received_at)
             self.auth_stage='credential storage'
             record=self._read()
             if (record.get('client_id'),record.get('subject'))!=(issued,identity['sub']):record={'host_id':record['host_id']}
