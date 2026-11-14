@@ -36,6 +36,7 @@ type BackendManager struct {
 	binPath   string
 	lastError string
 	done      chan error
+	exited    chan struct{}
 	stopPath  string
 }
 
@@ -172,9 +173,12 @@ func (b *BackendManager) Start(cfg Config) error {
 	}
 	b.cmd = cmd
 	b.done = make(chan error, 1)
+	b.exited = make(chan struct{})
 	done := b.done
+	exited := b.exited
 	go func() {
 		done <- cmd.Wait()
+		close(exited)
 		if logFile != nil {
 			_ = logFile.Close()
 		}
@@ -183,13 +187,29 @@ func (b *BackendManager) Start(cfg Config) error {
 }
 
 func (b *BackendManager) WaitReady(timeout time.Duration) bool {
+	b.mu.Lock()
+	exited, started := b.exited, b.cmd != nil
+	b.mu.Unlock()
+	if !started {
+		return false
+	}
 	deadline := time.Now().Add(timeout)
 	client := http.Client{Timeout: 500 * time.Millisecond}
 
 	for time.Now().Before(deadline) {
+		select {
+		case <-exited:
+			return false
+		default:
+		}
 		resp, err := client.Get(b.url + "/")
 		if err == nil && (resp.StatusCode == 200 || resp.StatusCode == 404) {
 			_ = resp.Body.Close()
+			select {
+			case <-exited:
+				return false
+			default:
+			}
 			return true
 		}
 		time.Sleep(200 * time.Millisecond)

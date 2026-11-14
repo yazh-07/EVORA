@@ -1,6 +1,22 @@
 package main
 
-import "testing"
+import (
+	"net"
+	"testing"
+)
+
+func TestOccupiedPortIsNotReused(t *testing.T) {
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer listener.Close()
+	oldPort := listener.Addr().(*net.TCPAddr).Port
+	selected, err := availablePort(oldPort)
+	if err != nil || selected == oldPort {
+		t.Fatal("must not attach to the occupied old endpoint")
+	}
+}
 
 func TestSignInDestination(t *testing.T) {
 	if !validChatGPTAuthorizationURL("https://auth.openai.com/api/accounts/authorize?state=example") {

@@ -28,6 +28,12 @@ var (
 
 func main() {
 	appConfig = LoadConfig()
+	port, err := availablePort(appConfig.Port)
+	if err != nil {
+		fmt.Println("Could not allocate a local workstation port")
+		return
+	}
+	appConfig.Port = port
 	backendMgr = NewBackendManager(appConfig)
 	defer backendMgr.Stop()
 
