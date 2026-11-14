@@ -22,18 +22,18 @@ from backend import plates
 from backend.parsers.normalization import NormalizedObservation
 from backend.parsers.source_events import SourceEvent, SourceEventResult
 
-PARSER_VERSION = 'media-detection/3'
-PROCESSOR_VERSION = 'processing-lifecycle/15'
+PARSER_VERSION = 'media-detection/4'
+PROCESSOR_VERSION = 'processing-lifecycle/16'
 MAX_SOURCE_BYTES = 50 * 1024 * 1024
 MAX_DATA_ROWS = 10000  # detections
 MAX_FRAMES = 3600
 MAX_PIXELS = 25_000_000
 MAX_DECODED_FRAMES = 216000
+MIN_PLATE_SCORE = .65
 _CASCADES = (
     ('person:face', 'haarcascade_frontalface_default.xml'),
     ('person:fullbody', 'haarcascade_fullbody.xml'),
     ('person:upperbody', 'haarcascade_upperbody.xml'),
-    ('vehicle:license_plate', 'haarcascade_russian_plate_number.xml'),
 )
 
 
@@ -54,7 +54,8 @@ def _cascade_path(filename):
 def model_info():
     return dict(opencv=cv2.__version__, pillow=Image.__version__, numpy=np.__version__,
                 cascades={name: hashlib.sha256(_cascade_path(name).read_bytes()).hexdigest()
-                          for _, name in _CASCADES}, confidence_transform='sigmoid_uncalibrated', plates=plates.model_info())
+                          for _, name in _CASCADES}, confidence_transform='sigmoid_uncalibrated', plates=plates.model_info(),
+                plate_filter=dict(min_detector_score=MIN_PLATE_SCORE, min_width=16, min_height=8, aspect_range=[1, 8]))
 
 
 def _classifiers():
@@ -174,7 +175,12 @@ def parse_media(source, *, kind, case_id, evidence_id, processing_run_id):
     try:
         for index, offset, frame, time in frames:
             hits = plates.detect(frame) if plate_model else []
-            detections = [item for item in detect_frame(frame, classifiers) if not plate_model or item[0] != 'vehicle:license_plate']
+            hits = [hit for hit in hits if hit['detector_score'] >= MIN_PLATE_SCORE
+                    and hit['box'][2] >= 16 and hit['box'][3] >= 8
+                    and 1 <= hit['box'][2] / hit['box'][3] <= 8]
+            # The old region-specific Haar cascade frequently classified ordinary
+            # rectangles as plates. Only the dedicated plate model supplies these.
+            detections = [item for item in detect_frame(frame, classifiers) if item[0] != 'vehicle:license_plate']
             detections.extend(('vehicle:license_plate', tuple(hit['box']), hit['detector_score'], 'onnx:plate-detector') for hit in hits)
             readings = {tuple(hit['box']): hit for hit in hits}
             for label, box, weight, detector in detections:

@@ -12,7 +12,7 @@ export type BulkOptions = {
   vision?: { provider: components['schemas']['Settings']['qa_provider']; model: string; endpoint: string; consent: boolean };
 };
 export type BulkItem = { evidence: Evidence; status: 'waiting' | 'checking' | 'queued' | 'running' | 'completed' | 'failed' | 'skipped' | 'unknown'; message: string; run?: ProcessingRun };
-export type BulkState = { status: 'idle' | 'running' | 'done' | 'stopped' | 'error'; items: BulkItem[]; message: string };
+export type BulkState = { status: 'idle' | 'running' | 'done' | 'stopped' | 'error'; items: BulkItem[]; message: string; visionRequested?: boolean };
 const initial = (): BulkState => ({ status: 'idle', items: [], message: '' });
 
 /** Serial, case-wide queue over existing authorized endpoints. Never auto-retries a POST. */
@@ -91,7 +91,7 @@ export function createBulkProcessingController(client: ApiClient, caseId: string
           if (!selected.size || selected.size !== options.evidenceIds.length || [...selected].some(id => !ids.has(id))) throw Error('Selection unavailable');
           const chosen = items.filter(item => selected.has(item.id)); items.splice(0, items.length, ...chosen);
         }
-        publish({ status: 'running', message: 'Processing one source at a time. New uploads are included on the next batch.', items: items.map(evidence => ({ evidence, status: 'waiting', message: '' })) });
+        publish({ status: 'running', visionRequested: !!settings, message: 'Processing one source at a time. New uploads are included on the next batch.', items: items.map(evidence => ({ evidence, status: 'waiting', message: '' })) });
         for (let index = 0; index < items.length; index++) {
           check(); const item = items[index]!;
           if (!supportsBasicProcessing(item)) { update(index, { status: 'skipped', message: 'Standalone audio extraction is unavailable.' }); continue; }

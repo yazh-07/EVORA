@@ -1867,6 +1867,17 @@ components:
       required: [question]
       properties:
         question: { type: string, minLength: 1, maxLength: 2000 }
+        conversation:
+          type: array
+          maxItems: 8
+          description: Prior dialogue for follow-up references, never source evidence.
+          items:
+            type: object
+            additionalProperties: false
+            required: [question, answer]
+            properties:
+              question: { type: string, minLength: 1, maxLength: 2000 }
+              answer: { type: string, minLength: 1, maxLength: 8000 }
     AnswerCitation:
       type: object
       additionalProperties: false

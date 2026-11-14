@@ -1643,6 +1643,11 @@ export interface components {
         };
         CaseQuestion: {
             question: string;
+            /** @description Prior dialogue for follow-up references, never source evidence. */
+            conversation?: {
+                question: string;
+                answer: string;
+            }[];
         };
         AnswerCitation: {
             /** @description Factual assertion in the answer supported by this citation */

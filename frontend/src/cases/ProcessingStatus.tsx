@@ -1,8 +1,32 @@
-import { useEffect, useMemo, useSyncExternalStore } from 'react';
+import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import { useApiClient } from '../api/ApiProvider';
 import type { ProcessingRun } from './processingController';
+import { validRun } from './processingController';
 import { createProcessingStatusController } from './processingStatusController';
 import type { ProcessingStatusState } from './processingStatusController';
+
+export function ProcessingHistory({ caseId, evidenceId, revision }: { caseId: string; evidenceId: string; revision?: unknown }) {
+  const client = useApiClient();
+  const [runs, setRuns] = useState<ProcessingRun[]>(), [error, setError] = useState(false), [reload, setReload] = useState(0);
+  useEffect(() => {
+    const request = new AbortController(); setError(false); setRuns(undefined);
+    void client.request('get', '/api/v1/cases/{caseId}/evidence/{evidenceId}/processing-runs', { path: { caseId, evidenceId }, signal: request.signal }).then(value => {
+      if (request.signal.aborted) return;
+      if (!Array.isArray(value) || value.some(run => !validRun(run, caseId, evidenceId))) throw Error('Invalid history');
+      setRuns([...value].sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at) || b.id.localeCompare(a.id)));
+    }).catch(() => { if (!request.signal.aborted) setError(true); });
+    return () => request.abort();
+  }, [client, caseId, evidenceId, revision, reload]);
+  return <section aria-label="Previous processing runs">
+    {error ? <p role="alert">Could not load history. <button type="button" onClick={() => setReload(value => value + 1)}>Retry</button></p>
+      : !runs ? <p role="status">Loading history…</p> : !runs.length ? <p>No processing runs yet.</p>
+      : <ol className="processing-history-list">{runs.map(run => <li key={run.id}><div><time dateTime={run.created_at}>{new Date(run.created_at).toLocaleString()}</time><span>{run.status === 'completed' ? 'Complete' : run.status === 'running' ? 'Processing' : run.status === 'queued' ? 'Queued' : 'Failed'}</span></div>
+        {run.processing_kind && <p>{run.processing_kind.replaceAll('_', ' ')}</p>}
+        {run.error && <p role="alert">{run.error}</p>}
+        <details><summary>Run information</summary><dl><dt>Run</dt><dd className="identifier">{run.id}</dd><dt>Processor</dt><dd>{run.processor_version}</dd>{run.finished_at && <><dt>Finished</dt><dd>{new Date(run.finished_at).toLocaleString()}</dd></>}</dl></details>
+      </li>)}</ol>}
+  </section>;
+}
 
 export function ProcessingStatus({ run, pollIntervalMs = 750, onCompleted, onStatusChange }: {
   onStatusChange?: (run: ProcessingRun) => void; run: ProcessingRun; pollIntervalMs?: number; onCompleted?: (runId: string) => void }) {

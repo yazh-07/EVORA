@@ -47,7 +47,7 @@ function submit(c) {
   find(c, e => e.type === 'form').props.onSubmit({ preventDefault() { prevented = true; } });
   assert.equal(prevented, true);
 }
-const retry = c => find(c, e => e.type === 'button' && e.props.children === 'Retry question').props.onClick();
+const retry = c => find(c, e => e.type === 'button' && e.props.children === 'Retry').props.onClick();
 async function settled(c) {
   for (let i = 0; i < 100; i++) {
     if (c.getSnapshot().status !== 'submitting') return;
@@ -61,14 +61,14 @@ test('supported inquiry posts the typed wire contract, renders every citation an
   const { controller: c, calls } = setup(t, () => new Promise(resolve => { finish = resolve; }));
   assert.equal(calls.length, 0, 'Opening the panel must not submit an inquiry');
   const initial = render(c);
-  assert.match(initial, /<label for="case-question">Question about the evidence<\/label>/);
+  assert.match(initial, /<label class="sr-only" for="case-question">Message about this case<\/label>/);
   assert.match(initial, /<textarea id="case-question" name="question" maxLength="2000"/);
-  assert.match(initial, /placeholder="e\.g\. Which records mention this device\?"/);
+  assert.match(initial, /placeholder="Ask a question or follow up…"/);
   change(c, `  ${question}  `); submit(c); submit(c);
   assert.equal(c.getSnapshot().status, 'submitting');
   assert.match(render(c), /aria-busy="true"/);
-  assert.match(render(c), /role="status">Searching case evidence/);
-  assert.match(render(c), /<button type="submit" disabled="">Ask question/);
+  assert.match(render(c), /role="status">Searching evidence/);
+  assert.match(render(c), /aria-label="Stop response">Stop/);
   assert.equal(find(c, e => e.type === 'textarea').props.disabled, true);
   change(c, 'A different question');
   assert.equal(c.getSnapshot().question, `  ${question}  `, 'Draft cannot change while submitting');
@@ -83,14 +83,14 @@ test('supported inquiry posts the typed wire contract, renders every citation an
   finish(Response.json(answer())); await settled(c);
   assert.equal(c.getSnapshot().status, 'ready'); assert.deepEqual(c.getSnapshot().answer, answer());
   const html = render(c);
-  assert.match(html, /question-supported/); assert.match(html, /Supported by Evidence/);
+  assert.match(html, /chat-sources/); assert.match(html, /Sources \(2\)/);
   assert.match(html, /The network log records two connections/);
-  assert.match(html, /Source locator: row 1/); assert.match(html, /Source locator: row 2/);
-  assert.match(html, /Retrieval version: deterministic-grounded-retrieval\/1/);
-  assert.match(html, /aria-busy="false"/); assert.doesNotMatch(html, /Searching case evidence/);
+  assert.match(html, /source-locator">row 1/); assert.match(html, /source-locator">row 2/);
+  assert.match(html, /<dt>Retrieval<\/dt><dd>deterministic-grounded-retrieval\/1/);
+  assert.match(html, /aria-busy="false"/); assert.doesNotMatch(html, /Searching evidence/);
   const inspected = [];
   const buttons = elements(QuestionAnswerPanel(props(c, value => inspected.push(value))),
-    e => e.type === 'button' && e.props['aria-label']?.startsWith('Inspect source evidence'));
+    e => e.type === 'button' && e.props['aria-label']?.startsWith('Open source '));
   assert.equal(buttons.length, 2);
   buttons.forEach(button => button.props.onClick());
   assert.deepEqual(inspected, [id(11), id(12)]);
@@ -104,11 +104,11 @@ test('unsupported inquiry explicitly reports uncertainty, no factual claims and 
   assert.equal(calls.length, 1); assert.equal(c.getSnapshot().status, 'ready');
   assert.deepEqual(c.getSnapshot().answer.citations, []);
   const html = render(c);
-  assert.match(html, /question-unsupported/); assert.match(html, /Insufficient Evidence/);
+  assert.match(html, /question-unsupported/); assert.match(html, /Insufficient evidence/);
   assert.match(html, /Insufficient evidence in this case to support the inquiry/);
-  assert.match(html, /No factual claims or citations were made/);
-  assert.doesNotMatch(html, /Inspect source evidence|<li|Supported by Evidence/);
-  assert.match(html, /Retrieval version:/);
+  assert.doesNotMatch(html, /chat-sources/);
+  assert.doesNotMatch(html, /Open source [0-9]|<li|Supported by Evidence/);
+  assert.match(html, /<dt>Retrieval<\/dt>/);
 });
 
 test('blank and oversized questions fail locally; a 2000-character question is accepted', async t => {
@@ -133,7 +133,7 @@ for (const failure of [400, 401, 404, 'network']) test(`${failure}: safe error a
   change(c, question); submit(c); await settled(c);
   assert.equal(c.getSnapshot().status, 'error'); assert.equal(c.getSnapshot().answer, null);
   const html = render(c);
-  assert.match(html, /role="alert"/); assert.match(html, /Retry question/);
+  assert.match(html, /role="alert"/); assert.match(html, /Retry/);
   assert.doesNotMatch(html, /PRIVATE|TOKEN|<script|Supported by Evidence/);
   const message = { 400: /Check your question and retry/, 401: /Authentication required/,
     404: /Case unavailable or no longer accessible/, network: /Could not answer the question/ }[failure];
@@ -148,7 +148,7 @@ for (const failure of [400, 401, 404, 'network']) test(`${failure}: safe error a
   if (failure === 401) await c.submit();
   else { retry(c); await settled(c); }
   assert.equal(calls.length, 2); assert.equal(c.getSnapshot().status, 'ready');
-  assert.match(render(c), /Supported by Evidence/); assert.doesNotMatch(render(c), /role="alert"/);
+  assert.match(render(c), /Sources \(2\)/); assert.doesNotMatch(render(c), /role="alert"/);
 });
 
 test('questions, answers, claims, locators and retrieval versions are escaped text', async t => {
@@ -162,8 +162,8 @@ test('questions, answers, claims, locators and retrieval versions are escaped te
   assert.deepEqual(JSON.parse(calls[0].options.body), { question: unsafe });
   const html = render(c);
   assert.doesNotMatch(html, /<img|<script|<\/textarea><img/);
-  assert.equal((html.match(/&lt;script&gt;PAYLOAD&lt;\/script&gt; &amp; text/g) ?? []).length, 6,
-    'Textarea plus question, answer, claim, locator and version must all be escaped');
+  assert.equal((html.match(/&lt;script&gt;PAYLOAD&lt;\/script&gt; &amp; text/g) ?? []).length, 5,
+    'Question, answer, claim, locator and version must all be escaped');
 });
 
 test('editing a new inquiry clears its active answer while preserving the conversation', async t => {
@@ -196,7 +196,7 @@ test('citations without optional observation IDs remain inspectable under the ge
   const { controller: c } = setup(t, () => Response.json(answer({ citations: [source] })));
   change(c, question); await c.submit();
   assert.equal(c.getSnapshot().status, 'ready');
-  assert.match(render(c), /Inspect source evidence/); assert.doesNotMatch(render(c), /Observation:/);
+  assert.match(render(c), /Open source 1/); assert.doesNotMatch(render(c), /Observation:/);
 });
 
 for (const action of ['unmount', 'case change', 'sign out', 'token replacement']) {
@@ -239,4 +239,27 @@ test('workspace defers the question composer until the investigator opens the to
   assert.match(html, /role="tab" id="tab-investigation" aria-controls="panel-investigation"/);
   assert.match(html, /id="panel-investigation" role="tabpanel" aria-labelledby="tab-investigation" tabindex="0" hidden=""/);
   assert.doesNotMatch(html, /id="case-question"/); assert.equal(calls.length, 0);
+});
+
+test('follow-ups carry bounded dialogue, successful sends clear the composer and new chat resets context', async t => {
+  const { controller: c, calls } = setup(t, (_url, options) => Response.json(answer({ question: JSON.parse(options.body).question })));
+  change(c, question); await c.submit();
+  assert.equal(c.getSnapshot().question, '');
+  change(c, 'What records support that?'); await c.submit();
+  assert.deepEqual(JSON.parse(calls[1].options.body).conversation, [{ question, answer: answer().answer }]);
+  for (let i = 0; i < 9; i++) { change(c, `Follow-up ${i}`); await c.submit(); }
+  assert.equal(JSON.parse(calls.at(-1).options.body).conversation.length, 8);
+  c.clear(); assert.deepEqual(c.getSnapshot().history, []);
+  change(c, 'A new conversation'); await c.submit();
+  assert.equal(JSON.parse(calls.at(-1).options.body).conversation, undefined);
+});
+
+test('stopping and starting a new chat discard late answers without clearing the new draft', async t => {
+  let resolve;
+  const { controller: c } = setup(t, () => new Promise(done => { resolve = done; }));
+  change(c, question); const pending = c.submit();
+  c.cancel(); change(c, 'My next question');
+  resolve(Response.json(answer())); await pending;
+  assert.equal(c.getSnapshot().question, 'My next question'); assert.deepEqual(c.getSnapshot().history, []);
+  c.clear(); assert.equal(c.getSnapshot().question, '');
 });

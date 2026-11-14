@@ -6,59 +6,59 @@ import { createQuestionController } from './questionController';
 import type { QuestionState } from './questionController';
 import './QuestionAnswer.css';
 
-export function QuestionAnswer({ caseId, inspectEvidence }: { caseId: string; inspectEvidence: (id: string, focus?: SourceFocus) => void }) {
+export function QuestionAnswer({ caseId, inspectEvidence, activeView = true }: { caseId: string; activeView?: boolean; inspectEvidence: (id: string, focus?: SourceFocus) => void }) {
   const client = useApiClient();
   const container = useRef<HTMLDivElement>(null);
   const controller = useMemo(() => createQuestionController(client, caseId), [client, caseId]);
   const state = useSyncExternalStore(controller.subscribe, controller.getSnapshot, controller.getSnapshot);
   useEffect(() => { controller.start(); return () => controller.dispose(); }, [controller]);
   useEffect(() => {
+    if (!activeView) return;
     const stream = container.current?.querySelector('.conversation-stream');
     if (stream) stream.scrollTop = stream.scrollHeight;
-  }, [state.history?.length]);
-  return <div ref={container}><QuestionAnswerPanel state={state} setQuestion={controller.setQuestion} submit={controller.submit} inspectEvidence={inspectEvidence} /></div>;
+  }, [state.history?.length, state.status, activeView]);
+  useEffect(() => {
+    if (activeView && state.status === 'ready') container.current?.querySelector<HTMLTextAreaElement>('textarea')?.focus({ preventScroll: true });
+  }, [state.status, activeView]);
+  const focusComposer = () => requestAnimationFrame(() => container.current?.querySelector<HTMLTextAreaElement>('textarea')?.focus({ preventScroll: true }));
+  return <div className="case-chat" ref={container}><QuestionAnswerPanel state={state} setQuestion={controller.setQuestion} submit={controller.submit} cancel={() => { controller.cancel(); focusComposer(); }} clear={() => { controller.clear(); focusComposer(); }} inspectEvidence={inspectEvidence} /></div>;
 }
 
-export function QuestionAnswerPanel({ state, setQuestion, submit, inspectEvidence }: {
+export function QuestionAnswerPanel({ state, setQuestion, submit, cancel, clear, inspectEvidence }: {
   state: QuestionState; setQuestion: (question: string) => void; submit: () => Promise<void>;
+  cancel?: () => void; clear?: () => void;
   inspectEvidence: (id: string, focus?: SourceFocus) => void;
 }) {
   const busy = state.status === 'submitting';
   const answers = state.history?.length ? state.history : state.answer ? [state.answer] : [];
-  const prompts = ['Summarize recorded devices and vehicles', 'Identify temporal or location conflicts', 'Trace financial transactions', 'Show high-priority forensic leads'];
-  return <section className="panel question-answer" aria-label="Case questions and answers" aria-busy={busy}>
-    <h2>Ask about the evidence</h2>
-    <details className="context-help"><summary>About answers</summary><p>Answers are AI-generated from available case evidence. Missing evidence does not establish that an event did not occur.</p></details>
-    <details className="question-examples"><summary>Example questions</summary><div className="quick-prompts" aria-label="Suggested investigative questions">{prompts.map(prompt => <button key={prompt} type="button" disabled={busy} onClick={() => setQuestion(prompt)}>{prompt}<span aria-hidden="true"> ↗</span></button>)}</div></details>
-    <form noValidate aria-busy={busy} onSubmit={event => { event.preventDefault(); void submit(); }}>
-      <label htmlFor="case-question">Question about the evidence</label>
-      <textarea id="case-question" name="question" maxLength={2000} rows={4} required
-        placeholder="e.g. Which records mention this device?" value={state.question} disabled={busy}
+  const prompts = ['Summarize the evidence', 'Show recorded locations'];
+  return <section className="panel question-answer" aria-label="Case conversation">
+    <header className="chat-heading"><h2>Ask</h2>{!!answers.length && <button type="button" className="quiet-button" onClick={clear}>New chat</button>}</header>
+    <div className="conversation-stream" role="log" aria-label="Investigation conversation" aria-live="polite" aria-busy={busy}>
+      {!answers.length && !busy && <div className="chat-empty"><h3>Ask about this case</h3><div className="quick-prompts" aria-label="Suggested questions">{prompts.map(prompt => <button key={prompt} type="button" onClick={() => setQuestion(prompt)}>{prompt}</button>)}</div></div>}
+      {answers.map((answer, turn) => <article className="question-result" key={turn}>
+        <div className="chat-question"><span className="sr-only">You</span><p className="question-text">{answer.question}</p></div>
+        <div className="chat-answer"><span className="chat-sender">EVORA</span>
+          {!answer.supported && <span className="question-badge question-unsupported">Insufficient evidence</span>}
+          <AnswerMarkdown text={answer.answer} citationIds={answer.citations.map((_, index) => `citation-${answer.case_id}-${turn}-${index + 1}`)} />
+          {answer.supported && <details className="chat-sources"><summary>Sources ({answer.citations.length})</summary><ol className="question-citations">{answer.citations.map((citation, index) => <li key={index} data-observation-id={citation.observation_id} id={`citation-${answer.case_id}-${turn}-${index + 1}`} tabIndex={-1}>
+            <p>{citation.claim}</p><p className="source-locator">{citation.source_locator}</p>
+            <button type="button" aria-label={`Open source ${index + 1}`} onClick={() => inspectEvidence(citation.evidence_id, { source_locator: citation.source_locator, observation_id: citation.observation_id })}>Open source {index + 1}</button>
+          </li>)}</ol></details>}
+          <details className="answer-information"><summary>Response information</summary><dl><dt>Retrieval</dt><dd>{answer.retrieval_version}</dd>{answer.model_version && <><dt>Model</dt><dd>{answer.model_version}</dd></>}{answer.provenance_id && <><dt>Reference</dt><dd>{answer.provenance_id}</dd></>}</dl></details>
+        </div>
+      </article>)}
+      {busy && <article className="question-result"><div className="chat-question"><p className="question-text">{state.question.trim()}</p></div><div className="chat-answer"><span className="chat-sender">EVORA</span><p className="chat-thinking" role="status">Searching evidence<span aria-hidden="true">…</span></p></div></article>}
+    </div>
+    {state.message && <p id="case-question-message" role="alert">{state.message}{state.status === 'error' && <button type="button" className="text-action" onClick={() => { void submit(); }}>Retry</button>}</p>}
+    <form className="chat-composer" noValidate onSubmit={event => { event.preventDefault(); void submit(); }}>
+      <label className="sr-only" htmlFor="case-question">Message about this case</label>
+      <textarea id="case-question" name="question" maxLength={2000} rows={2} required placeholder="Ask a question or follow up…" value={state.question} disabled={busy}
         aria-invalid={state.status === 'error'} aria-describedby={state.message ? 'case-question-message' : undefined}
-        onChange={event => setQuestion(event.currentTarget.value)} />
-      <button type="submit" disabled={busy}>Ask question</button>
+        onChange={event => setQuestion(event.currentTarget.value)} onKeyDown={event => {
+          if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); if (!busy && state.question.trim()) void submit(); }
+        }} />
+      {busy ? <button key="stop" type="button" className="chat-send" onClick={event => { event.preventDefault(); cancel?.(); }} aria-label="Stop response">Stop</button> : <button key="send" type="submit" className="chat-send" disabled={!state.question.trim()} aria-label="Send message">Send <span aria-hidden="true">↑</span></button>}
     </form>
-    {busy && <p role="status">Searching case evidence...</p>}
-    {state.message && <p id="case-question-message" role="alert">{state.message}</p>}
-    {state.status === 'error' && <button type="button" onClick={() => { void submit(); }}>Retry question</button>}
-    <div className="conversation-stream" role="log" aria-label="Investigation conversation" aria-live="polite">{answers.map((answer, turn) => <article className="question-result" key={turn}>
-      <div className="chat-question"><h3>Question</h3><p className="question-text">{answer.question}</p></div><div className="chat-answer"><span className="section-label">AI-generated answer</span>
-      <p role="status"><strong className={`question-badge ${answer.supported ? 'question-supported' : 'question-unsupported'}`}>
-        {answer.supported ? 'Supported by Evidence' : 'Insufficient Evidence'}
-      </strong></p>
-      <AnswerMarkdown text={answer.answer} citationIds={answer.citations.map((_, index) => `citation-${answer.case_id}-${turn}-${index + 1}`)} />
-      <h3>Citations</h3>
-      {answer.supported ? <ol className="question-citations">{answer.citations.map((citation, index) => <li key={index} id={`citation-${answer.case_id}-${turn}-${index + 1}`} tabIndex={-1}>
-        <span className="section-label">SOURCE {index + 1}</span>
-        <p className="question-text">{citation.claim}</p>
-        <p className="question-text">Source locator: {citation.source_locator}</p>
-        {citation.observation_id && <details className="technical-details"><summary>Observation reference</summary><p className="identifier">{citation.observation_id}</p></details>}
-        <button type="button" aria-label={`Inspect source evidence ${citation.evidence_id}`}
-          onClick={() => inspectEvidence(citation.evidence_id, { source_locator: citation.source_locator, observation_id: citation.observation_id })}>Open source {index + 1}</button>
-      </li>)}</ol> : <p>No factual claims or citations were made. The available evidence is insufficient to answer this question.</p>}
-      <details className="technical-details"><summary>Answer details</summary><p className="identifier">Retrieval version: {answer.retrieval_version}</p>
-      {answer.provenance_id && <p className="identifier">Provenance: {answer.provenance_id}</p>}
-      {answer.model_version && <p className="identifier">Model: {answer.model_version}</p>}</details>
-    </div></article>)}</div>
   </section>;
 }

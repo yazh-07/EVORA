@@ -22,7 +22,7 @@ export function detectionStyle(value: string) {
   if (/person:face|\bface\b/i.test(value)) return { label: 'Face region · identity unknown', color: '#f59e0b' };
   if (/person:fullbody|^person$/i.test(value)) return { label: 'Person detection · identity unknown', color: '#f59e0b' };
   if (/person:upperbody/i.test(value)) return { label: 'Upper-body detection · identity unknown', color: '#f59e0b' };
-  if (/license_plate|\bplate\b/i.test(value)) return { label: 'License plate region', color: '#06b6d4' };
+  if (/license_plate|\bplate\b/i.test(value)) return { label: 'Possible plate · unverified', color: '#06b6d4' };
   if (/\b(vehicle|car)\b/i.test(value)) return { label: 'Vehicle detection', color: '#06b6d4' };
   return { label: 'Object', color: '#8b5cf6' };
 }

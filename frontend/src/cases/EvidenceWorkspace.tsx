@@ -7,6 +7,7 @@ import type { SourceFocus } from './mediaLocators';
 import { ObservationInspector } from './ObservationInspector';
 import { OriginalDownload } from './OriginalDownload';
 import { BulkProcessing } from './BulkProcessing';
+import { ProcessingHistory } from './ProcessingStatus';
 import { StartProcessing } from './StartProcessing';
 import { TranscriptViewer } from './TranscriptViewer';
 import { useApiClient } from '../api/ApiProvider';
@@ -58,10 +59,11 @@ export function EvidencePanels({ state, load, select, upload, sourceFocus, intak
   const page = state.page;
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
-  const [pendingCount, setPendingCount] = useState(0);
+  const [, setPendingCount] = useState(0);
   const [kind, setKind] = useState('all');
   const [sort, setSort] = useState('newest');
   const [intakeOpen, setIntakeOpen] = useState(false);
+  const [intakeRevision, setIntakeRevision] = useState(0);
   useEffect(() => { if (intakeRequest) setIntakeOpen(true); }, [intakeRequest]);
   const [detectedKind, setDetectedKind] = useState<string>();
   const [detecting, setDetecting] = useState(false);
@@ -72,14 +74,15 @@ export function EvidencePanels({ state, load, select, upload, sourceFocus, intak
     `${item.source_label} ${item.filename} ${item.id} ${item.sha256}`.toLowerCase().includes(query.trim().toLowerCase())
   ).sort((a, b) => sort === 'name' ? a.source_label.localeCompare(b.source_label) : sort === 'size' ? b.size_bytes - a.size_bytes : b.created_at.localeCompare(a.created_at));
   return <div className="evidence-workspace">
-    {state.uploaded && <p className="upload-confirmation" role="status">Evidence uploaded.</p>}
+    <div className="section-heading evidence-topbar"><h2 id="evidence-heading">Evidence</h2><div className="evidence-actions"><button ref={addButton} hidden={readOnly} type="button" className="button-primary" disabled={state.submitting} aria-expanded={intakeOpen} aria-controls="evidence-intake" onClick={() => { setIntakeOpen(value => !value); requestAnimationFrame(() => document.getElementById('batch-evidence-files')?.focus()); }}>Upload files</button><button type="button" className="icon-button" aria-label="Refresh evidence" title="Refresh evidence" disabled={state.status === 'loading'} onClick={() => load(page?.offset ?? 0)}>↻</button></div></div>
+    {state.uploaded && <p className="sr-only" role="status">Evidence uploaded.</p>}
     <section hidden={readOnly || !intakeOpen} className="panel intake-panel" aria-labelledby="upload-heading">
       <details className="intake-disclosure" id="evidence-intake" open={intakeOpen} onToggle={event => {
         setIntakeOpen(event.currentTarget.open);
         if (!event.currentTarget.open && event.currentTarget.contains(document.activeElement)) addButton.current?.focus();
       }}>
-      <summary><h2 id="upload-heading">Add evidence</h2></summary>
-      <EvidenceIntake upload={upload} submitting={state.submitting} />
+      <summary aria-disabled={state.submitting} onClick={event => { if (state.submitting) event.preventDefault(); }}><h2 id="upload-heading">Add evidence</h2></summary>
+      <EvidenceIntake key={intakeRevision} upload={upload} submitting={state.submitting} onUploaded={() => { setSelected(new Set()); setIntakeRevision(value => value + 1); setIntakeOpen(false); requestAnimationFrame(() => addButton.current?.focus({ preventScroll: true })); }} />
       <details className="single-intake"><summary>More upload options</summary>
       <form className="upload-form" noValidate aria-busy={state.submitting} onSubmit={async event => {
         event.preventDefault();
@@ -87,7 +90,7 @@ export function EvidencePanels({ state, load, select, upload, sourceFocus, intak
         const form = event.currentTarget;
         const data = new FormData(form);
         const file = (form.elements.namedItem('file') as HTMLInputElement).files?.[0] ?? null;
-        if (await upload(file, String(data.get('kind')), String(data.get('source_label') ?? ''), String(data.get('acquired_at') ?? ''))) { cancelDetection.current?.(); form.reset(); setDetectedKind(undefined); setIntakeOpen(false); }
+        if (await upload(file, String(data.get('kind')), String(data.get('source_label') ?? ''), String(data.get('acquired_at') ?? ''))) { cancelDetection.current?.(); form.reset(); setDetectedKind(undefined); setSelected(new Set()); setIntakeRevision(value => value + 1); setIntakeOpen(false); }
         else error.current?.focus();
       }}>
         <fieldset disabled={state.submitting}>
@@ -126,7 +129,7 @@ export function EvidencePanels({ state, load, select, upload, sourceFocus, intak
     </section>
     <div className={`workspace-layout ${state.detailStatus !== 'idle' ? 'evidence-has-selection' : ''}`}>
       <section className="panel" aria-labelledby="evidence-heading" aria-busy={state.status === 'loading'}>
-        <div className="section-heading evidence-actionbar"><div><h2 id="evidence-heading">Evidence</h2></div><div className="evidence-actions">{renderProcessing?.([...selected], setPendingCount)}<button ref={addButton} hidden={readOnly} type="button" className={pendingCount > 0 ? 'quiet-button' : 'button-primary'} aria-expanded={intakeOpen} aria-controls="evidence-intake" onClick={() => { setIntakeOpen(true); requestAnimationFrame(() => document.getElementById('batch-evidence-files')?.focus()); }}>＋ Add files</button><button type="button" className="icon-button" aria-label="Refresh evidence" title="Refresh evidence" disabled={state.status === 'loading'} onClick={() => load(page?.offset ?? 0)}>↻</button></div></div>{selected.size > 0 && <div className="selection-toolbar"><span>{selected.size} selected</span><button type="button" className="text-action" onClick={() => setSelected(new Set())}>Clear selection</button></div>}
+        <div className="evidence-processing">{renderProcessing?.([...selected], setPendingCount)}</div>{selected.size > 0 && <div className="selection-toolbar"><span>{selected.size} selected</span><button type="button" className="text-action" onClick={() => setSelected(new Set())}>Clear selection</button></div>}
 
         {processingControls}
 <div className="contextual-workspace"><details className="context-filters" open><summary>Filters</summary><div className="evidence-toolbar">
@@ -195,8 +198,9 @@ export function EvidenceProcessingInspection({ item, sourceFocus, externalRevisi
     <div hidden={view !== 'info'}>{visited.has('info') && <>
       <dl className="evidence-metadata"><dt>File</dt><dd>{item.filename}</dd><dt>Type</dt><dd>{item.kind.replaceAll('_', ' ')}</dd><dt>Size</dt><dd>{formatFileSize(item.size_bytes)}</dd><dt>Added</dt><dd>{new Date(item.created_at).toLocaleString()}</dd></dl>
       {selected && <section className="selected-result-info"><h3>Selected result</h3><p>{selected.source_locator}</p><p>Reported score: {selected.extraction_confidence}</p>{selected.raw_value !== selected.normalized_value && <p>{selected.raw_value}</p>}</section>}
-      <details className="processing-actions" open={processingOpen} onToggle={event => setProcessingOpen(event.currentTarget.open)}><summary>Processing history</summary>{processingOpen && (item.kind === 'audio' ? <p>Standalone audio transcription is unavailable.</p> : <StartProcessing caseId={item.case_id} evidenceId={item.id} sourceKind={item.kind} filename={item.filename} onCompleted={onProcessingCompleted} />)}</details>
-      <details className="technical-details"><summary>Technical</summary><Metadata item={item} detailed />{selected && <dl><dt>Observation</dt><dd className="identifier">{selected.id}</dd><dt>Processing output</dt><dd className="identifier">{selected.processing_run_id}</dd></dl>}</details>
+      <details className="processing-actions" open={processingOpen} onToggle={event => setProcessingOpen(event.currentTarget.open)}><summary>Processing history</summary>{processingOpen && <ProcessingHistory caseId={item.case_id} evidenceId={item.id} revision={refreshKey} />}</details>
+      {item.kind === 'document' && item.filename.toLowerCase().endsWith('.csv') && <details><summary>CSV format</summary><StartProcessing caseId={item.case_id} evidenceId={item.id} sourceKind={item.kind} filename={item.filename} onCompleted={onProcessingCompleted} /></details>}
+      <details className="technical-details"><summary>File verification</summary><Metadata item={item} detailed />{selected && <dl><dt>Observation</dt><dd className="identifier">{selected.id}</dd><dt>Processing output</dt><dd className="identifier">{selected.processing_run_id}</dd></dl>}</details>
       <details className="raw-observations" open={rawOpen} onToggle={event => setRawOpen(event.currentTarget.open)}><summary>Raw observations</summary>{rawOpen && <ObservationInspector focus={focus} caseId={item.case_id} evidenceId={item.id} processingRunId={focus?.processing_run_id} refreshKey={refreshKey} />}</details>
       {(item.kind === 'audio' || item.kind === 'video') && <details open={transcriptOpen} onToggle={event => setTranscriptOpen(event.currentTarget.open)}><summary>Transcript history</summary>{transcriptOpen && <TranscriptViewer item={item} refreshKey={refreshKey} onDerivedRun={onProcessingCompleted} />}</details>}
       <p className="scope-note">{formatSupport(item.filename, item.kind)}</p>

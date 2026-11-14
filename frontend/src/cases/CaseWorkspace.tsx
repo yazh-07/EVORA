@@ -156,7 +156,7 @@ export function CaseEvidenceWorkspace({ caseId, caseTitle = 'Investigation' }: {
               {id === 'graph' && <GraphView inspectEvidence={inspectEvidence} />}
               {id === 'entities' && <EntityEventInspector caseId={caseId} inspectEvidence={inspectEvidence} />}
               {id === 'triage' && <PriorityList inspectEvidence={inspectEvidence} />}
-              {id === 'questions' && <QuestionAnswer caseId={caseId} inspectEvidence={inspectEvidence} />}
+              {id === 'questions' && <QuestionAnswer caseId={caseId} inspectEvidence={inspectEvidence} activeView={activeTab === 'investigation' && tool === 'questions'} />}
             </>}</div>)}
           </>}
           {tab === 'report' && <ReportWorkspace caseId={caseId} caseTitle={caseTitle} investigate={() => { setTool('findings'); navigate('investigation'); }} />}

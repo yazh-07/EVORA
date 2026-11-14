@@ -9,7 +9,7 @@ import json
 from uuid import UUID, uuid4, uuid5
 
 
-PROMPT_TEMPLATE_VERSION = "forensic-case-synthesis/2"
+PROMPT_TEMPLATE_VERSION = "forensic-case-synthesis/3"
 MODEL_VERSION = "deterministic-extractor/1"
 
 

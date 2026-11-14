@@ -15,16 +15,15 @@ export function BulkProcessing({ caseId, caseTitle, evidenceIds = [], revision, 
   const [vision, setVision] = useState(true), [consent, setConsent] = useState(false), [settings, setSettings] = useState<Settings>();
   const [optionsOpen, setOptionsOpen] = useState(false), [progressOpen, setProgressOpen] = useState(false);
   useEffect(() => {
-    const request = new AbortController(); setError(''); setInventory(undefined);
+    const request = new AbortController(); setError('');
     void readBatchInventory(client, caseId, request.signal, vision).then(value => { if (!request.signal.aborted) setInventory(value); }).catch(() => { if (!request.signal.aborted) setError('Could not check pending files.'); });
     return () => request.abort();
   }, [client, caseId, revision, reload, state.status, vision]);
   useEffect(() => {
-    if (!vision) return;
     const request = new AbortController(); setConsent(false);
-    void client.request('get', '/api/v1/settings', { signal: request.signal }).then(value => { if (!request.signal.aborted) setSettings(value); }).catch(() => { if (!request.signal.aborted) setError('Could not load model settings.'); });
+    void client.request('get', '/api/v1/settings', { signal: request.signal }).then(value => { if (!request.signal.aborted) { setSettings(value); setVision(value.qa_provider === 'ollama'); } }).catch(() => { if (!request.signal.aborted) setError('Could not load model settings.'); });
     return () => request.abort();
-  }, [client, vision, preferences.qa_provider, preferences.qa_model, preferences.vision_model, preferences.vision_use_qa_model, preferences.offline_mode, preferences.has_chatgpt_connection, preferences.has_openai_key, preferences.qa_url, preferences.openai_base_url]);
+  }, [client, preferences.qa_provider, preferences.qa_model, preferences.vision_model, preferences.vision_use_qa_model, preferences.offline_mode, preferences.has_chatgpt_connection, preferences.has_openai_key, preferences.qa_url, preferences.openai_base_url]);
   const selected = new Set(evidenceIds);
   const scope = inventory?.filter(item => !selected.size || selected.has(item.evidence.id));
   const candidates = scope?.filter(item => item.status === 'pending' || (reprocess && item.status === 'ready') || (vision && ['image', 'video'].includes(item.evidence.kind) && item.status !== 'running' && !item.visionComplete));
@@ -39,20 +38,22 @@ export function BulkProcessing({ caseId, caseTitle, evidenceIds = [], revision, 
   const model = settings?.vision_use_qa_model ? settings.qa_model : settings?.vision_model;
   const hosted = settings?.qa_provider !== 'ollama';
   const endpoint = settings?.qa_provider === 'chatgpt' ? 'https://api.openai.com/v1' : hosted ? settings?.openai_base_url : settings?.qa_url;
+  const destination = settings?.qa_provider === 'chatgpt' ? 'ChatGPT' : (() => { try { return new URL(endpoint ?? '').host; } catch { return 'the selected provider'; } })();
   const visionReady = !!settings && !!model && !!endpoint && (!hosted || (!settings.offline_mode && consent && (settings.qa_provider === 'chatgpt' ? settings.has_chatgpt_connection : settings.has_openai_key)));
   const submit = async (ids: string[], forceReprocess = false) => {
     const includesMedia = inventory?.some(item => ids.includes(item.evidence.id) && ['image', 'video'].includes(item.evidence.kind));
     if (vision && includesMedia && !visionReady) return;
     setOptionsOpen(false);
     await controller.submit({ evidenceIds: ids, reprocess: reprocess || forceReprocess, ...(vision && settings && model && endpoint ? { vision: { provider: settings.qa_provider, model, endpoint, consent } } : {}) });
-    setConsent(false); onCompleted?.();
+    setConsent(false); if (hosted) setVision(false); onCompleted?.();
   };
   return <div className="batch-toolbar" aria-label="Evidence processing">
-    {busy ? <div className="batch-progress" role="status"><progress value={settled} max={Math.max(1, state.items.length)} aria-label="Evidence processing progress" /><span>Processing {settled}/{state.items.length || '…'}</span></div> : candidates?.length === 0 ? null : <button type="button" className="button-primary" disabled={!candidates?.length || (vision && hasMedia && !visionReady)} onClick={() => { if (candidates) void submit(candidates.map(item => item.evidence.id)); }}>{inventory ? selected.size ? `Process selected (${candidates?.length ?? 0})` : `Process ${candidates?.length ?? 0}` : 'Checking files…'}</button>}
-    {(hasMedia || retryHasMedia) && !busy && <div className="batch-media-options">
-      <label><input type="checkbox" checked={vision} onChange={event => { setVision(event.target.checked); setConsent(false); }} /> Analyze images and video</label>
-      {vision && <>{model ? <span className="batch-model">{model}</span> : <span>Choose an image model in Settings.</span>}
-        {hosted && model && <label><input type="checkbox" checked={consent} onChange={event => setConsent(event.target.checked)} /> Send images and sampled frames to {endpoint || 'the selected provider'}.</label>}</>}
+    <div className="batch-primary-row"><button type="button" className="button-primary batch-process" aria-label={busy ? 'Processing evidence' : selected.size ? 'Process selected files' : 'Process all files'} disabled={busy || !candidates?.length || (vision && hasMedia && !visionReady)} onClick={() => { if (candidates) void submit(candidates.map(item => item.evidence.id)); }}>{busy ? 'Processing…' : selected.size ? 'Process selected' : 'Process all'}<span aria-hidden="true" className="batch-count">{candidates?.length ?? 0}</span></button>
+      {busy && <span className="batch-progress" role="status"><progress value={settled} max={Math.max(1, state.items.length)} aria-label="Evidence processing progress" /><span>{settled}/{state.items.length}</span></span>}
+    </div>
+    {(scope?.some(item => ['image', 'video'].includes(item.evidence.kind)) || retryHasMedia) && <div className="batch-media-options">
+      <label><input type="checkbox" disabled={busy || !settings} checked={vision && (!hosted || consent)} onChange={event => { setVision(event.target.checked); setConsent(event.target.checked && hosted); }} /><span>{hosted ? `Analyze images and video · send to ${destination}` : 'Analyze images and video with Ollama'}</span></label>
+      {vision && !model && <span role="status">Choose an image model in Settings.</span>}
     </div>}
     <details className="action-menu batch-options" open={optionsOpen} onToggle={event => setOptionsOpen(event.currentTarget.open)}><summary aria-label="Processing options" title="Processing options">⌄</summary><div className="action-popover">
       {busy ? <button type="button" onClick={controller.stop}>Stop queue</button> : <><label><input type="checkbox" checked={reprocess} onChange={event => setReprocess(event.target.checked)} /> Reprocess completed files</label>
@@ -61,7 +62,7 @@ export function BulkProcessing({ caseId, caseTitle, evidenceIds = [], revision, 
       {!!state.items.length && <button type="button" onClick={() => { setProgressOpen(value => !value); setOptionsOpen(false); }}>Processing history</button>}
     </div></details>
     {!busy && state.items.length > 0 && <span className="batch-outcome" role="status">{ready} ready{failed.length > 0 ? ` · ${failed.length} failed` : ''}{unknown ? ` · ${unknown} unconfirmed` : ''}</span>}
-    {!busy && failed.length > 0 && <button type="button" className="text-action" disabled={vision && retryHasMedia && !visionReady} onClick={() => { void submit(failed.map(item => item.evidence.id), true); }}>Retry failed</button>}
+    {!busy && failed.length > 0 && <button type="button" className="text-action" disabled={retryHasMedia && (state.visionRequested || vision) && !visionReady} onClick={() => { void submit(failed.map(item => item.evidence.id), true); }}>Retry failed</button>}
     {error && <span role="alert">{error}<button type="button" onClick={() => setReload(value => value + 1)}>Retry</button></span>}
     {progressOpen && <section className="batch-history"><div className="section-heading"><h3>Processing history</h3><button type="button" onClick={() => setProgressOpen(false)} aria-label="Close processing history">×</button></div><BulkProcessingResults state={state} /></section>}
   </div>;

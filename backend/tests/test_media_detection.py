@@ -65,14 +65,23 @@ class MediaDetectionTests(unittest.TestCase):
                 parser(b'not media', **self.context())
         with patch.object(media, 'MAX_PIXELS', 1), self.assertRaisesRegex(media.MediaDetectionError, 'PIXEL_LIMIT'):
             media.parse_image(buf.getvalue(), **self.context())
-        # Classifier-result injection tests vehicle projection, not plate detection accuracy.
+        # A plate-shaped Haar response is not evidence of a plate.
         with patch.object(media.plates, 'model_info', return_value=None), patch.object(media, 'detect_frame', return_value=iter([
                 ('vehicle:license_plate', (5, 10, 70, 25), 2.0, 'test-classifier')])):
             result = media.parse_image(buf.getvalue(), **self.context())
-        self.assertEqual(result.entities[0].kind, 'visual_candidate')
-        self.assertTrue(result.observations[0].observation.raw_value.startswith('vehicle:license_plate'))
-        self.assertNotIn('vehicle', {entity.kind for entity in result.entities})
-        self.assertEqual(result.events[0].event.kind, 'visual.detected')
+        self.assertEqual(result.observations, ())
+        # The dedicated detector retains its box, reading and source lineage.
+        hit=dict(box=[5,10,70,25],detector_score=.95,text='TEST42',ocr_score=.9)
+        with patch.object(media.plates, 'model_info', return_value={'test':'fixture'}), patch.object(media.plates, 'detect', return_value=[hit]):
+            result=media.parse_image(buf.getvalue(), **self.context())
+        self.assertEqual(result.entities[0].kind,'visual_candidate')
+        self.assertEqual(result.observations[1].observation.normalized_value,'TEST42')
+        self.assertEqual(result.events[0].event.kind,'visual.detected')
+        for weak in [dict(hit,detector_score=.45),dict(hit,box=[5,10,8,8]),dict(hit,box=[5,10,10,50])]:
+            with patch.object(media.plates,'model_info',return_value={'test':'fixture'}),patch.object(media.plates,'detect',return_value=[weak]):
+                rejected=media.parse_image(buf.getvalue(),**self.context())
+            self.assertFalse(rejected.observations)
+
 
 
 class MediaPublicationTests(unittest.IsolatedAsyncioTestCase):

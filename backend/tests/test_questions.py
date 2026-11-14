@@ -22,6 +22,17 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 class QuestionTests(unittest.IsolatedAsyncioTestCase):
+    async def test_follow_up_uses_prior_question_but_rejects_unbounded_dialogue(self):
+        first=(await self.client.post(self.url,json={'question':'D-7'})).json()
+        self.assertTrue(first['supported'])
+        response=await self.client.post(self.url,json={'question':'Which records mention it?',
+            'conversation':[dict(question=first['question'],answer=first['answer'])]})
+        self.assertEqual(response.status_code,200,response.text)
+        self.assertTrue(response.json()['supported'])
+        for conversation in [[dict(question='x',answer='y')]*9,[dict(question='x',answer='y'*8001)]]:
+            rejected=await self.client.post(self.url,json={'question':'Follow up','conversation':conversation})
+            self.assertEqual(rejected.status_code,400,rejected.text)
+
     async def asyncSetUp(self):
         root = Path(self.enterContext(TemporaryDirectory()))
         self.app = create_app(root / "questions.sqlite3", storage_dir=root / "private",

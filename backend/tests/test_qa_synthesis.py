@@ -13,6 +13,22 @@ from backend.tests import test_questions as questions
 
 
 class SynthesisTests(unittest.TestCase):
+    def test_follow_up_dialogue_is_separate_from_source_evidence(self):
+        self.context['conversation']=[dict(question='Which device?',answer='The record mentions D-7.')]
+        with patch.object(qa_synthesis,'_chat',side_effect=[(self.result,'test'),({'supported':True},'test')]) as model:
+            citations,_,_=qa_synthesis.synthesize('What records mention it?',self.context,'test')
+        generated=model.call_args_list[0].args[2]
+        verified=model.call_args_list[1].args[2]
+        self.assertEqual(generated['conversation'],self.context['conversation'])
+        self.assertEqual(verified['conversation'],self.context['conversation'])
+        self.assertNotIn('conversation',generated['context'])
+        self.assertNotIn('conversation',verified['context'])
+        self.assertEqual(citations[0]['observation_id'],self.oid)
+        forged=dict(supported=True,claims=[dict(text='D-999 was recorded.',observation_ids=[self.oid])])
+        self.context['conversation']=[dict(question='D-999?',answer='D-999 was recorded.')]
+        with patch.object(qa_synthesis,'_chat',return_value=(forged,'test')),self.assertRaises(qa_synthesis.SynthesisError):
+            qa_synthesis.synthesize('What about it?',self.context,'test')
+
     def setUp(self):
         self.oid = str(uuid4())
         self.context = dict(observations=[dict(id=self.oid, evidence_id=str(uuid4()),

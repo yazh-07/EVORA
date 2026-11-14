@@ -12,7 +12,7 @@ export function formatSupport(filename: string, kind: string): string {
   if (kind === 'image' || kind === 'video') return 'Decodable media can be processed for visual candidates. Codec support is checked during processing.';
   return 'Document extraction supports UTF-8 plain text. The original is retained separately.';
 }
-export function EvidenceIntake({ upload, submitting }: { upload: (file: File | null, kind: string, label: string, acquired: string) => Promise<boolean>; submitting: boolean }) {
+export function EvidenceIntake({ upload, submitting, onUploaded }: { onUploaded?: (count: number) => void; upload: (file: File | null, kind: string, label: string, acquired: string) => Promise<boolean>; submitting: boolean }) {
   const [items, setItems] = useState<IntakeItem[]>([]);
   const [busy, setBusy] = useState(false), [dragging, setDragging] = useState(false);
   const [message, setMessage] = useState(''), [acquired, setAcquired] = useState('');
@@ -43,10 +43,12 @@ export function EvidenceIntake({ upload, submitting }: { upload: (file: File | n
         if (!ok) { setMessage('Upload stopped on this source. Check the error below and retry the remaining files. Confirmed uploads will not be repeated.'); return; }
         uploaded++;
       }
-      setMessage(`${uploaded} ${uploaded === 1 ? 'source uploaded' : 'sources uploaded'}.`);
+      readers.current.forEach(cancel => cancel()); readers.current.clear();
+      setItems([]); setAcquired(''); setMessage(''); onUploaded?.(uploaded);
     } finally { running.current = false; if (alive.current) setBusy(false); }
   };
   return <div className="batch-intake" aria-busy={busy}>
+    {!!items.length && <div className="intake-actions"><button className="button-primary" type="button" disabled={busy || submitting || !pending.length || items.some(item => item.detecting)} onClick={() => { void start(); }}>{busy ? 'Uploading originals…' : `Upload ${pending.length} ${pending.length === 1 ? 'source' : 'sources'}`}</button></div>}
     <div className={`drop-zone ${dragging ? 'dragging' : ''}`} onDragOver={event => { event.preventDefault(); if (!busy) setDragging(true); }} onDragLeave={() => setDragging(false)} onDrop={event => { event.preventDefault(); setDragging(false); add(Array.from(event.dataTransfer.files)); }}>
       <p>Drop files here</p>
       <label className="file-picker">Choose files<input id="batch-evidence-files" type="file" multiple disabled={busy || submitting} onChange={event => { add(Array.from(event.target.files ?? [])); event.target.value = ''; }} /></label>
@@ -60,7 +62,6 @@ export function EvidenceIntake({ upload, submitting }: { upload: (file: File | n
         <details className="context-help"><summary>Format support</summary><p>{formatSupport(item.file.name, item.kind)}</p></details>
       </li>)}</ol>
       <details className="context-help"><summary>Acquisition date (optional)</summary><label className="acquisition-field">Acquired at (optional, UTC)<input type="datetime-local" value={acquired} disabled={busy} onChange={event => setAcquired(event.target.value)} /><small>Applies to remaining uploads. Leave blank if unknown.</small></label></details>
-      <button className="button-primary" type="button" disabled={busy || submitting || !pending.length || items.some(item => item.detecting)} onClick={() => { void start(); }}>{busy ? 'Uploading originals…' : `Upload ${pending.length} ${pending.length === 1 ? 'source' : 'sources'}`}</button>
     </>}
     {message && <p role="status">{message}</p>}
   </div>;

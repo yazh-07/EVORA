@@ -99,3 +99,33 @@ button { font-weight: 550; }
 
 .media-analysis-actions { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--color-border); }
 .media-analysis-actions > summary { cursor: pointer; color: var(--color-accent); }
+
+/* Upload and processing actions keep separate, stable rows. */
+.evidence-topbar { margin-bottom: 16px; align-items: center; }
+.evidence-topbar h2 { font-size: 1.25rem; }
+.evidence-processing:empty { display: none; }
+.evidence-processing { margin-bottom: 20px; }
+.evidence-processing .batch-toolbar { display: grid; grid-template-columns: 190px 44px minmax(0,1fr); align-items: center; gap: 8px; width: 100%; }
+.batch-primary-row { display: contents; }
+.evidence-processing .batch-process { grid-area: 1 / 1; width: 100%; min-height: 44px; justify-content: space-between; white-space: nowrap; }
+.batch-count { min-width: 2ch; font-variant-numeric: tabular-nums; }
+.evidence-processing .batch-options { grid-area: 1 / 2; }
+.evidence-processing .batch-outcome { grid-area: 1 / 3; }
+.evidence-processing .batch-media-options { grid-area: 2 / 1 / auto / -1; margin: 0; min-height: 48px; padding: 8px 0; }
+.evidence-processing .batch-media-options label { align-items: flex-start; margin: 0; }
+.evidence-processing .batch-media-options input { flex-shrink: 0; margin-top: 3px; }
+.evidence-processing .batch-media-options span { overflow-wrap: anywhere; }
+.evidence-processing .batch-progress, .evidence-processing .batch-toolbar > .text-action { grid-column: 1 / -1; grid-row: 3; }
+.evidence-processing .batch-toolbar > [role=alert] { grid-column: 1 / -1; }
+.evidence-processing .batch-history { position: static; grid-column: 1 / -1; width: 100%; max-height: 340px; }
+.intake-actions { display: flex; justify-content: flex-end; margin-bottom: 16px; }
+.processing-history-list { list-style: none; padding: 0; }
+.processing-history-list > li { padding: 14px 0; border-bottom: 1px solid var(--color-border); }
+.processing-history-list > li > div { display: flex; justify-content: space-between; gap: 16px; font-size: .9375rem; }
+.processing-history-list details { margin-top: 8px; }
+.processing-history-list summary { font-size: .875rem; color: var(--color-secondary); }
+@media(max-width:560px) {
+  .evidence-processing .batch-toolbar { grid-template-columns: minmax(0,190px) 44px; }
+  .evidence-processing .batch-outcome { grid-area: 3 / 1 / auto / -1; }
+  .evidence-processing .batch-toolbar > .text-action { grid-row: 4; }
+}

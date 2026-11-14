@@ -163,6 +163,7 @@ function boundary(center: Point, target: Point, shape: string): Point {
 /** Own animation and gestures outside React's render cycle; inspector updates never restart physics. */
 function GraphMotion({ graph, view, onViewChange, selection }: { graph: Graph; view: GraphViewOptions; selection: GraphSelection | null; onViewChange?: (view: GraphViewOptions) => void }) {
   const anchor = useRef<SVGGElement>(null);
+  const fixed = useRef({ scope: '', positions: new Map<string, Point>() });
   const current = useRef({ view, onViewChange, selection });
   const runtime = useRef<{ redraw: () => void; zoom: (value: number) => void; highlight: () => void } | null>(null);
   current.current = { view, onViewChange, selection };
@@ -171,12 +172,15 @@ function GraphMotion({ graph, view, onViewChange, selection }: { graph: Graph; v
     const world = svg.querySelector<SVGGElement>('.graph-world')!;
     const canvas = svg.parentElement!;
     const simulation = forceSimulation(graph), layout = clusteredLayout(graph), seed = layout.positions;
+    const scope = `${graph.case_id}:${graph.analysis_run_id}`;
+    if (fixed.current.scope !== scope) fixed.current = { scope, positions: new Map() };
+    fixed.current.positions.forEach((point, id) => { const p = simulation.particles.get(id); if (p) Object.assign(p, point, { pinned: true }); });
     const nodeById = new Map(graph.nodes.map(n => [n.id, n]));
     const neighbors = new Map(graph.nodes.map(n => [n.id, new Set([n.id])]));
     graph.edges.forEach(e => { neighbors.get(e.from_id)!.add(e.to_id); neighbors.get(e.to_id)!.add(e.from_id); });
     let pan = { x: 0, y: 0 }, zoom = current.current.view.zoom, frame = 0, quiet = 0, last = 0, visible = true, autoFit = true;
     let bounds = { left: layout.minX, top: layout.minY, right: layout.minX + layout.width, bottom: layout.minY + layout.height };
-    let gesture: { pointer: number; node?: string; start: Point; previous: Point; moved: boolean; offset: Point; capture: Element } | undefined;
+    let gesture: { pointer: number; node?: string; start: Point; previous: Point; moved: boolean; offset: Point; capture: Element; wasPinned: boolean; origin?: Point } | undefined;
     const motion = matchMedia('(prefers-reduced-motion: reduce)');
     const point = (event: { clientX: number; clientY: number }) => {
       const matrix = svg.getScreenCTM();
@@ -207,6 +211,7 @@ function GraphMotion({ graph, view, onViewChange, selection }: { graph: Graph; v
       svg.querySelectorAll<SVGGElement>('[data-node-id]').forEach(el => {
         const id = el.dataset.nodeId!, p = simulation.particles.get(id)!, origin = seed.get(id)!;
         el.setAttribute('transform', `translate(${p.x - origin.x} ${p.y - origin.y})`);
+        el.dataset.fixed = String(fixed.current.positions.has(id));
       });
       svg.querySelectorAll<SVGGElement>('[data-edge-id]').forEach(el => {
         const a = simulation.particles.get(el.dataset.from!)!, b = simulation.particles.get(el.dataset.to!)!;
@@ -273,7 +278,8 @@ function GraphMotion({ graph, view, onViewChange, selection }: { graph: Graph; v
       autoFit = false;
       const start = point(event), id = target?.dataset.nodeId, p = id ? simulation.particles.get(id)! : undefined;
       gesture = { pointer: event.pointerId, node: id, start, previous: start, moved: false,
-        offset: p ? { x: p.x - (start.x - pan.x) / zoom, y: p.y - (start.y - pan.y) / zoom } : { x: 0, y: 0 }, capture: target ?? svg };
+        offset: p ? { x: p.x - (start.x - pan.x) / zoom, y: p.y - (start.y - pan.y) / zoom } : { x: 0, y: 0 }, capture: target ?? svg,
+        wasPinned: !!p?.pinned, origin: p ? { x: p.x, y: p.y } : undefined };
       if (p) p.pinned = true;
       gesture.capture.setPointerCapture(event.pointerId); canvas.classList.add('is-dragging');
       event.preventDefault(); if (p) wake();
@@ -293,7 +299,12 @@ function GraphMotion({ graph, view, onViewChange, selection }: { graph: Graph; v
     let suppressClick = false;
     const up = (event: PointerEvent) => {
       if (!gesture || gesture.pointer !== event.pointerId) return;
-      if (gesture.node) { simulation.particles.get(gesture.node)!.pinned = false; wake(); }
+      if (gesture.node) {
+        const p = simulation.particles.get(gesture.node)!;
+        if (gesture.moved && event.type !== 'pointercancel') { p.pinned = true; fixed.current.positions.set(gesture.node, { x: p.x, y: p.y }); }
+        else { p.pinned = gesture.wasPinned; if (event.type === 'pointercancel') Object.assign(p, gesture.origin); }
+        p.vx = 0; p.vy = 0; wake();
+      }
       suppressClick = gesture.moved || event.type === 'pointercancel';
       const capture = gesture.capture; gesture = undefined;
       if (capture.hasPointerCapture(event.pointerId)) capture.releasePointerCapture(event.pointerId);
@@ -314,9 +325,21 @@ function GraphMotion({ graph, view, onViewChange, selection }: { graph: Graph; v
     };
     const leave = () => { if (!gesture) illuminate(); };
     const reset = () => {
+      fixed.current.positions.clear();
+      simulation.particles.forEach((p, id) => Object.assign(p, seed.get(id), { vx: 0, vy: 0, pinned: false }));
       pan = { x: 0, y: 0 }; zoom = 1; autoFit = true;
       bounds = { left: layout.minX, top: layout.minY, right: layout.minX + layout.width, bottom: layout.minY + layout.height };
-      redraw();
+      wake();
+    };
+    const keyboard = (event: KeyboardEvent) => {
+      const target = (event.target as Element).closest<SVGGElement>('[data-node-id]');
+      const direction = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[event.key];
+      if (!target || !direction) return;
+      const p = simulation.particles.get(target.dataset.nodeId!); if (!p) return;
+      event.preventDefault(); event.stopPropagation(); autoFit = false;
+      const distance = event.shiftKey ? 50 : 10;
+      p.x += direction[0]! * distance; p.y += direction[1]! * distance; p.pinned = true; p.vx = p.vy = 0;
+      fixed.current.positions.set(target.dataset.nodeId!, { x: p.x, y: p.y }); redraw(); wake();
     };
     const visibility = () => { if (document.hidden) { cancelAnimationFrame(frame); frame = 0; } else wake(); };
     const observer = new IntersectionObserver(entries => {
@@ -326,6 +349,7 @@ function GraphMotion({ graph, view, onViewChange, selection }: { graph: Graph; v
     observer.observe(svg);
     const resize = new ResizeObserver(resizeViewport); resize.observe(canvas);
     svg.addEventListener('pointerdown', down); svg.addEventListener('pointermove', move);
+    svg.addEventListener('keydown', keyboard, true);
     svg.addEventListener('pointerup', up); svg.addEventListener('pointercancel', up); svg.addEventListener('lostpointercapture', up);
     svg.addEventListener('click', click, true); svg.addEventListener('wheel', wheel, { passive: false });
     svg.addEventListener('pointerover', over); svg.addEventListener('pointerleave', leave);
@@ -336,6 +360,7 @@ function GraphMotion({ graph, view, onViewChange, selection }: { graph: Graph; v
     return () => {
       cancelAnimationFrame(frame); observer.disconnect(); resize.disconnect(); runtime.current = null;
       svg.removeEventListener('pointerdown', down); svg.removeEventListener('pointermove', move);
+      svg.removeEventListener('keydown', keyboard, true);
       svg.removeEventListener('pointerup', up); svg.removeEventListener('pointercancel', up); svg.removeEventListener('lostpointercapture', up);
       svg.removeEventListener('click', click, true); svg.removeEventListener('wheel', wheel);
       svg.removeEventListener('pointerover', over); svg.removeEventListener('pointerleave', leave);

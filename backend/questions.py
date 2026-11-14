@@ -45,9 +45,16 @@ _STOPWORDS = frozenset(
 )
 
 
+class ConversationTurn(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True)
+    question: str = Field(min_length=1, max_length=2000)
+    answer: str = Field(min_length=1, max_length=8000)
+
+
 class CaseQuestion(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
     question: str = Field(min_length=1, max_length=2000)
+    conversation: list[ConversationTurn] = Field(default_factory=list, max_length=8)
 
     @field_validator("question")
     @classmethod
@@ -177,6 +184,10 @@ def ask_case_question(
             context = build_case_context(connection, case_id, observations)
         except (ValueError, TypeError, KeyError):
             raise AccessError(404, 'NOT_FOUND', 'Resource not found.') from None
+    if body.conversation:
+        # Conversation resolves follow-ups; only current authorized observations
+        # can support the answer. Prior replies never become source evidence.
+        context['conversation'] = [turn.model_dump() for turn in body.conversation]
     model = request.app.state.qa_model
     provider = request.app.state.qa_provider
     citations, model_version = [], MODEL_VERSION
@@ -200,7 +211,10 @@ def ask_case_question(
                 verification = dict(status='generation_unavailable_or_unverified')
         else:
             # Explicit extractive mode is useful offline and is labelled in provenance.
-            matches = _matching_observations(body.question, observations)
+            inquiry = body.question
+            if body.conversation:
+                inquiry = body.conversation[-1].question + '\nFollow-up: ' + inquiry
+            matches = _matching_observations(inquiry, observations)
             citations = [dict(
                 claim=f"{item['kind']} records {json.dumps(item['normalized_value'], ensure_ascii=False)}.",
                 evidence_id=item['evidence_id'], observation_id=item['id'],

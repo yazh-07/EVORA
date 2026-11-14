@@ -59,6 +59,13 @@ export function createQuestionController(client: ApiClient, caseId: string) {
       if (!enabled || state.status === 'submitting') return;
       publish({ ...initial(), question, history: state.history });
     },
+    cancel() {
+      pending?.abort(); pending = undefined;
+      publish({ ...state, status: state.history?.length ? 'ready' : 'idle', message: '' });
+    },
+    clear() {
+      pending?.abort(); pending = undefined; publish(initial());
+    },
     async submit() {
       if (!enabled || state.status === 'submitting' || session !== client.getSessionVersion()) return;
       const question = state.question.trim();
@@ -71,11 +78,11 @@ export function createQuestionController(client: ApiClient, caseId: string) {
       publish({ ...state, status: 'submitting', answer: null, message: '' });
       try {
         const answer = await client.request('post', '/api/v1/cases/{caseId}/questions', {
-          path: { caseId }, body: { question }, signal: request.signal,
+          path: { caseId }, body: { question, ...(state.history?.length ? { conversation: state.history.slice(-8).map(turn => ({ question: turn.question, answer: turn.answer.slice(0, 8000) })) } : {}) }, signal: request.signal,
         });
         if (!current()) return;
         if (!validAnswer(answer, caseId, question)) throw Error('Invalid case answer.');
-        publish({ ...state, status: 'ready', answer, history: [...(state.history ?? []), answer], message: '' });
+        publish({ ...state, status: 'ready', question: '', answer, history: [...(state.history ?? []), answer], message: '' });
       } catch (error) {
         if (!current()) return;
         publish({ ...state, status: 'error', answer: null, message: questionError(error) });

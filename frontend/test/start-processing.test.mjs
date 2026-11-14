@@ -24,10 +24,10 @@ const click = controller => StartProcessingPanel({ state: controller.getSnapshot
 test('explicit button dispatches bodyless generated request with UUID key; busy blocks duplicate; 202 retains actual run', async () => {
   const wait = deferred(); const calls = [];
   const { controller } = setup(async (url, options) => { calls.push({ url: String(url), ...options }); return wait.promise; });
-  assert.match(render(controller), />Start processing<\/button>/);
+  assert.match(render(controller), />Process source<\/button>/);
   assert.equal(calls.length, 0);
   click(controller);
-  assert.match(render(controller), /disabled="">Starting processing/);
+  assert.match(render(controller), /disabled="">Processing…/);
   assert.match(render(controller), /aria-busy="true"/);
   click(controller); await controller.submit();
   assert.equal(calls.length, 1);
@@ -125,7 +125,7 @@ test('selected evidence inspector opens on results and defers processing control
     state: { status: 'ready', page: { items: [detail], total: 1, limit: 20, offset: 0 }, detailStatus: 'ready', detail, submitting: false },
     load() {}, select() {}, upload: async () => false,
   })));
-  assert.match(markup, /Source views/); assert.match(markup, />Info<\/button>/); assert.doesNotMatch(markup, />Start processing<\/button>/);
+  assert.match(markup, /Source views/); assert.match(markup, />Info<\/button>/); assert.doesNotMatch(markup, />Process source<\/button>/);
 });
 
 test('explicit structured interpretation uses the dedicated endpoint and validates returned source/processing kinds', async () => {

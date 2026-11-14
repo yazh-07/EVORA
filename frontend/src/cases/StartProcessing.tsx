@@ -35,12 +35,11 @@ export function StartProcessingPanel({ state, submit, onCompleted }: { state: Pr
   const busy = state.status === 'submitting';
   return <div aria-busy={busy}>
     <button type="button" disabled={busy} onClick={() => { void submit(); }}>
-      {busy ? 'Starting processing...' : 'Start processing'}
+      {busy ? 'Processing…' : 'Process source'}
     </button>
     {state.message && <p role="alert">{state.message}</p>}
     {state.run && <>
       <ProcessingStatus run={state.run} onCompleted={onCompleted} />
-      <p>Starting again requests a new run.</p>
     </>}
   </div>;
 }

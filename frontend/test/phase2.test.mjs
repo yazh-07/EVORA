@@ -93,9 +93,10 @@ test('quick prompts populate the composer and citation actions retain frame loca
   const answer = { case_id: 'c', question: 'Where?', answer: '**Here** [1]', supported: true, citations: [{ evidence_id: 'e', observation_id: 'o', source_locator: 'frame=30; time_offset=1s', claim: 'Seen here' }], retrieval_version: 'v1' };
   const tree = QuestionAnswerPanel({ state: { question: '', status: 'ready', answer }, setQuestion: v => { question = v; }, submit: async () => {}, inspectEvidence: (...args) => { selected = args; } });
   const controls = elements(tree);
-  controls.find(e => e.type === 'button' && e.props.children?.[0] === 'Trace financial transactions').props.onClick();
-  assert.equal(question, 'Trace financial transactions');
-  controls.find(e => e.type === 'button' && e.props['aria-label'] === 'Inspect source evidence e').props.onClick();
+  const empty = elements(QuestionAnswerPanel({ state: { question: '', status: 'idle', answer: null }, setQuestion: v => { question = v; }, submit: async () => {}, inspectEvidence() {} }));
+  empty.find(e => e.type === 'button' && e.props.children === 'Summarize the evidence').props.onClick();
+  assert.equal(question, 'Summarize the evidence');
+  controls.find(e => e.type === 'button' && e.props['aria-label'] === 'Open source 1').props.onClick();
   assert.deepEqual(selected, ['e', { observation_id: 'o', source_locator: 'frame=30; time_offset=1s' }]);
 });
 
