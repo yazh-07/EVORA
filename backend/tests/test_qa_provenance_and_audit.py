@@ -104,7 +104,7 @@ class QAProvenanceAndAuditTests(unittest.IsolatedAsyncioTestCase):
         self.validate("CaseAnswer", answer)
         self.assertFalse(answer["supported"])
         self.assertEqual(len(answer["citations"]), 0)
-        self.assertIn("Insufficient evidence", answer["answer"])
+        self.assertIn("enough evidence", answer["answer"])
         provenance_id = answer.get("provenance_id")
         self.assertIsNotNone(provenance_id)
 

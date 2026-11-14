@@ -13,6 +13,19 @@ from backend.tests import test_questions as questions
 
 
 class SynthesisTests(unittest.TestCase):
+    def test_fenced_provider_json_still_requires_verified_source_claims(self):
+        calls=[]
+        def respond(request):
+            calls.append(request)
+            result=self.result if len(calls)==1 else {'supported':True}
+            return httpx.Response(200,json={'model':'test','choices':[{'finish_reason':'stop','message':{'content':'```json\n'+json.dumps(result)+'\n```'}}]})
+        real=httpx.Client
+        with patch.object(qa_synthesis.httpx,'Client',side_effect=lambda **kwargs:real(transport=httpx.MockTransport(respond))):
+            citations,_,verification=qa_synthesis.synthesize('Which device?',self.context,'test',qa_provider='openai',openai_api_key='synthetic-key')
+        self.assertEqual(len(calls),2)
+        self.assertEqual(citations[0]['observation_id'],self.oid)
+        self.assertEqual(verification['status'],'verified')
+
     def test_follow_up_dialogue_is_separate_from_source_evidence(self):
         self.context['conversation']=[dict(question='Which device?',answer='The record mentions D-7.')]
         with patch.object(qa_synthesis,'_chat',side_effect=[(self.result,'test'),({'supported':True},'test')]) as model:
@@ -166,6 +179,28 @@ class SynthesisTests(unittest.TestCase):
 
 
 class GeneratedQuestionTests(unittest.IsolatedAsyncioTestCase):
+    async def test_model_failure_shows_actual_records_and_names_references(self):
+        self.app.state.qa_model='test-model'
+        with patch('backend.questions.synthesize',side_effect=qa_synthesis.SynthesisError('Invalid JSON')):
+            response=await self.client.post(self.url,json={'question':'Summarize the evidence'})
+            data=response.json();self.validate('CaseAnswer',data)
+            self.assertEqual(data['answer_status'],'source_records')
+            self.assertTrue(data['citations']);self.assertTrue(data['references'])
+            self.assertNotIn('identity or guilt',data['answer'])
+            for ref in data['references']:
+                self.assertEqual(ref['evidence_id'],self.network['id'])
+                self.assertEqual(ref['filename'],self.network['filename'])
+                self.assertTrue(ref['excerpt']);self.assertTrue(ref['source_locator'])
+            missing=(await self.client.post(self.url,json={'question':'Explain unicorns'})).json()
+            self.assertEqual(missing['answer_status'],'unavailable')
+            self.assertFalse(missing['supported']);self.assertEqual(missing['citations'],[])
+            self.assertTrue(all(ref['usage']=='reviewed' for ref in missing['references']))
+            self.assertIn('Settings',missing['answer'])
+        with patch('backend.questions.synthesize') as model:
+            hello=(await self.client.post(self.url,json={'question':'Hello!'})).json()
+            self.assertEqual(hello['answer_status'],'conversation');self.assertEqual(hello['references'],[])
+            model.assert_not_called()
+
     asyncSetUp = questions.QuestionTests.asyncSetUp
     new_case = questions.QuestionTests.new_case
     upload = questions.QuestionTests.upload
@@ -180,10 +215,12 @@ class GeneratedQuestionTests(unittest.IsolatedAsyncioTestCase):
             with patch.object(qa_synthesis,'_chat',side_effect=[(result,'test'),({'supported':flag},'test')]):
                 response=await self.client.post(self.url,json={'question':'Summarize the recorded source.'})
             self.assertEqual(response.status_code,200)
-            answer=response.json();self.assertFalse(answer['supported']);self.assertEqual(answer['citations'],[])
+            answer=response.json();self.assertTrue(answer['supported']);self.assertEqual(answer['answer_status'],'source_records')
+            self.assertNotIn('A recorded observation is present.',answer['answer'])
+            self.assertTrue(all(c['observation_id'] in {o['id'] for o in self.stored_observations()} for c in answer['citations']))
             with self.app.state.database.connect() as connection:
                 payload=json.loads(connection.execute('SELECT payload_json FROM qa_provenance WHERE id=?',(answer['provenance_id'],)).fetchone()[0])
-            self.assertEqual(payload['citations'],[])
+            self.assertEqual(payload['citations'],answer['citations'])
             self.assertEqual(payload['verification']['status'],'generation_unavailable_or_unverified')
 
     async def test_generated_answer_private_context_and_unknown_provenance(self):
@@ -221,8 +258,9 @@ class GeneratedQuestionTests(unittest.IsolatedAsyncioTestCase):
                 response = await self.client.post(self.url, json={'question': 'D-7?'})
             self.assertEqual(response.status_code, 200)
             answer = response.json()
-            self.assertFalse(answer['supported']); self.assertEqual(answer['citations'], [])
-            self.assertIn('unavailable', answer['answer'])
+            self.assertTrue(answer['supported']); self.assertEqual(answer['answer_status'],'source_records')
+            self.assertTrue(all(c['observation_id'] in {o['id'] for o in self.stored_observations()} for c in answer['citations']))
+            self.assertIn('source records',answer['answer'])
 
     async def test_invalid_provider_metadata_cannot_publish_partial_citations(self):
         self.app.state.qa_model = 'test-model'
@@ -231,5 +269,6 @@ class GeneratedQuestionTests(unittest.IsolatedAsyncioTestCase):
                         observation_id=item['id'], source_locator=item['source_locator'])
         with patch('backend.questions.synthesize', return_value=([citation], None, {'status': 'verified'})):
             answer = (await self.client.post(self.url, json={'question': 'D-7?'})).json()
-        self.assertFalse(answer['supported'])
-        self.assertEqual(answer['citations'], [])
+        self.assertTrue(answer['supported'])
+        self.assertEqual(answer['answer_status'],'source_records')
+        self.assertNotIn('A partial claim',answer['answer'])

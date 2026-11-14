@@ -18,6 +18,9 @@ const uuid = (value: unknown): value is string => typeof value === 'string' &&
 function validAnswer(answer: CaseAnswer, caseId: string, question: string): boolean {
   return !!answer && answer.case_id === caseId && answer.question === question &&
     typeof answer.supported === 'boolean' && text(answer.answer) && text(answer.retrieval_version) &&
+    (answer.answer_status === undefined || ['generated','source_records','unavailable','no_evidence','unsupported','conversation'].includes(answer.answer_status)) &&
+    (answer.references_total === undefined || (Number.isSafeInteger(answer.references_total) && answer.references_total >= 0)) &&
+    (answer.references === undefined || (Array.isArray(answer.references) && answer.references.length <= 12 && answer.references.every(ref => uuid(ref.evidence_id) && uuid(ref.observation_id) && typeof ref.filename === 'string' && typeof ref.excerpt === 'string' && ref.excerpt.length <= 1600 && text(ref.source_locator) && ['cited', 'reviewed'].includes(ref.usage)))) &&
     Array.isArray(answer.citations) && (answer.supported ? answer.citations.length > 0 : answer.citations.length === 0) &&
     answer.citations.every(citation => !!citation && text(citation.claim) && uuid(citation.evidence_id) &&
       text(citation.source_locator) && (citation.observation_id === undefined || uuid(citation.observation_id)));

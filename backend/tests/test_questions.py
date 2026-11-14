@@ -103,7 +103,7 @@ class QuestionTests(unittest.IsolatedAsyncioTestCase):
 
     def assert_supported(self, body, expected):
         self.assertIs(body["supported"], True)
-        self.assertTrue(body["answer"].startswith("Evidence in this case confirms "))
+        self.assertTrue(body["answer"].startswith("Here’s what the matching records say:"))
         expected = sorted(expected, key=lambda item: (item["evidence_id"], item["id"]))
         self.assertEqual([citation["observation_id"] for citation in body["citations"]],
                          [item["id"] for item in expected])
@@ -119,8 +119,8 @@ class QuestionTests(unittest.IsolatedAsyncioTestCase):
     def assert_unsupported(self, body):
         self.assertIs(body["supported"], False)
         self.assertEqual(body["citations"], [])
-        self.assertEqual(body["answer"], "Insufficient evidence in this case to support the inquiry; "
-                         "candidate observations do not establish identity or guilt.")
+        expected = "There aren’t any processed records to search yet. Upload and process evidence, then ask me about it." if body['answer_status']=='no_evidence' else "I couldn’t find enough evidence to answer that. Try a specific file, identifier or time."
+        self.assertEqual(body['answer'], expected)
 
     def test_operation_matches_contract(self):
         path = "/api/v1/cases/{caseId}/questions"

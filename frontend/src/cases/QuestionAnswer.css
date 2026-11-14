@@ -39,3 +39,10 @@
 .answer-markdown blockquote { border-left: 2px solid var(--color-border); padding-left: 16px; margin-inline: 0; color: var(--color-secondary); }
 .claim-reference { display: inline-block; font-size: .75rem; padding-inline: 5px; background: var(--color-tab-active); border-radius: 4px; }
 @media (max-width: 560px) { .chat-heading { padding: 10px 14px; min-height: 64px; }.conversation-stream { padding: 16px 14px; }.case-chat .chat-composer { padding: 10px; gap: 8px; }.chat-question { max-width: 95%; }.chat-composer textarea { min-height: 58px; }.quick-prompts { flex-direction: column; } }
+
+.chat-references { margin-top: 16px; padding: 12px 16px; border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-neutral); }
+.chat-references h4 { margin: 0; font-size: .9375rem; }
+.chat-references ul { list-style: none; padding: 0; margin: 8px 0; display: grid; gap: 12px; }
+.chat-references .source-locator { display: block; color: var(--color-secondary); font-size: .875rem; overflow-wrap: anywhere; }
+.chat-references blockquote { margin: 4px 0 0; padding-left: 10px; border-left: 2px solid var(--color-border); font-size: .9375rem; white-space: pre-wrap; }
+.references-scope, .chat-references > p { font-size: .875rem; color: var(--color-secondary); }

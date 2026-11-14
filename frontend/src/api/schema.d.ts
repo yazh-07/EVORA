@@ -1660,6 +1660,21 @@ export interface components {
             observation_id?: string;
         };
         CaseAnswer: {
+            /** @enum {string} */
+            answer_status?: "generated" | "source_records" | "unavailable" | "no_evidence" | "unsupported" | "conversation";
+            references_total?: number;
+            references?: {
+                /** Format: uuid */
+                evidence_id: string;
+                /** Format: uuid */
+                observation_id: string;
+                filename: string;
+                source_label: string;
+                source_locator: string;
+                excerpt: string;
+                /** @enum {string} */
+                usage: "cited" | "reviewed";
+            }[];
             /** Format: uuid */
             case_id: string;
             question: string;

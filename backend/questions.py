@@ -12,7 +12,7 @@ from fastapi import APIRouter, Depends, Request, Response
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from backend.audit import record_audit_event
-from backend.qa_synthesis import synthesize, SynthesisError
+from backend.qa_synthesis import synthesize, SynthesisError, MODEL_DERIVED_KINDS
 from backend.errors import AccessError
 from backend.entities import _valid_entity
 from backend.events import _valid_event
@@ -26,10 +26,7 @@ from backend.qa_provenance import (MODEL_VERSION, PROMPT_TEMPLATE_VERSION,
 
 
 RETRIEVAL_VERSION = "case-context-retrieval/2"
-_INSUFFICIENT = (
-    "Insufficient evidence in this case to support the inquiry; "
-    "candidate observations do not establish identity or guilt."
-)
+_INSUFFICIENT = "I couldn’t find enough evidence to answer that. Try a specific file, identifier or time."
 _TOKENS = re.compile(r"[^\W_]+(?:[.-][^\W_]+)*", re.UNICODE)
 _IDENTITY_OR_GUILT = re.compile(
     r"\b(?:guilt\w*|innocen\w*|identity|identities|identify|identified|identification|"
@@ -196,7 +193,8 @@ def ask_case_question(
     source_text = ' '.join(item['normalized_value'] for item in observations)
     unknown_id = any(not re.search(r'(?<![\w.])' + re.escape(value) + r'(?![\w.])',
                                   source_text, re.I) for value in asked_ids)
-    if observations and not unknown_id and not _IDENTITY_OR_GUILT.search(body.question):
+    conversational = bool(re.fullmatch(r'(?:hi|hello|hey|thanks|thank you|help|what can you do)[!.? ]*', body.question.strip(), re.I))
+    if observations and not conversational and not unknown_id and not _IDENTITY_OR_GUILT.search(body.question):
         if model:
             model_version = provider + ':' + model
             try:
@@ -220,13 +218,50 @@ def ask_case_question(
                 evidence_id=item['evidence_id'], observation_id=item['id'],
                 source_locator=item['source_locator']) for item in matches]
             verification = dict(status='extractive_mode')
+    status = 'generated' if model else 'source_records'
+    if verification['status'] == 'generation_unavailable_or_unverified':
+        inquiry = body.question
+        if body.conversation:
+            inquiry = body.conversation[-1].question + '\n' + inquiry
+        matches = _matching_observations(inquiry, observations)
+        if not matches and re.search(r'\b(summarize|summary|overview)\b', inquiry, re.I):
+            # Give broad summaries a bounded spread of source records.
+            matches = sorted(observations, key=lambda item:(item['evidence_id'],item['source_locator']))
+        citations = [dict(claim=('Model-derived, unverified: ' if item['kind'] in MODEL_DERIVED_KINDS else '') + item['normalized_value'], evidence_id=item['evidence_id'],
+            observation_id=item['id'],source_locator=item['source_locator']) for item in matches[:6]]
+        status = 'source_records' if citations else 'unavailable'
+        verification['fallback'] = 'source_records' if citations else 'none'
     supported = bool(citations)
-    claims_text = " ".join(dict.fromkeys(citation['claim'] for citation in citations))
-    answer = claims_text if model else 'Evidence in this case confirms these recorded observations: ' + claims_text
+    claims_text = "\n\n".join(dict.fromkeys(citation['claim'] for citation in citations))
+    answer = claims_text
+    if status == 'source_records' and supported:
+        answer = "Here’s what the matching records say:\n\n" + claims_text
+        if model:
+            answer = "I couldn’t verify a summary from the selected model. Here are the matching source records instead:\n\n" + claims_text
     if not supported:
+        status = 'unsupported'
         answer = _INSUFFICIENT
         if verification['status'] == 'generation_unavailable_or_unverified':
-            answer = 'A verified analytical answer is unavailable. ' + _INSUFFICIENT
+            status = 'unavailable'
+            answer = "I couldn’t get a verified reply from the selected model. Check its connection in Settings, or try a more specific question."
+        elif not observations:
+            status = 'no_evidence'
+            answer = "There aren’t any processed records to search yet. Upload and process evidence, then ask me about it."
+    if conversational:
+        status = 'conversation'
+        answer = "Hi! I can help you explore this case, summarize records and trace answers back to their sources. What would you like to check?"
+    evidence_map = {item['id']:item for item in context['evidence']}
+    cited_ids = {item.get('observation_id') for item in citations}
+    ranked = sorted(observations, key=lambda item: (item['id'] not in cited_ids, item['evidence_id'],item['source_locator']))
+    references = []
+    for item in ranked[:12]:
+        source = evidence_map[item['evidence_id']]
+        references.append(dict(evidence_id=item['evidence_id'],observation_id=item['id'],
+            filename=source['filename'],source_label=source['source_label'],source_locator=item['source_locator'],
+            excerpt=item['normalized_value'][:1600],usage='cited' if item['id'] in cited_ids else 'reviewed'))
+    if conversational:
+        references = []
+    verification['answer_status'] = status
     created_at = datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
     # No SQLite write lock is held across inference. Check access again afterwards.
     if not request.app.state.case_access.allows(grant.actor.id, grant.case_id):
@@ -245,4 +280,5 @@ def ask_case_question(
     return dict(case_id=case_id, question=body.question, supported=supported,
         answer=answer, citations=citations, retrieval_version=RETRIEVAL_VERSION,
         provenance_id=provenance_id, model_version=model_version,
-        prompt_template_version=PROMPT_TEMPLATE_VERSION)
+        prompt_template_version=PROMPT_TEMPLATE_VERSION, answer_status=status, references=references,
+        references_total=0 if conversational else len(observations))

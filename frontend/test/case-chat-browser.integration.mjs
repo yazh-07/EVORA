@@ -52,6 +52,9 @@ try {
   await input.fill('When did it disconnect?'); await page.getByRole('button', { name: 'Send message', exact: true }).click();
   await page.locator('.chat-answer .answer-markdown').getByText('Device D-7 disconnected at 10:00.', { exact: true }).waitFor();
   assert.equal(await page.locator('.question-result').count(), 2); assert.equal(calls.length, 4);
+  const references=page.getByRole('region',{name:'References'}).last();
+  await references.getByRole('button',{name:'connections.txt',exact:true}).first().waitFor();
+  assert.ok(await references.getByText(/Used/).count());
   await page.locator('.chat-sources > summary').last().click(); await page.locator('.chat-sources').last().getByRole('button', { name: 'Open source 1', exact: true }).click();
   await page.getByRole('heading', { name: 'Connection notes', exact: true }).waitFor();
   await page.getByRole('tab', { name: 'Findings', exact: true }).click(); await page.getByRole('button', { name: 'Ask', exact: true }).click();

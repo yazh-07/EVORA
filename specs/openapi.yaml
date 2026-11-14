@@ -1903,6 +1903,23 @@ components:
       additionalProperties: false
       required: [case_id, question, supported, answer, citations, retrieval_version]
       properties:
+        answer_status: { type: string, enum: [generated, source_records, unavailable, no_evidence, unsupported, conversation] }
+        references_total: { type: integer, minimum: 0 }
+        references:
+          type: array
+          maxItems: 12
+          items:
+            type: object
+            additionalProperties: false
+            required: [evidence_id, observation_id, filename, source_label, source_locator, excerpt, usage]
+            properties:
+              evidence_id: { type: string, format: uuid }
+              observation_id: { type: string, format: uuid }
+              filename: { type: string }
+              source_label: { type: string }
+              source_locator: { type: string }
+              excerpt: { type: string, maxLength: 1600 }
+              usage: { type: string, enum: [cited, reviewed] }
         case_id: { type: string, format: uuid }
         question: { type: string }
         supported: { type: boolean }

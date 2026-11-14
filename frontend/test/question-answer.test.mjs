@@ -104,7 +104,7 @@ test('unsupported inquiry explicitly reports uncertainty, no factual claims and 
   assert.equal(calls.length, 1); assert.equal(c.getSnapshot().status, 'ready');
   assert.deepEqual(c.getSnapshot().answer.citations, []);
   const html = render(c);
-  assert.match(html, /question-unsupported/); assert.match(html, /Insufficient evidence/);
+  assert.match(html, /question-unsupported/); assert.match(html, /No matching evidence/);
   assert.match(html, /Insufficient evidence in this case to support the inquiry/);
   assert.doesNotMatch(html, /chat-sources/);
   assert.doesNotMatch(html, /Open source [0-9]|<li|Supported by Evidence/);
