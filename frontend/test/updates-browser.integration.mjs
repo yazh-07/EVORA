@@ -37,7 +37,7 @@ try {
   await page.goto(origin);
   await page.getByRole('button', { name: 'Update available', exact: true }).click();
   const panel = page.getByRole('region', { name: 'Application updates' });
-  await panel.getByText('Version 1.3.11', { exact: true }).waitFor();
+  await panel.getByText('Version 1.3.12', { exact: true }).waitFor();
   await panel.getByText('Version 9.0.0 available', { exact: true }).waitFor();
   await Promise.all([page.waitForResponse(response => response.url().endsWith('/api/v1/updates') && response.status() === 200), panel.getByRole('switch', { name: 'Check automatically' }).uncheck()]);
   assert.equal((await (await context.request.get(origin + '/api/v1/settings')).json()).automatic_update_checks, false);
