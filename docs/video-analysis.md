@@ -21,7 +21,7 @@ Install FFmpeg and ffprobe and the optional package into the Python environment 
 python -m pip install -r requirements-speech.txt
 ```
 
-Download a CTranslate2-format Whisper model directory separately. Point `EVORA_SPEECH_MODEL_PATH` to that directory (containing `model.bin`, configuration, tokenizer and vocabulary) before starting the backend. The application never downloads speech models during evidence processing. Select a multilingual model for multilingual material; the `tiny.en` model used in validation is English-only.
+Download a CTranslate2-format Whisper model directory separately. Point `EVORA_SPEECH_MODEL_PATH` to that directory (containing `model.bin`, configuration, tokenizer and vocabulary) before starting the backend. The application never downloads speech models during evidence processing. Select a multilingual model for multilingual material; `tiny.en` is English-only.
 
 ```sh
 export EVORA_SPEECH_MODEL_PATH=/absolute/path/to/downloaded/whisper-model
@@ -36,13 +36,10 @@ The existing visual decoder limits still apply: 50 MiB original size, 25 million
 
 If any requested frame, decode or speech stage fails, the entire new run fails without publishing partial results. Earlier completed results remain selected. A later ordinary extraction can become the newest output; historical outputs retain their references. Re-run video enrichment when its results should be the current output. Existing deployment requirements for graph publication still apply.
 
-## Validation performed
+## Tests
 
 - Real codec decoding, capped samples across a clip, per-frame uniqueness, OCR/descriptions, candidate tracks, original hashes, private provenance, idempotent replay and analysis-snapshot inclusion were tested through the API with a labeled vision provider double.
 - Consent, wrong source type, missing speech configuration, failed-frame atomicity and absent-audio handling were tested. Tracking checks cover separate nearby candidates, category changes and gaps.
 - The browser test exercises consent, frame limits, result display, timestamp seeking, provenance, failure recovery and mobile layout. It uses a vision protocol double, not an accuracy benchmark.
-- A live run used local Ollama `qwen3-vl:2b-instruct` and Faster Whisper 1.2.1 with a downloaded `tiny.en` model. A controlled 11-second MP4 combined the repository photograph with the public [Whisper JFK speech fixture](https://github.com/openai/whisper/blob/main/tests/jfk.flac). It produced two scene/OCR samples, one candidate track and two timed speech segments. This constructed clip is not genuine investigation footage and does not validate forensic accuracy. The earlier [image accuracy failures](real-evidence-validation.md) still apply.
-
-The final complete backend suite passed 884 tests with seven skipped; all 375 frontend tests and the production build passed. A real silent PCM control produced no speech segments. Revoking case access during a frame request stopped later frame transmissions and prevented publication. Recorded live outputs are available in [the validation results](validation/live-video-results.json).
 
 To repeat the live API test, configure the speech environment and a local vision service, then run `python scripts/validate_live_video.py --video /path/to/clip.mp4 --model YOUR_VISION_MODEL --endpoint http://127.0.0.1:11434 --output /tmp/new-video-test`. Use a new output directory. Browser acceptance runs with `node frontend/test/video-understanding.integration.mjs` and the same Playwright/Python environment overrides used by the image test. Test artifacts are isolated from existing cases.

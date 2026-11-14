@@ -29,7 +29,7 @@ EVORA organizes each case into five primary sections:
 - **Local credentials:** Argon2id password hashing, HttpOnly session cookies, role-based access (Administrator, Investigator, Reviewer), and single-use recovery code.
 - **Local AI assistance:** Direct Ollama integration (e.g. `llama3.1:8b`) with strict loopback isolation and grounded evidence citations.
 
-See [NEW_UPDATE_FEATURES.md](docs/NEW_UPDATE_FEATURES.md) and [docs/local-accounts.md](docs/local-accounts.md) for full implementation details.
+See [local accounts](docs/local-accounts.md) for account setup and permissions.
 
 ## Screenshots
 
@@ -133,9 +133,9 @@ For the complete local workstation, use a persistent `.venv` with Python 3.14.8,
 
 The Evidence toolbar processes pending files directly, or an explicit selection. Open a source to switch between Results, Original and Info; processing history and raw technical references live in Info.
 
-The case Locations view opens a street map with online OpenStreetMap tiles. Satellite imagery is available in the same basemap selector. Choose Offline map to use bundled country boundaries or a local archive without external map requests; the choice is remembered in this browser. GPS records link to their original source rows; approximate markers identify recognized place mentions, rather than a person's position. Open a `.pmtiles` file through Map actions for regional detail during the current session. Common vector geometry layers and PNG/JPEG/WebP raster tiles are supported; labels/custom archive styles are not imported. Map views have their own Offline/Street map/Satellite selector and do not change the local-model settings. For reported GPS points, Street View opens Google’s available panorama in a new tab, sending coordinates only. See [map scope and remaining work](GPS_MAP_PLAN.md).
+The case Locations view opens a street map with online OpenStreetMap tiles. Satellite imagery is available in the same basemap selector. Choose Offline map to use bundled country boundaries or a local archive without external map requests; the choice is remembered in this browser. GPS records link to their original source rows; approximate markers identify recognized place mentions, rather than a person's position. Open a `.pmtiles` file through Map actions for regional detail during the current session. Common vector geometry layers and PNG/JPEG/WebP raster tiles are supported; labels/custom archive styles are not imported. Map views have their own Offline/Street map/Satellite selector and do not change the local-model settings. For reported GPS points, Street View opens Google’s available panorama in a new tab, sending coordinates only.
 
-For the optional local plate detector and OCR, run `./scripts/setup-plates.sh` before starting EVORA. This creates an isolated Python 3.13 environment, installs `requirements-plates.txt`, and explicitly downloads hash-checked models into `storage/models/plates`. It does not change the main text-processing environment. Restart and reprocess selected images/videos to produce plate readings. Inference uses local files; the included sample is a smoke check, not a region-specific accuracy benchmark. See [plate scope and evaluation plan](PLATE_RECOGNITION_PLAN.md).
+For the optional local plate detector and OCR, run `./scripts/setup-plates.sh` before starting EVORA. This creates an isolated Python 3.13 environment, installs `requirements-plates.txt`, and explicitly downloads hash-checked models into `storage/models/plates`. It does not change the main text-processing environment. Restart and reprocess selected images/videos to produce plate readings. Inference uses local files; the included sample is a smoke check, not a region-specific accuracy benchmark.
 
 For frontend development, `npm --prefix frontend run dev` serves the workspace at `http://127.0.0.1:5173`. `EVORA_API_BASE_URL` is read at build/start time; the demo above serves the UI and API together.
 

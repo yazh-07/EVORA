@@ -1,23 +1,17 @@
-# EVORA LLM RAG & Analytical Context Retrieval Policy (G03)
+# Model use and evidence grounding
 
-## 1. Scope and Authority
-This document defines the governing boundary, privacy invariants, and citation verification rules for evidence-grounded question answering and Retrieval-Augmented Generation (RAG) across the EVORA workstation.
+Model requests use the provider selected in Settings. **Local models only** blocks hosted inference. Hosted image and video processing requires confirmation of the destination and model. Connecting a provider or fetching its model catalog does not transmit evidence.
 
-## 2. Privacy Boundary and Data Sovereignty
-- **Default Offline Execution:** All analytical retrieval, embedding lookups, entity extraction, and deterministic grounding execute locally. No unencrypted evidence, raw bytes, or sensitive investigative queries leave the workstation boundary by default.
-- **Approved Providers:** Any external generative inference must use explicitly approved, zero-data-retention enterprise endpoints with client-side credential controls. Real case evidence is never used for external model training.
-- **Audit Masking:** Application logs and public `audit_events` record safe references (`action='askCaseQuestion'`, `target_id=<UUID>`), strictly redacting raw question strings, generated text, and source contents.
+## Case Q&A
 
-## 3. Retrieval Invariants (A16B)
-- Retrieval is strictly scoped to the authorized case and the latest completed analysis run (`AnalysisInputSnapshot`).
-- Multi-context retrieval aggregates:
-  1. Source-located candidate observations (`row`, `chars`, `time`, `media` locators).
-  2. Incident graph nodes and candidate edges.
-  3. Labeled findings (`corroboration`, `conflict`, `gap`, `cluster`, `anomaly`, `hypothesis`).
-  4. Pinned triage scores and contributing factor breakdowns.
-- Cross-case leakage is structurally impossible: queries without same-case matches return `supported=False` with zero citations.
+Retrieval uses the authorized case and its selected completed analysis snapshot. Context can include source observations, candidate graph relationships, findings and triage factors. References retain their evidence, processing-run and source-locator identifiers.
 
-## 4. Citation Verification and Grounding (U10C)
-- **Supported Answers:** If `supported=True`, every factual claim in the answer must carry at least one valid `AnswerCitation` linking to a verified same-case Evidence ID and exact `source_locator`.
-- **Unsupported Inquiries:** If evidence is absent, contradictory, or requests subjective guilt/identity conclusions, the system falls back to `supported=False`, provides an honest uncertainty notice, and emits zero citations.
-- **Provenance Linkage:** Complete retrieval snapshots, prompt templates, model versions, and verification results are persisted immutably in authorized private storage (`qa_provenance`).
+Answers must pass citation and grounding checks before publication. Unsupported questions return an unsupported result. Valid citations identify the supplied source; they do not establish that a model's interpretation is correct. Candidate associations and model scores do not establish identity or guilt.
+
+Private Q&A provenance records the retrieval inputs, prompt/model information and verification results. Public audit records use action and resource references rather than raw questions, answers or evidence text.
+
+## Data handling
+
+Original evidence remains in the local vault. Hosted processing transmits the content needed for the selected operation to the configured provider. Retention and account terms depend on that provider; EVORA cannot guarantee a provider's handling of submitted data.
+
+Protect the workstation, database, vault, graph and provider credentials with operating-system access controls. See [ChatGPT connection](chatgpt-connection.md), [image processing](image-description-and-ocr.md) and [security and limitations](THREAT_PROVENANCE_LIMITATIONS.md).

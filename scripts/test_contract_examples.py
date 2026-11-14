@@ -198,6 +198,7 @@ class WireExamples(unittest.TestCase):
             "getSettings", "getMediaCapabilities", "setupLocalAdministrator", "recoverLocalAccount",
             "updateLocalAccount", "loginLocalAccount", "getChatGPTStatus", "listLocalAccounts",
             "listCaseMembers", "getAuthStatus", "logoutLocalAccount",
+            "getEvidenceResults", "listLocations",
         }
         actual = [operation["operationId"] for path in self.spec["paths"].values()
                   for method, operation in path.items()
@@ -310,7 +311,6 @@ class WireExamples(unittest.TestCase):
                 del invalid[field]
                 self.assertFalse(self.validator("TranscriptRevision").is_valid(invalid))
         # Same-case/evidence joins cannot be proven by UUID-shaped synthetic data.
-        # U14B must execute real two-case and immutable snapshot acceptance tests.
 
     def test_revision_routes_and_bodyless_existing_commands(self):
         path = "/api/v1/cases/{caseId}/observations/{observationId}/transcript-revisions"
