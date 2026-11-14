@@ -12,6 +12,12 @@ EVORA can use the official Sign in with ChatGPT flow as a model provider. This c
 
 ChatGPT plan eligibility, supported clients and account usage limits are controlled by OpenAI. A successful sign-in or model listing is not a guarantee of inference access. A completed model response verifies access for that request. The user must complete authentication and consent.
 
+## Sign-in time errors
+
+EVORA allows up to 60 seconds of clock difference when validating signed identity tokens. Larger differences still prevent sign-in. A token that is not valid yet and an expired token have separate error messages.
+
+On Windows, open **Settings → Time & language → Date & time**, enable **Set time automatically**, and select **Sync now**. Then start a fresh sign-in in EVORA. If synchronization fails, check the Windows time service or your organization's time configuration.
+
 ## Text, images, video and speech
 
 Case Q&A and executive briefs can use this provider. Images and sampled video frames use the existing image pipeline with the selected model or a separate vision model. ChatGPT plan model discovery currently supplies account model IDs; EVORA does not guess image capability when the catalog does not provide it. Choose a model known to accept images. The shared-model option is enabled when choosing the ChatGPT provider, but image processing still needs a supported model and explicit consent.

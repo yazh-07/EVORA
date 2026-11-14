@@ -26,6 +26,8 @@ AUTH='https://auth.openai.com'
 BASE='https://api.openai.com/v1'
 TOKEN=AUTH+'/api/accounts/oauth/token'
 SCOPE='openid profile email offline_access resource.invoke chatgpt.tokens.use.direct'
+# Bound clock drift for signed identity timestamps; all JWT checks stay enabled.
+IDENTITY_CLOCK_SKEW_SECONDS=60
 router=APIRouter(prefix='/api/v1/chatgpt')
 
 
@@ -41,8 +43,10 @@ def client():
 
 
 def callback_error(error, stage):
-    if isinstance(error,jwt.ImmatureSignatureError) or isinstance(error,jwt.ExpiredSignatureError):
-        return 'ChatGPT identity time validation failed. Sync the Windows date and time, then sign in again.'
+    if isinstance(error,jwt.ImmatureSignatureError):
+        return 'ChatGPT sign-in token is not valid yet. Sync your device date and time, then sign in again.'
+    if isinstance(error,jwt.ExpiredSignatureError):
+        return 'ChatGPT sign-in token has expired. Start a new sign-in. If this repeats, sync your device date and time.'
     if isinstance(error,httpx.HTTPStatusError):
         code=''
         try:
@@ -197,7 +201,7 @@ class Connection:
             if header.get('alg')!='RS256':raise ValueError('Unsupported identity signature')
             key=next(key for key in keys.json()['keys'] if key.get('kid')==header.get('kid') and key.get('kty')=='RSA')
             identity=jwt.decode(body['id_token'],jwt.PyJWK.from_dict(key).key,algorithms=['RS256'],issuer=AUTH,audience=issued,
-                options={'require':['exp','iat','sub','iss','aud','nonce']})
+                leeway=IDENTITY_CLOCK_SKEW_SECONDS,options={'require':['exp','iat','sub','iss','aud','nonce']})
             if not secrets.compare_digest(identity['nonce'],pending['nonce']) or (pending['subject'] and identity['sub']!=pending['subject']):raise ValueError('Account mismatch')
             self.auth_stage='credential storage'
             record=self._read()

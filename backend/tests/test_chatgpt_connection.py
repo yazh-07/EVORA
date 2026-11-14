@@ -30,7 +30,7 @@ class ChatGPTTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result.status_code,200,result.text)
         return result.json()['authorization_url']
 
-    def provider(self,scope='openid chatgpt.tokens.use.direct',nonce=None,stream=None):
+    def provider(self,scope='openid chatgpt.tokens.use.direct',nonce=None,stream=None,claims=None):
         requests=[];connection=self.app.state.chatgpt_connection
         key=rsa.generate_private_key(public_exponent=65537,key_size=2048)
         jwk=json.loads(jwt.algorithms.RSAAlgorithm.to_jwk(key.public_key()));jwk.update(kid='test-key')
@@ -38,8 +38,10 @@ class ChatGPTTests(unittest.IsolatedAsyncioTestCase):
             requests.append(request)
             if request.url.path.endswith('/oauth/token'):
                 body=parse_qs(request.content.decode())
-                identity=jwt.encode(dict(sub='test-subject',iss=cg.AUTH,aud='oaiapp_test',iat=int(time.time()),exp=int(time.time())+3600,
-                    nonce=nonce or self.nonce,email='tester@example.test'),key,algorithm='RS256',headers={'kid':'test-key'})
+                payload=dict(sub='test-subject',iss=cg.AUTH,aud='oaiapp_test',iat=int(time.time()),exp=int(time.time())+3600,
+                    nonce=nonce or self.nonce,email='tester@example.test')
+                payload.update(claims or {})
+                identity=jwt.encode(payload,key,algorithm='RS256',headers={'kid':'test-key'})
                 return httpx.Response(200,json=dict(access_token='private-access',refresh_token='private-refresh',id_token=identity,token_type='Bearer',expires_in=3600,scope=scope))
             if request.url.path.endswith('openid-configuration'):
                 return httpx.Response(200,json=dict(issuer=cg.AUTH,jwks_uri=cg.AUTH+'/.well-known/jwks.json'))
@@ -64,15 +66,54 @@ class ChatGPTTests(unittest.IsolatedAsyncioTestCase):
         self.assertNotIn('private-code',response.text)
         self.assertEqual(connection.status()['error'],response.text)
 
-    async def authorized(self,scope='openid chatgpt.tokens.use.direct'):
+    async def authorized(self,scope='openid chatgpt.tokens.use.direct',claims=None):
         url=await self.begin();connection=self.app.state.chatgpt_connection;self.nonce=connection.pending['nonce']
-        requests,mock,_,_=self.provider(scope)
+        requests,mock,_,_=self.provider(scope,claims=claims)
         query=dict(state=connection.pending['state'],code='test-code',client_id='oaiapp_test')
         with mock:
             async with httpx.AsyncClient(trust_env=False) as http:
                 response=await http.get(parse_qs(urlsplit(url).query)["redirect_uri"][0],params=query)
                 self.assertEqual(response.status_code,200,response.text)
         return connection,requests,url
+
+    async def test_callback_accepts_small_clock_drift_in_issued_and_not_before_times(self):
+        now=int(time.time())
+        connection,_,_=await self.authorized(claims=dict(iat=now+30,nbf=now+30))
+        self.assertTrue(connection.status()['connected'])
+
+    async def test_callback_accepts_expiry_within_clock_tolerance(self):
+        now=int(time.time())
+        connection,_,_=await self.authorized(claims=dict(iat=now-3600,exp=now-30))
+        self.assertTrue(connection.status()['connected'])
+
+    async def test_callback_rejects_invalid_identity_and_preserves_saved_credentials(self):
+        connection,_,_=await self.authorized()
+        saved=connection._read()
+        now=int(time.time())
+        cases=[
+            (dict(iat=now+120),'not valid yet'),
+            (dict(nbf=now+120),'not valid yet'),
+            (dict(iat=now-3600,exp=now-120),'has expired'),
+            (dict(iat=now+30,nonce='wrong-nonce'),'identity validation failed'),
+            (dict(iat=now+30,aud='wrong-client'),'identity validation failed'),
+            (dict(iat=now+30,iss='https://example.invalid'),'identity validation failed'),
+        ]
+        for claims,message in cases:
+            with self.subTest(claims=claims):
+                result=await self.client.post('/api/v1/chatgpt/connect',json={'offline_mode':False})
+                self.assertEqual(result.status_code,200,result.text)
+                self.nonce=connection.pending['nonce']
+                _,mock,_,_=self.provider(claims=claims)
+                with mock:
+                    async with httpx.AsyncClient(trust_env=False) as browser:
+                        response=await browser.get(parse_qs(urlsplit(result.json()['authorization_url']).query)['redirect_uri'][0],
+                            params=dict(state=connection.pending['state'],code='private-code',client_id='oaiapp_test'))
+                self.assertEqual(response.status_code,400)
+                self.assertIn(message,response.text)
+                self.assertNotIn('private-code',response.text)
+                self.assertNotIn('private-access',response.text)
+                self.assertEqual(connection._read(),saved)
+                self.assertFalse(connection.status()['pending'])
 
     async def test_callback_verifies_identity_saves_private_tokens_and_models(self):
         connection,requests,url=await self.authorized()
