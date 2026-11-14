@@ -158,7 +158,12 @@ def evidence_results(caseId: UUID, evidenceId: UUID, request: Request,
             if attempt and attempt['status'] == 'failed':
                 manifest['error'] = attempt['error'] if attempt['error'] in _PROCESSING_ERRORS else 'PROCESSING_FAILED'
             operations.append(manifest)
-        chosen = operation or next((entry['operation'] for entry in operations if entry['output_run_id']), operations[0]['operation'])
+        # Open useful content rather than an empty detection output. Explicit
+        # operation and historical-output selectors still take precedence.
+        preferred = ('description', 'ocr', 'plates', 'detection', 'transcript', 'records')
+        populated = {entry['operation'] for entry in operations if entry['output_run_id'] and entry['count']}
+        chosen = operation or next((op for op in preferred if op in populated),
+            next((entry['operation'] for entry in operations if entry['output_run_id']), operations[0]['operation']))
         items = sorted((item for item in outputs.get(chosen, []) if operation_for(item['kind']) == chosen),
                        key=lambda item: (item['source_locator'], item['kind'], item['id']))
         result = dict(case_id=case_id, evidence_id=evidence_id, operations=operations, operation=chosen,

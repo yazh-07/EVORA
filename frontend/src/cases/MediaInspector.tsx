@@ -1,5 +1,3 @@
-import { ImageUnderstanding } from './ImageUnderstanding';
-import { VideoUnderstanding } from './VideoUnderstanding';
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { useApiClient } from '../api/ApiProvider';
 import type { components } from '../api/schema';
@@ -23,13 +21,10 @@ function storedImageSize(image: HTMLImageElement) {
   probe.remove();
   return size;
 }
-export function MediaInspector({ item, processingRunId, refreshKey, focus, onDerivedRun, resultsOnly = false }: {
-  resultsOnly?: boolean;
-  onDerivedRun?: (id: string) => void;
+export function MediaInspector({ item, processingRunId, refreshKey, focus }: {
   item: Evidence; processingRunId?: string; refreshKey?: string; focus?: SourceFocus;
 }) {
   const client = useApiClient();
-  const container = useRef<HTMLElement>(null);
   const [url, setUrl] = useState('');
   const [sessionVersion, setSessionVersion] = useState(client.getSessionVersion());
   const [decodeError, setDecodeError] = useState(false);
@@ -57,7 +52,7 @@ export function MediaInspector({ item, processingRunId, refreshKey, focus, onDer
     }).catch(() => { if (!request.signal.aborted) setObservationState({ items: [], loading: false, error: true }); });
     return () => { request.abort(); unsubscribe(); };
   }, [client, item.case_id, item.id, processingRunId, refreshKey, focus, refresh]);
-  return <section ref={container} className={`media-inspector ${expanded ? 'media-expanded' : ''}`} aria-label="Interactive media inspector">
+  return <section className={`media-inspector ${expanded ? 'media-expanded' : ''}`} aria-label="Interactive media inspector">
     <div className="section-heading"><div><h3>Media inspector</h3></div>
       <span className="kind-badge">{item.kind}</span><button type="button" aria-pressed={expanded} onClick={() => setExpanded(value => !value)}>{expanded ? 'Compact view' : 'Expand viewer'}</button></div>
     {!url && <button type="button" disabled={downloadState.status === 'loading' || !client.hasToken()} onClick={() => { void download.download(); }}>
@@ -71,11 +66,6 @@ export function MediaInspector({ item, processingRunId, refreshKey, focus, onDer
     {observationState.error && <p role="alert">Could not load the complete source observations. The cited output may be unavailable. Retry detections.</p>}
     {!observationState.loading && !observationState.error && <details className="technical-details"><summary>{observationState.items.length} observations</summary>{observationState.items[0] && <p className="identifier">Processing run: {observationState.items[0].processing_run_id}</p>}</details>}
     {observationState.error && <button type="button" onClick={() => setRefresh(value => value + 1)}>Retry detections</button>}
-    {!resultsOnly && item.kind === 'image' && <details className="media-processing-options"><summary>Image extraction options</summary><ImageUnderstanding item={item} observations={observationState.items} onCompleted={onDerivedRun} /></details>}
-    {!resultsOnly && item.kind === 'video' && <details className="media-processing-options"><summary>Video extraction options</summary><VideoUnderstanding item={item} observations={observationState.items} onCompleted={onDerivedRun} onSeek={seconds => {
-      const element = container.current?.querySelector('video');
-      if (element) { element.currentTime = seconds; element.pause(); }
-    }} /></details>}
   </section>;
 }
 

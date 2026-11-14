@@ -85,33 +85,21 @@ test('history disclosure lazily wires getTriageHistory with exact case/evidence 
   } finally { controller.dispose(); }
 });
 
-test('chronological history retains every run and factors, distinguishes selected/latest, and displays adaptive changes', async () => {
+test('history shows recent score changes and selected snapshot without formulas or repeated explanations', async () => {
   const { controller } = await setup(() => Response.json(runs));
   try {
     const selected = controller.getSnapshot().page;
     toggle(controller); await historyReady(controller);
-    const tree = PriorityListPanel(props(controller));
-    const list = elements(tree, element => element.props?.className === 'triage-history-list')[0];
+    const list = elements(PriorityListPanel(props(controller)), element => element.props?.className === 'triage-history-list')[0];
     const html = renderToStaticMarkup(list);
-    assert.ok(html.indexOf(id(21)) < html.indexOf(id(22)) && html.indexOf(id(22)) < html.indexOf(id(23)));
-    assert.equal(elements(list, element => element.type === 'h3').length, 3);
-    assert.deepEqual(elements(list, element => element.type === 'time').map(element => element.props.dateTime), runs.map(run => run.created_at));
-    assert.match(html, /↑ P3 from P4/);
-    assert.match(html, /↓ P4 from P3/);
-    assert.match(html, /Score change: 0\.00 → 44\.44/);
-    assert.match(html, /Score change: 44\.44 → 20\.00/);
-    assert.match(html, /Evaluation 3 \(latest evaluation\)/);
-    assert.ok(html.indexOf('Selected analysis run') > html.indexOf(id(22)) && html.indexOf('Selected analysis run') < html.indexOf(id(23)));
-    for (const run of runs) {
-      assert.ok(html.includes(`Score: ${run.score.toFixed(2)}`));
-      assert.ok(html.includes(`priority-${run.priority.toLowerCase()}`));
-      assert.ok(html.includes(run.explanation));
-      assert.ok(html.includes(run.factors[0].explanation));
-      assert.ok(html.includes(`${run.factors[0].contribution.toFixed(2)} points`));
-      assert.ok(html.includes(`value ${run.factors[0].value}, weight 1`));
-    }
-    assert.match(html, /relevance/); assert.match(html, /Supporting evidence/);
-    assert.strictEqual(controller.getSnapshot().page, selected, 'History never replaces the pinned list or its computed priority');
+    assert.deepEqual(elements(list, element => element.type === 'time').map(element => element.props.dateTime), [...runs].reverse().map(run => run.created_at));
+    assert.match(html, /44\.44 → 20\.00 pts/);
+    assert.match(html, /0\.00 → 44\.44 pts/);
+    assert.match(html, /P4 → P3/); assert.match(html, /P3 → P4/);
+    assert.match(html, /Case matches −24\.44 pts/);
+    assert.match(html, /Selected/);
+    assert.doesNotMatch(html, /Analysis Run UUID|Evaluation from run|Factor from run|value |weight /);
+    assert.strictEqual(controller.getSnapshot().page, selected);
     assert.equal(selected.items[0].latest_result.analysis_run_id, runId);
   } finally { controller.dispose(); }
 });
@@ -120,8 +108,8 @@ test('consecutive runs in the same priority band report unchanged priority and t
   const { controller } = await setup(() => Response.json([runs[0], evaluation(24, 10, 'P4')]));
   try {
     toggle(controller); await historyReady(controller);
-    assert.match(render(controller), /Priority unchanged: P4/);
-    assert.match(render(controller), /Score change: 0\.00 → 10\.00/);
+    assert.equal(controller.getSnapshot().histories[evidenceId].items[1].priority, 'P4');
+    assert.match(render(controller), /0\.00 → 10\.00 pts/);
   } finally { controller.dispose(); }
 });
 
@@ -130,8 +118,8 @@ test('unscored rows have independent empty history and reopening fetches newly a
   const { controller, calls } = await setup(url => Response.json(url.pathname.includes(id(11)) ? [] : appended ? runs : [runs[0]]));
   try {
     toggle(controller, id(11)); await historyReady(controller, id(11));
-    assert.match(render(controller), /No historical evaluations for this evidence item\./);
-    assert.match(render(controller), /Unprocessed \/ Not Scored<\/td><td><\/td>/);
+    assert.match(render(controller), /No earlier scores\./);
+    assert.match(render(controller), /Not scored<\/span><\/td><td>—<\/td>/);
     assert.equal(calls[1].url.pathname, `/api/v1/cases/${caseId}/evidence/${id(11)}/triage-history`);
     toggle(controller); await historyReady(controller);
     assert.equal(controller.getSnapshot().histories[evidenceId].items.length, 1);
@@ -139,7 +127,7 @@ test('unscored rows have independent empty history and reopening fetches newly a
     toggle(controller); await historyReady(controller);
     assert.deepEqual(controller.getSnapshot().histories[evidenceId].items, runs);
     assert.deepEqual(controller.getSnapshot().histories[id(11)].items, []);
-    assert.match(render(controller), /Evaluation 3/);
+    assert.equal(controller.getSnapshot().histories[evidenceId].items.length, 3);
   } finally { controller.dispose(); }
 });
 
@@ -186,7 +174,7 @@ test('401 clears session and history; reopening a session and reselecting permit
   } finally { controller.dispose(); }
 });
 
-test('history explanations and every factor explanation render as escaped text', async () => {
+test('history does not expose raw model explanations or internal factor formulas', async () => {
   const malicious = '<img src=x onerror="alert(1)"><script>alert("private")</script>&';
   const factors = ['relevance', 'connectivity', 'corroboration', 'gap_relevance', 'source_quality', 'conflict_relevance', 'temporal_proximity']
     .map(name => ({ name, value: 0.5, weight: 0.125, contribution: 6.25, explanation: malicious, evidence_ids: [evidenceId] }));
@@ -195,10 +183,9 @@ test('history explanations and every factor explanation render as escaped text',
     toggle(controller); await historyReady(controller);
     const html = render(controller);
     assert.doesNotMatch(html, /<img|<script/);
-    assert.equal(html.split('&lt;img src=x onerror=&quot;alert(1)&quot;&gt;').length - 1, 8);
-    assert.equal(html.split('&lt;script&gt;alert(&quot;private&quot;)&lt;/script&gt;&amp;').length - 1, 8);
-    for (const factor of factors) assert.ok(html.includes(factor.name.replaceAll('_', ' ')));
-    assert.match(html, /6\.25 points.*value 0\.5, weight 0\.125/);
+    assert.doesNotMatch(html, /&lt;img|&lt;script|weight 0\.125|value 0\.5/);
+    assert.deepEqual(controller.getSnapshot().histories[evidenceId].items[0].factors, factors);
+
   } finally { controller.dispose(); }
 });
 

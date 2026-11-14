@@ -70,6 +70,21 @@ class ResultsTests(unittest.IsolatedAsyncioTestCase):
         self.evidence = response.json()['id']
         self.base = f'/api/v1/cases/{self.case}/evidence/{self.evidence}'
 
+    async def test_default_opens_description_instead_of_empty_detections(self):
+        for index, (kind, description) in enumerate([('image', 'image.description'), ('video', 'video.scene')], 1):
+            with self.subTest(kind=kind):
+                with self.app.state.database.connect() as c:
+                    c.execute('UPDATE evidence SET kind=? WHERE id=?', (kind, self.evidence))
+                run = self.fixture({'kind': kind, kind + '_understanding': {'model': 'fixture'}}, [description], index)
+                response = await self.client.get(self.base + '/results')
+                self.assertEqual(response.status_code, 200, response.text)
+                data = response.json()
+                self.assertEqual(data['operation'], 'description')
+                self.assertEqual(data['items'][0]['processing_run_id'], run)
+                explicit = (await self.client.get(self.base + '/results', params={'operation': 'detection'})).json()
+                self.assertEqual(explicit['operation'], 'detection')
+                self.assertEqual(explicit['total'], 0)
+
     async def test_selects_each_operation_independently_and_keeps_success_after_failure(self):
         await self.image_source()
         enriched = self.fixture({'kind': 'image', 'image_understanding': {'model': 'private/path'}}, ['image.description', 'image.ocr'], 1)

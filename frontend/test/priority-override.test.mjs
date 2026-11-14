@@ -63,20 +63,20 @@ const submitted = (c, target = evidenceId) => until(() =>
   ['success', 'error'].includes(c.getSnapshot().overrides[target]?.status) || c.getSnapshot().status === 'error');
 const posts = calls => calls.filter(({ url }) => url.pathname.endsWith('/priority-overrides'));
 
-test('computed and effective badges stay distinct; active override includes reason, author and timestamp', async () => {
+test('effective priority and recorded reason are visible without raw author identifiers', async () => {
   const selectedPage = { ...page, items: [{ ...page.items[0], override: override(), effective_priority: 'P1' }, page.items[1]] };
   const { controller: c, calls } = await setup(() => Response.json(override(), { status: 201 }), selectedPage);
   try {
     const html = render(c);
-    assert.match(html, /Computed<\/span>/);
-    assert.match(html, /class="priority-badge priority-p3" aria-label="Computed priority P3">P3/);
-    assert.match(html, /<td>44\.44<\/td>/);
+    assert.match(html, /Manual · automatic P3/);
+    assert.match(html, /automatic P3/);
+    assert.match(html, /title="Review score out of 100">44\.44<\/span>/);
     assert.match(html, /class="priority-badge priority-p1" aria-label="Effective priority P1">P1/);
     assert.match(html, /Urgent source check/);
-    assert.match(html, /Author: investigator-one/);
-    assert.match(html, new RegExp(`<time dateTime="${timestamp}">${timestamp}</time>`));
-    assert.match(html, /Unprocessed \/ Not Scored<\/td><td><\/td>/);
-    assert.match(html, /Not assigned/);
+    assert.doesNotMatch(html, /Author: investigator-one/);
+    assert.equal(c.getSnapshot().page.items[0].override.created_at, timestamp);
+    assert.match(html, /Not scored<\/span><\/td><td>—<\/td>/);
+    assert.match(html, /Not scored/);
     assert.equal(elements(PriorityListPanel(props(c)), e => e.props?.className === 'override-details').length, 2);
     for (const target of [evidenceId, id(11)]) {
       for (const name of ['priority', 'reason']) {
@@ -100,7 +100,7 @@ for (const priority of ['P1', 'P2', 'P3', 'P4']) test(`setPriorityOverride submi
     const histories = c.getSnapshot().histories;
     change(c, 'priority', priority); change(c, 'reason', '  Urgent source check \n'); submit(c);
     assert.match(render(c), /aria-busy="true"/);
-    assert.match(render(c), /role="status">Setting priority override/);
+    assert.match(render(c), /role="status">Saving priority/);
     assert.equal(find(c, e => e.type === 'fieldset').props.disabled, true);
     submit(c); change(c, 'reason', 'Blocked duplicate');
     assert.equal(posts(calls).length, 1);
@@ -123,8 +123,8 @@ for (const priority of ['P1', 'P2', 'P3', 'P4']) test(`setPriorityOverride submi
     assert.equal(after.analysis_run_id, runId);
     assert.equal(c.getSnapshot().overrides[evidenceId].reason, '');
     assert.match(render(c), /role="status">Priority override saved\./);
-    assert.match(render(c), /Computed priority P3/);
-    assert.match(render(c), /<td>44\.44<\/td>/);
+    assert.equal(c.getSnapshot().page.items[0].latest_result.priority, 'P3');
+    assert.match(render(c), /title="Review score out of 100">44\.44<\/span>/);
     assert.match(render(c), new RegExp(`Effective priority ${priority}`));
     assert.equal(find(c, e => e.type === 'fieldset').props.disabled, false);
   } finally { c.dispose(); }
@@ -235,7 +235,7 @@ test('scored and unscored rows submit independently and later overrides replace 
     assert.equal(c.getSnapshot().page.items[0].override.reason, 'Revised urgency');
     assert.equal(c.getSnapshot().page.items[0].effective_priority, 'P1');
     assert.deepEqual(c.getSnapshot().page.items[0].latest_result, result);
-    assert.match(render(c), /Unprocessed \/ Not Scored<\/td><td><\/td>/);
+    assert.match(render(c), /<td>—<\/td>/);
   } finally { c.dispose(); }
 });
 

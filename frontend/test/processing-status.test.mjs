@@ -30,14 +30,14 @@ test('polls queued -> running -> completed using exact generated path; terminal 
     calls.push({ url: String(url), ...options }); return Response.json(responses.shift());
   });
   controller.start(); await setImmediate();
-  assert.match(render(controller), /Last reported status: queued/);
+  assert.match(render(controller), /Queued/);
   assert.match(render(controller), new RegExp(seed.created_at));
   assert.doesNotMatch(render(controller), /Finished time/);
   await tick(t);
-  assert.match(render(controller), /Last reported status: running/);
+  assert.match(render(controller), /Processing…/);
   assert.match(render(controller), /synthetic\/1/);
   await tick(t);
-  assert.match(render(controller), /Last reported status: completed/);
+  assert.match(render(controller), /Complete/);
   assert.match(render(controller), new RegExp(finished_at));
   assert.deepEqual(controller.getSnapshot().run, { ...seed, status: 'completed', finished_at });
   await tick(t, 10000); await controller.refresh();
@@ -55,7 +55,7 @@ test('running -> failed displays escaped diagnostic and exact finished time; sto
   const { controller } = setup(t, async () => { calls++; return Response.json({ ...seed, status: 'failed', error, finished_at }); }, { ...seed, status: 'running' });
   assert.match(render(controller), /running/);
   controller.start(); await setImmediate();
-  assert.match(render(controller), /Last reported status: failed/);
+  assert.match(render(controller), /Processing failed/);
   assert.match(render(controller), /MALFORMED_CSV &lt;script&gt;/);
   assert.doesNotMatch(render(controller), /<script>/);
   assert.match(render(controller), new RegExp(finished_at));
@@ -82,7 +82,7 @@ for (const status of [401, 404, 'network', 500]) {
       // Invoke the rendered retry button's actual handler.
       ProcessingStatusPanel({ state: controller.getSnapshot(), retry: controller.refresh }).props.children[1].props.onClick();
       await setImmediate(); assert.equal(calls, 2);
-      assert.match(render(controller), /Last reported status: completed/);
+      assert.match(render(controller), /Complete/);
       assert.doesNotMatch(render(controller), /role="alert"|Retry status check/);
     }
   });
@@ -135,7 +135,7 @@ test('rejects mismatched run/case/evidence and malformed terminal payloads witho
     controller.start(); await setImmediate();
     assert.deepEqual(controller.getSnapshot().run, seed);
     assert.equal(controller.getSnapshot().retryable, true);
-    assert.doesNotMatch(render(controller), /Last reported status: completed|Last reported status: failed|verified/);
+    assert.doesNotMatch(render(controller), /Complete|Processing failed|verified/);
     controller.dispose();
   }
 });
@@ -143,6 +143,6 @@ test('rejects mismatched run/case/evidence and malformed terminal payloads witho
 test('accepted terminal run is displayed without polling', async t => {
   const { controller } = setup(t, async () => { throw Error('Must not fetch'); }, { ...seed, status: 'completed', finished_at });
   controller.start(); await tick(t, 10000);
-  assert.match(render(controller), /Last reported status: completed/);
+  assert.match(render(controller), /Complete/);
   assert.equal(controller.getSnapshot().message, '');
 });

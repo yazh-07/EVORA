@@ -13,7 +13,7 @@ const scored = (n, score = 48.88, band = 'P3') => ({ evidence_id: id(n), effecti
   latest_result: { id: id(n + 100), evidence_id: id(n), case_id: caseId, analysis_run_id: runId,
     score, priority: band, created_at: time, explanation: 'Candidate association; requires human verification. <script>source</script>',
     factors: [
-      { name: 'relevance', value: .8, weight: 5 / 9, contribution: 44.44, explanation: 'Matched candidate keys', evidence_ids: [id(n)] },
+      { name: 'relevance', value: .8, weight: 5 / 9, contribution: 44.44, explanation: 'Matched candidate keys <script>source</script> Investigative attention only; not truth, identity or guilt.', evidence_ids: [id(n)] },
       { name: 'connectivity', value: .1, weight: 4 / 9, contribution: 4.44, explanation: 'One supported neighbor', evidence_ids: [id(n)] },
     ] } });
 const unscored = n => ({ evidence_id: id(n) });
@@ -53,7 +53,7 @@ test('typed request, table, exact score formatting, server pagination, stable pi
   try {
     await ready(controller); assert.equal(controller.getSnapshot().status, 'ready');
     const html = render(controller);
-    for (const label of ['Evidence ID', 'Priority', 'Score', 'Contributing Factors', 'Explanation', 'Effective Priority', 'relevance', 'connectivity', '44.44 points', '4.44 points', '48.88', '0.00', 'P3', 'P4', 'Supporting evidence']) assert.ok(html.includes(label), label);
+    for (const label of ['Source', 'Priority', 'Score', 'Why flagged', 'Actions', 'Case matches', 'Connections', '+44.44 pts', '+4.44 pts', '48.88', '0.00', 'P3', 'P4']) assert.ok(html.includes(label), label);
     assert.match(html, /&lt;script&gt;source&lt;\/script&gt;/); assert.doesNotMatch(html, /<script>/);
     assert.match(html, /disabled="">Previous/);
     click(controller, 'Next'); await ready(controller);
@@ -78,9 +78,9 @@ test('unscored entries before analysis and inside snapshots have blank score and
     try {
       await ready(controller); assert.equal(controller.getSnapshot().status, 'ready');
       const html = render(controller);
-      assert.match(html, /Unprocessed \/ Not Scored<\/td><td><\/td>/);
+      assert.match(html, /<td>—<\/td>/);
       assert.doesNotMatch(html, /P4|0\.00|priority-badge/);
-      assert.equal(html.includes('live list of uploads'), !selected);
+      assert.equal(html.includes('Run case analysis'), !selected);
     } finally { controller.dispose(); }
   }
 });
@@ -112,12 +112,12 @@ test('live override changes effective display while automated fields and server 
   });
   try {
     await ready(controller); const before = controller.getSnapshot().page.items.map(e => [e.evidence_id, e.latest_result]);
-    let html = render(controller); assert.match(html, /P1<\/strong> \(live override\)/); assert.match(html, /&lt;img&gt;/);
-    assert.ok(html.indexOf(id(10)) < html.lastIndexOf(id(11)));
+    let html = render(controller); assert.match(html, /Effective priority P1/); assert.match(html, /&lt;img&gt;/);
+    assert.deepEqual(controller.getSnapshot().page.items.map(entry => entry.evidence_id), [id(10), id(11), id(12)]);
     revision++; click(controller, 'Refresh priorities'); await ready(controller);
-    html = render(controller); assert.match(html, /P2<\/strong> \(live override\)/);
+    html = render(controller); assert.match(html, /Effective priority P2/);
     assert.deepEqual(controller.getSnapshot().page.items.map(e => [e.evidence_id, e.latest_result]), before);
-    assert.match(html, /Unprocessed \/ Not Scored<\/td><td><\/td>/);
+    assert.match(html, /<td>—<\/td>/);
   } finally { controller.dispose(); }
 });
 
@@ -151,7 +151,7 @@ for (const failure of [401, 404, 'network']) test(`${failure} safe error and ret
 
 test('empty selection is honest; selected empty snapshot retains run ID', async () => {
   const { controller } = setup(async () => Response.json(page([])));
-  try { await ready(controller); assert.match(render(controller), /No triage items exist/); assert.match(render(controller), new RegExp(runId)); }
+  try { await ready(controller); assert.match(render(controller), /No evidence to prioritize/); assert.equal(controller.getSnapshot().page.analysis_run_id, runId); }
   finally { controller.dispose(); }
 });
 
@@ -249,14 +249,19 @@ test('cross-page duplicates or reordered computed scores are rejected without pu
   }
 });
 
-test('evidence and factor source actions pass the exact evidence UUID to the case-scoped inspector', async () => {
-  const { controller } = setup(async () => Response.json(page([scored(10)])));
+test('filenames and related sources open their exact evidence without displaying internal IDs', async () => {
+  const entry = scored(10);
+  entry.latest_result.factors.forEach(factor => { factor.evidence_ids.push(id(11)); });
+  const { controller } = setup(async () => Response.json(page([entry])));
   try {
     await ready(controller); const inspected = [];
-    const tree = PriorityListPanel({ state: controller.getSnapshot(), load: controller.load, inspectEvidence: value => inspected.push(value) });
-    const sources = buttons(tree).filter(button => button.props['aria-label'] === `Inspect source evidence ${id(10)}`);
-    assert.equal(sources.length, 3); // Row identifier plus the two actual factor evidence references.
+    const tree = PriorityListPanel({ state: controller.getSnapshot(), load: controller.load, sourceNames: { [id(10)]: 'gateway.csv', [id(11)]: 'phone.csv' }, inspectEvidence: value => inspected.push(value) });
+    const sources = buttons(tree).filter(button => button.props.className === 'source-link');
+    assert.equal(sources.length, 3);
     sources.forEach(button => button.props.onClick());
-    assert.deepEqual(inspected, [id(10), id(10), id(10)]);
+    assert.deepEqual(inspected, [id(10), id(11), id(11)]);
+    const html = renderToStaticMarkup(tree);
+    assert.match(html, /gateway\.csv/); assert.match(html, /phone\.csv/);
+    assert.doesNotMatch(html, /View explanation|contributing factors|Investigative attention only|value 0\.8|weight|00000000-0000/);
   } finally { controller.dispose(); }
 });

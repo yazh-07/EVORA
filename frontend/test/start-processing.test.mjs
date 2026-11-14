@@ -40,7 +40,7 @@ test('explicit button dispatches bodyless generated request with UUID key; busy 
   wait.resolve(accepted()); await done;
   assert.deepEqual(controller.getSnapshot().run, run);
   assert.match(render(controller), new RegExp(run.id));
-  assert.match(render(controller), /Last reported status: queued/);
+  assert.match(render(controller), /Queued/);
   assert.doesNotMatch(render(controller), /completed/);
   await controller.submit();
   assert.notEqual(calls[0].headers.get('Idempotency-Key'), calls[1].headers.get('Idempotency-Key'));
@@ -68,7 +68,7 @@ test('400/401/404/409/415/500 and network failures show safe alerts and permit e
     }
     await controller.submit();
     assert.equal(controller.getSnapshot().status, 'accepted');
-    assert.match(render(controller), /Last reported status: running/);
+    assert.match(render(controller), /Processing…/);
     assert.notEqual(keys[0], keys[1]);
     controller.dispose();
   }

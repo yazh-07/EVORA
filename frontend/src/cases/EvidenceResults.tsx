@@ -1,5 +1,5 @@
 import { SourceExcerpt } from './SourceExcerpt';
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { useApiClient } from '../api/ApiProvider';
 import type { components } from '../api/schema';
 import type { Evidence } from './evidenceStore';
@@ -7,6 +7,8 @@ import { detectionStyle, parseMediaLocator } from './mediaLocators';
 import type { SourceFocus } from './mediaLocators';
 import { resolveSourceObservations } from './sourceObservations';
 import { MediaInspector } from './MediaInspector';
+import { ImageUnderstanding } from './ImageUnderstanding';
+import { VideoUnderstanding } from './VideoUnderstanding';
 import { createOriginalDownload } from './downloadController';
 
 type Results = components['schemas']['EvidenceResults'];
@@ -32,7 +34,8 @@ export function resultTitle(item: Observation): string {
     const category = detectionStyle(item.raw_value).label;
     return category === 'Object' ? (item.raw_value.split(' [')[0] || 'Detection') : category;
   }
-  return item.kind.replaceAll('.', ' / ').replaceAll('_', ' ');
+  const names: Record<string, string> = { 'image.description': 'Scene description', 'video.scene': 'Scene description', 'image.ocr': 'Visible text', 'video.ocr': 'Visible text', 'transcript.segment': 'Speech' };
+  return names[item.kind] ?? item.kind.replaceAll('.', ' / ').replaceAll('_', ' ');
 }
 
 function sourceLabel(value: Observation, kind: Evidence['kind']) {
@@ -66,13 +69,15 @@ function ResultAudio({ item, selection }: { item: Evidence; selection: Observati
   </section>;
 }
 
-export function EvidenceResults({ item, revision, focus, onDerivedRun, onSelectResult, onInspectOriginal }: { item: Evidence; revision?: string; focus?: SourceFocus; onDerivedRun: (id: string) => void; onSelectResult?: (value: Observation) => void; onInspectOriginal?: (focus: SourceFocus) => void }) {
+export function EvidenceResults({ item, revision, focus, onDerivedRun, onSelectResult, onInspectOriginal, onFailed, allowProcessing = true }: { allowProcessing?: boolean; onFailed?: () => void; item: Evidence; revision?: string; focus?: SourceFocus; onDerivedRun: (id: string) => void; onSelectResult?: (value: Observation) => void; onInspectOriginal?: (focus: SourceFocus) => void }) {
   const client = useApiClient();
   const pagePin = useRef<string | undefined>(undefined);
   const focused = useRef('');
   const [operation, setOperation] = useState<Operation>();
   const [offset, setOffset] = useState(0), [refresh, setRefresh] = useState(0);
   const [selected, setSelected] = useState<Observation>();
+  const refreshFailedAttempt = useCallback(() => { setRefresh(value => value + 1); onFailed?.(); }, [onFailed]);
+  useEffect(() => { if (allowProcessing) { pagePin.current = undefined; setOffset(0); } }, [revision, allowProcessing]);
   const [state, setState] = useState<{ data?: Results; loading: boolean; error?: string }>({ loading: true });
   // When following a citation the caller supplies its exact historical run. Never fall back to live results.
   useEffect(() => {
@@ -127,11 +132,11 @@ export function EvidenceResults({ item, revision, focus, onDerivedRun, onSelectR
         <strong>{labels[op.operation]}</strong><span>{statusLabels[op.status]}{op.count !== null ? ` · ${op.count} ${op.operation === 'transcript' ? (op.count === 1 ? 'record' : 'records') : (op.count === 1 ? 'result' : 'results')}` : ''}</span>
       </button>)}</div>
       {current?.status === 'unsupported' && <p>Unavailable for this source.</p>}
-      {current?.status === 'not_run' && <p>Not processed. Choose an operation under Processing.</p>}
-      {current?.status === 'failed' && <p role="alert">Latest attempt failed ({current.error}). {current.output_run_id ? 'Showing earlier completed results.' : 'No completed results available.'}</p>}
+      {current?.status === 'not_run' && <p>This extraction has not run yet.</p>}
+      {current?.status === 'failed' && <p role="alert" title={current.error}>{labels[data.operation]} failed. {current.output_run_id ? 'Showing saved results.' : 'Try again.'}</p>}
       {(current?.status === 'queued' || current?.status === 'running') && <p role="status">Operation {current.status}.{current.output_run_id ? ' Showing earlier completed results.' : ''}</p>}
       {!!current?.notes.length && <details className="context-help"><summary>Method</summary><p>{current.notes.join(' ')}</p></details>}
-      {current?.output_run_id && data.total === 0 && <p>No results returned; the source may still contain relevant content.</p>}
+      {current?.output_run_id && data.total === 0 && <p>No results for this extraction.</p>}
       <ol className="extracted-result-list">{data.items.map(value => <li key={value.id} className={selected?.id === value.id ? 'selected-result' : ''}>
         <button type="button" aria-pressed={selected?.id === value.id} onClick={() => { setSelected(value); onSelectResult?.(value); if (['image', 'video'].includes(item.kind)) onInspectOriginal?.({ source_locator: value.source_locator, observation_id: value.id, processing_run_id: value.processing_run_id }); }}><strong>{resultTitle(value)}</strong><span>{value.normalized_value || value.raw_value || 'No readable text returned'}</span>{sourceLabel(value, item.kind) && <small>{sourceLabel(value, item.kind)}</small>}</button>
         {(value.kind.startsWith('image.') || value.kind.startsWith('video.') || value.kind.startsWith('transcript.')) && !value.kind.endsWith('detection') && !value.kind.endsWith('.plate_reading') && <span className="result-origin">{value.transcript_revision_id ? 'Human corrected' : 'Model output · unverified'}</span>}
@@ -142,6 +147,9 @@ export function EvidenceResults({ item, revision, focus, onDerivedRun, onSelectR
       {data.total > data.limit && <nav className="pagination" aria-label="Result pages"><button type="button" disabled={offset === 0} onClick={() => setOffset(value => Math.max(0, value - 50))}>Previous results</button><span>{offset + 1}–{Math.min(offset + 50, data.total)} of {data.total}</span><button type="button" disabled={offset + 50 >= data.total} onClick={() => setOffset(value => value + 50)}>Next results</button></nav>}
       {!onSelectResult && current?.output_run_id && <details className="technical-details"><summary>Output reference</summary><p>{current.output_run_id} · {current.updated_at}</p></details>}
     </>}
-    {!onInspectOriginal && (item.kind === 'image' || item.kind === 'video') && <MediaInspector item={item} resultsOnly processingRunId={selected?.processing_run_id || current?.output_run_id || undefined} focus={selectedFocus} refreshKey={revision} onDerivedRun={onDerivedRun} />}
+    {allowProcessing && (item.kind === 'image' || item.kind === 'video') && <details className="media-analysis-actions" open={!data?.operations.some(value => value.operation === 'description' && value.output_run_id)}><summary>{data?.operations.some(value => value.operation === 'description' && value.output_run_id) ? 'Reanalyze' : 'Analyze'} {item.kind}</summary>
+      {item.kind === 'image' ? <ImageUnderstanding item={item} onCompleted={onDerivedRun} onFailed={refreshFailedAttempt} /> : <VideoUnderstanding item={item} onCompleted={onDerivedRun} onFailed={refreshFailedAttempt} />}
+    </details>}
+    {!onInspectOriginal && (item.kind === 'image' || item.kind === 'video') && <MediaInspector item={item} processingRunId={selected?.processing_run_id || current?.output_run_id || undefined} focus={selectedFocus} refreshKey={revision} />}
   </section>;
 }

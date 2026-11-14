@@ -86,3 +86,15 @@ button { font-weight: 550; }
 .map-cluster { transition: background-color 120ms ease, border-color 120ms ease; }
 .location-records-scroll { max-height: 340px; }
 .location-records th { position: sticky; top: 0; z-index: 1; background: var(--color-surface); }
+
+.batch-media-options { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; flex-basis: 100%; padding-block: 8px; }
+.batch-media-options label { display: flex; align-items: center; gap: 8px; font-size: .9375rem; }
+.batch-model { color: var(--color-secondary); font-size: .875rem; }
+.media-analysis-actions > .image-understanding { margin: 0 0 20px; padding: 16px; border: 1px solid var(--color-border); border-radius: var(--radius-md); }
+.image-understanding > h3 { margin-top: 0; }
+.image-understanding label { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-block: 12px; }
+.image-understanding .media-sampling-options { margin-block: 12px; }
+.image-understanding > button[aria-label^="Refresh"] { margin-left: 8px; }
+
+.media-analysis-actions { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--color-border); }
+.media-analysis-actions > summary { cursor: pointer; color: var(--color-accent); }

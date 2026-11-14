@@ -182,14 +182,16 @@ export function EvidenceProcessingInspection({ item, sourceFocus, externalRevisi
   const [processingOpen, setProcessingOpen] = useState(false), [rawOpen, setRawOpen] = useState(false), [transcriptOpen, setTranscriptOpen] = useState(false);
   const changeView = (next: 'results' | 'original' | 'info') => { setView(next); setVisited(previous => new Set([...previous, next])); };
   const onProcessingCompleted = useCallback((runId: string) => { setCompletedRunId(runId); setRevision(value => value + 1); }, []);
-  useEffect(() => { setSelected(undefined); }, [externalRevision, revision]);
+  const onProcessingFailed = useCallback(() => setRevision(value => value + 1), []);
+  useEffect(() => { setSelected(undefined); if (!sourceFocus?.processing_run_id) setFocus(undefined); }, [externalRevision, revision, sourceFocus?.processing_run_id]);
+  useEffect(() => { setFocus(sourceFocus); }, [sourceFocus]);
   const refreshKey = `${completedRunId ?? ''}:${revision}:${externalRevision}`;
   return <>
     <div className="source-tabs" role="group" aria-label="Source views">{(['results', 'original', 'info'] as const).map(tab => <button key={tab} type="button" aria-pressed={view === tab} onClick={() => changeView(tab)}>{tab.charAt(0).toUpperCase() + tab.slice(1)}</button>)}
       <details className="action-menu source-actions"><summary aria-label="Source actions" title="Source actions">⋯</summary><div className="action-popover"><OriginalDownload item={item} /><button type="button" onClick={() => setRevision(value => value + 1)}>Refresh source</button><button type="button" onClick={() => { changeView('info'); setProcessingOpen(true); }}>Processing history</button></div></details>
     </div>
-    <div hidden={view !== 'results'}>{visited.has('results') && <EvidenceResults item={item} revision={refreshKey} focus={focus} onDerivedRun={onProcessingCompleted} onSelectResult={setSelected} onInspectOriginal={next => { setFocus(next); changeView('original'); }} />}</div>
-    <div hidden={view !== 'original'}>{visited.has('original') && (item.kind === 'image' || item.kind === 'video' ? <MediaInspector item={item} onDerivedRun={onProcessingCompleted} processingRunId={focus?.processing_run_id} refreshKey={refreshKey} focus={focus} /> : <OriginalTextPreview item={item} />)}</div>
+    <div hidden={view !== 'results'}>{visited.has('results') && <EvidenceResults onFailed={onProcessingFailed} allowProcessing={!sourceFocus?.processing_run_id} item={item} revision={refreshKey} focus={focus} onDerivedRun={onProcessingCompleted} onSelectResult={setSelected} onInspectOriginal={next => { setFocus(next); changeView('original'); }} />}</div>
+    <div hidden={view !== 'original'}>{visited.has('original') && (item.kind === 'image' || item.kind === 'video' ? <MediaInspector item={item} processingRunId={focus?.processing_run_id} refreshKey={refreshKey} focus={focus} /> : <OriginalTextPreview item={item} />)}</div>
     <div hidden={view !== 'info'}>{visited.has('info') && <>
       <dl className="evidence-metadata"><dt>File</dt><dd>{item.filename}</dd><dt>Type</dt><dd>{item.kind.replaceAll('_', ' ')}</dd><dt>Size</dt><dd>{formatFileSize(item.size_bytes)}</dd><dt>Added</dt><dd>{new Date(item.created_at).toLocaleString()}</dd></dl>
       {selected && <section className="selected-result-info"><h3>Selected result</h3><p>{selected.source_locator}</p><p>Reported score: {selected.extraction_confidence}</p>{selected.raw_value !== selected.normalized_value && <p>{selected.raw_value}</p>}</section>}
