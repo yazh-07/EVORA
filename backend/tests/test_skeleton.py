@@ -28,7 +28,7 @@ class SkeletonTests(unittest.IsolatedAsyncioTestCase):
                 self.assertEqual([row[0] for row in connection.execute(
                     "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"
                 )], ["account_audit", "analysis_outputs", "analysis_runs", "audit_events", "auth_attempts", "case_members", "cases", "evidence", "finding_reviews", "intake_provenance", "local_sessions", "local_users",
-                     "priority_overrides", "processing_outputs", "processing_provenance", "processing_runs", "transcript_revisions"])
+                     "priority_overrides", "processing_outputs", "processing_provenance", "processing_runs", "transcript_revisions", "workstation_settings"])
         # Lifespan has left no open connection; reconnect after shutdown.
         with closing(sqlite3.connect(self.path)) as connection:
             self.assertEqual(connection.execute("PRAGMA integrity_check").fetchone()[0], "ok")
