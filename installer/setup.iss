@@ -3,7 +3,7 @@
 
 #define MyAppName "EVORA"
 #define MyAppFullName "EVORA — Forensic Evidence Fusion & Investigation Workstation"
-#define MyAppVersion "1.3.7"
+#define MyAppVersion "1.3.8"
 #define MyAppPublisher "EVORA Team"
 #define MyAppURL "https://github.com/yazh-07/EVORA"
 #define MyAppExeName "EVORA.exe"
@@ -264,6 +264,8 @@ begin
     AppDataDir := ExpandConstant('{userappdata}\EVORA');
     ForceDirectories(AppDataDir);
     ConfigFile := AppDataDir + '\config.json';
+    if FileExists(ConfigFile) then
+      Exit;
 
     if OllamaRadio.Checked then
       ProviderStr := 'ollama'

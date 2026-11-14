@@ -104,7 +104,7 @@ def main():
             graph = ManagedGraph(runtime, graph_home, owner_pid=args.parent_pid or None)
             resources.callback(graph.close)
             os.environ.update(graph.start())
-        app = create_app(str(db_path), storage_dir=str(vault_path), offline_mode=True)
+        app = create_app(str(db_path), storage_dir=str(vault_path))
         app.mount("/", StaticFiles(directory=str(frontend_dist), html=True), name="workstation")
 
         if not args.no_browser:

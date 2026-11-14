@@ -46,7 +46,7 @@ export function accessibleAccent(requested: string, dark: boolean) {
   const valid = /^#[\da-f]{6}$/i.test(requested) ? requested : defaultAppearance.accent;
   const channels = rgb(valid);
   let accent = valid;
-  const background = dark ? '#1b2528' : '#faf9ee';
+  const background = dark ? '#1b2528' : '#f4f6f8';
   for (let step = 0; step <= 100; step++) {
     const ratio = step / 100;
     accent = '#' + channels.map(channel => Math.round(channel + ((dark ? 255 : 0) - channel) * ratio).toString(16).padStart(2, '0')).join('');

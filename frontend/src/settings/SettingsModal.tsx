@@ -6,6 +6,7 @@ import { defaultSettings, readSettings, saveSettings, saveViewerSettings, type S
 import './SettingsModal.css';
 import { ChatGPTConnection } from './ChatGPTConnection';
 import { AppearanceForm } from '../appearance/AppearanceModal';
+import { UpdatesPanel } from './Updates';
 
 const ollamaModels = [
   ['llama3.1:8b', 'Llama 3.1'],
@@ -19,7 +20,7 @@ const openaiModels = [
 ];
 const modelsFor = (provider: Settings['qa_provider']) => provider === 'chatgpt' ? [] : provider === 'openai' ? openaiModels : ollamaModels;
 
-type SettingsSection = 'appearance' | 'models' | 'display';
+export type SettingsSection = 'appearance' | 'models' | 'display' | 'updates';
 export function SettingsModal({ onClose, initialSection = 'appearance' }: { onClose: () => void; initialSection?: SettingsSection }) {
   const client = useApiClient();
   const canConfigure = !client.isLocalAuth() || client.getUser()?.role === 'administrator';
@@ -123,9 +124,9 @@ export function SettingsModal({ onClose, initialSection = 'appearance' }: { onCl
       <header className="settings-heading"><div><h2 id="settings-title">Settings</h2></div>
         <button type="button" aria-label="Close settings" disabled={saving} onClick={closeDialog}>✕</button></header>
       <nav className="settings-sections" aria-label="Settings sections">
-        {(['appearance', ...(canConfigure ? ['models'] : []), ...(client.hasToken() ? ['display'] : [])] as SettingsSection[]).map(item => <button key={item} type="button" aria-pressed={section === item} disabled={saving} onClick={() => setSection(item)}>{item === 'appearance' ? 'Appearance' : item === 'models' ? 'Models' : 'Viewer'}</button>)}
+        {(['appearance', ...(canConfigure ? ['models'] : []), ...(client.hasToken() ? ['display', 'updates'] : [])] as SettingsSection[]).map(item => <button key={item} type="button" aria-pressed={section === item} disabled={saving} onClick={() => setSection(item)}>{item === 'appearance' ? 'Appearance' : item === 'models' ? 'Models' : item === 'updates' ? 'Updates' : 'Viewer'}</button>)}
       </nav>
-      {section === 'appearance' ? <AppearanceForm onClose={closeDialog} /> : <form onSubmit={event => { event.preventDefault(); if (!disabled) void save(); }}>
+      {section === 'appearance' ? <AppearanceForm onClose={closeDialog} /> : section === 'updates' ? <><UpdatesPanel /><footer className="settings-actions"><button type="button" onClick={closeDialog}>Done</button></footer></> : <form onSubmit={event => { event.preventDefault(); if (!disabled) void save(); }}>
       <div className="settings-content">
         {loading && section === 'models' && <p role="status">Loading settings…</p>}
         {error && <p role="alert">{error}</p>}

@@ -17,7 +17,7 @@ def main():
     frontend = Path(__file__).resolve().parents[1] / 'frontend' / 'dist'
     if not (frontend / 'index.html').is_file():
         parser.error('Build the interface first: npm --prefix frontend run build')
-    app = create_app(args.database, storage_dir=args.storage, offline_mode=not args.online)
+    app = create_app(args.database, storage_dir=args.storage, offline_mode=False if args.online else None)
     app.mount('/', StaticFiles(directory=frontend, html=True), name='workstation')
     uvicorn.run(app, host='127.0.0.1', port=args.port, access_log=False)
 

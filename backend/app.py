@@ -38,6 +38,8 @@ from backend.chatgpt_connection import Connection, router as chatgpt_router
 from starlette.concurrency import run_in_threadpool
 from backend.local_auth import initialize_auth, router as local_auth_router
 from backend.errors import AccessError, access_error, invalid_request
+from backend import workstation_settings
+from backend.updates import Updates, router as updates_router
 
 
 def validate_offline_endpoint(value):
@@ -98,6 +100,7 @@ class ProviderEndpoint(OllamaEndpoint):
 
 
 class Settings(ProviderEndpoint):
+    automatic_update_checks: bool = True
     vision_use_qa_model: bool = False
     vision_model: str = Field(default='', max_length=200)
     qa_model: str = Field(default="deepseek-r1:8b", min_length=1, max_length=200)
@@ -144,6 +147,7 @@ def create_app(
             initialize_reviews(database)
             initialize_overrides(database)
             initialize_transcripts(database)
+            workstation_settings.initialize(app,Settings,offline_mode)
             app.state.database_ready = True
 
     @asynccontextmanager
@@ -160,6 +164,7 @@ def create_app(
             yield
         finally:
             try:
+                _app.state.updates.stop.set()
                 _app.state.chatgpt_connection.cancel()
                 if _app.state.graph_database is not None:
                     _app.state.graph_database.close()
@@ -180,6 +185,7 @@ def create_app(
     app.state.unlock_throttle_lock = threading.Lock()
     app.state.unlock_attempts = defaultdict(list)
     app.state.database_ready = False
+    app.state.settings_loaded = False
     app.state.initialize_database = initialize_database
     app.state.local_auth = token_verifier is None
     app.state.chatgpt_connection = Connection(app,database.path)
@@ -207,9 +213,12 @@ def create_app(
         validate_offline_endpoint(app.state.qa_url)
     app.state.vision_model = os.environ.get('EVORA_VISION_MODEL', '')
     app.state.vision_use_qa_model = False
+    app.state.automatic_update_checks = os.environ.get('EVORA_AUTO_UPDATE_CHECKS','1') != '0'
     app.state.detection_threshold = 0.7
     app.state.show_provenance_rays = True
     app.state.database = database
+    app.state.load_settings = lambda: workstation_settings.initialize(app,Settings,offline_mode)
+    app.state.updates = Updates(app)
     app.state.processing_lock = asyncio.Lock()
     app.state.analysis_lock = asyncio.Lock()
     app.state.graph_database = None
@@ -222,16 +231,18 @@ def create_app(
 
     @app.get("/api/v1/settings", dependencies=[Depends(authenticated_actor)])
     async def get_settings(response: Response):
+        workstation_settings.initialize(app,Settings,offline_mode)
         response.headers["Cache-Control"] = "no-store"
-        return {**{key: getattr(app.state, key) for key in Settings.model_fields if key not in ('openai_api_key', 'offline_mode', 'vision_model', 'vision_use_qa_model')},
+        return {**{key: getattr(app.state, key) for key in Settings.model_fields if key not in ('openai_api_key', 'offline_mode', 'vision_model', 'vision_use_qa_model', 'automatic_update_checks')},
                 'has_openai_key': bool(app.state.openai_api_key), **({'has_chatgpt_connection':app.state.chatgpt_connection.status()['sharing']} if app.state.local_auth or app.state.qa_provider=='chatgpt' else {}), **({'offline_mode': app.state.offline_mode, 'vision_model': app.state.vision_model,
-                'vision_use_qa_model': app.state.vision_use_qa_model} if app.state.local_auth or app.state.vision_model or app.state.vision_use_qa_model else {})}
+                'vision_use_qa_model': app.state.vision_use_qa_model, 'automatic_update_checks': app.state.automatic_update_checks} if app.state.local_auth or app.state.vision_model or app.state.vision_use_qa_model else {})}
 
     @app.put("/api/v1/settings", dependencies=[Depends(authenticated_actor)])
     async def put_settings(body: Settings, response: Response, request: Request):
         if app.state.local_auth:
             from backend.local_auth import admin
             admin(authenticated_actor(request))
+        workstation_settings.initialize(app,Settings,offline_mode)
         offline = body.offline_mode if 'offline_mode' in body.model_fields_set else app.state.offline_mode
         provider = body.qa_provider if 'qa_provider' in body.model_fields_set else app.state.qa_provider
         qa_url = body.qa_url if 'qa_url' in body.model_fields_set else app.state.qa_url
@@ -246,10 +257,8 @@ def create_app(
             from backend.image_understanding import safe_endpoint
             safe_endpoint(base, 'openai')
         # Validation finishes before any mutation. Omitted values remain unchanged.
-        for key, value in body.model_dump(exclude_unset=True).items():
-            if key == 'openai_api_key' and not value:
-                continue
-            setattr(app.state, key, value)
+        updates={key:value for key,value in body.model_dump(exclude_unset=True).items() if key!='openai_api_key' or value}
+        workstation_settings.save(app,Settings,updates)
         if 'offline_mode' in body.model_fields_set and offline:
             app.state.chatgpt_connection.cancel()
         return await get_settings(response)
@@ -329,6 +338,7 @@ def create_app(
     app.include_router(image_understanding_router)
     app.include_router(video_understanding_router)
     app.include_router(chatgpt_router)
+    app.include_router(updates_router)
     app.include_router(audit_router)
     app.include_router(processing_router)
     app.include_router(observations_router)

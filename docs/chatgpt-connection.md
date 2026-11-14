@@ -40,7 +40,7 @@ Use **Disconnect ChatGPT** to clear local tokens. Online disconnect attempts rem
 
 On Windows, v1.2.1 and later use a protected NTFS ACL granting access to the current Windows user and SYSTEM. Unix mode bits are not used to judge Windows file privacy. Existing credential files are secured in place on access, preserving their host registration and any saved account credentials. This fixes the v1.2.0 Windows sign-in startup error; upgrade and retry without deleting the workstation database.
 
-The connection survives backend restarts. Existing non-secret provider/model preferences are still runtime settings: select online ChatGPT mode again after restarting. You do not need to enter an API key, but expired/revoked sessions may require signing in again. Local EVORA sign-out does not disconnect the workstation model provider; a pending OAuth callback requires the initiating local administrator session to remain valid.
+The connection survives backend restarts. The saved online/offline choice, provider and models are restored from the encrypted workstation database after local sign-in. You do not need to enter an API key, but expired/revoked sessions may require signing in again. Local EVORA sign-out does not disconnect the workstation model provider; a pending OAuth callback requires the initiating local administrator session to remain valid.
 
 ## Verification
 

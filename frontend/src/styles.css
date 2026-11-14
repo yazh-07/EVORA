@@ -7,7 +7,7 @@
   --color-primary: #354052; --color-secondary: #657185;
   --color-accent: var(--appearance-accent, #7c3aed);
   --color-accent-fg: var(--appearance-accent-fg, #fff);
-  --color-neutral: #faf9ee; --color-surface: #fff; --color-border: #e6e8ee;
+  --color-neutral: #f4f6f8; --color-surface: #fff; --color-border: #e6e8ee;
   --color-success: #28633c; --color-warning: #805c12; --color-error: #b0353e;
   --color-button-bg: #fff; --color-input-bg: #fff;
   --color-button-hover: #f1effb; --color-card-hover: #f8f8fc;

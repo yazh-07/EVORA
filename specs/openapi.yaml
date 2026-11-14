@@ -66,6 +66,222 @@ paths:
   /api/v1/accounts/{userId}: {"put": {"operationId": "updateLocalAccount", "summary": "updateLocalAccount", "description": "Offline local account operation. Mutations require X-Evora-Request: 1 and a same-origin request.", "responses": {"200": {"description": "Success", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/AuthSession"}}}}, "400": {"description": "Request rejected", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}, "401": {"description": "Request rejected", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}, "403": {"description": "Request rejected", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}, "404": {"description": "Request rejected", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}, "409": {"description": "Request rejected", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}, "429": {"description": "Request rejected", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}}, "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/UpdateLocalUser"}}}}, "parameters": [{"name": "userId", "in": "path", "required": true, "schema": {"type": "string", "format": "uuid"}}]}}
   /api/v1/accounts/audit: {"get": {"operationId": "listAccountAudit", "summary": "listAccountAudit", "description": "Offline local account operation. Mutations require X-Evora-Request: 1 and a same-origin request.", "responses": {"200": {"description": "Success", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/AccountAuditList"}}}}, "400": {"description": "Request rejected", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}, "401": {"description": "Request rejected", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}, "403": {"description": "Request rejected", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}, "404": {"description": "Request rejected", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}, "409": {"description": "Request rejected", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}, "429": {"description": "Request rejected", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}}}}
   /api/v1/cases/{caseId}/members: {"get": {"operationId": "listCaseMembers", "summary": "listCaseMembers", "description": "Offline local account operation. Mutations require X-Evora-Request: 1 and a same-origin request.", "responses": {"200": {"description": "Success", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/CaseMemberList"}}}}, "400": {"description": "Request rejected", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}, "401": {"description": "Request rejected", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}, "403": {"description": "Request rejected", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}, "404": {"description": "Request rejected", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}, "409": {"description": "Request rejected", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}, "429": {"description": "Request rejected", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}}, "parameters": [{"name": "caseId", "in": "path", "required": true, "schema": {"type": "string", "format": "uuid"}}]}, "put": {"operationId": "updateCaseMembership", "summary": "updateCaseMembership", "description": "Offline local account operation. Mutations require X-Evora-Request: 1 and a same-origin request.", "responses": {"200": {"description": "Success", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/AuthOK"}}}}, "400": {"description": "Request rejected", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}, "401": {"description": "Request rejected", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}, "403": {"description": "Request rejected", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}, "404": {"description": "Request rejected", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}, "409": {"description": "Request rejected", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}, "429": {"description": "Request rejected", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ApiError"}}}}}, "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/UpdateCaseMember"}}}}, "parameters": [{"name": "caseId", "in": "path", "required": true, "schema": {"type": "string", "format": "uuid"}}]}}
+  /api/v1/updates:
+    get:
+      operationId: getUpdateStatus
+      summary: getUpdateStatus
+      responses:
+        '200':
+          description: Update status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpdateStatus'
+        '400':
+          description: Request rejected
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: Administrator required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: Update unavailable or processing active
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '500':
+          description: Installer unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /api/v1/updates/check:
+    post:
+      operationId: checkForUpdates
+      summary: checkForUpdates
+      responses:
+        '200':
+          description: Update status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpdateStatus'
+        '400':
+          description: Request rejected
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: Administrator required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: Update unavailable or processing active
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '500':
+          description: Installer unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                automatic:
+                  type: boolean
+                  default: false
+  /api/v1/updates/download:
+    post:
+      operationId: downloadUpdate
+      summary: downloadUpdate
+      responses:
+        '200':
+          description: Update status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpdateStatus'
+        '400':
+          description: Request rejected
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: Administrator required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: Update unavailable or processing active
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '500':
+          description: Installer unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /api/v1/updates/cancel:
+    post:
+      operationId: cancelUpdateDownload
+      summary: cancelUpdateDownload
+      responses:
+        '200':
+          description: Update status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpdateStatus'
+        '400':
+          description: Request rejected
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: Administrator required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: Update unavailable or processing active
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '500':
+          description: Installer unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /api/v1/updates/install:
+    post:
+      operationId: installUpdate
+      summary: installUpdate
+      responses:
+        '200':
+          description: Update status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpdateStatus'
+        '400':
+          description: Request rejected
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: Administrator required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: Update unavailable or processing active
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '500':
+          description: Installer unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
   /api/v1/settings:
     get:
       operationId: getSettings
@@ -954,11 +1170,75 @@ components:
     CaseMemberList: {"type": "object", "additionalProperties": false, "properties": {"items": {"type": "array", "items": {"type": "object", "additionalProperties": false, "properties": {"id": {"type": "string", "format": "uuid"}, "username": {"type": "string"}, "display_name": {"type": "string"}, "role": {"type": "string", "enum": ["administrator", "investigator", "reviewer"]}}, "required": ["id", "username", "display_name", "role"]}}}, "required": ["items"]}
     UpdateCaseMember: {"type": "object", "additionalProperties": false, "properties": {"user_id": {"type": "string", "format": "uuid"}, "grant": {"type": "boolean"}}, "required": ["user_id", "grant"]}
     AccountAuditList: {"type": "object", "additionalProperties": false, "properties": {"items": {"type": "array", "items": {"type": "object", "additionalProperties": false, "properties": {"id": {"type": "string"}, "actor_id": {"type": ["string", "null"]}, "action": {"type": "string"}, "target_id": {"type": ["string", "null"]}, "created_at": {"type": "number"}}, "required": ["id", "actor_id", "action", "target_id", "created_at"]}}}, "required": ["items"]}
+    UpdateStatus:
+      type: object
+      additionalProperties: false
+      required:
+        - current_version
+        - latest_version
+        - status
+        - downloaded_bytes
+        - total_bytes
+        - release_url
+        - download_url
+        - checked_at
+        - error
+        - automatic
+        - can_install
+        - available
+      properties:
+        current_version:
+          type: string
+        latest_version:
+          type:
+            - string
+            - 'null'
+        status:
+          type: string
+          enum:
+            - idle
+            - checking
+            - available
+            - up_to_date
+            - downloading
+            - ready
+            - installing
+            - error
+        downloaded_bytes:
+          type: integer
+          minimum: 0
+        total_bytes:
+          type: integer
+          minimum: 0
+        release_url:
+          type: string
+          format: uri
+        download_url:
+          type:
+            - string
+            - 'null'
+          format: uri
+        checked_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        error:
+          type:
+            - string
+            - 'null'
+        automatic:
+          type: boolean
+        can_install:
+          type: boolean
+        available:
+          type: boolean
     Settings:
       type: object
       additionalProperties: false
       required: [qa_provider, qa_model, qa_url, openai_base_url, has_openai_key, detection_threshold, show_provenance_rays]
       properties:
+        automatic_update_checks: { type: boolean, description: Automatically check official releases after sign-in. }
         vision_use_qa_model: { type: boolean, description: Use the selected Q&A model for explicit image processing; it must support image input. }
         vision_model: { type: string, maxLength: 200, description: Separate vision-capable model for explicit image description and model-assisted text extraction. }
         offline_mode: { type: boolean }
@@ -974,6 +1254,7 @@ components:
       type: object
       additionalProperties: false
       properties:
+        automatic_update_checks: { type: boolean, description: Automatically check official releases after sign-in. }
         vision_use_qa_model: { type: boolean }
         vision_model: { type: string, maxLength: 200, description: Separate vision-capable model for explicit image description and model-assisted text extraction. }
         offline_mode: { type: boolean, description: Administrator-controlled local-only or hosted-provider operation. }

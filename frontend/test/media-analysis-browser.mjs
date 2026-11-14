@@ -37,7 +37,7 @@ export async function checkMediaAnalysis(kind) {
   const endpoint = `http://127.0.0.1:${provider.address().port}/v1`;
   const probe = createServer(); await new Promise(resolve => probe.listen(0, '127.0.0.1', resolve));
   const port = probe.address().port; await new Promise(resolve => probe.close(resolve));
-  const child = spawn(python, ['-m', 'backend.run', '--database', join(scratch, 'case.sqlite'), '--storage', join(scratch, 'evidence'), '--port', String(port)], { cwd: root, stdio: ['ignore', 'ignore', 'pipe'] });
+  const child = spawn(python, ['-m', 'backend.run', '--database', join(scratch, 'case.sqlite'), '--storage', join(scratch, 'evidence'), '--port', String(port)], { cwd: root, env: { ...process.env, EVORA_AUTO_UPDATE_CHECKS: '0' }, stdio: ['ignore', 'ignore', 'pipe'] });
   let diagnostics = ''; child.stderr.on('data', data => { diagnostics = (diagnostics + data).slice(-4000); });
   const origin = `http://127.0.0.1:${port}`;
   let browser, page;

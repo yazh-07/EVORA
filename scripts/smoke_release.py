@@ -14,6 +14,7 @@ from urllib.error import HTTPError
 import cv2
 import numpy as np
 
+sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 binary = Path(sys.argv[1]).resolve()
 if sys.platform == 'win32':
     import pefile
@@ -54,9 +55,9 @@ with TemporaryDirectory(prefix='evora-release-smoke-') as directory:
                     with urlopen(f'http://127.0.0.1:{port}/', timeout=2) as response:
                         assert response.status == 200
                     browser=build_opener(HTTPCookieProcessor(http.cookiejar.CookieJar()))
-                    def post(path,payload=None,extra_headers=None):
+                    def post(path,payload=None,extra_headers=None,method='POST'):
                         request=Request(f'http://127.0.0.1:{port}/api/v1'+path,
-                            data=json.dumps(payload).encode() if payload is not None else b'',method='POST',
+                            data=json.dumps(payload).encode() if payload is not None else b'',method=method,
                             headers={'Content-Type':'application/json','X-Evora-Request':'1',**(extra_headers or {})})
                         try:
                             with browser.open(request,timeout=10) as result:
@@ -118,6 +119,9 @@ with TemporaryDirectory(prefix='evora-release-smoke-') as directory:
                         with browser.open(f'http://127.0.0.1:{port}/api/v1'+base+'/graph?analysis_run_id='+run['id'],timeout=10) as response:
                             assert json.load(response)['nodes']
                         print('PASS frozen bundled graph: GPS processing, analysis publication and authenticated graph readback')
+                    saved=post('/settings',{'offline_mode':False,'qa_provider':'chatgpt',
+                        'qa_model':'release-vision','vision_use_qa_model':True,'automatic_update_checks':False},method='PUT')
+                    assert not saved['offline_mode'] and not saved['automatic_update_checks']
                     break
                 except OSError:
                     if child.poll() is not None or attempt == 359:
@@ -139,4 +143,36 @@ with TemporaryDirectory(prefix='evora-release-smoke-') as directory:
                 child.kill()
                 child.wait(timeout=10)
                 raise AssertionError('Frozen workstation did not shut down cleanly')
+    # A second actual executable startup catches launcher overrides that API-only
+    # tests cannot see. The first run already exercises the bundled graph.
+    with (root/'restart.log').open('w+') as log:
+        child=subprocess.Popen([str(binary),'--no-browser','--port',str(port),
+            '--database',str(root/'case.sqlite3'),'--storage',str(root/'evidence'),
+            '--graph-mode','external','--shutdown-file',str(root/'restart-stop')],stdout=log,stderr=log)
+        try:
+            for attempt in range(360):
+                try:
+                    with urlopen(f'http://127.0.0.1:{port}/api/v1/auth/status',timeout=2) as response:
+                        assert json.load(response)['database_locked'] is True
+                    break
+                except OSError:
+                    if child.poll() is not None or attempt==359:
+                        log.seek(0);raise RuntimeError(log.read()[-4000:])
+                    time.sleep(.5)
+            browser=build_opener(HTTPCookieProcessor(http.cookiejar.CookieJar()))
+            post('/auth/login',{'username':'release-smoke','password':'isolated release smoke passphrase'})
+            with browser.open(f'http://127.0.0.1:{port}/api/v1/settings',timeout=10) as response:saved=json.load(response)
+            assert saved['offline_mode'] is False and saved['qa_provider']=='chatgpt'
+            assert saved['qa_model']=='release-vision' and saved['vision_use_qa_model'] is True
+            assert saved['automatic_update_checks'] is False
+            from backend.version import APP_VERSION
+            with browser.open(f'http://127.0.0.1:{port}/api/v1/updates',timeout=10) as response:status=json.load(response)
+            assert status['current_version']==APP_VERSION and status['automatic'] is False
+            print('PASS frozen encrypted restart: saved online mode, models and update preferences')
+        finally:
+            (root/'restart-stop').touch()
+            try:child.wait(timeout=75)
+            except subprocess.TimeoutExpired:
+                child.kill();child.wait(timeout=10)
+                raise AssertionError('Restarted workstation did not shut down cleanly')
 print('PASS frozen worker/model integrity, startup, local auth, frontend and repeated ChatGPT sign-in startup')

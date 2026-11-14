@@ -10,12 +10,12 @@
 .appearance-modes > div { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; }
 .appearance-modes button { padding: 10px; display: flex; flex-direction: column; gap: 10px; background: var(--color-surface); font-size: .75rem; }
 .appearance-modal button[aria-pressed="true"] { border-color: var(--color-accent); box-shadow: 0 0 0 1px var(--color-accent); color: var(--color-accent); }
-.mode-preview { display: grid; gap: 5px; width: 100%; height: 54px; padding: 10px 8px 8px 28px; border: 1px solid #d9dcd5; border-left: 15px solid #e2e7e2; border-radius: 4px; background: #f5f4ef; }
-.mode-preview i { display: block; background: #cad4ce; border-radius: 1px; height: 4px; }
+.mode-preview { display: grid; gap: 5px; width: 100%; height: 54px; padding: 10px 8px 8px 28px; border: 1px solid #dce2e8; border-left: 15px solid #e8edf2; border-radius: 4px; background: #f4f6f8; }
+.mode-preview i { display: block; background: #cad3df; border-radius: 1px; height: 4px; }
 .mode-preview i:last-child { width: 65%; }
 .mode-dark { background: #1b2528; border-color: #39484a; border-left-color: #2c3c40; }
 .mode-dark i { background: #667c77; }
-.mode-system { background: linear-gradient(90deg,#f5f4ef 50%,#1b2528 50%); }
+.mode-system { background: linear-gradient(90deg,#f4f6f8 50%,#1b2528 50%); }
 .accent-presets { display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); gap: 8px; }
 .accent-presets button { display: flex; flex-direction: column; border-color: transparent; padding: 8px 2px; font-size: .65rem; background: transparent; gap: 8px; }
 .accent-presets button > span { display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 50%; color: #fff; font-size: .85rem; }

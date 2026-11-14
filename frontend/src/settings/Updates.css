@@ -1,0 +1,13 @@
+.updates-panel { min-height: 0; overflow: auto; padding: 24px; }
+.updates-version { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; }
+.updates-version h3, .updates-version p { margin: 0; }
+.updates-version p, .updates-checked { color: var(--color-secondary); }
+.updates-actions { display: flex; flex-wrap: wrap; gap: 12px; margin: 20px 0; }
+.updates-progress { display: flex; align-items: center; gap: 12px; margin: 16px 0; }
+.updates-progress progress { flex: 1; width: 100%; accent-color: var(--color-accent); }
+.updates-progress output { font-variant-numeric: tabular-nums; }
+.updates-panel .settings-toggle { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-top: 28px; }
+.updates-checked { margin-top: 20px; font-size: .875rem; }
+.updates-release { display: inline-flex; align-items: center; min-height: 44px; }
+.header-update { color: var(--color-accent); background: var(--color-tab-active); border-color: transparent; }
+.settings-sections { flex-wrap: wrap; }

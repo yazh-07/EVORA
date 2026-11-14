@@ -33,6 +33,8 @@ try {
   await page.route('http://127.0.0.1:4179/**',async route=>{
    const url=new URL(route.request().url());
    if(url.pathname==='/')return route.fulfill({contentType:'text/html',body:'<html data-theme="light"><body><div id="root"></div></body></html>'});
+   if(url.pathname==='/api/v1/settings')return route.fulfill({json:{offline_mode:true,qa_provider:'ollama',qa_url:'http://127.0.0.1:11434',qa_model:'fixture',openai_base_url:'https://api.openai.com/v1',has_openai_key:false,detection_threshold:.7,plate_detection_threshold:.4,show_provenance_rays:true,show_bounding_boxes:true,default_node_label:'source_description'}});
+   if(url.pathname==='/api/v1/media-capabilities')return route.fulfill({json:{video_decoding:true,video_decoder:'opencv'}});
    if(url.pathname.endsWith('/content'))return route.fulfill({contentType:'application/octet-stream',body:media[kind]});
    if(url.pathname.endsWith('/results')){const operation=url.searchParams.get('operation')??operations[0];const all=observations.filter(o=>opname(o)===operation),offset=Number(url.searchParams.get('offset')??0);return route.fulfill({json:{case_id:id(1),evidence_id:id(2),operation,operations:manifest,items:all.slice(offset,offset+50),total:all.length,limit:50,offset}});}
    if(url.pathname.endsWith('/observations')){const run=url.searchParams.get('processing_run_id');const items=observations.filter(o=>!run||o.processing_run_id===run);return route.fulfill({json:{items,total:items.length,limit:100,offset:0}});}

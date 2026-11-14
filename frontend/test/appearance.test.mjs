@@ -12,7 +12,7 @@ test('all presets and extreme custom colors produce readable text and buttons in
   for (const dark of [false, true]) {
     for (const color of [...accentPresets.map(preset => preset.color), '#ffffff', '#000000', '#ffff00', '#00ff00', '#ff00ff', '#123456']) {
       const result = accessibleAccent(color, dark);
-      assert.ok(contrast(result.accent, dark ? '#1b2528' : '#faf9ee') >= 5.3, `${color} text in ${dark ? 'dark' : 'light'}`);
+      assert.ok(contrast(result.accent, dark ? '#1b2528' : '#f4f6f8') >= 5.3, `${color} text in ${dark ? 'dark' : 'light'}`);
       assert.ok(contrast(result.accent, result.foreground) >= 4.5, `${color} button in ${dark ? 'dark' : 'light'}`);
     }
   }
