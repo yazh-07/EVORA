@@ -129,10 +129,10 @@ test('settings dialog exposes labeled controls, slider bounds and actions', () =
   const client = createApiClient({ baseUrl: 'http://backend.test', fetch: async () => { throw Error('No rendering requests'); } });
   const html = renderToStaticMarkup(createElement(ApiProvider, { client }, createElement(SettingsModal, { onClose() {}, initialSection: 'models' })));
   for (const text of ['aria-labelledby="settings-title"', 'Models', 'Media',
-    'Connections', 'Source Description', 'Filename', 'Show Bounding Boxes', 'Show source connections',
-    'Test connection', 'Save Settings', 'Reset to Defaults', 'Cancel', 'min="50" max="95"',
-    'Local (Ollama)', 'Ollama Endpoint URL']) assert.ok(html.includes(text), text);
-  assert.ok(!html.includes('Cloud / Custom (OpenAI-compatible)'));
+    'Connections', 'Source description', 'Filename', 'Bounding boxes', 'Source connections',
+    'Test connection', 'Save', 'Reset', 'Cancel', 'min="50" max="95"',
+    'Ollama', 'Ollama URL']) assert.ok(html.includes(text), text);
+  assert.ok(!html.includes('OpenAI-compatible'));
   assert.ok(!html.includes('<option value="chatgpt"'));
   assert.ok(!html.includes('type="password"'));
 });
@@ -144,7 +144,7 @@ test('cloud provider choices require an explicitly online settings draft', t => 
   for(const offline_mode of [undefined,true,false]){
     window.localStorage.setItem(SETTINGS_KEY,JSON.stringify({...defaultSettings,offline_mode}));
     const html=render();
-    assert.equal(html.includes('Cloud / Custom (OpenAI-compatible)'),offline_mode===false);
+    assert.equal(html.includes('OpenAI-compatible'),offline_mode===false);
     assert.equal(html.includes('<option value="chatgpt"'),offline_mode===false);
   }
 });
@@ -155,10 +155,10 @@ test('OpenAI settings show password, base URL and model choices without revealin
     qa_model: 'gpt-4o', has_openai_key: true, openai_api_key: 'sk-stale-secret' }));
   const client = createApiClient({ baseUrl: 'http://backend.test' });
   const html = renderToStaticMarkup(createElement(ApiProvider, { client }, createElement(SettingsModal, { onClose() {}, initialSection: 'models' })));
-  for (const text of ['type="password"', 'placeholder="sk-..."', 'Base URL', 'https://api.openai.com/v1',
-    'GPT-4o', 'gpt-4o-mini', 'o3-mini', 'Custom model', 'Key saved. Leave blank to keep.']) assert.ok(html.includes(text), text);
+  for (const text of ['type="password"', 'placeholder="Saved · enter to replace"', 'Base URL', 'https://api.openai.com/v1',
+    'gpt-4o', 'gpt-4o-mini', 'o3-mini', 'Model name', 'Connection options']) assert.ok(html.includes(text), text);
   assert.ok(!html.includes('sk-stale-secret'));
-  assert.ok(!html.includes('Ollama Endpoint URL'));
+  assert.ok(!html.includes('Ollama URL'));
 });
 
 

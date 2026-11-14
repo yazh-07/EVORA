@@ -221,6 +221,15 @@ label, legend, summary { font-size: .9375rem; }
 .case-navigation .investigation-tabs button[aria-selected="true"] { background: var(--color-tab-active); color: var(--color-accent); box-shadow: inset 3px 0 var(--color-accent); }
 .case-navigation svg { width: 20px; height: 20px; flex-shrink: 0; }
 .investigation-content { min-width: 0; }
+/* Case navigation stays in place; each retained view owns its scroll position. */
+.app-shell:has(.investigation-layout) { height: 100dvh; min-height: 0; overflow: hidden; }
+.app-shell:has(.investigation-layout) > .app-header { flex-shrink: 0; }
+.app-shell:has(.investigation-layout) > main { display: flex; flex: 1; flex-direction: column; min-height: 0; padding-bottom: 24px; }
+.app-shell:has(.investigation-layout) .case-header { flex-shrink: 0; }
+.app-shell:has(.investigation-layout) .investigation-layout { flex: 1; min-height: 0; grid-template-rows: minmax(0, 1fr); align-items: stretch; }
+.app-shell:has(.investigation-layout) .case-navigation { position: static; align-self: start; max-height: 100%; overflow-y: auto; }
+.investigation-content { display: grid; grid-template: minmax(0, 1fr) / minmax(0, 1fr); min-height: 0; }
+.investigation-content > [role="tabpanel"] { grid-area: 1 / 1; min-height: 0; min-width: 0; overflow: auto; scrollbar-gutter: stable; overscroll-behavior: contain; }
 .case-header-active { align-items: center; padding-bottom: 8px; }
 .case-heading h1 { font-size: 1.65rem; line-height: 1.35; }
 .case-heading .back-button { font-size: .9375rem; }
@@ -247,6 +256,7 @@ label, legend, summary { font-size: .9375rem; }
   .dashboard-charts { grid-template-columns: minmax(0,1fr); }
 }
 @media(max-width:850px) {
+  .app-shell:has(.investigation-layout) .investigation-layout { grid-template-rows: auto minmax(0, 1fr); }
   .investigation-layout { grid-template-columns: minmax(0,1fr); gap: 16px; }
   .case-navigation { position: static; padding: 6px; overflow: hidden; }
   .case-navigation .investigation-tabs { flex-direction: row; overflow-x: auto; gap: 4px; }

@@ -1,4 +1,4 @@
-.updates-panel { min-height: 0; overflow: auto; padding: 24px; }
+.updates-panel { flex: 1; min-height: 0; overflow: auto; padding: 24px; scrollbar-gutter: stable; }
 .updates-version { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; }
 .updates-version h3, .updates-version p { margin: 0; }
 .updates-version p, .updates-checked { color: var(--color-secondary); }
@@ -10,4 +10,3 @@
 .updates-checked { margin-top: 20px; font-size: .875rem; }
 .updates-release { display: inline-flex; align-items: center; min-height: 44px; }
 .header-update { color: var(--color-accent); background: var(--color-tab-active); border-color: transparent; }
-.settings-sections { flex-wrap: wrap; }

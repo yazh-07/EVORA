@@ -45,7 +45,12 @@ export function InvestigationTabs({ activeTab, onSelect }: { activeTab: Investig
       tabIndex={activeTab === tab.id ? 0 : -1} onClick={() => onSelect(tab.id)} onKeyDown={event => {
         const next = (event.key === 'ArrowRight' || event.key === 'ArrowDown') ? (index + 1) % tabs.length : (event.key === 'ArrowLeft' || event.key === 'ArrowUp') ? (index + tabs.length - 1) % tabs.length :
           event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 : null;
-        if (next !== null) { event.preventDefault(); onSelect(tabs[next]!.id); buttons.current[next]?.focus(); }
+        if (next !== null) {
+          event.preventDefault(); onSelect(tabs[next]!.id);
+          const button = buttons.current[next];
+          button?.focus({ preventScroll: true });
+          button?.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'instant' });
+        }
       }}>
       <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={tab.path} /></svg>
       {tab.label}

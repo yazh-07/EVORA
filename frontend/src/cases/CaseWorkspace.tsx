@@ -53,7 +53,7 @@ export { EvidencePanels } from './EvidenceWorkspace';
 export { createEvidenceStore } from './evidenceStore';
 export { createProcessingController } from './processingController';
 export { StartProcessing, StartProcessingPanel } from './StartProcessing';
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { useApiClient } from '../api/ApiProvider';
 import { createCaseStore } from './store';
 import type { CaseState } from './store';
@@ -117,11 +117,18 @@ export function CaseEvidenceWorkspace({ caseId, caseTitle = 'Investigation' }: {
   const [intakeRequest, setIntakeRequest] = useState(0);
   const [timelineRange, setTimelineRange] = useState<{ from: string; to: string; revision: number }>();
   const scrollPositions = useRef<Partial<Record<InvestigationTab, number>>>({});
+  const panels = useRef<Partial<Record<InvestigationTab, HTMLDivElement | null>>>({});
   const currentTab = useRef<InvestigationTab>('overview');
   const navigate = (tab: InvestigationTab) => {
-    if (currentTab.current !== tab) { scrollPositions.current[currentTab.current] = window.scrollY; currentTab.current = tab; requestAnimationFrame(() => window.scrollTo({ top: scrollPositions.current[tab] ?? 0, behavior: 'instant' })); }
+    if (currentTab.current === tab) return;
+    scrollPositions.current[currentTab.current] = panels.current[currentTab.current]?.scrollTop ?? 0;
+    currentTab.current = tab;
     setActiveTab(tab); setVisited(value => new Set([...value, tab]));
   };
+  useLayoutEffect(() => {
+    const panel = panels.current[activeTab];
+    if (panel) panel.scrollTop = scrollPositions.current[activeTab] ?? 0;
+  }, [activeTab]);
   const inspectEvidence = (id: string, focus?: SourceFocus) => {
     setSelection({ id, focus }); navigate('evidence');
   };
@@ -136,7 +143,7 @@ export function CaseEvidenceWorkspace({ caseId, caseTitle = 'Investigation' }: {
   return <div className="investigation-layout">
     <aside className="case-navigation" aria-label="Case tools"><InvestigationTabs activeTab={activeTab} onSelect={navigate} /></aside>
     <div className="investigation-content">
-      {(['overview', 'evidence', 'timeline', 'locations', 'investigation', 'report'] as const).map(tab => <div key={tab} id={`panel-${tab}`} role="tabpanel" aria-labelledby={`tab-${tab}`} tabIndex={0} hidden={activeTab !== tab}>
+      {(['overview', 'evidence', 'timeline', 'locations', 'investigation', 'report'] as const).map(tab => <div key={tab} ref={element => { panels.current[tab] = element; }} id={`panel-${tab}`} role="tabpanel" aria-labelledby={`tab-${tab}`} tabIndex={0} hidden={activeTab !== tab}>
         {visited.has(tab) && <>
           {tab === 'overview' && <InvestigationOverview activeView={activeTab === 'overview'} caseId={caseId} navigate={navigate} addEvidence={addEvidence} inspectEvidence={inspectEvidence} showTimeline={(from, to) => { setTimelineRange(value => ({ from, to, revision: (value?.revision ?? 0) + 1 })); navigate('timeline'); }} />}
           {tab === 'evidence' && <EvidenceWorkspace caseId={caseId} caseTitle={caseTitle} sourceSelection={selection} intakeRequest={intakeRequest} />}

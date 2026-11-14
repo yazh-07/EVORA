@@ -11,7 +11,7 @@ export function ChatGPTConnection({ onSharing }: { onSharing: (sharing: boolean)
     const controller=new AbortController();
     const refresh=()=>{void client.request('get','/api/v1/chatgpt/status',{signal:controller.signal}).then(value=>{
       if(!controller.signal.aborted){setStatus(value);callback.current(value.sharing);}
-    }).catch(()=>{if(!controller.signal.aborted)setError('Could not read the ChatGPT connection. Sign in as a local administrator and retry.');});};
+    }).catch(()=>{if(!controller.signal.aborted)setError('Could not check ChatGPT. Retry.');});};
     refresh();const timer=status?.pending?window.setInterval(refresh,1500):undefined;
     return()=>{controller.abort();if(timer!==undefined)window.clearInterval(timer);};
   },[client,status?.pending]);
@@ -39,12 +39,14 @@ export function ChatGPTConnection({ onSharing }: { onSharing: (sharing: boolean)
     finally{setBusy(false);}
   }
   return <section aria-label="ChatGPT model connection">
-    {status?.connected&&<p role="status">Connected{status.email?` as ${status.email}`:''}. {status.sharing?'Model access authorized.':'Model access not authorized. Reconnect.'}</p>}
-    {status?.pending&&<p role="status">Finish sign-in in the browser window, then return here.</p>}
-    <button type="button" disabled={busy||status?.pending} onClick={()=>void connect()}>Continue with ChatGPT</button>
-    {status?.email&&<button type="button" disabled={busy||status.pending} onClick={()=>void connect(true)}>Use another ChatGPT account</button>}
-    {(status?.connected||status?.pending)&&<button type="button" disabled={busy} onClick={()=>void disconnect()}>Disconnect ChatGPT</button>}
+    {status?.connected&&<p role="status">{status.email || 'ChatGPT'} · {status.sharing?'Connected':'Reconnect to use models'}</p>}
+    {status?.pending ? <><p role="status">Finish sign-in in your browser.</p><button type="button" disabled={busy} onClick={()=>void disconnect()}>Cancel sign-in</button></>
+      : !status?.sharing && <button type="button" disabled={busy} onClick={()=>void connect()}>Continue with ChatGPT</button>}
+    {status?.connected&&<details className="settings-advanced"><summary>Account options</summary>
+      {status.email&&<button type="button" disabled={busy||status.pending} onClick={()=>void connect(true)}>Switch account</button>}
+      <button type="button" disabled={busy} onClick={()=>void disconnect()}>Disconnect</button>
+      <p><a href="https://chatgpt.com/settings/usage" target="_blank" rel="noreferrer">ChatGPT account ↗</a></p>
+    </details>}
     {(error||status?.error)&&<p role="alert">{error||status?.error}</p>}
-    <p><a href="https://chatgpt.com/settings/usage" target="_blank" rel="noreferrer">Manage ChatGPT usage and app access</a></p>
   </section>;
 }

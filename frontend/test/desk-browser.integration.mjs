@@ -43,6 +43,7 @@ try {
   else if (path.endsWith('/events')) result = paged([{ id: '77777777-7777-4777-8777-777777777777', case_id: caseId, kind: 'network.activity', summary: 'Gateway event', evidence_ids: [sourceId], observation_ids: [], entity_ids: [], confidence: 0, observed_at_utc: created_at }]);
   else if (/\/(findings|events|entities|observations)$/.test(path)) result = { ...paged([]), ...(path.endsWith('/findings') ? { analysis_run_id: runId } : {}) };
   else if (path === '/settings') result = { qa_provider: 'ollama', qa_model: 'test', qa_url: 'http://localhost:11434', offline_mode: true };
+  else if (path === '/updates') result = { current_version: '1.3.9', latest_version: null, status: 'idle', downloaded_bytes: 0, total_bytes: 0, release_url: 'https://github.com/yazh-07/EVORA/releases/latest', download_url: null, checked_at: null, error: null, automatic: false, can_install: false, available: false };
   else if (path.endsWith('/triage')) result = { ...paged([]), analysis_run_id: runId };
   else if (path.endsWith('/graph')) result = { case_id: caseId, analysis_run_id: runId, nodes: [], edges: [] };
   else if (path.endsWith('/executive-brief')) result = { case_id: caseId, analysis_run_id: runId, hypotheses: [] };
@@ -63,7 +64,7 @@ try {
  await tab('Overview').click();
  await button('Run case analysis').waitFor();
  await button('← All Cases').click(); await button(`Open case ${record.title}`).waitFor();
- assert.equal(await page.evaluate(() => getComputedStyle(document.body).backgroundColor), 'rgb(250, 249, 238)');
+ assert.equal(await page.evaluate(() => getComputedStyle(document.body).backgroundColor), 'rgb(244, 246, 248)');
  await page.screenshot({ path: `${artifacts}/cases.png`, fullPage: true });
  assert.equal(await button('Settings').count(), 1);
  await button('Settings').click(); await button('Blue').click();
@@ -74,8 +75,8 @@ try {
  await button('Cancel').click(); assert.notEqual(await accent(), preview);
  await button('Settings').click(); await page.getByLabel('Hex code', { exact: true }).fill('#ffffff');
  await page.getByText('Color adjusted for readable text.').waitFor();
- await page.getByLabel('Hex code', { exact: true }).fill('bad'); assert.ok(await button('Apply appearance').isDisabled());
- await button('Blue').click(); await button('Apply appearance').click(); await page.reload();
+ await page.getByLabel('Hex code', { exact: true }).fill('bad'); assert.ok(await button('Apply').isDisabled());
+ await button('Blue').click(); await button('Apply').click(); await page.reload();
  assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('evora-appearance')).accent), '#2859b8');
  await button(`Open case ${record.title}`).click();
  assert.equal(await page.locator('.case-details').count(), 0);
@@ -129,20 +130,20 @@ try {
  }
  await page.setViewportSize({ width: 390, height: 844 }); await tab('Overview').click();
  await page.screenshot({ path: `${artifacts}/mobile.png`, fullPage: true });
- await button('Settings').click(); await button('Dark').click(); await button('Apply appearance').click(); assert.equal(await page.evaluate(() => document.documentElement.dataset.theme), 'dark');
+ await button('Settings').click(); await button('Dark').click(); await button('Apply').click(); assert.equal(await page.evaluate(() => document.documentElement.dataset.theme), 'dark');
  assert.equal(await page.evaluate(() => getComputedStyle(document.body).backgroundColor), 'rgb(18, 26, 28)');
  assert.equal(await page.locator('.case-heading h1').evaluate(element => getComputedStyle(element).color), 'rgb(234, 241, 239)');
  await page.screenshot({ path: `${artifacts}/dark.png`, fullPage: true });
- await button('Settings').click(); await button('System').click(); await button('Apply appearance').click();
+ await button('Settings').click(); await button('System').click(); await button('Apply').click();
  await page.emulateMedia({ colorScheme: 'light' }); await page.waitForFunction(() => document.documentElement.dataset.theme === 'light');
  await page.emulateMedia({ colorScheme: 'dark' }); await page.waitForFunction(() => document.documentElement.dataset.theme === 'dark');
  await page.waitForFunction(() => document.documentElement.dataset.theme === 'dark');
  await tab('Report').click(); const download = page.waitForEvent('download'); await button('Download text').click(); await download;
  await button('← All Cases').click(); await button(`Open case ${record.title}`).waitFor();
  role = 'reviewer'; await page.reload(); await button(`Open case ${record.title}`).click();
- assert.ok(await button('Run case analysis').isDisabled()); await button('Settings').click(); assert.equal(await button('Models').count(), 0); await button('Viewer').click(); await page.getByRole('switch', { name: 'Show Bounding Boxes', exact: true }).uncheck(); await button('Save Settings').click(); await button('Settings').click(); await button('Cancel').click();
+ assert.ok(await button('Run case analysis').isDisabled()); await button('Settings').click(); assert.equal(await button('Models').count(), 0); await button('Viewer').click(); await page.getByRole('switch', { name: 'Bounding boxes', exact: true }).uncheck(); await button('Save').click(); await button('Settings').click(); await button('Cancel').click();
  await page.setViewportSize({ width: 1440, height: 1000 });
- await button('Settings').click(); await button('Reset').click(); await button('Apply appearance').click();
+ await button('Settings').click(); await button('Reset').click(); await button('Apply').click();
  assert.equal(await page.evaluate(() => document.documentElement.dataset.theme), 'light');
  await page.screenshot({ path: `${artifacts}/overview-default.png`, fullPage: true });
  await button('Settings').click(); await page.keyboard.press('Escape');

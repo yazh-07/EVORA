@@ -28,6 +28,7 @@
   --color-card-hover: #233033; --color-table-header: #202d30;
 }
 
+html { scrollbar-gutter: stable; }
 * { box-sizing: border-box; scrollbar-color: var(--color-border) var(--color-neutral); }
 ::selection { background: var(--color-accent); color: var(--color-accent-fg); }
 body { margin: 0; background: var(--color-neutral); color: var(--color-primary); }

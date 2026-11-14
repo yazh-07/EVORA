@@ -31,6 +31,6 @@ export function AppearanceForm({ onClose }: { onClose: () => void }) {
         {colors.adjusted && <p className="appearance-note" role="status">Color adjusted for readable text.</p>}
         {error && <p role="alert">{error}</p>}
       </div>
-      <footer className="appearance-actions"><button type="button" onClick={() => { setDraft({ ...defaultAppearance }); setHex(defaultAppearance.accent); setError(''); }}>Reset</button><div><button type="button" onClick={close}>Cancel</button><button type="submit" disabled={!valid}>Apply appearance</button></div></footer>
+      <footer className="appearance-actions"><button type="button" onClick={() => { setDraft({ ...defaultAppearance }); setHex(defaultAppearance.accent); setError(''); }}>Reset</button><div><button type="button" onClick={close}>Cancel</button><button type="submit" disabled={!valid}>Apply</button></div></footer>
     </form>;
 }

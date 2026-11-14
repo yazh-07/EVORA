@@ -11,7 +11,8 @@ button { font-weight: 550; }
 .action-menu > summary { display: flex; align-items: center; justify-content: center; min-width: 40px; min-height: 44px; padding: 8px; border: 1px solid var(--color-border); border-radius: 6px; list-style: none; background: var(--color-surface); font-size: 1.1rem; }
 .action-menu > summary::-webkit-details-marker { display: none; }
 .action-menu[open] > summary { background: var(--color-tab-active); color: var(--color-accent); }
-.action-popover { position: absolute; right: 0; top: calc(100% + 6px); z-index: 30; width: min(330px, calc(100vw - 48px)); padding: 10px; border: 1px solid var(--color-border); border-radius: 8px; box-shadow: 0 10px 30px #1725241c; background: var(--color-surface); display: grid; gap: 8px; }
+.action-popover { position: absolute; right: 0; top: calc(100% + 6px); z-index: 30; width: min(330px, calc(100vw - 48px)); max-height: calc(100dvh - 16px); overflow-y: auto; padding: 10px; border: 1px solid var(--color-border); border-radius: 8px; box-shadow: 0 10px 30px #1725241c; background: var(--color-surface); display: grid; gap: 8px; }
+.action-popover[data-positioned] { position: fixed; right: auto; }
 .action-popover button { justify-content: flex-start; width: 100%; background: transparent; border-color: transparent; text-align: left; }
 .action-popover button:hover { background: var(--color-tab-active); }
 .action-popover p, .action-popover label { font-size: .875rem; margin: 0; }
@@ -54,7 +55,7 @@ button { font-weight: 550; }
 .case-list > li { animation: none; }
 .case-list > li:hover, .overview-stats button:hover { transform: none; box-shadow: none; }
 .action-menu::details-content { overflow: visible; }
-.source-tabs ~ div:not([hidden]) { animation: workspace-enter 150ms ease; }
+.source-tabs ~ div:not([hidden]) { animation: none; }
 /* The map and table remain available without external map services. */
 .location-filters { display: flex; gap: 12px; flex-wrap: wrap; align-items: end; margin-bottom: 16px; }
 .location-filters label { display: grid; gap: 6px; font-size: .875rem; }

@@ -96,10 +96,10 @@ export function UpdatesPanel() {
   return <section className="updates-panel" aria-label="Application updates">
     <div className="updates-version"><img src="/brand/icon.png" alt="" width="40" height="40" /><div><h3>EVORA</h3><p>{data ? `Version ${data.current_version}` : 'Loading version…'}</p></div></div>
     {data?.status === 'up_to_date' && <p role="status">Up to date</p>}
-    {data?.available && <p role="status">Version {data.latest_version} available</p>}
+    {data?.available && !['ready', 'installing'].includes(data.status) && <p role="status">Version {data.latest_version} available</p>}
     {data?.status === 'checking' && <p role="status">Checking for updates…</p>}
     {data?.status === 'downloading' && <div className="updates-progress"><progress aria-label="Update download" value={data.downloaded_bytes} max={data.total_bytes || 1} /><output>{data.total_bytes ? Math.floor(100 * data.downloaded_bytes / data.total_bytes) : 0}%</output></div>}
-    {data?.status === 'ready' && <p role="status">Download verified. Ready to install.</p>}
+    {data?.status === 'ready' && <p role="status">Version {data.latest_version} ready to install</p>}
     {data?.status === 'installing' && <p role="status">Finish setup in the installer.</p>}
     {(error || state.error || data?.error) && <p role="alert">{error || state.error || data?.error}</p>}
     {admin && <div className="updates-actions">
@@ -110,6 +110,5 @@ export function UpdatesPanel() {
       {data?.available && !data.can_install && <a className="updates-release" href={data.download_url ?? data.release_url} target="_blank" rel="noreferrer">Download update ↗</a>}
     </div>}
     {data && admin && <label className="settings-toggle"><span>Check automatically</span><input type="checkbox" role="switch" checked={automaticDraft ?? data.automatic} disabled={saving} onChange={event => void automatic(event.target.checked)} /></label>}
-    {data?.checked_at && <p className="updates-checked">Last checked {new Date(data.checked_at).toLocaleString()}</p>}
   </section>;
 }

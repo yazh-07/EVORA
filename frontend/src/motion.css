@@ -8,7 +8,7 @@ button, .file-picker, input, select, textarea {
   transition: background-color var(--motion-fast) ease, border-color var(--motion-fast) ease,
     color var(--motion-fast) ease, box-shadow var(--motion-fast) ease, transform var(--motion-fast) var(--motion-ease);
 }
-button:active:not(:disabled), .file-picker:active { transform: translateY(1px); }
+button:active:not(:disabled), .file-picker:active { transform: none; }
 input:focus-visible, textarea:focus-visible, select:focus-visible {
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 10%, transparent);
 }
@@ -16,7 +16,7 @@ body, .app-header, .panel, .workspace-sidebar, footer {
   transition: background-color 180ms ease, color 180ms ease, border-color 180ms ease;
 }
 [role="tabpanel"]:not([hidden]), .workspace-tool-panel:not([hidden]) {
-  animation: workspace-enter var(--motion-normal) var(--motion-ease) both;
+  animation: none;
 }
 .case-header-active, .local-login, .case-creation, .case-browser {
   animation: workspace-enter var(--motion-normal) var(--motion-ease) both;
@@ -32,7 +32,6 @@ body, .app-header, .panel, .workspace-sidebar, footer {
 }
 @media (hover: hover) and (pointer: fine) {
   .case-list > li:hover, .overview-stats button:hover {
-    transform: translateY(-2px);
     border-color: color-mix(in srgb, var(--color-accent) 35%, var(--color-border));
     box-shadow: 0 4px 12px #101d1808;
   }
@@ -54,7 +53,7 @@ body, .app-header, .panel, .workspace-sidebar, footer {
   }
   details[open]::details-content { block-size: auto; opacity: 1; }
 }
-@keyframes workspace-enter { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes workspace-enter { from { opacity: .9; } to { opacity: 1; } }
 @keyframes dialog-enter { from { opacity: 0; transform: translateY(10px) scale(.99); } to { opacity: 1; transform: translateY(0) scale(1); } }
 @keyframes backdrop-enter { from { opacity: 0; } to { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) {
