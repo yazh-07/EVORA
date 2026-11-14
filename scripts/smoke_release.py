@@ -39,6 +39,11 @@ if runtime.is_dir():
     assert (runtime / 'sources/neo4j-source.tar.gz').is_file()
 with TemporaryDirectory(prefix='evora-release-smoke-') as directory:
     root = Path(directory)
+    if runtime.is_dir():
+        # Exercise the CLI parser edge case deterministically in the actual bundle.
+        (root/'graph').mkdir(mode=0o700)
+        (root/'graph/credentials.json').write_text(json.dumps({'password':
+            '-synthetic-release-parser-fixture-012345678901234567890123456789'}),encoding='utf-8')
     with socket.socket() as sock:
         sock.bind(('127.0.0.1', 0))
         port = sock.getsockname()[1]

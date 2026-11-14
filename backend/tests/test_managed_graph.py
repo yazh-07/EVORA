@@ -97,6 +97,17 @@ class GraphPackagingTests(unittest.TestCase):
 
 @unittest.skipUnless(os.environ.get('EVORA_GRAPH_TEST_RUNTIME'), 'Requires an explicitly staged JVM/Neo4j runtime')
 class ManagedGraphIntegrationTests(unittest.TestCase):
+    def test_dash_prefixed_password_initializes_and_authenticates(self):
+        with TemporaryDirectory() as directory:
+            graph=ManagedGraph(os.environ['EVORA_GRAPH_TEST_RUNTIME'],directory)
+            try:
+                with patch('backend.managed_graph.secrets.token_urlsafe',return_value='-synthetic-parser-fixture-012345678901234567890123456789'):
+                    env=graph.start()
+                with GraphDatabase.driver(env['NEO4J_URI'],auth=('neo4j',env['NEO4J_PASSWORD'])) as driver:
+                    driver.verify_connectivity()
+            finally:
+                graph.close()
+
     def test_authenticated_restart_preserves_data_credentials_and_rejects_second_owner(self):
         with TemporaryDirectory() as directory:
             root = Path(directory)

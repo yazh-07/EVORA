@@ -90,7 +90,8 @@ class ManagedGraph:
         # Only initialize a new store. Never reset a password on an existing graph.
         if not (self.home / 'data/databases/system').exists():
             try:
-                subprocess.run(self.command('org.neo4j.cli.AdminTool', 'dbms', 'set-initial-password', password),
+                # Generated secrets may begin with '-'; terminate option parsing.
+                subprocess.run(self.command('org.neo4j.cli.AdminTool', 'dbms', 'set-initial-password', '--', password),
                                env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
                                check=True, timeout=90, **options)
             except (OSError, subprocess.SubprocessError):
