@@ -130,7 +130,7 @@ class IncrementalTests(unittest.TestCase):
             self.service._install_incremental()
         args=execute.call_args.args[0];self.assertEqual(args[1],'--plan')
         plan=json.loads(Path(args[2]).read_text())
-        self.assertEqual(plan['root'],str(self.root));self.assertEqual(plan['changes'],package['changes'])
+        self.assertEqual(Path(plan['root']),self.root.resolve());self.assertEqual(plan['changes'],package['changes'])
         self.assertEqual(plan['deletes'][0]['path'],'backend/obsolete.txt')
         self.assertEqual(plan['baseline_sha256'],inc.digest(self.root/inc.INSTALLED))
         self.assertEqual(Path(args[0]).read_bytes(),b'helper')
