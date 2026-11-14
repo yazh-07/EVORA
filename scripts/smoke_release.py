@@ -12,6 +12,11 @@ from urllib.request import urlopen,build_opener,HTTPCookieProcessor,Request
 from urllib.error import HTTPError
 
 binary = Path(sys.argv[1]).resolve()
+if sys.platform == 'win32':
+    import pefile
+    with pefile.PE(str(binary)) as image:
+        resource_types = {entry.id for entry in image.DIRECTORY_ENTRY_RESOURCE.entries}
+        assert {3, 14, 16}.issubset(resource_types), 'Windows EXE must contain icons and version metadata'
 subprocess.run([str(binary), '--help'], check=True, timeout=60)
 manifest = binary.parent / '_internal/backend/models/text_ner.json'
 worker = subprocess.run([str(binary), '-m', 'backend.text_ner_worker', str(manifest)],

@@ -16,16 +16,17 @@ export function ChatGPTConnection({ onSharing }: { onSharing: (sharing: boolean)
     return()=>{controller.abort();if(timer!==undefined)window.clearInterval(timer);};
   },[client,status?.pending]);
   async function connect(newAccount=false){
-    const popup=window.open('about:blank','_blank');if(popup)popup.opener=null;
-    if(!popup){setError('Allow pop-ups for EVORA, then try again.');return;}
+    const nativeOpen=(window as Window & {evoraOpenChatGPT?: (url:string)=>Promise<void>}).evoraOpenChatGPT;
+    const popup=nativeOpen?null:window.open('about:blank','_blank');if(popup)popup.opener=null;
+    if(!nativeOpen&&!popup){setError('Allow pop-ups for EVORA, then try again.');return;}
     setBusy(true);setError('');
     try{
       const value=await client.request('post','/api/v1/chatgpt/connect',{body:{offline_mode:false,new_account:newAccount}});
       const url=new URL(value.authorization_url);
-      if(url.origin!=='https://auth.openai.com')throw Error('Invalid sign-in destination');
-      popup.location.href=url.href;
+      if(url.origin!=='https://auth.openai.com'||url.pathname!=='/api/accounts/authorize'||url.username||url.password)throw Error('Invalid sign-in destination');
+      if(nativeOpen)await nativeOpen(url.href);else popup!.location.href=url.href;
       setStatus(current=>({...current,connected:current?.connected??false,sharing:current?.sharing??false,email:current?.email??'',error:'',pending:true}));
-    }catch(cause){popup.close();setError(cause instanceof ApiHttpError&&cause.apiError?cause.apiError.message:'Could not start ChatGPT sign-in.');}
+    }catch(cause){popup?.close();setError(cause instanceof ApiHttpError&&cause.apiError?cause.apiError.message:'Could not start ChatGPT sign-in.');}
     finally{setBusy(false);}
   }
   async function disconnect(){

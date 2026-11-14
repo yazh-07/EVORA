@@ -33,6 +33,8 @@ exe = EXE(
     [],
     exclude_binaries=True,
     name='evora',
+    icon=str(Path(SPECPATH) / 'desktop/icon.ico'),
+    version=str(Path(SPECPATH) / 'desktop/backend-version.txt') if sys.platform == 'win32' else None,
     debug=False,
     bootloader_ignore_signals=False,
     strip=sys.platform != "win32",

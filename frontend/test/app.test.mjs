@@ -14,6 +14,7 @@ test('workspace offers local login with landmarks and no fabricated records', ()
   assert.match(html, /href="#workspace">Skip to workspace/);
   assert.match(html, /<main id="workspace" tabindex="-1"/);
   assert.match(html, /aria-label="Settings"/);
+  assert.match(html, /src="\/brand\/icon.png"/);
   assert.match(html, /Sign in to EVORA/);
   assert.doesNotMatch(html, /Access token|synthetic-one|synthetic-two/);
   assert.match(html, /Sign in to load your cases/);

@@ -19,9 +19,7 @@ function Application() {
       <div className="app-shell">
         <header className="app-header">
           <a className="brand" href="#workspace" aria-label="EVORA workspace">
-            <svg width="28" height="30" viewBox="0 0 28 30" fill="none" aria-hidden="true">
-              <path d="M4 3h20M4 15h15M4 27h20M4 3v24" stroke="currentColor" strokeWidth="3" /><circle cx="23" cy="15" r="3" fill="currentColor" />
-            </svg>
+            <img src="/brand/icon.png" width="32" height="32" alt="" />
             EVORA
           </a>
           <div className="header-actions">

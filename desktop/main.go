@@ -76,6 +76,12 @@ func openNativeWindow(targetURL string, initialReady bool) {
 
 	wvWindow = wv
 	wv.SetSize(1440, 900, webview2.HintNone)
+	_ = wv.Bind("evoraOpenChatGPT", func(raw string) error {
+		if !validChatGPTAuthorizationURL(raw) {
+			return fmt.Errorf("invalid sign-in destination")
+		}
+		return openSystemBrowser(raw)
+	})
 
 	// Bind JS helpers for the custom error page
 	_ = wv.Bind("evoraRetry", func() {
@@ -194,7 +200,7 @@ func buildErrorHTML(diag DiagnosticInfo) string {
 </html>`
 }
 
-func openSystemBrowser(url string) {
+func openSystemBrowser(url string) error {
 	var cmd *exec.Cmd
 	switch runtime.GOOS {
 	case "windows":
@@ -204,7 +210,7 @@ func openSystemBrowser(url string) {
 	default:
 		cmd = exec.Command("xdg-open", url)
 	}
-	_ = cmd.Start()
+	return cmd.Start()
 }
 
 func onTrayReady() {
