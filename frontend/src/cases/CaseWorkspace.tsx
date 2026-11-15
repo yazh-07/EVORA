@@ -184,8 +184,10 @@ export function CasePanels({ state, load, select }: { state: CaseState; load: (o
         <p className="sr-only" role="status">{page.total} accessible cases. {page.items.length ? `Showing ${page.offset + 1}-${page.offset + page.items.length}.` : 'Showing 0 cases on this page.'}</p>
         {page.items.length === 0 ? <p>{page.total === 0 ? 'No cases are available to this account.' : 'No cases on this page. Return to the first page or refresh.'}</p> :
           <ul className="case-list">{visibleCases.map(item => <li key={item.id}>
-            <button onClick={() => select(item.id)} aria-label={`Open case ${item.title}`} aria-pressed={state.detail?.id === item.id}>{item.title}</button>
-            <p className="case-created">Created <time dateTime={item.created_at}>{new Date(item.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' })}</time></p>
+            <button type="button" className="case-card" onClick={() => select(item.id)} aria-label={`Open case ${item.title}`} aria-pressed={state.detail?.id === item.id}>
+              <span className="case-card-title">{item.title}</span>
+              <span className="case-created">Created <time dateTime={item.created_at}>{new Date(item.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' })}</time></span>
+            </button>
           </li>)}</ul>}
         {query && <p role="status">{visibleCases.length} matches</p>}
         <nav hidden={!!page && page.total <= page.limit} className="pagination" aria-label="Case pages">

@@ -38,7 +38,11 @@ try {
   await page.route('**/api/v1/settings/models', route => route.fulfill({ json: { models: ['fixture-chat', 'fixture-vision'], vision_models: ['fixture-vision'] }, headers: { 'X-Evora-User': me.user.id } }));
   await page.route('**/api/v1/chatgpt/status', route => route.fulfill({ json: { connected: true, sharing: true, email: 'fixture@example.test', pending: false, error: '' }, headers: { 'X-Evora-User': me.user.id } }));
   await page.goto(origin);
-  await page.getByRole('button', { name: 'Open case Navigation acceptance', exact: true }).click();
+  const caseCard = page.getByRole('button', { name: 'Open case Navigation acceptance', exact: true });
+  await caseCard.waitFor();
+  const cardSize = await caseCard.boundingBox();
+  // Click empty card padding, away from both the title and date.
+  await caseCard.click({ position: { x: cardSize.width - 8, y: cardSize.height - 8 } });
   await page.locator('.overview-stats').waitFor();
   await page.waitForTimeout(300);
   const nav = page.getByRole('complementary', { name: 'Case tools' }), header = page.locator('.case-header'), content = page.locator('.investigation-content');
