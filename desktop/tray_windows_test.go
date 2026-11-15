@@ -73,3 +73,31 @@ type trayTestWindow struct {
 
 func (w *trayTestWindow) Window() unsafe.Pointer { return w.hwnd }
 func (w *trayTestWindow) Dispatch(fn func())     { w.dispatched = true; fn() }
+
+func (w *trayTestWindow) Destroy()   { user32.NewProc("SendMessageW").Call(uintptr(w.hwnd), 0x10, 0, 0) }
+func (w *trayTestWindow) Terminate() { panic("stopping the event loop leaves a frozen native window") }
+
+func TestTrayExitDestroysNativeWindowBeforeBackendShutdown(t *testing.T) {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+	previous := nativeWindow()
+	defer setNativeWindow(previous)
+	defer quitting.Store(false)
+	class, _ := syscall.UTF16PtrFromString("STATIC")
+	title, _ := syscall.UTF16PtrFromString("EVORA exit acceptance")
+	hwnd, _, err := user32.NewProc("CreateWindowExW").Call(0, uintptr(unsafe.Pointer(class)), uintptr(unsafe.Pointer(title)), 0x10cf0000, 0, 0, 320, 200, 0, 0, 0, 0)
+	if hwnd == 0 {
+		t.Fatal(err)
+	}
+	defer user32.NewProc("DestroyWindow").Call(hwnd)
+	if err := installCloseToTray(unsafe.Pointer(hwnd)); err != nil {
+		t.Fatal(err)
+	}
+	setNativeWindow(&trayTestWindow{hwnd: unsafe.Pointer(hwnd)})
+	beginWorkstationShutdown()
+	terminateNativeWindow()
+	valid, _, _ := user32.NewProc("IsWindow").Call(hwnd)
+	if valid != 0 {
+		t.Fatal("tray Exit left the old native window alive")
+	}
+}

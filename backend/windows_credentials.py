@@ -102,3 +102,39 @@ def security_descriptor(path):
             kernel.LocalFree(text)
     finally:
         kernel.LocalFree(descriptor)
+
+
+class _DataBlob(ctypes.Structure):
+    _fields_ = [('size', w.DWORD), ('data', ctypes.POINTER(ctypes.c_ubyte))]
+
+
+def _transform_secret(value, decrypt=False):
+    """Current-user DPAPI; never fall back to writing plaintext on failure."""
+    if os.name != 'nt':
+        raise OSError('Windows secret protection is unavailable')
+    if not isinstance(value, bytes) or not value:
+        raise ValueError('Secret must be nonempty bytes')
+    crypt = ctypes.WinDLL('crypt32', use_last_error=True)
+    kernel = ctypes.WinDLL('kernel32', use_last_error=True)
+    buffer = (ctypes.c_ubyte * len(value)).from_buffer_copy(value)
+    source = _DataBlob(len(value), buffer)
+    output = _DataBlob()
+    function = crypt.CryptUnprotectData if decrypt else crypt.CryptProtectData
+    function.argtypes = [ctypes.POINTER(_DataBlob), ctypes.c_void_p, ctypes.c_void_p,
+                         ctypes.c_void_p, ctypes.c_void_p, w.DWORD, ctypes.POINTER(_DataBlob)]
+    function.restype = w.BOOL
+    kernel.LocalFree.argtypes, kernel.LocalFree.restype = [ctypes.c_void_p], ctypes.c_void_p
+    if not function(ctypes.byref(source), None, None, None, None, 1, ctypes.byref(output)):
+        raise ValueError('Could not unlock Windows credentials' if decrypt else 'Could not protect Windows credentials')
+    try:
+        return ctypes.string_at(output.data, output.size)
+    finally:
+        kernel.LocalFree(output.data)
+
+
+def protect_secret(value):
+    return _transform_secret(value)
+
+
+def unprotect_secret(value):
+    return _transform_secret(value, decrypt=True)

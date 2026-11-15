@@ -75,6 +75,6 @@ func restoreNativeWindow() bool {
 }
 func terminateNativeWindow() {
 	if window := nativeWindow(); window != nil {
-		window.Dispatch(func() { window.Terminate() })
+		window.Dispatch(func() { window.Destroy() })
 	}
 }

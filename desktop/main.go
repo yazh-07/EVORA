@@ -5,9 +5,7 @@ import (
 	"fmt"
 	"github.com/yazh-07/evora/desktop/internal/launchconfig"
 	"html"
-	"os"
 	"os/exec"
-	"path/filepath"
 	"runtime"
 	"time"
 
@@ -73,12 +71,9 @@ func main() {
 	// Attempt to start backend server
 	_ = backendMgr.Start(appConfig)
 
-	// Wait for the backend, including a cold start of the bundled graph service.
-	ready := backendMgr.WaitReady(180 * time.Second)
-	if ready {
-		markApplicationHealthy()
+	if backendMgr.stopPath != "" {
+		go watchApplicationUpdate()
 	}
-	go watchApplicationUpdate()
 
 	// Run system tray in parallel
 	go runTray()
@@ -87,10 +82,12 @@ func main() {
 	targetURL := fmt.Sprintf("http://127.0.0.1:%d", appConfig.Port)
 
 	if appConfig.Mode == "webview" && runtime.GOOS == "windows" {
-		openNativeWindow(targetURL, ready)
+		openNativeWindow(targetURL)
 	} else {
 		close(workstationReady)
+		ready := backendMgr.WaitReady(180 * time.Second)
 		if ready {
+			markApplicationHealthy()
 			openSystemBrowser(targetURL)
 		} else {
 			diag := backendMgr.GetDiagnosticInfo()
@@ -108,7 +105,7 @@ func main() {
 	<-trayExited
 }
 
-func openNativeWindow(targetURL string, initialReady bool) {
+func openNativeWindow(targetURL string) {
 	wv := webview2.NewWithOptions(webview2.WebViewOptions{
 		Debug:     false,
 		AutoFocus: true,
@@ -170,12 +167,26 @@ func openNativeWindow(targetURL string, initialReady bool) {
 		}
 	})
 
-	if initialReady {
-		wv.Navigate(targetURL)
-	} else {
-		diag := backendMgr.GetDiagnosticInfo()
-		wv.SetHtml(buildErrorHTML(diag))
-	}
+	wv.SetHtml(buildLoadingHTML())
+	go func() {
+		ready := backendMgr.WaitReady(180 * time.Second)
+		if quitting.Load() {
+			return
+		}
+		if ready {
+			markApplicationHealthy()
+		}
+		wv.Dispatch(func() {
+			if quitting.Load() {
+				return
+			}
+			if ready {
+				wv.Navigate(targetURL)
+			} else {
+				wv.SetHtml(buildErrorHTML(backendMgr.GetDiagnosticInfo()))
+			}
+		})
+	}()
 
 	wv.Run()
 	beginWorkstationShutdown()
@@ -187,7 +198,7 @@ func buildLoadingHTML() string {
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Connecting to EVORA...</title>
+  <title>Starting EVORA</title>
   <style>
     body { background: #0b1120; color: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; }
     .spinner { width: 48px; height: 48px; border: 4px solid #1e293b; border-top-color: #38bdf8; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 24px; }
@@ -198,8 +209,7 @@ func buildLoadingHTML() string {
 </head>
 <body>
   <div class="spinner"></div>
-  <h2>Initializing Forensic Engine...</h2>
-  <p>Connecting to local backend service on 127.0.0.1:8000</p>
+  <h2>Starting EVORA</h2>
 </body>
 </html>`
 }
@@ -310,8 +320,6 @@ func onTrayReady() {
 	mStatus := systray.AddMenuItem(statusText, "Server status")
 	mStatus.Disable()
 
-	mConfig := systray.AddMenuItem("Open Data Folder", "Show local evidence & database directory")
-	systray.AddSeparator()
 	mQuit := systray.AddMenuItem("Exit EVORA", "Shutdown workstation and quit")
 
 	targetURL := fmt.Sprintf("http://127.0.0.1:%d", appConfig.Port)
@@ -322,29 +330,12 @@ func onTrayReady() {
 		openSystemBrowser(targetURL)
 	})
 
-	mConfig.Click(func() {
-		openConfigFolder()
-	})
-
 	mQuit.Click(func() { beginWorkstationShutdown(); systray.Quit() })
 	systray.SetOnClick(func(_ systray.IMenu) { openWorkstation() })
 	systray.SetOnDClick(func(_ systray.IMenu) { openWorkstation() })
 	systray.SetOnRClick(func(menu systray.IMenu) { _ = menu.ShowMenu() })
 	trayReady.Store(true)
 	close(trayInitialized)
-}
-
-func openConfigFolder() {
-	appData := os.Getenv("APPDATA")
-	var path string
-	if appData != "" {
-		path = filepath.Join(appData, "EVORA")
-	} else {
-		home, _ := os.UserHomeDir()
-		path = filepath.Join(home, ".evora")
-	}
-	_ = os.MkdirAll(path, 0755)
-	openSystemBrowser(path)
 }
 
 func onTrayExit() {

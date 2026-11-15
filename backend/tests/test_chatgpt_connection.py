@@ -179,6 +179,17 @@ class ChatGPTTests(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(result['revoked']);self.assertFalse(connection.status()['connected'])
         self.assertNotIn('private-',connection.path.read_text())
 
+    @unittest.skipUnless(os.name=='nt','Native Windows encrypted credential file')
+    async def test_credentials_encrypt_and_migrate_legacy_json(self):
+        connection=self.app.state.chatgpt_connection
+        record={'access_token':'synthetic-plaintext-access','refresh_token':'synthetic-plaintext-refresh','host_id':'synthetic-host'}
+        connection._write(record)
+        self.assertNotIn('synthetic-plaintext',connection.path.read_text())
+        self.assertEqual(connection._read(),record)
+        connection.path.write_text(json.dumps(record))
+        self.assertEqual(connection._read(),record)
+        self.assertNotIn('synthetic-plaintext',connection.path.read_text())
+
     async def test_responses_stream_requires_completion_and_uses_contract(self):
         connection,_,_=await self.authorized();self.app.state.offline_mode=False
         stream='data: '+json.dumps(dict(type='response.completed',response=dict(status='completed',model='actual-model',output=[dict(content=[dict(type='output_text',text='{"answer":"ok"}')])])) )+'\n\n'

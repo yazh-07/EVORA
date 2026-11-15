@@ -116,6 +116,14 @@ class Connection:
             raise ValueError('Credential file must be private')
         record=json.loads(self.path.read_text())
         if not isinstance(record,dict):raise ValueError('Invalid credential record')
+        if record.get('format') == 'evora-dpapi-user-v1':
+            if os.name != 'nt':raise ValueError('Windows credentials require the original Windows account')
+            import base64
+            from backend.windows_credentials import unprotect_secret
+            record=json.loads(unprotect_secret(base64.b64decode(record['payload'],validate=True)))
+            if not isinstance(record,dict):raise ValueError('Invalid protected credential record')
+        elif os.name == 'nt':
+            self._write(record)  # Migrate a legacy permission-only file before use.
         return record
 
     def _write(self,record):
@@ -126,11 +134,16 @@ class Connection:
             secure_path(self.directory,directory=True)
         else:
             os.chmod(self.directory,0o700)
+        stored=record
+        if os.name == 'nt':
+            import base64
+            from backend.windows_credentials import protect_secret
+            stored=dict(format='evora-dpapi-user-v1',payload=base64.b64encode(protect_secret(json.dumps(record).encode('utf-8'))).decode('ascii'))
         temporary=self.directory/(secrets.token_hex(16)+'.tmp')
         try:
             with os.fdopen(os.open(temporary,os.O_CREAT|os.O_EXCL|os.O_WRONLY,0o600),'w') as stream:
                 if os.name == 'nt':secure_path(temporary)
-                json.dump(record,stream);stream.flush();os.fsync(stream.fileno())
+                json.dump(stored,stream);stream.flush();os.fsync(stream.fileno())
             os.replace(temporary,self.path)
         finally:temporary.unlink(missing_ok=True)
 

@@ -23,3 +23,11 @@ jobs:
           cache-dependency-path: desktop/go.sum
       - name: Test close, restore, concurrent launches, shutdown and crash recovery
         run: go -C desktop test -count=3 -timeout=90s -v . ./internal/launchconfig
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: backend/.python-version
+          cache: pip
+      - name: Install backend dependencies
+        run: python -m pip install -r requirements.txt
+      - name: Test Windows credential encryption and ChatGPT migration
+        run: python -m unittest backend.tests.test_windows_secret_protection backend.tests.test_chatgpt_connection -v
