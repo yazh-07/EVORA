@@ -197,7 +197,7 @@ jobs:
       - name: Package Windows distribution zip
         shell: pwsh
         run: |
-          Compress-Archive -Path dist/evora -DestinationPath dist/evora-windows-x64.zip
+          python scripts/build_windows_portable.py
 
       - name: Upload Windows artifact
         uses: actions/upload-artifact@v4
