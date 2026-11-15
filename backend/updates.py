@@ -1,4 +1,4 @@
-"""Official release checks and resumable, checksum-verified Windows updates."""
+"""Official release checks and resumable, checksum-verified application updates."""
 from contextlib import contextmanager
 from datetime import datetime, timezone
 import hashlib
@@ -75,7 +75,7 @@ def read_remote(http,url,limit):
     return bytes(data)
 
 
-def parse_release(body,current,asset_name):
+def parse_release(body,current,asset_name,target_platform='windows-x64'):
     if not isinstance(body,dict) or body.get('draft') or body.get('prerelease'):
         raise UpdateError('A stable release could not be found.')
     tag=body.get('tag_name')
@@ -85,14 +85,14 @@ def parse_release(body,current,asset_name):
     if not isinstance(assets,list):raise UpdateError('The release files could not be read.')
     selected=next((item for item in assets if isinstance(item,dict) and item.get('name')==asset_name),None)
     checksum=next((item for item in assets if isinstance(item,dict) and item.get('name')=='SHA256SUMS'),None)
-    extra={name:next((item for item in assets if isinstance(item,dict) and item.get('name')==name),None) for name in (inc.MANIFEST,inc.BUNDLE)}
+    extra={name:next((item for item in assets if isinstance(item,dict) and item.get('name')==name),None) for name in inc.assets_for(target_platform)}
     for item,name in [(selected,asset_name),(checksum,'SHA256SUMS'),*((item,name) for name,item in extra.items())]:
         if item and item.get('browser_download_url')!=f'{REPOSITORY}/releases/download/{tag}/{name}':
             raise UpdateError('The release file is not hosted in the EVORA repository.')
     if selected and (type(selected.get('size')) is not int or not 0<selected['size']<=MAX_DOWNLOAD):
         raise UpdateError('The update file size is invalid.')
     for name,item in extra.items():
-        if item and (type(item.get('size')) is not int or not 0<item['size']<=(inc.MAX_MANIFEST if name==inc.MANIFEST else MAX_DOWNLOAD)):
+        if item and (type(item.get('size')) is not int or not 0<item['size']<=(inc.MAX_MANIFEST if name==inc.assets_for(target_platform)[0] else MAX_DOWNLOAD)):
             raise UpdateError('The incremental update size is invalid.')
     return dict(tag=tag,newer=newer,asset=selected,checksum=checksum,incremental=extra,
         release_url=f'{REPOSITORY}/releases/tag/{tag}')
@@ -106,17 +106,26 @@ def sha256(path):
 
 
 class Updates:
-    def __init__(self,app,*,current=APP_VERSION,can_install=None,cache=None,installed_root=None):
+    def __init__(self,app,*,current=APP_VERSION,can_install=None,cache=None,installed_root=None,target_platform=None):
         self.app=app;self.current=current
-        self.can_install=(sys.platform=='win32' and bool(getattr(sys,'frozen',False))) if can_install is None else can_install
         self.platform='windows' if sys.platform=='win32' else 'linux' if sys.platform.startswith('linux') else 'other'
-        self.asset_name=INSTALLER if self.platform=='windows' or self.can_install else (
+        self.target=target_platform or ('windows-x64' if self.platform=='windows' else 'linux-x64')
+        self.manifest_name,self.bundle_name=inc.assets_for(self.target)
+        self.helper_name='evora-updater' if self.target=='linux-x64' else 'evora-updater.exe'
+        self.launcher_name='evora' if self.target=='linux-x64' else 'EVORA.exe'
+        candidate=Path(sys.executable).resolve().parent.parent
+        self.root=Path(installed_root).resolve() if installed_root else (candidate if Path(sys.executable).parent.name.lower()=='backend' else None)
+        frozen=bool(getattr(sys,'frozen',False))
+        managed_linux=(self.platform=='linux' and platform.machine().lower() in ('x86_64','amd64') and self.root is not None
+            and (self.root/inc.INSTALLED).is_file() and (self.root/self.helper_name).is_file()
+            and (self.root/self.launcher_name).is_file() and os.access(self.root,os.W_OK))
+        self.can_install=(frozen and (self.platform=='windows' or managed_linux)) if can_install is None else can_install
+        self.asset_name=INSTALLER if self.target=='windows-x64' else (
             'evora-linux-x86_64.tar.gz' if self.platform=='linux' and platform.machine().lower() in ('x86_64','amd64') else None)
         self.cache=Path(cache) if cache else app.state.database.path.parent/'updates'
         self.lock=threading.RLock();self.stop=threading.Event();self.release=None;self.expected=None;self.installer=None;self.last_check=0
-        self.root=Path(installed_root).resolve() if installed_root else (Path(sys.executable).resolve().parent.parent if self.can_install and Path(sys.executable).parent.name.lower()=='backend' else None)
         self.incremental=None;self.helper_process=False
-        self.state=dict(mode='installer',file_count=0,current_version=current,latest_version=None,status='idle',downloaded_bytes=0,total_bytes=0,
+        self.state=dict(mode='archive' if self.target=='linux-x64' else 'installer',file_count=0,current_version=current,latest_version=None,status='idle',downloaded_bytes=0,total_bytes=0,
             release_url=REPOSITORY+'/releases/latest',download_url=None,checked_at=None,error=None)
 
     def status(self):
@@ -124,10 +133,10 @@ class Updates:
             if self.installer is not None and self.installer.poll() is not None:
                 code=self.installer.returncode;self.installer=None
                 if self.helper_process:
-                    self._fallback('The update could not finish. Download the installer to continue.')
+                    self._fallback('The update could not finish. Download the full package to continue.' if self.target=='linux-x64' else 'The update could not finish. Download the installer to continue.')
                     self.helper_process=False
                 else:self.state.update(status='ready',error='Installation did not finish. Try again.' if code else None)
-            return {**self.state,'automatic':self.app.state.automatic_update_checks,'can_install':self.can_install,
+            return {**self.state,'automatic':self.app.state.automatic_update_checks,'can_install':self.can_install and (self.target=='windows-x64' or self.incremental is not None),
                 'available':bool(self.release and self.release['newer'])}
 
     def set(self,**values):
@@ -147,7 +156,7 @@ class Updates:
             self._prune_cache()
             with client() as http:
                 body=json.loads(read_remote(http,LATEST,2*1024*1024))
-                release=parse_release(body,self.current,self.asset_name)
+                release=parse_release(body,self.current,self.asset_name,self.target)
                 self.incremental=None;self.expected=None
                 if release['newer'] and self.can_install and self.root and release['asset'] and release['checksum'] and all(release['incremental'].values()):
                     try:self.incremental=self._prepare_incremental(http,release)
@@ -157,8 +166,8 @@ class Updates:
                 asset=release['asset']
                 package=self.incremental
                 self.state.update(status='available' if release['newer'] else 'up_to_date',latest_version=release['tag'].lstrip('v'),
-                    mode='incremental' if package else 'installer',file_count=len(package['changes']) if package else 0,
-                    download_url=release['incremental'][inc.BUNDLE]['browser_download_url'] if package else asset['browser_download_url'] if asset else None,
+                    mode='incremental' if package else 'archive' if self.target=='linux-x64' else 'installer',file_count=len(package['changes']) if package else 0,
+                    download_url=release['incremental'][self.bundle_name]['browser_download_url'] if package else asset['browser_download_url'] if asset else None,
                     total_bytes=package['total'] if package else asset['size'] if asset else 0,
                     downloaded_bytes=0,release_url=release['release_url'],checked_at=datetime.now(timezone.utc).isoformat(),error=None)
         except UpdateError as error:self.set(status='error',error=str(error))
@@ -202,7 +211,7 @@ class Updates:
         if os.name=='nt':
             from backend.windows_credentials import secure_path
             secure_path(stage,directory=True)
-        for name in ('objects','payload','manifest.json','plan.json','bootstrap.exe','result.json','health.json'):
+        for name in ('objects','payload','manifest.json','plan.json','bootstrap.exe','bootstrap','result.json','health.json'):
             child=stage/name
             if child.is_symlink() or (hasattr(child,'is_junction') and child.is_junction()):raise UpdateError('Linked update folders are not supported.')
         return stage.resolve()
@@ -216,15 +225,15 @@ class Updates:
 
     def _prepare_incremental(self,http,release):
         if (self.root/inc.INSTALLED).is_symlink():raise UpdateError('Invalid installed file inventory.')
-        previous=inc.parse_manifest((self.root/inc.INSTALLED).read_bytes(),self.current)
-        helper=inc.safe_path(self.root,'evora-updater.exe')
-        helper_info=next(item for item in previous['files'] if item['path']=='evora-updater.exe')
+        previous=inc.parse_manifest((self.root/inc.INSTALLED).read_bytes(),self.current,self.target)
+        helper=inc.safe_path(self.root,self.helper_name)
+        helper_info=next(item for item in previous['files'] if item['path']==self.helper_name)
         if inc.digest(helper)!=helper_info['sha256']:raise UpdateError('The update helper needs the full installer.')
-        expected=self._checksum(http,release,inc.MANIFEST)
-        data=read_remote(http,release['incremental'][inc.MANIFEST]['browser_download_url'],inc.MAX_MANIFEST)
+        expected=self._checksum(http,release,self.manifest_name)
+        data=read_remote(http,release['incremental'][self.manifest_name]['browser_download_url'],inc.MAX_MANIFEST)
         if hashlib.sha256(data).hexdigest()!=expected:raise UpdateError('Update manifest verification failed.')
-        manifest=inc.parse_manifest(data,release['tag'].lstrip('v'))
-        if manifest['bundle_size']!=release['incremental'][inc.BUNDLE]['size']:raise UpdateError('Update package size mismatch.')
+        manifest=inc.parse_manifest(data,release['tag'].lstrip('v'),self.target)
+        if manifest['bundle_size']!=release['incremental'][self.bundle_name]['size']:raise UpdateError('Update package size mismatch.')
         # A failed health check always leaves a full-installer route for this release.
         stage=self._stage(release['tag'])
         result=stage/'result.json'
@@ -239,13 +248,14 @@ class Updates:
         if shutil.disk_usage(stage).free<stage_space+64*1024**2 or shutil.disk_usage(self.root).free<root_space+64*1024**2:
             raise UpdateError('Not enough disk space to stage the update.')
         baseline=inc.digest(self.root/inc.INSTALLED)
+        if previous['platform']=='linux-x64' and not os.access(helper,os.X_OK):raise UpdateError('The update helper is not executable.')
         (stage/'manifest.json').write_bytes(data)
         return dict(stage=stage,expected=expected,baseline=baseline,manifest=manifest,changes=changed,deletes=deleted,total=total)
 
     def _fallback(self,message):
         self.incremental=None;self.expected=None
         asset=self.release['asset']
-        self.set(status='available',mode='installer',file_count=0,downloaded_bytes=0,total_bytes=asset['size'],
+        self.set(status='available',mode='archive' if self.target=='linux-x64' else 'installer',file_count=0,downloaded_bytes=0,total_bytes=asset['size'],
             download_url=asset['browser_download_url'],error=message)
 
     def _download_incremental(self):
@@ -253,12 +263,12 @@ class Updates:
         try:
             with client() as http:
                 done=inc.stage_download(http,remote,package['stage'],package['changes'],
-                    self.release['incremental'][inc.BUNDLE]['browser_download_url'],package['manifest']['bundle_size'],
+                    self.release['incremental'][self.bundle_name]['browser_download_url'],package['manifest']['bundle_size'],
                     self.stop,lambda count:self.set(downloaded_bytes=count))
             if not done:self.set(status='available');return
             self.expected=package['expected']
             self.set(status='ready',downloaded_bytes=package['total'],error=None)
-        except inc.RangeUnavailable as error:self._fallback(str(error))
+        except inc.RangeUnavailable as error:self._fallback('Download the full Linux package to continue.' if self.target=='linux-x64' else str(error))
         except (ValueError,OSError,httpx.HTTPError,EOFError) as error:
             self.set(status='error',error=str(error) if isinstance(error,inc.IncrementalError) else 'Download interrupted. Retry to resume.')
 
@@ -266,23 +276,25 @@ class Updates:
         package=self.incremental;stage=package['stage']
         if inc.digest(self.root/inc.INSTALLED)!=package['baseline'] or inc.digest(stage/'manifest.json')!=package['expected']:
             raise UpdateError('Application files changed. Check for updates again.')
-        previous=inc.parse_manifest((self.root/inc.INSTALLED).read_bytes(),self.current)
+        previous=inc.parse_manifest((self.root/inc.INSTALLED).read_bytes(),self.current,self.target)
         changes,deletes=inc.plan_files(self.root,previous,package['manifest'])
         if changes!=package['changes'] or deletes!=package['deletes']:raise UpdateError('Application files changed. Check for updates again.')
         for item in changes:
             if inc.digest(inc.safe_path(stage/'payload',item['path']))!=item['sha256']:raise UpdateError('Update verification failed. Download again.')
         owner=getattr(self.app.state,'update_owner_pid',0);marker=getattr(self.app.state,'update_stop_marker','')
         if not owner or not marker:raise UpdateError('Restart EVORA from its desktop shortcut before updating.')
-        helper=inc.safe_path(self.root,'evora-updater.exe')
-        info=next(f for f in previous['files'] if f['path']=='evora-updater.exe')
+        helper=inc.safe_path(self.root,self.helper_name)
+        info=next(f for f in previous['files'] if f['path']==self.helper_name)
         if inc.digest(helper)!=info['sha256']:raise UpdateError('Update helper verification failed.')
-        bootstrap=stage/'bootstrap.exe'
+        bootstrap=stage/('bootstrap' if self.target=='linux-x64' else 'bootstrap.exe')
         if bootstrap.is_symlink():raise UpdateError('Invalid update helper.')
         shutil.copyfile(helper,bootstrap)
+        if self.target=='linux-x64':bootstrap.chmod(0o700)
         if inc.digest(bootstrap)!=info['sha256']:raise UpdateError('Update helper verification failed.')
         plan=dict(root=str(self.root),stage=str(stage),manifest_sha256=package['expected'],baseline_sha256=package['baseline'],
             changes=changes,deletes=deletes,owner_pid=owner,backend_pid=os.getpid(),stop_marker=marker,
-            health_file=str(stage/'health.json'),result_file=str(stage/'result.json'))
+            health_file=str(stage/'health.json'),result_file=str(stage/'result.json'),
+            **({'launch_args':getattr(self.app.state,'update_launch_args',[])} if self.target=='linux-x64' else {}))
         path=stage/'plan.json';path.write_text(json.dumps(plan),encoding='utf-8')
         self.installer=subprocess.Popen([str(bootstrap),'--plan',str(path)],close_fds=True)
         self.helper_process=True
@@ -291,7 +303,7 @@ class Updates:
 
     def download(self):
         with self.lock:
-            if not self.can_install:raise AccessError(400,'MANUAL_UPDATE','Use the release download for this installation.')
+            if not self.can_install or (self.target=='linux-x64' and self.incremental is None):raise AccessError(400,'MANUAL_UPDATE','Use the release download for this installation.')
             if self.state['status'] in ('checking','downloading','installing'):return self.status()
             if not self.release or not self.release['newer'] or not self.release['asset'] or not self.release['checksum']:
                 raise AccessError(409,'UPDATE_UNAVAILABLE','Check for an update with a published checksum first.')
@@ -360,6 +372,7 @@ class Updates:
             except (ValueError,OSError,KeyError) as error:
                 self._fallback(str(error))
                 raise AccessError(409,'UPDATE_VERIFICATION_FAILED',str(error)) from None
+        if self.target=='linux-x64':raise AccessError(409,'MANUAL_UPDATE','Download the full Linux package for this update.')
         target,_=self._paths()
         if not target.is_file() or sha256(target)!=self.expected:
             self.set(status='error',error='Installer verification failed. Download the update again.')

@@ -22,7 +22,7 @@ class UpdateTests(unittest.IsolatedAsyncioTestCase):
         account=await self.client.post('/api/v1/auth/setup',json={'username':'admin','display_name':'Update Tester','password':'disposable update test passphrase'})
         self.assertEqual(account.status_code,200,account.text)
         self.actor=account.json()['user']['id'] if 'user' in account.json() else account.json()['id']
-        self.service=self.app.state.updates=updates.Updates(self.app,can_install=True,cache=self.root/'updates')
+        self.service=self.app.state.updates=updates.Updates(self.app,can_install=True,target_platform='windows-x64',cache=self.root/'updates')
         self.payload=b'MZ'+b'synthetic installer protocol fixture'*2048
         self.digest=hashlib.sha256(self.payload).hexdigest()
         self.base=updates.REPOSITORY+'/releases/download/v9.0.0/'

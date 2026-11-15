@@ -9,7 +9,7 @@ on:
       version:
         description: 'Release version tag (e.g. v1.0.0)'
         required: true
-        default: 'v1.3.13'
+        default: 'v1.3.14'
 
 permissions:
   contents: write
@@ -55,13 +55,34 @@ jobs:
       - name: Smoke test frozen application
         run: python scripts/smoke_release.py dist/evora/evora
 
-      - name: Package Linux distribution archive
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.27.3'
+          cache-dependency-path: desktop/go.sum
+
+      - name: Test Linux updater and launcher
         run: |
-          cp installer/install-linux.sh dist/evora/install.sh
-          cp installer/uninstall-linux.sh dist/evora/uninstall.sh
-          chmod +x dist/evora/install.sh dist/evora/uninstall.sh
-          cd dist
-          tar -czvf evora-linux-x86_64.tar.gz evora/
+          go test -C desktop ./internal/patcher ./cmd/updater ./cmd/linux
+          node scripts/bundle-openapi.mjs specs/openapi.yaml "$RUNNER_TEMP/evora-openapi.json" frontend
+          EVORA_CONTRACT_BUNDLE="$RUNNER_TEMP/evora-openapi.json" python -m unittest backend.tests.test_linux_updates -q
+
+      - name: Build Linux launcher and updater
+        run: |
+          go build -C desktop -ldflags "-s -w" -o evora-linux ./cmd/linux
+          go build -C desktop -ldflags "-s -w" -o evora-updater ./cmd/updater
+
+      - name: Package Linux updates and distribution
+        run: |
+          python scripts/build_linux_package.py
+          tar -czf dist/evora-linux-x86_64.tar.gz -C dist/linux evora
+
+      - name: Upload Linux incremental assets
+        uses: actions/upload-artifact@v4
+        with:
+          name: evora-linux-incremental
+          path: |
+            dist/EVORA-Update-Linux-x86_64.json
+            dist/EVORA-Update-Linux-x86_64.bin
 
       - name: Upload Linux artifact
         uses: actions/upload-artifact@v4
@@ -210,8 +231,13 @@ jobs:
           name: evora-windows-incremental
           path: release-assets/
 
+      - uses: actions/download-artifact@v4
+        with:
+          name: evora-linux-incremental
+          path: release-assets/
+
       - name: Generate checksums
-        run: sha256sum release-assets/evora-linux-x86_64.tar.gz release-assets/evora-windows-x64.zip release-assets/EVORA-Setup-Windows-x64.exe release-assets/EVORA-Update-Windows-x64.json release-assets/EVORA-Update-Windows-x64.bin | sed 's@release-assets/@@' > release-assets/SHA256SUMS
+        run: sha256sum release-assets/evora-linux-x86_64.tar.gz release-assets/evora-windows-x64.zip release-assets/EVORA-Setup-Windows-x64.exe release-assets/EVORA-Update-Windows-x64.json release-assets/EVORA-Update-Windows-x64.bin release-assets/EVORA-Update-Linux-x86_64.json release-assets/EVORA-Update-Linux-x86_64.bin | sed 's@release-assets/@@' > release-assets/SHA256SUMS
 
       - name: Create GitHub Release and attach binaries
         uses: softprops/action-gh-release@v2
@@ -227,6 +253,8 @@ jobs:
             release-assets/EVORA-Setup-Windows-x64.exe
             release-assets/EVORA-Update-Windows-x64.json
             release-assets/EVORA-Update-Windows-x64.bin
+            release-assets/EVORA-Update-Linux-x86_64.json
+            release-assets/EVORA-Update-Linux-x86_64.bin
             release-assets/SHA256SUMS
           draft: true
           prerelease: false

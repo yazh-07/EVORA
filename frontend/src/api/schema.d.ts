@@ -1210,7 +1210,7 @@ export interface components {
         };
         UpdateStatus: {
             /** @enum {string} */
-            mode?: "installer" | "incremental";
+            mode?: "installer" | "incremental" | "archive";
             file_count?: number;
             current_version: string;
             latest_version: string | null;

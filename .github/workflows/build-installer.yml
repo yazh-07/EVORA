@@ -120,13 +120,21 @@ jobs:
         run: |
           pyinstaller --noconfirm evora.spec
 
-      - name: Package Linux Archive with Install Scripts
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.27.3'
+          cache-dependency-path: desktop/go.sum
+
+      - name: Build Linux launcher and updater
         run: |
-          cp installer/install-linux.sh dist/evora/install.sh
-          cp installer/uninstall-linux.sh dist/evora/uninstall.sh
-          chmod +x dist/evora/install.sh dist/evora/uninstall.sh
-          cd dist
-          tar -czvf evora-linux-x86_64.tar.gz evora/
+          go test -C desktop ./internal/patcher ./cmd/updater ./cmd/linux
+          go build -C desktop -ldflags "-s -w" -o evora-linux ./cmd/linux
+          go build -C desktop -ldflags "-s -w" -o evora-updater ./cmd/updater
+
+      - name: Package Linux Archive and Updates
+        run: |
+          python scripts/build_linux_package.py
+          tar -czf dist/evora-linux-x86_64.tar.gz -C dist/linux evora
 
       - name: Upload Linux Package Artifact
         uses: actions/upload-artifact@v4

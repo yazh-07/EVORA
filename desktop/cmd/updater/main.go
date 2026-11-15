@@ -16,10 +16,14 @@ import (
 
 func main() {
 	planPath := flag.String("plan", "", "verified update plan")
+	uninstallRoot := flag.String("uninstall", "", "remove managed Linux program files")
 	recoverRoot := flag.String("recover", "", "recover interrupted update")
 	flag.Parse()
 	var err error
-	if *recoverRoot != "" {
+	if *uninstallRoot != "" {
+		root, _ := filepath.Abs(*uninstallRoot)
+		err = patcher.Uninstall(root)
+	} else if *recoverRoot != "" {
 		root, _ := filepath.Abs(*recoverRoot)
 		var release func()
 		release, err = patcher.Lock(root)
@@ -60,15 +64,23 @@ func markerSafe(p patcher.Plan) bool {
 	expected := fmt.Sprintf("stop-%d.update", p.OwnerPID)
 	return p.OwnerPID > 0 && p.BackendPID > 0 && filepath.Base(p.StopMarker) == expected
 }
-func launch(root, health, version string) (*exec.Cmd, error) {
-	cmd := exec.Command(filepath.Join(root, "EVORA.exe"))
+func launch(root, health, version string, args ...string) (*exec.Cmd, error) {
+	manifest, e := patcher.ReadManifest(filepath.Join(root, patcher.Installed))
+	if e != nil {
+		return nil, e
+	}
+	executable := "EVORA.exe"
+	if manifest.Platform == "linux-x64" {
+		executable = "evora"
+	}
+	cmd := exec.Command(filepath.Join(root, executable), args...)
 	cmd.Dir = root
 	cmd.Env = cleanEnvironment()
 	if health != "" {
 		cmd.Env = append(cmd.Env, "EVORA_UPDATE_HEALTH_FILE="+health, "EVORA_UPDATE_EXPECTED_VERSION="+version)
 	}
 	hide(cmd)
-	e := cmd.Start()
+	e = cmd.Start()
 	return cmd, e
 }
 func run(path string) error {
@@ -87,6 +99,9 @@ func run(path string) error {
 	next, e := patcher.Validate(p)
 	if e != nil {
 		return e
+	}
+	if next.Platform == "windows-x64" && len(p.LaunchArgs) != 0 {
+		return errors.New("unexpected restart arguments")
 	}
 	result := func(success bool) {
 		_ = os.WriteFile(p.ResultFile, []byte(fmt.Sprintf(`{"version":%q,"success":%t}`, next.Version, success)), 0600)
@@ -115,14 +130,14 @@ func run(path string) error {
 			return fmt.Errorf("recovery required: %w", err)
 		}
 		result(false)
-		_, _ = launch(p.Root, "", "")
+		_, _ = launch(p.Root, "", "", p.LaunchArgs...)
 		return cause
 	}
 	if e = patcher.Apply(p); e != nil {
 		return rollback(e)
 	}
 	_ = os.Remove(p.HealthFile)
-	cmd, e := launch(p.Root, p.HealthFile, next.Version)
+	cmd, e := launch(p.Root, p.HealthFile, next.Version, p.LaunchArgs...)
 	if e != nil {
 		return rollback(e)
 	}

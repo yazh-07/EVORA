@@ -21,10 +21,12 @@ type File struct {
 	Path string `json:"path"`
 	SHA  string `json:"sha256"`
 	Size int64  `json:"size"`
+	Mode uint32 `json:"mode,omitempty"`
 }
 type Change struct {
 	File
-	Before *string `json:"before"`
+	Before     *string `json:"before"`
+	BeforeMode uint32  `json:"before_mode,omitempty"`
 }
 type Manifest struct {
 	Format   int    `json:"format"`
@@ -33,6 +35,7 @@ type Manifest struct {
 	Files    []File `json:"files"`
 }
 type Plan struct {
+	LaunchArgs   []string `json:"launch_args,omitempty"`
 	Root         string   `json:"root"`
 	Stage        string   `json:"stage"`
 	ManifestHash string   `json:"manifest_sha256"`
@@ -79,7 +82,7 @@ func Safe(root, name string) (string, error) {
 			return "", errors.New("invalid update path")
 		}
 	}
-	if name != Installed && name != "EVORA.exe" && name != "evora-updater.exe" && name != "icon.ico" && (len(parts) < 2 || parts[0] != "backend") {
+	if name != Installed && name != "EVORA.exe" && name != "evora-updater.exe" && name != "icon.ico" && name != "evora" && name != "evora-updater" && name != "icon.png" && name != "install.sh" && name != "uninstall.sh" && (len(parts) < 2 || parts[0] != "backend") {
 		return "", errors.New("unmanaged update path")
 	}
 	if len(parts) > 1 {
@@ -120,7 +123,7 @@ func ReadManifest(path string) (Manifest, error) {
 	if e = json.Unmarshal(b, &m); e != nil {
 		return m, e
 	}
-	if m.Format != 1 || m.Platform != "windows-x64" || !versionPattern.MatchString(m.Version) || len(m.Files) == 0 || len(m.Files) > 20000 {
+	if m.Format != 1 || (m.Platform != "windows-x64" && m.Platform != "linux-x64") || !versionPattern.MatchString(m.Version) || len(m.Files) == 0 || len(m.Files) > 20000 {
 		return m, errors.New("unsupported manifest")
 	}
 	seen := map[string]bool{}
@@ -131,19 +134,43 @@ func ReadManifest(path string) (Manifest, error) {
 		if _, e = Safe(filepath.Dir(path), f.Path); e != nil {
 			return m, e
 		}
-		key := strings.ToLower(f.Path)
+		key := FileKey(m.Platform, f.Path)
 		if seen[key] || !hashPattern.MatchString(f.SHA) || f.Size < 0 || f.Size > 2<<30 {
 			return m, errors.New("invalid file manifest")
 		}
+		if m.Platform == "linux-x64" {
+			if (f.Path == "evora" || f.Path == "evora-updater" || f.Path == "backend/evora") && f.Mode != 0755 {
+				return m, errors.New("launcher is not executable")
+			}
+			if f.Mode != 0644 && f.Mode != 0755 {
+				return m, errors.New("invalid executable permissions")
+			}
+			if !strings.HasPrefix(f.Path, "backend/") && f.Path != "evora" && f.Path != "evora-updater" && f.Path != "icon.png" && f.Path != "install.sh" && f.Path != "uninstall.sh" {
+				return m, errors.New("invalid Linux file")
+			}
+		} else if !strings.HasPrefix(f.Path, "backend/") && f.Path != "EVORA.exe" && f.Path != "evora-updater.exe" && f.Path != "icon.ico" {
+			return m, errors.New("invalid Windows file")
+		}
 		seen[key] = true
 	}
-	for _, name := range []string{"evora.exe", "evora-updater.exe", "backend/evora.exe"} {
+	required := []string{"evora.exe", "evora-updater.exe", "backend/evora.exe"}
+	if m.Platform == "linux-x64" {
+		required = []string{"evora", "evora-updater", "backend/evora"}
+	}
+	for _, name := range required {
 		if !seen[name] {
 			return m, errors.New("incomplete application manifest")
 		}
 	}
 	return m, nil
 }
+func FileKey(platform, name string) string {
+	if platform == "windows-x64" {
+		return strings.ToLower(name)
+	}
+	return name
+}
+
 func atomicJSON(path string, value any) error {
 	b, e := json.Marshal(value)
 	if e != nil {
@@ -178,6 +205,15 @@ func copyFile(from, to string) error {
 	defer in.Close()
 	out, e := os.OpenFile(to, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0600)
 	if e != nil {
+		return e
+	}
+	stat, e := in.Stat()
+	if e != nil {
+		out.Close()
+		return e
+	}
+	if e = out.Chmod(stat.Mode().Perm()); e != nil {
+		out.Close()
 		return e
 	}
 	_, e = io.Copy(out, in)
@@ -225,22 +261,25 @@ func Validate(p Plan) (Manifest, error) {
 	if e != nil {
 		return none, e
 	}
+	if next.Platform != current.Platform {
+		return none, errors.New("update platform mismatch")
+	}
 	if !Newer(next.Version, current.Version) {
 		return none, errors.New("update is not newer")
 	}
 	old := map[string]File{}
 	for _, f := range current.Files {
-		old[strings.ToLower(f.Path)] = f
+		old[FileKey(next.Platform, f.Path)] = f
 	}
 	newFiles := map[string]File{}
 	for _, f := range next.Files {
-		newFiles[strings.ToLower(f.Path)] = f
+		newFiles[FileKey(next.Platform, f.Path)] = f
 	}
 	changed := map[string]bool{}
 	for _, c := range p.Changes {
-		key := strings.ToLower(c.Path)
+		key := FileKey(next.Platform, c.Path)
 		entry, ok := newFiles[key]
-		if !ok || changed[key] || entry.SHA != c.SHA || entry.Size != c.Size {
+		if !ok || changed[key] || entry.SHA != c.SHA || entry.Size != c.Size || entry.Mode != c.Mode {
 			return none, errors.New("invalid changed file list")
 		}
 		changed[key] = true
@@ -256,6 +295,12 @@ func Validate(p Plan) (Manifest, error) {
 		} else if e != nil || before != *c.Before {
 			return none, errors.New("application file changed during download")
 		}
+		if next.Platform == "linux-x64" && c.Before != nil {
+			stat, err := os.Stat(target)
+			if err != nil || uint32(stat.Mode().Perm()) != c.BeforeMode {
+				return none, errors.New("application permissions changed")
+			}
+		}
 		if c.Before != nil {
 			if _, ok := old[key]; !ok {
 				return none, errors.New("cannot replace unmanaged file")
@@ -270,12 +315,12 @@ func Validate(p Plan) (Manifest, error) {
 			return none, errors.New("staged file verification failed")
 		}
 		stat, e := os.Stat(staged)
-		if e != nil || stat.Size() != c.Size {
+		if e != nil || stat.Size() != c.Size || (next.Platform == "linux-x64" && uint32(stat.Mode().Perm()) != c.Mode) {
 			return none, errors.New("staged file size invalid")
 		}
 	}
 	for _, f := range next.Files {
-		if changed[strings.ToLower(f.Path)] {
+		if changed[FileKey(next.Platform, f.Path)] {
 			continue
 		}
 		path, e := Safe(p.Root, f.Path)
@@ -286,13 +331,19 @@ func Validate(p Plan) (Manifest, error) {
 		if e != nil || h != f.SHA {
 			return none, errors.New("required changed file missing")
 		}
+		if next.Platform == "linux-x64" {
+			stat, err := os.Stat(path)
+			if err != nil || uint32(stat.Mode().Perm()) != f.Mode {
+				return none, errors.New("required permission change missing")
+			}
+		}
 	}
 	removed := map[string]bool{}
 	for _, f := range p.Deletes {
-		key := strings.ToLower(f.Path)
+		key := FileKey(next.Platform, f.Path)
 		original, ok := old[key]
 		_, exists := newFiles[key]
-		if !ok || exists || removed[key] || f.SHA != original.SHA {
+		if !ok || exists || removed[key] || f.SHA != original.SHA || f.Mode != original.Mode {
 			return none, errors.New("invalid removal list")
 		}
 		removed[key] = true
@@ -303,6 +354,12 @@ func Validate(p Plan) (Manifest, error) {
 		h, e := Hash(path)
 		if e != nil || h != f.SHA {
 			return none, errors.New("modified application file cannot be deleted")
+		}
+		if next.Platform == "linux-x64" {
+			stat, err := os.Stat(path)
+			if err != nil || uint32(stat.Mode().Perm()) != f.Mode {
+				return none, errors.New("modified permissions cannot be deleted")
+			}
 		}
 	}
 	for key, f := range old {

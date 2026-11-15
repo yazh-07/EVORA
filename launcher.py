@@ -4,6 +4,7 @@ Bundled entry point for standalone Windows and Linux binaries.
 Starts the local offline backend server and opens the browser interface.
 """
 import argparse
+import json
 import os
 import sys
 import threading
@@ -105,6 +106,7 @@ def main():
             resources.callback(graph.close)
             os.environ.update(graph.start())
         app = create_app(str(db_path), storage_dir=str(vault_path))
+        app.state.update_launch_args=json.loads(os.environ.get('EVORA_UPDATE_LAUNCH_ARGS','[]')) if sys.platform.startswith('linux') else []
         app.state.update_owner_pid = args.parent_pid or 0
         app.state.update_stop_marker = args.shutdown_file + ".update" if args.shutdown_file else ""
         app.mount("/", StaticFiles(directory=str(frontend_dist), html=True), name="workstation")

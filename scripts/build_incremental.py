@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 import sys
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
-from backend.incremental import MANIFEST,BUNDLE,digest,parse_manifest,safe_name
+from backend.incremental import MANIFEST,BUNDLE,digest,parse_manifest,safe_name,assets_for
 from backend.version import APP_VERSION
 
 def build(backend,desktop,helper,icon,output,version):
@@ -16,19 +16,23 @@ def build(backend,desktop,helper,icon,output,version):
         if file.is_file():sources['backend/'+file.relative_to(backend).as_posix()]=file
     for file in Path(backend,'_internal').glob('*.dll'):
         if file.name.startswith(('python3','vcruntime140','msvcp140')):sources['backend/'+file.name]=file
+    return write_package(sources,output,version,'windows-x64')
+
+def write_package(sources,output,version,target):
     output=Path(output);output.mkdir(parents=True,exist_ok=True);files=[];objects={}
-    with (output/BUNDLE).open('wb') as bundle:
+    manifest_name,bundle_name=assets_for(target)
+    with (output/bundle_name).open('wb') as bundle:
         for name,file in sorted(sources.items()):
-            safe_name(name);checksum=digest(file)
+            safe_name(name,target);checksum=digest(file)
             if checksum not in objects:
                 compressed=gzip.compress(file.read_bytes(),compresslevel=9,mtime=0)
                 objects[checksum]=dict(offset=bundle.tell(),compressed_size=len(compressed),compressed_sha256=hashlib.sha256(compressed).hexdigest())
                 bundle.write(compressed)
-            files.append(dict(path=name,size=file.stat().st_size,sha256=checksum,**objects[checksum]))
+            files.append(dict(path=name,size=file.stat().st_size,sha256=checksum,**objects[checksum],**({'mode':0o755 if file.stat().st_mode & 0o111 else 0o644} if target=='linux-x64' else {})))
         size=bundle.tell()
-    body=dict(format=1,platform='windows-x64',version=version,bundle_size=size,files=files)
+    body=dict(format=1,platform=target,version=version,bundle_size=size,files=files)
     encoded=json.dumps(body,sort_keys=True,separators=(',',':')).encode();parse_manifest(encoded,version)
-    (output/MANIFEST).write_bytes(encoded)
+    (output/manifest_name).write_bytes(encoded)
     return body
 
 if __name__=='__main__':

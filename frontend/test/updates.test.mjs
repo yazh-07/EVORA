@@ -79,3 +79,17 @@ test('invalid update modes and file counts are rejected', async t => {
     await controller.refresh(); assert.equal(controller.getSnapshot().data, null);
   }
 });
+
+test('Linux accepts incremental bundles and full-package fallbacks', async t => {
+  for (const [mode, file, can_install] of [
+    ['incremental', 'EVORA-Update-Linux-x86_64.bin', true],
+    ['archive', 'evora-linux-x86_64.tar.gz', false],
+  ]) {
+    const { controller } = fixture(t, () => status({ mode, can_install, available: true, status: 'available',
+      download_url: `https://github.com/yazh-07/EVORA/releases/download/v9.0.0/${file}` }));
+    await controller.refresh();
+    assert.equal(controller.getSnapshot().data.mode, mode);
+    assert.equal(controller.getSnapshot().data.can_install, can_install);
+    assert.equal(controller.getSnapshot().error, '');
+  }
+});

@@ -20,7 +20,7 @@ func put(t *testing.T, root, name, value string) File {
 	if e != nil {
 		t.Fatal(e)
 	}
-	return File{name, h, int64(len(value))}
+	return File{Path: name, SHA: h, Size: int64(len(value))}
 }
 func manifest(t *testing.T, path, version string, files []File) string {
 	t.Helper()
@@ -52,7 +52,7 @@ func fixture(t *testing.T) Plan {
 	next = append(next, updated, added)
 	hash := manifest(t, filepath.Join(stage, "manifest.json"), "1.4.0", next)
 	put(t, root, "backend/user-note.txt", "unmanaged local file")
-	return Plan{Root: root, Stage: stage, ManifestHash: hash, BaselineHash: baseline, Changes: []Change{{updated, &before}, {added, nil}}, Deletes: []File{files[4]}}
+	return Plan{Root: root, Stage: stage, ManifestHash: hash, BaselineHash: baseline, Changes: []Change{{File: updated, Before: &before}, {File: added}}, Deletes: []File{files[4]}}
 }
 func expect(t *testing.T, root, name, value string) {
 	t.Helper()

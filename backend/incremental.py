@@ -9,6 +9,11 @@ import time
 
 MANIFEST='EVORA-Update-Windows-x64.json'
 BUNDLE='EVORA-Update-Windows-x64.bin'
+LINUX_MANIFEST='EVORA-Update-Linux-x86_64.json'
+LINUX_BUNDLE='EVORA-Update-Linux-x86_64.bin'
+
+def assets_for(target):
+    return (LINUX_MANIFEST,LINUX_BUNDLE) if target=='linux-x64' else (MANIFEST,BUNDLE)
 INSTALLED='evora-install.json'
 MAX_SIZE=2*1024**3
 MAX_MANIFEST=8*1024**2
@@ -22,11 +27,12 @@ def digest(path):
         for chunk in iter(lambda:stream.read(1024*1024),b''):value.update(chunk)
     return value.hexdigest()
 
-def safe_name(name):
+def safe_name(name,target=None):
     if not isinstance(name,str) or len(name)>240 or '\\' in name or ':' in name or '\x00' in name:raise IncrementalError('Invalid update path.')
     parts=PurePosixPath(name).parts
     if not parts or '/'.join(parts)!=name or any(p in ('.','..') or p.rstrip(' .')!=p or re.fullmatch(r'(con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\..*)?',p,re.I) for p in parts):raise IncrementalError('Invalid update path.')
-    if name not in ('EVORA.exe','icon.ico','evora-updater.exe') and not (len(parts)>1 and parts[0]=='backend'):raise IncrementalError('Invalid update destination.')
+    roots={'EVORA.exe','icon.ico','evora-updater.exe'} if target=='windows-x64' else {'evora','evora-updater','icon.png','install.sh','uninstall.sh'} if target=='linux-x64' else {'EVORA.exe','icon.ico','evora-updater.exe','evora','evora-updater','icon.png','install.sh','uninstall.sh'}
+    if name not in roots and not (len(parts)>1 and parts[0]=='backend'):raise IncrementalError('Invalid update destination.')
     if len(parts)>1 and parts[1].lower() in ('storage','evidence','vault','evidence_vault','updates'):raise IncrementalError('User data cannot be updated.')
     if Path(name).suffix.lower() in ('.db','.sqlite','.sqlite3'):raise IncrementalError('Databases cannot be updated.')
     return name
@@ -39,16 +45,17 @@ def safe_path(root,name):
     if not path.resolve().is_relative_to(Path(root).resolve()):raise IncrementalError('Invalid update destination.')
     return path
 
-def parse_manifest(data,version=None):
+def parse_manifest(data,version=None,target=None):
     if len(data)>MAX_MANIFEST:raise IncrementalError('Update manifest is too large.')
     body=json.loads(data)
     if not isinstance(body,dict):raise IncrementalError('Invalid update manifest.')
-    if body.get('format')!=1 or body.get('platform')!='windows-x64' or not re.fullmatch(r'\d+\.\d+\.\d+',body.get('version','')) or (version and body['version']!=version):raise IncrementalError('Unsupported update manifest.')
+    if body.get('format')!=1 or body.get('platform') not in ('windows-x64','linux-x64') or (target and body.get('platform')!=target) or not re.fullmatch(r'\d+\.\d+\.\d+',body.get('version','')) or (version and body['version']!=version):raise IncrementalError('Unsupported update manifest.')
     files=body.get('files');seen=set();total=0
     if not isinstance(files,list) or not 1<=len(files)<=20000 or type(body.get('bundle_size')) is not int or not 0<body['bundle_size']<=MAX_SIZE:raise IncrementalError('Invalid update file list.')
     for item in files:
         if not isinstance(item,dict):raise IncrementalError('Invalid update file entry.')
-        name=safe_name(item.get('path'));key=name.casefold()
+        name=safe_name(item.get('path'),body['platform']);key=name.casefold() if body['platform']=='windows-x64' else name
+        if body['platform']=='linux-x64' and (type(item.get('mode')) is not int or item['mode'] not in (0o644,0o755)):raise IncrementalError('Invalid update permissions.')
         if key in seen:raise IncrementalError('Duplicate update path.')
         seen.add(key)
         for field in ('sha256','compressed_sha256'):
@@ -57,24 +64,30 @@ def parse_manifest(data,version=None):
             if type(item.get(field)) is not int or not 0<=item[field]<=MAX_SIZE:raise IncrementalError('Invalid update size.')
         if not item['compressed_size'] or item['offset']+item['compressed_size']>body['bundle_size']:raise IncrementalError('Invalid update range.')
         total+=item['size']
-    if total>4*MAX_SIZE or not {'evora.exe','evora-updater.exe','backend/evora.exe'}<=seen:raise IncrementalError('Incomplete application update.')
+    required={'evora.exe','evora-updater.exe','backend/evora.exe'} if body['platform']=='windows-x64' else {'evora','evora-updater','backend/evora'}
+    if body['platform']=='linux-x64' and any(item['path'] in required and item['mode']!=0o755 for item in files):raise IncrementalError('Application launchers must be executable.')
+    if total>4*MAX_SIZE or not required<=seen:raise IncrementalError('Incomplete application update.')
     return body
 
 def plan_files(root,previous,current):
-    old={f['path'].casefold():f for f in previous['files']};new={f['path'].casefold():f for f in current['files']}
+    if previous['platform']!=current['platform']:raise IncrementalError('Update platform mismatch.')
+    linux=current['platform']=='linux-x64'
+    key_for=lambda name:name if linux else name.casefold()
+    old={key_for(f['path']):f for f in previous['files']};new={key_for(f['path']):f for f in current['files']}
     changed=[];deleted=[]
     for key,item in new.items():
         path=safe_path(root,item['path'])
         before=digest(path) if path.is_file() else None
         if path.exists() and not path.is_file():raise IncrementalError('Update destination is not a file.')
-        if before==item['sha256']:continue
+        mode=path.stat().st_mode & 0o7777 if before is not None and linux else None
+        if before==item['sha256'] and (not linux or mode==item['mode']):continue
         if before is not None and key not in old:raise IncrementalError('An unmanaged file needs the full installer.')
-        changed.append({**item,'before':before})
+        changed.append({**item,'before':before,**({'before_mode':mode} if linux else {})})
     for key,item in old.items():
         if key in new:continue
         path=safe_path(root,item['path'])
         if path.exists():
-            if not path.is_file() or digest(path)!=item['sha256']:raise IncrementalError('A modified application file needs the full installer.')
+            if not path.is_file() or digest(path)!=item['sha256'] or (linux and path.stat().st_mode & 0o7777 != item['mode']):raise IncrementalError('A modified application file needs the full installer.')
             deleted.append(item)
     return changed,deleted
 
@@ -87,6 +100,7 @@ def stage_download(http,remote,root,files,bundle_url,bundle_size,stop,progress):
         target=safe_path(root/'payload',item['path']);target.parent.mkdir(parents=True,exist_ok=True)
         if target.is_file() and target.stat().st_size==item['size'] and digest(target)==item['sha256']:
             if item['compressed_sha256'] not in completed:received+=item['compressed_size'];completed.add(item['compressed_sha256'])
+            if 'mode' in item:target.chmod(item['mode'])
             progress(received);continue
         blob=objects/(item['compressed_sha256']+'.gz')
         if blob.is_symlink():raise IncrementalError('Invalid download cache.')
@@ -120,6 +134,7 @@ def stage_download(http,remote,root,files,bundle_url,bundle_size,stop,progress):
                     checksum.update(chunk);output.write(chunk)
                 output.flush();os.fsync(output.fileno())
             if length!=item['size'] or checksum.hexdigest()!=item['sha256']:raise IncrementalError('Update file verification failed.')
+            if 'mode' in item:temporary.chmod(item['mode'])
             os.replace(temporary,target)
         finally:
             temporary.unlink(missing_ok=True)

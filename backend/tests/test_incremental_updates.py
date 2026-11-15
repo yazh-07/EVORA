@@ -38,7 +38,7 @@ class IncrementalTests(unittest.TestCase):
         self.data=self.base/'user-data';self.data.mkdir();(self.data/'cases.sqlite3').write_bytes(b'private evidence database')
         self.app=SimpleNamespace(state=SimpleNamespace(automatic_update_checks=True,update_owner_pid=123,
             update_stop_marker=str(self.data/'stop-123.update')))
-        self.service=updates.Updates(self.app,can_install=True,installed_root=self.root,cache=self.cache)
+        self.service=updates.Updates(self.app,can_install=True,target_platform='windows-x64',installed_root=self.root,cache=self.cache)
         self.url=updates.REPOSITORY+'/releases/download/v9.0.0/'
         self.release={'tag_name':'v9.0.0','assets':[dict(name=name,size=size,browser_download_url=self.url+name) for name,size in
             [(inc.MANIFEST,len(self.manifest)),(inc.BUNDLE,len(self.bundle)),('SHA256SUMS',300),(updates.INSTALLER,1000000)]]}

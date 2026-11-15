@@ -61,7 +61,7 @@ def respond(request):
 
 real_client=httpx.Client
 updates.client=lambda:real_client(transport=httpx.MockTransport(respond))
-app.state.updates=updates.Updates(app,can_install=True,cache=root/'updates',installed_root=installed if incremental else None)
+app.state.updates=updates.Updates(app,can_install=True,target_platform='windows-x64',cache=root/'updates',installed_root=installed if incremental else None)
 app.state.update_owner_pid=123
 app.state.update_stop_marker=str(root/'stop-123.update')
 def launch(*args,**kwargs):

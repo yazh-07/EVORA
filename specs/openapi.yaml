@@ -1205,7 +1205,7 @@ components:
       properties:
         mode:
           type: string
-          enum: [installer, incremental]
+          enum: [installer, incremental, archive]
         file_count:
           type: integer
           minimum: 0
