@@ -129,7 +129,7 @@ jobs:
         run: |
           node scripts/bundle-openapi.mjs specs/openapi.yaml "$env:EVORA_CONTRACT_BUNDLE" frontend
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          python -m unittest backend.tests.test_chatgpt_connection -v
+          python -m unittest backend.tests.test_chatgpt_connection backend.tests.test_windows_secret_protection -v
 
       - name: Test native Windows update downloads
         env:
