@@ -28,6 +28,16 @@ var (
 )
 
 var workstationReady = make(chan struct{})
+var trayInitialized = make(chan struct{})
+var trayExited = make(chan struct{})
+var activeInstance *workstationInstance
+
+func beginWorkstationShutdown() {
+	quitting.Store(true)
+	if activeInstance != nil {
+		activeInstance.markClosing()
+	}
+}
 
 func main() {
 	instance, err := acquireWorkstation(NewBackendManager(DefaultConfig()).dbPath)
@@ -38,6 +48,7 @@ func main() {
 	if instance == nil {
 		return
 	} // The existing workstation received activation.
+	activeInstance = instance
 	go instance.serve(workstationReady)
 	defer instance.Close()
 	if !recoverApplicationUpdate() {
@@ -71,6 +82,7 @@ func main() {
 
 	// Run system tray in parallel
 	go runTray()
+	<-trayInitialized
 
 	targetURL := fmt.Sprintf("http://127.0.0.1:%d", appConfig.Port)
 
@@ -85,8 +97,15 @@ func main() {
 			fmt.Printf("[EVORA] Engine offline: %s\nLogs: %s\n", diag.LastError, diag.LogPath)
 			openSystemBrowser(targetURL)
 		}
-		<-updateExit
+		select {
+		case <-updateExit:
+		case <-trayExited:
+		}
 	}
+	beginWorkstationShutdown()
+	backendMgr.Stop()
+	systray.Quit()
+	<-trayExited
 }
 
 func openNativeWindow(targetURL string, initialReady bool) {
@@ -104,7 +123,10 @@ func openNativeWindow(targetURL string, initialReady bool) {
 	if wv == nil {
 		close(workstationReady)
 		openSystemBrowser(targetURL)
-		<-updateExit
+		select {
+		case <-updateExit:
+		case <-trayExited:
+		}
 		return
 	}
 
@@ -156,6 +178,8 @@ func openNativeWindow(targetURL string, initialReady bool) {
 	}
 
 	wv.Run()
+	beginWorkstationShutdown()
+	setNativeWindow(nil)
 }
 
 func buildLoadingHTML() string {
@@ -299,11 +323,12 @@ func onTrayReady() {
 		openConfigFolder()
 	})
 
-	mQuit.Click(func() { quitting.Store(true); systray.Quit() })
+	mQuit.Click(func() { beginWorkstationShutdown(); systray.Quit() })
 	systray.SetOnClick(func(_ systray.IMenu) { openWorkstation() })
 	systray.SetOnDClick(func(_ systray.IMenu) { openWorkstation() })
 	systray.SetOnRClick(func(menu systray.IMenu) { _ = menu.ShowMenu() })
 	trayReady.Store(true)
+	close(trayInitialized)
 }
 
 func openConfigFolder() {
@@ -320,9 +345,8 @@ func openConfigFolder() {
 }
 
 func onTrayExit() {
-	quitting.Store(true)
-	if backendMgr != nil {
-		backendMgr.Stop()
-	}
-	os.Exit(0)
+	trayReady.Store(false)
+	beginWorkstationShutdown()
+	terminateNativeWindow()
+	close(trayExited)
 }

@@ -43,6 +43,7 @@ func closeWindowProcedure(hwnd, msg, wp, lp, id, data uintptr) uintptr {
 			showWindow.Call(hwnd, 0)
 			return 0
 		}
+		beginWorkstationShutdown()
 	case 0x0011:
 		quitting.Store(true) // Windows is ending the session.
 	case 0x0016:

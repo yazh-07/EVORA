@@ -296,7 +296,7 @@ class Connection:
         rows=[item for item in rows if item.get('visibility')=='list']
         return dict(models=[item['slug'] for item in rows])
 
-    def infer(self,model,instructions,content,timeout=180,connection_id=None):
+    def infer(self,model,instructions,content,timeout=180,connection_id=None,on_delta=None):
         with self.lock:
             if connection_id is not None and connection_id!=self.binding():raise ValueError('ChatGPT account changed')
             token=self.token()
@@ -313,6 +313,10 @@ class Connection:
                     if raw=='[DONE]':break
                     event=json.loads(raw);kind=event.get('type')
                     if kind in ('error','response.failed','response.incomplete'):raise ValueError('ChatGPT request failed or was incomplete')
+                    if kind=='response.output_text.delta' and on_delta is not None:
+                        delta=event.get('delta')
+                        if not isinstance(delta,str):raise ValueError('Invalid text delta')
+                        on_delta(delta)
                     if kind=='response.output_item.done':
                         index,item=event.get('output_index'),event.get('item')
                         if type(index) is not int or index<0 or not isinstance(item,dict) or item.get('status') not in (None,'completed'):

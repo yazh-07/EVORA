@@ -169,6 +169,15 @@ def ask_case_question(
 ):
     if request.query_params:
         raise invalid_input()
+    if 'application/x-ndjson' in request.headers.get('accept', ''):
+        from backend.question_stream import stream_answer
+        return stream_answer(request, grant, lambda emit: answer_question(caseId, body, request, response, grant, emit))
+    return answer_question(caseId, body, request, response, grant)
+
+
+def answer_question(caseId, body, request, response, grant, emit=None):
+    if request.query_params:
+        raise invalid_input()
     case_id = str(grant.case_id)
     parameters = dict(case_id=case_id, evidence_id=None, run_id=None)
     with request.app.state.database.connect() as connection:
@@ -185,6 +194,7 @@ def ask_case_question(
         # Conversation resolves follow-ups; only current authorized observations
         # can support the answer. Prior replies never become source evidence.
         context['conversation'] = [turn.model_dump() for turn in body.conversation]
+    if emit: emit("status", dict(stage="analyzing"))
     model = request.app.state.qa_model
     provider = request.app.state.qa_provider
     citations, model_version = [], MODEL_VERSION
@@ -202,6 +212,7 @@ def ask_case_question(
                     qa_url=request.app.state.qa_url, qa_provider=provider,
                     openai_api_key=request.app.state.openai_api_key,
                     openai_base_url=request.app.state.openai_base_url,
+                    **({'emit': emit} if emit else {}),
                     **({'chatgpt_connection':request.app.state.chatgpt_connection} if provider=='chatgpt' else {}))
                 model_version = provider + ':' + actual
             except (SynthesisError, httpx.HTTPError, ValueError, KeyError, TypeError):
@@ -218,6 +229,7 @@ def ask_case_question(
                 evidence_id=item['evidence_id'], observation_id=item['id'],
                 source_locator=item['source_locator']) for item in matches]
             verification = dict(status='extractive_mode')
+    if emit: emit('status', dict(stage='finalizing'))
     status = 'generated' if model else 'source_records'
     if verification['status'] == 'generation_unavailable_or_unverified':
         inquiry = body.question

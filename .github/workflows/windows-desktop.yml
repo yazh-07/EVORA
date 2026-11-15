@@ -1,0 +1,25 @@
+name: Windows desktop lifecycle
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'desktop/**'
+      - '.github/workflows/windows-desktop.yml'
+  pull_request:
+    paths:
+      - 'desktop/**'
+      - '.github/workflows/windows-desktop.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  lifecycle:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.27.3'
+          cache-dependency-path: desktop/go.sum
+      - name: Test close, restore, concurrent launches, shutdown and crash recovery
+        run: go -C desktop test -count=3 -timeout=90s -v . ./internal/launchconfig

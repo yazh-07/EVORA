@@ -967,7 +967,7 @@ export interface paths {
         put?: never;
         /**
          * Ask a case-grounded question
-         * @description Grounded retrieval; insufficient support yields supported=false and no invented answer.
+         * @description Grounded retrieval. Accept application/x-ndjson for live status and draft delta events, followed by a done event containing the checked CaseAnswer. Drafts are provisional; an interrupted stream has no final answer.
          */
         post: operations["askCaseQuestion"];
         delete?: never;
@@ -4629,6 +4629,8 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CaseAnswer"];
+                    /** @description One JSON event per line: status (stage), delta (text), done (answer), or error (message). */
+                    "application/x-ndjson": string;
                 };
             };
             400: components["responses"]["BadRequest"];

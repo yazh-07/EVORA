@@ -37,8 +37,8 @@ func watchApplicationUpdate() {
 			continue
 		}
 		_ = os.Remove(marker)
+		beginWorkstationShutdown()
 		backendMgr.Stop()
-		quitting.Store(true)
 		terminateNativeWindow()
 		systray.Quit()
 		close(updateExit)

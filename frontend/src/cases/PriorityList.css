@@ -14,6 +14,10 @@
 .priority-p3 { background: #58a6ff14; color: #58a6ff; border-color: #58a6ff4d; }
 .priority-p4 { background: #8b949e14; color: #8b949e; border-color: #8b949e4d; }
 .priority-list details > summary { color: var(--color-accent); cursor: pointer; font-weight: 500; line-height: 1.6; }
+/* Native disclosure animation can retain a table cell's expanded intrinsic size.
+   Remove closed content from layout and resize these rows without interpolation. */
+.priority-list details:not([open]) > :not(summary) { display: none; }
+.priority-list details::details-content { transition: none; interpolate-size: numeric-only; }
 .priority-list details > summary:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 4px; }
 .priority-list .priority-reasons { list-style: none; padding: 0; margin: 16px 0 0; display: grid; gap: 18px; }
 .priority-factor-heading { display: flex; justify-content: space-between; gap: 16px; }

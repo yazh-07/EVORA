@@ -67,7 +67,7 @@ test('supported inquiry posts the typed wire contract, renders every citation an
   change(c, `  ${question}  `); submit(c); submit(c);
   assert.equal(c.getSnapshot().status, 'submitting');
   assert.match(render(c), /aria-busy="true"/);
-  assert.match(render(c), /role="status">Searching evidence/);
+  assert.match(render(c), /role="status">[\s\S]*Searching evidence/);
   assert.match(render(c), /aria-label="Stop response">Stop/);
   assert.equal(find(c, e => e.type === 'textarea').props.disabled, true);
   change(c, 'A different question');

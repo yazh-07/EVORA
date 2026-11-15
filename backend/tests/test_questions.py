@@ -33,6 +33,23 @@ class QuestionTests(unittest.IsolatedAsyncioTestCase):
             rejected=await self.client.post(self.url,json={'question':'Follow up','conversation':conversation})
             self.assertEqual(rejected.status_code,400,rejected.text)
 
+    async def test_stream_returns_status_then_checked_answer_with_references(self):
+        response = await self.client.post(self.url, json={'question':'D-7'}, headers={'Accept':'application/x-ndjson'})
+        self.assertEqual(response.status_code, 200, response.text)
+        self.assertTrue(response.headers['content-type'].startswith('application/x-ndjson'))
+        events = [json.loads(line) for line in response.text.splitlines()]
+        self.assertEqual(events[0], {'type':'status','stage':'searching'})
+        self.assertEqual(events[-1]['type'], 'done')
+        answer = events[-1]['answer']
+        self.assertTrue(answer['supported'])
+        self.assertTrue(answer['references'])
+        self.assertEqual(answer['case_id'],self.case)
+
+    async def test_unauthorized_stream_never_starts_generation(self):
+        response = await self.client.post(self.url, json={'question':'D-7'}, headers={'Accept':'application/x-ndjson','Authorization':'Bearer questions-two'})
+        self.assertEqual(response.status_code,404)
+        self.assertNotIn('application/x-ndjson',response.headers.get('content-type',''))
+
     async def asyncSetUp(self):
         root = Path(self.enterContext(TemporaryDirectory()))
         self.app = create_app(root / "questions.sqlite3", storage_dir=root / "private",

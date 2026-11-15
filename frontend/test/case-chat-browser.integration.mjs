@@ -24,6 +24,14 @@ const provider = createServer(async (request, response) => {
     result = { supported: true, claims: [{ text: followUp ? 'Device D-7 disconnected at 10:00.' : 'Device D-7 connected at 09:00.', observation_ids: [observation.id] }] };
     if (delay) await new Promise(resolve => setTimeout(resolve, 800));
   }
+  if (body.stream && !response.destroyed) {
+    response.setHeader('Content-Type', 'text/event-stream');
+    const raw = JSON.stringify(result), split = raw.indexOf('connected') + 'connected'.length;
+    response.write('data: ' + JSON.stringify({ model:'chat-fixture', choices:[{delta:{content:raw.slice(0,split)}}] }) + '\n\n');
+    await new Promise(resolve => setTimeout(resolve,800));
+    if (!response.destroyed) response.end('data: ' + JSON.stringify({ model:'chat-fixture', choices:[{delta:{content:raw.slice(split)},finish_reason:'stop'}] }) + '\n\ndata: [DONE]\n\n');
+    return;
+  }
   if (!response.destroyed) { response.setHeader('Content-Type', 'application/json'); response.end(JSON.stringify({ model: 'chat-fixture', choices: [{ finish_reason: 'stop', message: { content: JSON.stringify(result) } }] })); }
 });
 await new Promise(resolve => provider.listen(0, '127.0.0.1', resolve));
@@ -48,8 +56,12 @@ try {
   await page.getByRole('tab', { name: 'Findings', exact: true }).click(); await page.getByRole('button', { name: 'Ask', exact: true }).click();
   const input = page.getByRole('textbox', { name: 'Message about this case', exact: true });
   await input.fill('What records mention D-7?'); await input.press('Enter');
+  await page.locator('.streaming-answer').getByText(/Device D-7/).waitFor();
+  assert.equal(await page.getByRole('button', {name:'Stop response',exact:true}).count(),1,'Draft must arrive before completion');
+  await page.waitForFunction(() => !document.querySelector('#case-question').disabled);
   await page.locator('.chat-answer .answer-markdown').getByText('Device D-7 connected at 09:00.', { exact: true }).waitFor(); assert.equal(await input.inputValue(), '');
   await input.fill('When did it disconnect?'); await page.getByRole('button', { name: 'Send message', exact: true }).click();
+  await page.waitForFunction(() => !document.querySelector('#case-question').disabled);
   await page.locator('.chat-answer .answer-markdown').getByText('Device D-7 disconnected at 10:00.', { exact: true }).waitFor();
   assert.equal(await page.locator('.question-result').count(), 2); assert.equal(calls.length, 4);
   const references=page.locator('details.chat-references').last();

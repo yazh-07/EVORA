@@ -9,6 +9,8 @@ export type QuestionState = {
   answer: CaseAnswer | null;
   message: string;
   history?: CaseAnswer[];
+  draft?: string;
+  stage?: string;
 };
 const initial = (): QuestionState => ({ status: 'idle', question: '', answer: null, message: '', history: [] });
 const text = (value: unknown): value is string => typeof value === 'string' && !!value.trim();
@@ -64,7 +66,7 @@ export function createQuestionController(client: ApiClient, caseId: string) {
     },
     cancel() {
       pending?.abort(); pending = undefined;
-      publish({ ...state, status: state.history?.length ? 'ready' : 'idle', message: '' });
+      publish({ ...state, status: state.history?.length ? 'ready' : 'idle', message: '', draft: '', stage: '' });
     },
     clear() {
       pending?.abort(); pending = undefined; publish(initial());
@@ -78,17 +80,23 @@ export function createQuestionController(client: ApiClient, caseId: string) {
       }
       const request = pending = new AbortController();
       const current = () => enabled && pending === request && !request.signal.aborted && session === client.getSessionVersion();
-      publish({ ...state, status: 'submitting', answer: null, message: '' });
+      publish({ ...state, status: 'submitting', answer: null, message: '', draft: '', stage: 'searching' });
       try {
         const answer = await client.request('post', '/api/v1/cases/{caseId}/questions', {
-          path: { caseId }, body: { question, ...(state.history?.length ? { conversation: state.history.slice(-8).map(turn => ({ question: turn.question, answer: turn.answer.slice(0, 8000) })) } : {}) }, signal: request.signal,
+          path: { caseId }, onEvent: (value: unknown) => {
+            if (!current()) return;
+            const event = value as { type?: string; stage?: string; text?: string };
+            if (event.type === 'status' && ['searching','analyzing','checking','finalizing'].includes(event.stage ?? '')) publish({ ...state, stage: event.stage });
+            else if (event.type === 'delta' && typeof event.text === 'string' && (state.draft?.length ?? 0) + event.text.length <= 16000) publish({ ...state, draft: (state.draft ?? '') + event.text });
+            else throw Error('Invalid response event');
+          }, body: { question, ...(state.history?.length ? { conversation: state.history.slice(-8).map(turn => ({ question: turn.question, answer: turn.answer.slice(0, 8000) })) } : {}) }, signal: request.signal,
         });
         if (!current()) return;
         if (!validAnswer(answer, caseId, question)) throw Error('Invalid case answer.');
-        publish({ ...state, status: 'ready', question: '', answer, history: [...(state.history ?? []), answer], message: '' });
+        publish({ ...state, status: 'ready', question: '', draft: '', stage: '', answer, history: [...(state.history ?? []), answer], message: '' });
       } catch (error) {
         if (!current()) return;
-        publish({ ...state, status: 'error', answer: null, message: questionError(error) });
+        publish({ ...state, status: 'error', draft: '', stage: '', answer: null, message: questionError(error) });
       } finally { if (pending === request) pending = undefined; }
     },
     dispose() {

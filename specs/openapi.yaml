@@ -980,7 +980,7 @@ paths:
       tags: [Investigation]
       operationId: askCaseQuestion
       summary: Ask a case-grounded question
-      description: Grounded retrieval; insufficient support yields supported=false and no invented answer.
+      description: Grounded retrieval. Accept application/x-ndjson for live status and draft delta events, followed by a done event containing the checked CaseAnswer. Drafts are provisional; an interrupted stream has no final answer.
       requestBody:
         required: true
         content:
@@ -992,6 +992,9 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/CaseAnswer' }
+            application/x-ndjson:
+              schema: { type: string }
+              description: 'One JSON event per line: status (stage), delta (text), done (answer), or error (message).'
         '400': { $ref: '#/components/responses/BadRequest' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '404': { $ref: '#/components/responses/NotFound' }

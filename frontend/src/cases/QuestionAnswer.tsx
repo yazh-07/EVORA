@@ -9,19 +9,24 @@ import './QuestionAnswer.css';
 export function QuestionAnswer({ caseId, inspectEvidence, activeView = true }: { caseId: string; activeView?: boolean; inspectEvidence: (id: string, focus?: SourceFocus) => void }) {
   const client = useApiClient();
   const container = useRef<HTMLDivElement>(null);
+  const followLatest = useRef(true);
   const controller = useMemo(() => createQuestionController(client, caseId), [client, caseId]);
   const state = useSyncExternalStore(controller.subscribe, controller.getSnapshot, controller.getSnapshot);
   useEffect(() => { controller.start(); return () => controller.dispose(); }, [controller]);
+  useEffect(() => { if (state.status === 'submitting') followLatest.current = true; }, [state.status]);
   useEffect(() => {
-    if (!activeView) return;
+    if (!activeView || !followLatest.current) return;
     const stream = container.current?.querySelector('.conversation-stream');
     if (stream) stream.scrollTop = stream.scrollHeight;
-  }, [state.history?.length, state.status, activeView]);
+  }, [state.history?.length, state.status, state.draft, activeView]);
   useEffect(() => {
     if (activeView && state.status === 'ready') container.current?.querySelector<HTMLTextAreaElement>('textarea')?.focus({ preventScroll: true });
   }, [state.status, activeView]);
   const focusComposer = () => requestAnimationFrame(() => container.current?.querySelector<HTMLTextAreaElement>('textarea')?.focus({ preventScroll: true }));
-  return <div className="case-chat" ref={container}><QuestionAnswerPanel state={state} setQuestion={controller.setQuestion} submit={controller.submit} cancel={() => { controller.cancel(); focusComposer(); }} clear={() => { controller.clear(); focusComposer(); }} inspectEvidence={inspectEvidence} /></div>;
+  return <div className="case-chat" ref={container} onScrollCapture={event => {
+    const element = event.target as HTMLElement;
+    if (element.classList.contains('conversation-stream')) followLatest.current = element.scrollHeight - element.clientHeight - element.scrollTop < 96;
+  }}><QuestionAnswerPanel state={state} setQuestion={controller.setQuestion} submit={controller.submit} cancel={() => { controller.cancel(); focusComposer(); }} clear={() => { controller.clear(); focusComposer(); }} inspectEvidence={inspectEvidence} /></div>;
 }
 
 export function QuestionAnswerPanel({ state, setQuestion, submit, cancel, clear, inspectEvidence }: {
@@ -61,7 +66,7 @@ export function QuestionAnswerPanel({ state, setQuestion, submit, cancel, clear,
           <details className="answer-information"><summary>Response information</summary><dl><dt>Retrieval</dt><dd>{answer.retrieval_version}</dd>{answer.model_version && <><dt>Model</dt><dd>{answer.model_version}</dd></>}{answer.provenance_id && <><dt>Reference</dt><dd>{answer.provenance_id}</dd></>}</dl></details>
         </div>
       </article>; })}
-      {busy && <article className="question-result"><div className="chat-question"><p className="question-text">{state.question.trim()}</p></div><div className="chat-answer"><span className="chat-sender">EVORA</span><p className="chat-thinking" role="status">Searching evidence<span aria-hidden="true">…</span></p></div></article>}
+      {busy && <article className="question-result"><div className="chat-question"><p className="question-text">{state.question.trim()}</p></div><div className="chat-answer"><span className="chat-sender">EVORA</span><p className="chat-thinking" role="status"><span className="thinking-dots" aria-hidden="true"><i /><i /><i /></span>{({ searching: 'Searching evidence', analyzing: 'Analyzing', checking: 'Checking sources', finalizing: 'Finishing reply' } as Record<string, string>)[state.stage ?? 'searching'] ?? 'Analyzing'}{state.draft && <span className="draft-label">Draft</span>}</p>{state.draft && <div className="streaming-answer"><AnswerMarkdown text={state.draft} citationIds={[]} /></div>}</div></article>}
     </div>
     {state.message && <p id="case-question-message" role="alert">{state.message}{state.status === 'error' && <button type="button" className="text-action" onClick={() => { void submit(); }}>Retry</button>}</p>}
     <form className="chat-composer" noValidate onSubmit={event => { event.preventDefault(); void submit(); }}>

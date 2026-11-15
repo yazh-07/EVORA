@@ -4,6 +4,7 @@ import hashlib
 from decimal import Decimal
 import os
 import re
+import time
 
 import httpx
 
@@ -54,12 +55,85 @@ def _compact_context(ctx):
     }
 
 
+class DraftClaims:
+    """Decode only claim text, never the model's reasoning or JSON metadata."""
+    def __init__(self, emit):
+        self.emit, self.raw, self.sent = emit, '', ''
+
+    def __call__(self, delta):
+        self.raw += delta
+        if len(self.raw) > 2 * 1024 * 1024:
+            raise SynthesisError('Response limit exceeded')
+        raw = self.raw.lstrip()
+        if raw.startswith('<think>'):
+            if '</think>' not in raw: return
+            raw = raw.split('</think>', 1)[1].lstrip()
+        raw = re.sub(r'^```(?:json)?\s*', '', raw, flags=re.I)
+        if not raw.startswith('{'):
+            return
+        parts = []
+        for match in re.finditer(r'"text"\s*:\s*"((?:[^"\\]|\\.)*)', raw):
+            value = match.group(1)
+            while value:
+                try:
+                    decoded = json.loads('"' + value + '"')
+                    decoded.encode('utf-8')  # Wait for a complete escaped surrogate pair.
+                    parts.append(decoded)
+                    break
+                except (ValueError, UnicodeError):
+                    value = value[:-1]
+        text = '\n\n'.join(parts)
+        if len(text) > 16000:
+            raise SynthesisError('Draft limit exceeded')
+        if text.startswith(self.sent) and len(text) > len(self.sent):
+            self.emit('delta', dict(text=text[len(self.sent):]))
+            self.sent = text
+
+
+def _read_chat_stream(client, url, payload, headers, on_delta, ollama=False):
+    raw, actual, done, size = '', payload['model'], False, 0
+    deadline = time.monotonic() + 180
+    with client.stream('POST', url, json={**payload, 'stream': True}, headers=headers) as response:
+        response.raise_for_status()
+        for line in response.iter_lines():
+            size += len(line)
+            if size > 2 * 1024 * 1024 or time.monotonic() > deadline:
+                raise SynthesisError('Response limit exceeded')
+            if not line: continue
+            if not ollama:
+                if not line.startswith('data:'): continue
+                line = line[5:].strip()
+                if line == '[DONE]': break
+            event = json.loads(line)
+            if event.get('error'): raise SynthesisError('Model stream failed')
+            actual = event.get('model') or actual
+            if ollama:
+                delta = event.get('message', {}).get('content', '')
+                done = event.get('done') is True and event.get('done_reason') != 'length'
+            else:
+                choices = event.get('choices', [])
+                if not choices: continue
+                choice = choices[0]
+                if choice.get('delta', {}).get('refusal'): raise SynthesisError('Refused answer')
+                delta = choice.get('delta', {}).get('content') or ''
+                done = choice.get('finish_reason') == 'stop'
+                if choice.get('finish_reason') not in (None, 'stop'): raise SynthesisError('Incomplete answer')
+            if not isinstance(delta, str): raise SynthesisError('Invalid text delta')
+            raw += delta
+            if delta: on_delta(delta)
+            if done: break
+    if not done: raise SynthesisError('Interrupted model response')
+    raw = re.sub(r'<think>.*?</think>', '', raw, flags=re.DOTALL).strip()
+    raw = re.sub(r'^```(?:json)?\s*|\s*```$', '', raw, flags=re.I).strip()
+    return json.loads(raw), actual
+
+
 def _chat(model, system, payload, qa_url=None, *, qa_provider='ollama',
           openai_api_key=None, openai_base_url='https://api.openai.com/v1',
-          response_schema=None, timeout=180.0, chatgpt_connection=None):
+          response_schema=None, timeout=180.0, chatgpt_connection=None, on_delta=None):
     if qa_provider == 'chatgpt':
         if chatgpt_connection is None:raise SynthesisError('Connect ChatGPT first')
-        raw,actual=chatgpt_connection.infer(model,system,[dict(type='input_text',text=json.dumps(payload,ensure_ascii=False))],timeout)
+        raw,actual=chatgpt_connection.infer(model,system,[dict(type='input_text',text=json.dumps(payload,ensure_ascii=False))],timeout, **({'on_delta': on_delta} if on_delta else {}))
         return json.loads(raw),actual
     messages = [dict(role='system', content=system),
                 dict(role='user', content=json.dumps(payload, ensure_ascii=False))]
@@ -68,6 +142,10 @@ def _chat(model, system, payload, qa_url=None, *, qa_provider='ollama',
             raise SynthesisError('OpenAI API key is required')
         with httpx.Client(timeout=httpx.Timeout(timeout, connect=5.0), trust_env=False,
                           follow_redirects=False) as client:
+            if on_delta:
+                return _read_chat_stream(client, openai_base_url.rstrip('/') + '/chat/completions',
+                    dict(model=model, messages=messages, response_format={'type': 'json_object'}),
+                    {'Authorization': f'Bearer {openai_api_key}'}, on_delta)
             response = client.post(openai_base_url.rstrip('/') + '/chat/completions',
                 headers={'Authorization': f'Bearer {openai_api_key}'},
                 json=dict(model=model, messages=messages, response_format={'type': 'json_object'}))
@@ -118,6 +196,9 @@ def _chat(model, system, payload, qa_url=None, *, qa_provider='ollama',
                     }
                 }
             }
+        if on_delta:
+            return _read_chat_stream(client, url, dict(model=model, format=response_schema or schema,
+                options=dict(temperature=0, num_predict=5000, num_ctx=8192), messages=messages), {}, on_delta, ollama=True)
         response = client.post(url, json=dict(model=model, stream=False, format=response_schema or schema,
             options=dict(temperature=0, num_predict=5000, num_ctx=8192),
             messages=messages))
@@ -140,7 +221,7 @@ def _chat(model, system, payload, qa_url=None, *, qa_provider='ollama',
 
 
 def synthesize(question, context, model, qa_url=None, *, qa_provider='ollama',
-               openai_api_key=None, openai_base_url='https://api.openai.com/v1',chatgpt_connection=None):
+               openai_api_key=None, openai_base_url='https://api.openai.com/v1',chatgpt_connection=None, emit=None):
     """Model prose is accepted only with valid source IDs and a separate entailment check.
 
     Entailment verification reduces model errors; it cannot prove semantic truth.
@@ -156,7 +237,8 @@ def synthesize(question, context, model, qa_url=None, *, qa_provider='ollama',
     provider_options = dict(qa_url=qa_url, qa_provider=qa_provider,
                             openai_api_key=openai_api_key, openai_base_url=openai_base_url)
     if qa_provider=='chatgpt':provider_options['chatgpt_connection']=chatgpt_connection
-    result, actual_model = _chat(model, SYSTEM_PROMPT, payload, **provider_options)
+    result, actual_model = _chat(model, SYSTEM_PROMPT, payload, **provider_options, **({'on_delta': DraftClaims(emit)} if emit else {}))
+    if emit: emit('status', dict(stage='checking'))
     if not isinstance(result, dict) or set(result) != {'supported', 'claims'}:
         raise SynthesisError('Invalid model answer')
     if result['supported'] is False and result['claims'] == []:

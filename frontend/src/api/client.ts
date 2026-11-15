@@ -25,7 +25,7 @@ type RequestOptions<O> =
   Option<'query', Parameter<ParametersOf<O>, 'query'>> &
   Option<'header', Parameter<ParametersOf<O>, 'header'>> & Body<O> &
   (SuccessContent<O> extends { 'application/octet-stream': unknown }
-    ? { responseType: 'blob' } : { responseType?: never }) & { signal?: AbortSignal };
+    ? { responseType: 'blob' } : { responseType?: never }) & { signal?: AbortSignal; onEvent?: (event: unknown) => void };
 
 type ClientErrorKind = 'configuration' | 'request' | 'authentication' | 'session' | 'network' | 'protocol';
 
@@ -64,6 +64,7 @@ type RuntimeOptions = {
   body?: unknown;
   responseType?: 'blob';
   signal?: AbortSignal;
+  onEvent?: (event: unknown) => void;
 };
 
 function requestUrl(origin: string, template: string, parameters: RuntimeOptions): URL {
@@ -177,7 +178,7 @@ export function createApiClient(config: { baseUrl: string; fetch?: typeof global
         catch { throw new ApiClientError('request', 'An API request header is invalid.'); }
       }
       const binary = parameters.responseType === 'blob';
-      headers.set('Accept', binary ? 'application/octet-stream' : 'application/json');
+      headers.set('Accept', parameters.onEvent ? 'application/x-ndjson, application/json' : binary ? 'application/octet-stream' : 'application/json');
       let body: BodyInit | undefined;
       if (parameters.body !== undefined) {
         if (method !== 'post' && method !== 'put') throw new ApiClientError('request', 'This API read does not accept a body.');
@@ -232,6 +233,35 @@ export function createApiClient(config: { baseUrl: string; fetch?: typeof global
             throw new ApiClientError('protocol', 'The API did not return original bytes.');
           }
           data = await response.blob();
+        }
+        else if (parameters.onEvent && response.headers.get('Content-Type')?.split(';')[0]?.trim() === 'application/x-ndjson') {
+          if (!response.body) throw new ApiClientError('protocol', 'Missing response stream.');
+          const reader = response.body.getReader(), decoder = new TextDecoder();
+          let buffer = '', total = 0, completed = false;
+          const line = (raw: string) => {
+            if (!raw.trim()) return;
+            checkSession(); signal.throwIfAborted();
+            const event = JSON.parse(raw);
+            if (!event || typeof event !== 'object' || completed) throw new ApiClientError('protocol', 'Invalid response stream.');
+            if (event.type === 'error') throw new ApiClientError('protocol', 'Response could not complete.');
+            if (event.type === 'done') { data = event.answer; completed = true; }
+            else if (event.type === 'status' || event.type === 'delta') parameters.onEvent?.(event);
+            else throw new ApiClientError('protocol', 'Unknown response event.');
+          };
+          try {
+            while (true) {
+              const chunk = await reader.read();
+              checkSession(); signal.throwIfAborted();
+              if (chunk.done) { buffer += decoder.decode(); break; }
+              total += chunk.value.byteLength;
+              if (total > 2 * 1024 * 1024) throw new ApiClientError('protocol', 'Response stream too large.');
+              buffer += decoder.decode(chunk.value, { stream: true });
+              let end: number;
+              while ((end = buffer.indexOf('\n')) >= 0) { line(buffer.slice(0, end)); buffer = buffer.slice(end + 1); }
+            }
+            if (buffer.trim()) line(buffer);
+            if (!completed) throw new ApiClientError('protocol', 'Response stream interrupted.');
+          } finally { await reader.cancel().catch(() => {}); reader.releaseLock(); }
         }
         else {
           if (response.headers.get('Content-Type')?.split(';')[0]?.trim().toLowerCase() !== 'application/json') {
