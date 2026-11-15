@@ -103,13 +103,16 @@ def main():
         bundled = args.graph_mode == 'bundled' or (args.graph_mode == 'auto' and
             (runtime.exists() or (os.name == 'nt' and getattr(sys, 'frozen', False))))
         if bundled:
-            from backend.managed_graph import ManagedGraph
+            from backend.managed_graph import ManagedGraph, GraphAlreadyRunning
             graph_home = Path(args.graph_data) if args.graph_data else (
                 Path(os.environ['LOCALAPPDATA']) / 'EVORA/graph' if os.name == 'nt' and os.environ.get('LOCALAPPDATA')
                 else db_path.parent / 'graph')
             graph = ManagedGraph(runtime, graph_home, owner_pid=args.parent_pid or None)
             resources.callback(graph.close)
-            os.environ.update(graph.start())
+            try:
+                os.environ.update(graph.start())
+            except GraphAlreadyRunning as error:
+                sys.exit(str(error))
         app = create_app(str(db_path), storage_dir=str(vault_path),network_available=host=='0.0.0.0',listen_port=args.port)
         app.state.update_launch_args=json.loads(os.environ.get('EVORA_UPDATE_LAUNCH_ARGS','[]')) if sys.platform.startswith('linux') else []
         app.state.update_owner_pid = args.parent_pid or 0

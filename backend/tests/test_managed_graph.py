@@ -10,7 +10,7 @@ import traceback
 
 from filelock import Timeout
 from neo4j import GraphDatabase
-from backend.managed_graph import ManagedGraph
+from backend.managed_graph import ManagedGraph, GraphAlreadyRunning
 
 
 class GraphPackagingTests(unittest.TestCase):
@@ -66,6 +66,29 @@ class GraphPackagingTests(unittest.TestCase):
             with FileLock(str(home / 'runtime.lock'), timeout=0):
                 pass
 
+    def test_second_owner_has_clear_error_and_preserves_the_running_graph(self):
+        from filelock import FileLock
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            runtime = root / 'runtime'
+            (runtime / 'java/bin').mkdir(parents=True)
+            (runtime / 'classes').mkdir()
+            (runtime / 'java/bin' / ('java.exe' if os.name == 'nt' else 'java')).touch()
+            (runtime / 'classes/GraphHost.class').touch()
+            home = root / 'home'
+            home.mkdir()
+            with FileLock(str(home / 'runtime.lock')):
+                second = ManagedGraph(runtime, home, lock_timeout=0)
+                with patch.object(second, '_start') as start:
+                    with self.assertRaisesRegex(GraphAlreadyRunning, 'tray menu'):
+                        second.start()
+                    start.assert_not_called()
+                    self.assertIsNone(second.lock)
+            with patch.object(second, '_start', return_value={}) as start:
+                self.assertEqual(second.start(), {})
+                start.assert_called_once()
+                second.close()
+
     def test_missing_runtime_fails_without_creating_data(self):
         with TemporaryDirectory() as directory:
             root = Path(directory)
@@ -118,8 +141,8 @@ class ManagedGraphIntegrationTests(unittest.TestCase):
                 with GraphDatabase.driver(env['NEO4J_URI'], auth=('neo4j', env['NEO4J_PASSWORD'])) as driver:
                     driver.execute_query('CREATE (:EvoraSmoke {value: $value})', value='persistent', database_='neo4j')
                 credential_bytes = (root / 'credentials.json').read_bytes()
-                second = ManagedGraph(os.environ['EVORA_GRAPH_TEST_RUNTIME'], root)
-                with self.assertRaises(Timeout):
+                second = ManagedGraph(os.environ['EVORA_GRAPH_TEST_RUNTIME'], root, lock_timeout=0)
+                with self.assertRaises(GraphAlreadyRunning):
                     second.start()
                 self.assertIsNone(graph.process.poll())
                 process = graph.process

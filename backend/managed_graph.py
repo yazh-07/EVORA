@@ -7,16 +7,21 @@ import socket
 import subprocess
 import time
 
-from filelock import FileLock
+from filelock import FileLock, Timeout
 from neo4j import GraphDatabase
 from backend.database_keys import atomic_json
 from backend.process_owner import alive
 
 
+class GraphAlreadyRunning(RuntimeError):
+    pass
+
+
 class ManagedGraph:
-    def __init__(self, runtime, home, *, timeout=150, owner_pid=None):
+    def __init__(self, runtime, home, *, timeout=150, owner_pid=None, lock_timeout=10):
         self.runtime, self.home = Path(runtime).resolve(), Path(home).resolve()
         self.timeout = timeout
+        self.lock_timeout = lock_timeout
         self.process = None
         self.log = None
         self.lock = None
@@ -47,7 +52,12 @@ class ManagedGraph:
         else:
             self.home.chmod(0o700)
         self.lock = FileLock(str(self.home / 'runtime.lock'))
-        self.lock.acquire(timeout=0)
+        try:
+            # Give an earlier workstation time to complete a clean shutdown.
+            self.lock.acquire(timeout=self.lock_timeout)
+        except Timeout:
+            self.lock = None
+            raise GraphAlreadyRunning('EVORA is already running. Exit EVORA from its tray menu, then reopen it.') from None
         try:
             return self._start()
         except BaseException:
