@@ -26,6 +26,9 @@ SetupIconFile=..\desktop\icon.ico
 Compression=lzma2/ultra64
 SolidCompression=yes
 WizardStyle=modern
+AppMutex=Local\EVORA.Workstation.Runtime
+UninstallLogging=yes
+UninstallDisplayIcon={app}\icon.ico
 PrivilegesRequired=lowest
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
@@ -59,6 +62,11 @@ Name: "{group}\{#MyAppFullName}"; Filename: "{app}\{#MyAppExeName}"; IconFilenam
 Name: "{group}\{cm:UninstallProgram,{#MyAppName}}"; Filename: "{uninstallexe}"
 Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "{app}\icon.ico"; Tasks: desktopicon
 Name: "{userstartup}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "{app}\icon.ico"; Tasks: startupicon
+
+[UninstallDelete]
+Type: files; Name: "{app}\.evora-update.lock"
+Type: dirifempty; Name: "{app}\backend"
+Type: dirifempty; Name: "{app}"
 
 [Run]
 Filename: "{tmp}\vc_redist.x64.exe"; Parameters: "/install /quiet /norestart"; Check: VCRedistNeedsInstall; StatusMsg: "Installing Microsoft Visual C++ Runtime..."; Flags: waituntilterminated skipifdoesntexist
@@ -287,5 +295,58 @@ begin
       '}';
 
     SaveStringToFile(ConfigFile, ConfigContent, False);
+  end;
+end;
+
+procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
+var
+  ResultCode: Integer;
+  AppExe, Helper, TempHelper, Inventory, AppRoot: String;
+begin
+  AppRoot := ExpandConstant('{app}');
+  if CurUninstallStep = usAppMutexCheck then
+  begin
+    // Hold this until Uninstall exits, so a quick relaunch cannot reopen files.
+    CreateMutex('Local\EVORA.Workstation.Maintenance');
+    AppExe := AppRoot + '\{#MyAppExeName}';
+    if FileExists(AppExe) then
+    begin
+      if not Exec(AppExe, '--shutdown', AppRoot, SW_HIDE, ewWaitUntilTerminated, ResultCode) then
+      begin
+        MsgBox('Could not stop EVORA. Exit it from the tray menu and retry uninstalling.', mbError, MB_OK);
+        Abort;
+      end;
+      if ResultCode <> 0 then
+      begin
+        MsgBox('EVORA is still running. Exit it from the tray menu and retry uninstalling.', mbError, MB_OK);
+        Abort;
+      end;
+    end;
+  end;
+  if CurUninstallStep = usUninstall then
+  begin
+    Inventory := AppRoot + '\evora-install.json';
+    Helper := AppRoot + '\evora-updater.exe';
+    if FileExists(Inventory) then
+    begin
+      TempHelper := ExpandConstant('{tmp}\evora-uninstall-helper.exe');
+      if not FileCopy(Helper, TempHelper, False) then
+      begin
+        MsgBox('Could not prepare EVORA for removal. Reinstall EVORA, then retry.', mbError, MB_OK);
+        Abort;
+      end;
+      if not Exec(TempHelper, '--recover "' + AppRoot + '"', ExpandConstant('{tmp}'), SW_HIDE, ewWaitUntilTerminated, ResultCode) then
+        ResultCode := 1;
+      if ResultCode = 0 then
+      begin
+        if not Exec(TempHelper, '--uninstall "' + AppRoot + '"', ExpandConstant('{tmp}'), SW_HIDE, ewWaitUntilTerminated, ResultCode) then
+          ResultCode := 1;
+      end;
+      if ResultCode <> 0 then
+      begin
+        MsgBox('Could not remove EVORA program files. Close EVORA and retry. Your case data has been kept.', mbError, MB_OK);
+        Abort;
+      end;
+    end;
   end;
 end;

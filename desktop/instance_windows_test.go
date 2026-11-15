@@ -200,3 +200,46 @@ func TestConcurrentRelaunchesDuringShutdownHaveOnlyOneNewOwner(t *testing.T) {
 		t.Fatalf("expected one replacement owner, got %d", owners)
 	}
 }
+
+func TestShutdownRequestWaitsForOwnerAndDoesNotLaunchAnything(t *testing.T) {
+	database := filepath.Join(t.TempDir(), "cases.sqlite3")
+	instance, err := acquireWorkstation(database)
+	if err != nil || instance == nil {
+		t.Fatalf("owner: %v", err)
+	}
+	go instance.serve(make(chan struct{}))
+	defer instance.Close()
+	done := make(chan error, 1)
+	go func() { done <- requestWorkstationShutdown(database, 5*time.Second) }()
+	result, _, _ := waitObject.Call(instance.shutdown, 3000)
+	if result != 0 {
+		t.Fatal("shutdown request was not delivered", result)
+	}
+	select {
+	case err := <-done:
+		t.Fatalf("shutdown returned before owner released files: %v", err)
+	default:
+	}
+	instance.Close()
+	select {
+	case err := <-done:
+		if err != nil {
+			t.Fatal(err)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("shutdown did not observe owner exit")
+	}
+	if err := requestWorkstationShutdown(database, time.Second); err != nil {
+		t.Fatal(err)
+	}
+}
+func TestShutdownWithoutWorkstationDoesNotCreateData(t *testing.T) {
+	root := t.TempDir()
+	database := filepath.Join(root, "missing", "cases.sqlite3")
+	if err := requestWorkstationShutdown(database, time.Second); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(filepath.Dir(database)); !os.IsNotExist(err) {
+		t.Fatal("shutdown created a workstation")
+	}
+}

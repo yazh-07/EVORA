@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/yazh-07/evora/desktop/internal/launchconfig"
 	"html"
+	"os"
 	"os/exec"
 	"runtime"
 	"time"
@@ -38,6 +39,17 @@ func beginWorkstationShutdown() {
 }
 
 func main() {
+	if len(os.Args) == 2 && os.Args[1] == "--shutdown" {
+		if err := requestWorkstationShutdown(NewBackendManager(DefaultConfig()).dbPath, 70*time.Second); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+		return
+	}
+	if maintenanceActive() {
+		return
+	}
+
 	instance, err := acquireWorkstation(NewBackendManager(DefaultConfig()).dbPath)
 	if err != nil {
 		fmt.Println("Could not open EVORA:", err)
@@ -46,9 +58,17 @@ func main() {
 	if instance == nil {
 		return
 	} // The existing workstation received activation.
-	activeInstance = instance
 	go instance.serve(workstationReady)
 	defer instance.Close()
+	unregisterRuntime, err := registerRuntime()
+	if err != nil {
+		return
+	}
+	defer unregisterRuntime()
+	if maintenanceActive() {
+		return
+	}
+	activeInstance = instance
 	if !recoverApplicationUpdate() {
 		return
 	}

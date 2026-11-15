@@ -14,8 +14,8 @@ func Uninstall(root string) error {
 	if err != nil {
 		return err
 	}
-	if manifest.Platform != "linux-x64" {
-		return errors.New("use the Windows uninstaller")
+	if manifest.Platform != "linux-x64" && manifest.Platform != "windows-x64" {
+		return errors.New("unsupported uninstall inventory")
 	}
 	release, err := Lock(root)
 	if err != nil {

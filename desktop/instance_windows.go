@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/sha256"
 	"fmt"
+	"github.com/energye/systray"
 	"os"
 	"path/filepath"
 	"strings"
@@ -22,6 +23,7 @@ var closeHandle = kernel32.NewProc("CloseHandle")
 
 type workstationInstance struct {
 	mutex, event uintptr
+	shutdown     uintptr
 	closing      uintptr
 	stop         chan struct{}
 	done         chan struct{}
@@ -34,7 +36,21 @@ func acquireWorkstation(database string) (*workstationInstance, error) {
 	if err != nil {
 		return nil, err
 	}
-	key := fmt.Sprintf(`Local\EVORA-Workstation-%x`, sha256.Sum256([]byte(strings.ToLower(filepath.Clean(path)))))
+	key, err := workstationKey(database)
+	if err != nil {
+		return nil, err
+	}
+	shutdownName, _ := syscall.UTF16PtrFromString(key + "-shutdown")
+	shutdown, _, err := createEvent.Call(0, 1, 0, uintptr(unsafe.Pointer(shutdownName)))
+	if shutdown == 0 {
+		return nil, err
+	}
+	keepShutdown := false
+	defer func() {
+		if !keepShutdown {
+			closeHandle.Call(shutdown)
+		}
+	}()
 	closingName, _ := syscall.UTF16PtrFromString(key + "-closing")
 	closing, _, err := createEvent.Call(0, 1, 0, uintptr(unsafe.Pointer(closingName)))
 	if closing == 0 {
@@ -101,7 +117,17 @@ func acquireWorkstation(database string) (*workstationInstance, error) {
 	}
 	kernel32.NewProc("ResetEvent").Call(closing)
 	keepClosing = true
-	return &workstationInstance{mutex: mutex, event: event, closing: closing, stop: make(chan struct{}), done: make(chan struct{})}, nil
+	keepShutdown = true
+	kernel32.NewProc("ResetEvent").Call(shutdown)
+	return &workstationInstance{mutex: mutex, event: event, closing: closing, shutdown: shutdown, stop: make(chan struct{}), done: make(chan struct{})}, nil
+}
+
+func workstationKey(database string) (string, error) {
+	path, err := filepath.Abs(database)
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf(`Local\EVORA-Workstation-%x`, sha256.Sum256([]byte(strings.ToLower(filepath.Clean(path))))), nil
 }
 
 func (i *workstationInstance) serve(ready <-chan struct{}) {
@@ -116,6 +142,12 @@ func (i *workstationInstance) serve(ready <-chan struct{}) {
 		case <-i.stop:
 			return
 		default:
+		}
+		if result, _, _ := waitObject.Call(i.shutdown, 0); result == 0 {
+			beginWorkstationShutdown()
+			terminateNativeWindow()
+			systray.Quit()
+			return
 		}
 		result, _, _ := waitObject.Call(i.event, 250)
 		if result == 0 {
@@ -138,5 +170,6 @@ func (i *workstationInstance) Close() {
 		closeHandle.Call(i.mutex)
 		closeHandle.Call(i.event)
 		closeHandle.Call(i.closing)
+		closeHandle.Call(i.shutdown)
 	})
 }

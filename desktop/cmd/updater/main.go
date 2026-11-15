@@ -16,7 +16,7 @@ import (
 
 func main() {
 	planPath := flag.String("plan", "", "verified update plan")
-	uninstallRoot := flag.String("uninstall", "", "remove managed Linux program files")
+	uninstallRoot := flag.String("uninstall", "", "remove managed program files")
 	recoverRoot := flag.String("recover", "", "recover interrupted update")
 	flag.Parse()
 	var err error

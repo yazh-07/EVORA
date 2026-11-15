@@ -180,3 +180,26 @@ func TestRecoverBeforeFirstJournalSave(t *testing.T) {
 	}
 	expect(t, root, "EVORA.exe", "intact launcher")
 }
+
+func TestWindowsUninstallRemovesUpdatedInventoryAndPreservesData(t *testing.T) {
+	root := t.TempDir()
+	files := []File{put(t, root, "EVORA.exe", "desktop"), put(t, root, "evora-updater.exe", "helper"), put(t, root, "backend/evora.exe", "backend"), put(t, root, "backend/new-from-update.dll", "updated library"), put(t, root, "backend/modified.dll", "original")}
+	manifest(t, filepath.Join(root, Installed), "1.0.0", files)
+	put(t, root, "backend/modified.dll", "locally modified")
+	put(t, root, "backend/user-notes.txt", "user notes")
+	os.MkdirAll(filepath.Join(root, "backend", "storage"), 0700)
+	os.WriteFile(filepath.Join(root, "backend", "storage", "cases.sqlite3"), []byte("case data"), 0600)
+	if err := Uninstall(root); err != nil {
+		t.Fatal(err)
+	}
+	for _, name := range []string{"EVORA.exe", "backend/evora.exe", "backend/new-from-update.dll", Installed} {
+		if _, err := os.Stat(filepath.Join(root, filepath.FromSlash(name))); !os.IsNotExist(err) {
+			t.Fatalf("managed file remains: %s", name)
+		}
+	}
+	for _, name := range []string{"backend/modified.dll", "backend/user-notes.txt", "backend/storage/cases.sqlite3"} {
+		if _, err := os.Stat(filepath.Join(root, filepath.FromSlash(name))); err != nil {
+			t.Fatalf("user or modified file removed: %s", name)
+		}
+	}
+}
