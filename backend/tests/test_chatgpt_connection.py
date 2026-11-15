@@ -192,6 +192,23 @@ class ChatGPTTests(unittest.IsolatedAsyncioTestCase):
         with patch.object(cg.httpx,'Client',side_effect=lambda **kwargs:real(transport=httpx.MockTransport(respond),**kwargs)),self.assertRaises(ValueError):
             connection.infer('test-model','Return JSON','test')
 
+    async def test_live_output_callback_receives_drafts_but_completion_is_still_required(self):
+        connection,_,_=await self.authorized();self.app.state.offline_mode=False
+        for completed in (True,False):
+            events=[dict(type='response.output_text.delta',delta='{"answer":'),dict(type='response.output_text.delta',delta='"ok"}')]
+            if completed:
+                events.append(dict(type='response.completed',response=dict(status='completed',output=[dict(content=[dict(type='output_text',text='{"answer":"ok"}')])])))
+            _,_,real,respond=self.provider(stream=''.join('data: '+json.dumps(event)+'\n\n' for event in events))
+            seen=[]
+            with patch.object(cg.httpx,'Client',side_effect=lambda **kwargs:real(transport=httpx.MockTransport(respond),**kwargs)):
+                if completed:
+                    raw,_=connection.infer('test-model','Return JSON','fixture',on_delta=seen.append)
+                    self.assertEqual(json.loads(raw),{'answer':'ok'})
+                else:
+                    with self.assertRaises(ValueError):
+                        connection.infer('test-model','Return JSON','fixture',on_delta=seen.append)
+            self.assertEqual(''.join(seen),'{"answer":"ok"}')
+
     async def test_plan_stream_uses_completed_items_when_terminal_output_is_empty(self):
         connection,_,_=await self.authorized();self.app.state.offline_mode=False
         item=lambda text:dict(type='message',role='assistant',status='completed',content=[dict(type='output_text',text=text)])

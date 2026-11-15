@@ -4,7 +4,6 @@ import json
 import queue
 import threading
 from starlette.responses import StreamingResponse
-from backend.errors import AccessError
 
 _slots = threading.BoundedSemaphore(4)
 
@@ -13,8 +12,6 @@ class StreamCancelled(BaseException):
 
 
 def stream_answer(request, grant, run):
-    if not _slots.acquire(blocking=False):
-        raise AccessError(429, 'BUSY', 'All answer slots are busy. Retry shortly.')
     messages = queue.Queue(maxsize=32)
     stopped = threading.Event()
 
@@ -47,7 +44,14 @@ def stream_answer(request, grant, run):
             _slots.release()
 
     async def events():
-        threading.Thread(target=worker, daemon=True).start()
+        if not _slots.acquire(blocking=False):
+            yield json.dumps(dict(type='error', message='All answer slots are busy. Retry shortly.')) + '\n'
+            return
+        try:
+            threading.Thread(target=worker, daemon=True).start()
+        except BaseException:
+            _slots.release()
+            raise
         try:
             while True:
                 if await request.is_disconnected():

@@ -31,3 +31,18 @@ class DraftTests(unittest.TestCase):
         with httpx.Client(transport=httpx.MockTransport(lambda request:httpx.Response(200,content=b'data: {"choices":[{"delta":{"content":"{}"}}]}\n\n'))) as client:
             with self.assertRaises(SynthesisError):
                 _read_chat_stream(client,'https://example.test/chat',{'model':'fixture'}, {},lambda value:None)
+
+    def test_ollama_stream_delivers_content_and_rejects_truncated_generation(self):
+        seen=[]
+        for reason in ('stop','length'):
+            events=[dict(model='local',message=dict(content='{"supported":')),dict(message=dict(content='true}'),done=True,done_reason=reason)]
+            wire=''.join(json.dumps(event)+'\n' for event in events).encode()
+            with httpx.Client(transport=httpx.MockTransport(lambda request:httpx.Response(200,content=wire))) as client:
+                if reason=='length':
+                    with self.assertRaises(SynthesisError):
+                        _read_chat_stream(client,'http://127.0.0.1/api/chat',{'model':'fixture'}, {},seen.append,ollama=True)
+                else:
+                    result,model=_read_chat_stream(client,'http://127.0.0.1/api/chat',{'model':'fixture'}, {},seen.append,ollama=True)
+                    self.assertEqual(result,{'supported':True})
+                    self.assertEqual(model,'local')
+                    self.assertEqual(seen,['{"supported":','true}'])

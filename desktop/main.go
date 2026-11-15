@@ -284,6 +284,9 @@ func runTray() {
 }
 
 func openWorkstation() {
+	if quitting.Load() {
+		return
+	}
 	if !restoreNativeWindow() {
 		_ = openSystemBrowser(fmt.Sprintf("http://127.0.0.1:%d", appConfig.Port))
 	}
