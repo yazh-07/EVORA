@@ -72,11 +72,12 @@ func acquireWorkstation(database string) (*workstationInstance, error) {
 	closingState, _, _ := waitObject.Call(closing, 0)
 	if locked == 0 && lockErr == syscall.Errno(33) && closingState == 0 {
 		deadline := time.Now().Add(70 * time.Second)
-		for locked == 0 && lockErr == syscall.Errno(33) && time.Now().Before(deadline) {
+		for locked == 0 && lockErr == syscall.Errno(33) && closingState == 0 && time.Now().Before(deadline) {
 			time.Sleep(100 * time.Millisecond)
 			locked, _, lockErr = lockFile.Call(mutex, 3, 0, 1, 0, uintptr(unsafe.Pointer(&overlap)))
+			closingState, _, _ = waitObject.Call(closing, 0)
 		}
-		if locked == 0 {
+		if locked == 0 && closingState == 0 {
 			closeHandle.Call(mutex)
 			closeHandle.Call(event)
 			return nil, fmt.Errorf("EVORA is still shutting down; try again shortly")

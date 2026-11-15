@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"io"
 	"os"
 	"os/exec"
@@ -15,6 +16,15 @@ func TestSecondLaunchActivatesExistingWorkstation(t *testing.T) {
 		instance, err := acquireWorkstation(database)
 		if err != nil {
 			t.Fatal(err)
+		}
+		if os.Getenv("EVORA_TEST_RELAUNCH") == "1" {
+			if instance == nil {
+				os.Stdout.WriteString("reused\n")
+				return
+			}
+			os.Stdout.WriteString("owned\n")
+			io.Copy(io.Discard, os.Stdin)
+			os.Exit(0)
 		}
 		if os.Getenv("EVORA_TEST_EXPECT_OWNER") == "1" {
 			if instance == nil {
@@ -139,5 +149,54 @@ func TestLaunchDuringShutdownWaitsForPreviousOwner(t *testing.T) {
 		}
 	case <-time.After(10 * time.Second):
 		t.Fatal("launch did not resume after shutdown")
+	}
+}
+
+func TestConcurrentRelaunchesDuringShutdownHaveOnlyOneNewOwner(t *testing.T) {
+	database := filepath.Join(t.TempDir(), "cases.sqlite3")
+	first, err := acquireWorkstation(database)
+	if err != nil || first == nil {
+		t.Fatalf("first launch: %v", err)
+	}
+	go first.serve(make(chan struct{}))
+	defer first.Close()
+	first.markClosing()
+	exe, _ := os.Executable()
+	results := make(chan string, 6)
+	for n := 0; n < 6; n++ {
+		cmd := exec.Command(exe, "-test.run=^TestSecondLaunchActivatesExistingWorkstation$")
+		cmd.Env = append(os.Environ(), "EVORA_TEST_INSTANCE_DATABASE="+database, "EVORA_TEST_RELAUNCH=1")
+		output, _ := cmd.StdoutPipe()
+		input, _ := cmd.StdinPipe()
+		if err := cmd.Start(); err != nil {
+			t.Fatal(err)
+		}
+		defer func() { input.Close(); cmd.Process.Kill(); cmd.Wait() }()
+		go func() {
+			line, err := bufio.NewReader(output).ReadString('\n')
+			if err != nil {
+				results <- err.Error()
+			} else {
+				results <- line
+			}
+		}()
+	}
+	time.Sleep(300 * time.Millisecond)
+	first.Close()
+	owners := 0
+	for n := 0; n < 6; n++ {
+		select {
+		case result := <-results:
+			if result == "owned\n" {
+				owners++
+			} else if result != "reused\n" {
+				t.Fatalf("unexpected launch result: %q", result)
+			}
+		case <-time.After(10 * time.Second):
+			t.Fatal("relaunch remained blocked after another process took ownership")
+		}
+	}
+	if owners != 1 {
+		t.Fatalf("expected one replacement owner, got %d", owners)
 	}
 }
