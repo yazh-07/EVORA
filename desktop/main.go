@@ -27,7 +27,19 @@ var (
 	wvWindow   webview2.WebView
 )
 
+var workstationReady = make(chan struct{})
+
 func main() {
+	instance, err := acquireWorkstation(NewBackendManager(DefaultConfig()).dbPath)
+	if err != nil {
+		fmt.Println("Could not open EVORA:", err)
+		return
+	}
+	if instance == nil {
+		return
+	} // The existing workstation received activation.
+	go instance.serve(workstationReady)
+	defer instance.Close()
 	if !recoverApplicationUpdate() {
 		return
 	}
@@ -65,6 +77,7 @@ func main() {
 	if appConfig.Mode == "webview" && runtime.GOOS == "windows" {
 		openNativeWindow(targetURL, ready)
 	} else {
+		close(workstationReady)
 		if ready {
 			openSystemBrowser(targetURL)
 		} else {
@@ -89,12 +102,14 @@ func openNativeWindow(targetURL string, initialReady bool) {
 		},
 	})
 	if wv == nil {
+		close(workstationReady)
 		openSystemBrowser(targetURL)
 		<-updateExit
 		return
 	}
 
 	setNativeWindow(wv)
+	close(workstationReady)
 	if err := installCloseToTray(wv.Window()); err != nil {
 		fmt.Println("Close-to-tray unavailable")
 	}
