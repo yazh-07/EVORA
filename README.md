@@ -1,3 +1,5 @@
+<img src="desktop/icon.png" alt="EVORA icon" width="80" height="80">
+
 # EVORA
 
 A desktop workspace for organizing digital evidence and following its connections.
