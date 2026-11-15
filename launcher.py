@@ -123,7 +123,7 @@ def main():
             target_url = f"http://127.0.0.1:{args.port}"
             threading.Thread(target=open_browser, args=(target_url,), daemon=True).start()
 
-        server = uvicorn.Server(uvicorn.Config(app, host=host, port=args.port, access_log=False))
+        server = uvicorn.Server(uvicorn.Config(app, host=host, port=args.port, access_log=False, timeout_graceful_shutdown=5))
         if args.shutdown_file or args.parent_pid:
             def watch_shutdown():
                 from backend.process_owner import alive

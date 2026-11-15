@@ -26,6 +26,12 @@ The app can serve its sign-in screen while the database is locked. Case access, 
 
 This change encrypts the local SQLite database: accounts, case metadata, extracted observations, stored processing/analysis outputs, notes, reviews and model report provenance. Original evidence files, downloaded reports, existing backups, ChatGPT credential files and the separate Neo4j projection store are outside this encryption scope. It does not provide per-case cryptographic separation between accounts sharing the database. Hosted model sharing controls continue to apply.
 
+## Model credentials
+
+API keys saved in Settings are stored inside the encrypted workstation database. On Windows, ChatGPT connection credentials and legacy desktop-config API keys use current-user [DPAPI](https://learn.microsoft.com/en-us/windows/win32/seccrypto/example-c-program-using-cryptprotectdata) encryption in addition to their file access controls. Existing plaintext Windows entries migrate when read. Protection failures do not fall back to writing plaintext. These credentials depend on the Windows account that protected them; copying the encrypted file to another computer or account is not a supported credential migration.
+
+On Linux, the separate ChatGPT credential file currently relies on owner-only file permissions; it is not encrypted by this Windows-specific protection. DPAPI and database encryption protect stored files, not secrets used by a running process or malicious software running as the signed-in user.
+
 ## Verification
 
 Regenerate the OpenAPI bundle before backend and contract tests. Use the project Python environment and the pinned frontend dependencies:

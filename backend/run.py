@@ -25,7 +25,7 @@ def main():
         parser.error('Build the interface first: npm --prefix frontend run build')
     app = create_app(args.database, storage_dir=args.storage, offline_mode=False if args.online else None,network_available=host=='0.0.0.0',listen_port=args.port)
     app.mount('/', StaticFiles(directory=frontend, html=True), name='workstation')
-    uvicorn.run(app, host=host, port=args.port, access_log=False)
+    uvicorn.run(app, host=host, port=args.port, access_log=False, timeout_graceful_shutdown=5)
 
 
 if __name__ == '__main__':
