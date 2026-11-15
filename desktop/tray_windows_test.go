@@ -7,6 +7,8 @@ import (
 	"syscall"
 	"testing"
 	"unsafe"
+
+	webview2 "github.com/jchv/go-webview2"
 )
 
 func TestCloseHidesWindowOnlyWhenTrayReadyAndEnabled(t *testing.T) {
@@ -33,7 +35,14 @@ func TestCloseHidesWindowOnlyWhenTrayReadyAndEnabled(t *testing.T) {
 	if valid == 0 || visible != 0 {
 		t.Fatal("close must hide, not destroy", valid, visible)
 	}
-	showWindow.Call(hwnd, 9)
+	previousWindow := nativeWindow()
+	defer setNativeWindow(previousWindow)
+	fake := &trayTestWindow{hwnd: unsafe.Pointer(hwnd)}
+	setNativeWindow(fake)
+	openWorkstation()
+	if !fake.dispatched {
+		t.Fatal("tray activation must dispatch to the native window thread")
+	}
 	visible, _, _ = user32.NewProc("IsWindowVisible").Call(hwnd)
 	if visible == 0 {
 		t.Fatal("hidden window cannot be restored")
@@ -54,3 +63,13 @@ func TestCloseHidesWindowOnlyWhenTrayReadyAndEnabled(t *testing.T) {
 		t.Fatal("explicit quit must bypass close-to-tray")
 	}
 }
+
+// Keep the real Win32 restore path, without requiring WebView2 in the runner.
+type trayTestWindow struct {
+	webview2.WebView
+	hwnd       unsafe.Pointer
+	dispatched bool
+}
+
+func (w *trayTestWindow) Window() unsafe.Pointer { return w.hwnd }
+func (w *trayTestWindow) Dispatch(fn func())     { w.dispatched = true; fn() }

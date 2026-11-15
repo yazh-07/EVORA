@@ -58,7 +58,7 @@ func main() {
 	go watchApplicationUpdate()
 
 	// Run system tray in parallel
-	go systray.Run(onTrayReady, onTrayExit)
+	go runTray()
 
 	targetURL := fmt.Sprintf("http://127.0.0.1:%d", appConfig.Port)
 
@@ -236,6 +236,20 @@ func openSystemBrowser(url string) error {
 	return cmd.Start()
 }
 
+// Windows delivers tray messages to the thread that created its hidden window.
+// The main thread belongs to WebView; keep the tray on its own fixed thread.
+func runTray() {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+	systray.Run(onTrayReady, onTrayExit)
+}
+
+func openWorkstation() {
+	if !restoreNativeWindow() {
+		_ = openSystemBrowser(fmt.Sprintf("http://127.0.0.1:%d", appConfig.Port))
+	}
+}
+
 func onTrayReady() {
 	if runtime.GOOS == "windows" && len(iconIcoData) > 0 {
 		systray.SetIcon(iconIcoData)
@@ -260,12 +274,7 @@ func onTrayReady() {
 
 	targetURL := fmt.Sprintf("http://127.0.0.1:%d", appConfig.Port)
 
-	mOpen.Click(func() {
-		if restoreNativeWindow() {
-		} else {
-			openSystemBrowser(targetURL)
-		}
-	})
+	mOpen.Click(openWorkstation)
 
 	mBrowser.Click(func() {
 		openSystemBrowser(targetURL)
@@ -276,8 +285,9 @@ func onTrayReady() {
 	})
 
 	mQuit.Click(func() { quitting.Store(true); systray.Quit() })
-	systray.SetOnClick(func(_ systray.IMenu) { restoreNativeWindow() })
-	systray.SetOnDClick(func(_ systray.IMenu) { restoreNativeWindow() })
+	systray.SetOnClick(func(_ systray.IMenu) { openWorkstation() })
+	systray.SetOnDClick(func(_ systray.IMenu) { openWorkstation() })
+	systray.SetOnRClick(func(menu systray.IMenu) { _ = menu.ShowMenu() })
 	trayReady.Store(true)
 }
 
