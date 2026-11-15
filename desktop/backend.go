@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"github.com/yazh-07/evora/desktop/internal/launchconfig"
 	"net/http"
 	"os"
 	"os/exec"
@@ -128,7 +129,13 @@ func (b *BackendManager) Start(cfg Config) error {
 
 	b.stopPath = filepath.Join(filepath.Dir(b.dbPath), fmt.Sprintf("stop-%d", os.Getpid()))
 	_ = os.Remove(b.stopPath)
+	preferences := launchconfig.Load(b.dbPath, b.port)
+	host := "127.0.0.1"
+	if preferences.NetworkAvailable {
+		host = "0.0.0.0"
+	}
 	args := []string{
+		"--host", host,
 		"--no-browser",
 		"--port", strconv.Itoa(b.port),
 		"--database", b.dbPath,
@@ -146,6 +153,11 @@ func (b *BackendManager) Start(cfg Config) error {
 	}
 
 	cmd.Env = os.Environ()
+	if cfg.Mode == "webview" {
+		cmd.Env = append(cmd.Env, "EVORA_NATIVE_WINDOW=1")
+	} else {
+		cmd.Env = append(cmd.Env, "EVORA_NATIVE_WINDOW=0")
+	}
 
 	if cfg.AIProvider == "openai" {
 		cmd.Env = append(cmd.Env,

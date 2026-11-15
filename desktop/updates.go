@@ -38,9 +38,8 @@ func watchApplicationUpdate() {
 		}
 		_ = os.Remove(marker)
 		backendMgr.Stop()
-		if wvWindow != nil {
-			wvWindow.Dispatch(func() { wvWindow.Terminate() })
-		}
+		quitting.Store(true)
+		terminateNativeWindow()
 		systray.Quit()
 		close(updateExit)
 		return

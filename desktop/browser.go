@@ -6,10 +6,11 @@ import (
 	"net/url"
 )
 
-func availablePort(preferred int) (int, error) {
-	listener, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", preferred))
+func availablePort(preferred int) (int, error) { return availablePortOn("127.0.0.1", preferred) }
+func availablePortOn(host string, preferred int) (int, error) {
+	listener, err := net.Listen("tcp", net.JoinHostPort(host, fmt.Sprint(preferred)))
 	if err != nil {
-		listener, err = net.Listen("tcp", "127.0.0.1:0")
+		listener, err = net.Listen("tcp", net.JoinHostPort(host, "0"))
 	}
 	if err != nil {
 		return 0, err

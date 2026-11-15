@@ -379,6 +379,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/settings/runtime": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** getRuntimeSettings */
+        get: operations["getRuntimeSettings"];
+        /** updateRuntimeSettings */
+        put: operations["updateRuntimeSettings"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/updates/health": {
         parameters: {
             query?: never;
@@ -1207,6 +1225,26 @@ export interface components {
                 target_id: string | null;
                 created_at: number;
             }[];
+        };
+        RuntimePreferences: {
+            /** @default false */
+            network_available: boolean;
+            /** @default 8000 */
+            port: number;
+            /** @default true */
+            minimize_to_tray: boolean;
+        };
+        RuntimeSettings: {
+            /** @default false */
+            network_available: boolean;
+            /** @default 8000 */
+            port: number;
+            /** @default true */
+            minimize_to_tray: boolean;
+            running_port: number;
+            network_active: boolean;
+            tray_supported: boolean;
+            restart_required: boolean;
         };
         UpdateStatus: {
             /** @enum {string} */
@@ -3322,6 +3360,50 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    getRuntimeSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Launcher settings */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RuntimeSettings"];
+                };
+            };
+        };
+    };
+    updateRuntimeSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RuntimePreferences"];
+            };
+        };
+        responses: {
+            /** @description Launcher settings */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RuntimeSettings"];
                 };
             };
         };

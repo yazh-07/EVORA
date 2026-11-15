@@ -67,7 +67,12 @@ def main():
     parser.add_argument('--graph-data', help='Private bundled graph data directory')
     parser.add_argument('--shutdown-file', help=argparse.SUPPRESS)
     parser.add_argument('--parent-pid', type=int, default=0, help=argparse.SUPPRESS)
+    parser.add_argument('--host',choices=['127.0.0.1','0.0.0.0'])
     args = parser.parse_args()
+    from backend.runtime_settings import load
+    preferences=load(args.database)
+    host=args.host or ('0.0.0.0' if preferences.network_available else '127.0.0.1')
+    if '--port' not in sys.argv[1:]:args.port=preferences.port
 
     frontend_dist = BUNDLE_DIR / "frontend" / "dist"
     if not (frontend_dist / "index.html").is_file():
@@ -105,7 +110,7 @@ def main():
             graph = ManagedGraph(runtime, graph_home, owner_pid=args.parent_pid or None)
             resources.callback(graph.close)
             os.environ.update(graph.start())
-        app = create_app(str(db_path), storage_dir=str(vault_path))
+        app = create_app(str(db_path), storage_dir=str(vault_path),network_available=host=='0.0.0.0',listen_port=args.port)
         app.state.update_launch_args=json.loads(os.environ.get('EVORA_UPDATE_LAUNCH_ARGS','[]')) if sys.platform.startswith('linux') else []
         app.state.update_owner_pid = args.parent_pid or 0
         app.state.update_stop_marker = args.shutdown_file + ".update" if args.shutdown_file else ""
@@ -115,7 +120,7 @@ def main():
             target_url = f"http://127.0.0.1:{args.port}"
             threading.Thread(target=open_browser, args=(target_url,), daemon=True).start()
 
-        server = uvicorn.Server(uvicorn.Config(app, host='127.0.0.1', port=args.port, access_log=False))
+        server = uvicorn.Server(uvicorn.Config(app, host=host, port=args.port, access_log=False))
         if args.shutdown_file or args.parent_pid:
             def watch_shutdown():
                 from backend.process_owner import alive

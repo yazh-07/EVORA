@@ -82,7 +82,7 @@ def csrf(request: Request):
     expected = str(request.base_url).rstrip('/')
     if (request.headers.get('x-evora-request') != '1' or
             (origin is not None and origin != expected) or request.headers.get('sec-fetch-site') == 'cross-site'):
-        raise AccessError(403, 'INVALID_ORIGIN', 'Open EVORA directly on this workstation and retry.')
+        raise AccessError(403, 'INVALID_ORIGIN', 'Open EVORA directly and retry.')
 
 
 def throttle(request, username):

@@ -29,7 +29,7 @@ try{
  assert.equal(await dialog.getByLabel('API Key',{exact:true}).count(),0);assert.equal(await dialog.getByLabel('Base URL',{exact:true}).count(),0);
  const [popup]=await Promise.all([context.waitForEvent('page'),dialog.getByRole('button',{name:'Continue with ChatGPT',exact:true}).click()]);
  await dialog.getByText('test@example.test · Connected',{exact:true}).waitFor();await popup.close();
- await dialog.getByRole('button',{name:'Test connection',exact:true}).click();await dialog.getByRole('button',{name:'Use test-multimodal',exact:true}).click();
+ await dialog.getByRole('button',{name:'Fetch models',exact:true}).click();await dialog.getByRole('button',{name:'Use test-multimodal',exact:true}).click();
  assert.ok(await dialog.getByRole('switch',{name:'Use this model for images',exact:true}).isChecked());
  await page.screenshot({path:join(scratch,'connected.png'),fullPage:true});
  await dialog.getByRole('button',{name:'Save',exact:true}).click();await dialog.waitFor({state:'detached'});

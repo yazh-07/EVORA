@@ -3,6 +3,7 @@ package main
 import (
 	_ "embed"
 	"fmt"
+	"github.com/yazh-07/evora/desktop/internal/launchconfig"
 	"html"
 	"os"
 	"os/exec"
@@ -31,7 +32,13 @@ func main() {
 		return
 	}
 	appConfig = LoadConfig()
-	port, err := availablePort(appConfig.Port)
+	preferences := launchconfig.Load(NewBackendManager(appConfig).dbPath, appConfig.Port)
+	appConfig.Port = preferences.Port
+	host := "127.0.0.1"
+	if preferences.NetworkAvailable {
+		host = "0.0.0.0"
+	}
+	port, err := availablePortOn(host, appConfig.Port)
 	if err != nil {
 		fmt.Println("Could not allocate a local workstation port")
 		return
@@ -87,7 +94,10 @@ func openNativeWindow(targetURL string, initialReady bool) {
 		return
 	}
 
-	wvWindow = wv
+	setNativeWindow(wv)
+	if err := installCloseToTray(wv.Window()); err != nil {
+		fmt.Println("Close-to-tray unavailable")
+	}
 	wv.SetSize(1440, 900, webview2.HintNone)
 	_ = wv.Bind("evoraOpenChatGPT", func(raw string) error {
 		if !validChatGPTAuthorizationURL(raw) {
@@ -251,8 +261,7 @@ func onTrayReady() {
 	targetURL := fmt.Sprintf("http://127.0.0.1:%d", appConfig.Port)
 
 	mOpen.Click(func() {
-		if wvWindow != nil {
-			wvWindow.Navigate(targetURL)
+		if restoreNativeWindow() {
 		} else {
 			openSystemBrowser(targetURL)
 		}
@@ -266,9 +275,10 @@ func onTrayReady() {
 		openConfigFolder()
 	})
 
-	mQuit.Click(func() {
-		systray.Quit()
-	})
+	mQuit.Click(func() { quitting.Store(true); systray.Quit() })
+	systray.SetOnClick(func(_ systray.IMenu) { restoreNativeWindow() })
+	systray.SetOnDClick(func(_ systray.IMenu) { restoreNativeWindow() })
+	trayReady.Store(true)
 }
 
 func openConfigFolder() {
@@ -285,6 +295,7 @@ func openConfigFolder() {
 }
 
 func onTrayExit() {
+	quitting.Store(true)
 	if backendMgr != nil {
 		backendMgr.Stop()
 	}

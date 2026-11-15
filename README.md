@@ -68,9 +68,13 @@ Choose light, dark, or system appearance and customize the accent color. Local a
 
 ![Appearance settings with a blue accent](docs/images/09-appearance.png)
 
+Windows keeps EVORA running in the system tray when you close its window. Click the tray icon to reopen it, or choose **Exit EVORA** to quit.
+
 ## Models and connectivity
 
 Use Ollama for local AI or configure a supported hosted provider in Settings. Image, audio, and video processing depend on the selected models and installed processing tools.
+
+EVORA is available only on this machine by default. **Settings → Advanced** lets you make it available on a trusted local network and choose its port; restart EVORA to apply network changes.
 
 Hosted models and online maps require a network connection. Offline maps and local model options are available. Review model results against the linked evidence.
 

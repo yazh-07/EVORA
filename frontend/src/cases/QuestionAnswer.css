@@ -46,3 +46,16 @@
 .chat-references .source-locator { display: block; color: var(--color-secondary); font-size: .875rem; overflow-wrap: anywhere; }
 .chat-references blockquote { margin: 4px 0 0; padding-left: 10px; border-left: 2px solid var(--color-border); font-size: .9375rem; white-space: pre-wrap; }
 .references-scope, .chat-references > p { font-size: .875rem; color: var(--color-secondary); }
+
+/* Keep tools outside the scrolling results, with one scroll area per view. */
+#panel-investigation:not([hidden]) { display: flex; flex-direction: column; overflow: hidden; }
+#panel-investigation > .investigation-tool-switch { flex: 0 0 auto; margin: 0 0 12px; width: 100%; overflow-x: auto; }
+#panel-investigation > .workspace-tool-panel:not([hidden]) { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; scrollbar-gutter: stable; }
+#panel-investigation > .workspace-tool-panel:not([hidden]):has(.case-chat) { overflow: hidden; }
+.case-chat .question-answer { border: 0; border-radius: 0; box-shadow: none; background: transparent; }
+.case-chat .chat-heading { min-height: 56px; padding: 8px 20px; border: 0; }
+.case-chat .question-result { width: 100%; max-width: 1100px; }
+.case-chat .chat-composer { max-width: 1160px; width: calc(100% - 24px); margin: 0 auto 12px; border: 1px solid var(--color-border); border-radius: 12px; }
+.chat-references > summary { cursor: pointer; font-size: .875rem; font-weight: 600; }
+.chat-references:not([open]) { padding-block: 8px; background: transparent; }
+.app-shell:has(.investigation-layout) > main { max-width: none; width: 100%; }

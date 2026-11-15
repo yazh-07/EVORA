@@ -130,7 +130,7 @@ test('settings dialog exposes labeled controls, slider bounds and actions', () =
   const html = renderToStaticMarkup(createElement(ApiProvider, { client }, createElement(SettingsModal, { onClose() {}, initialSection: 'models' })));
   for (const text of ['aria-labelledby="settings-title"', 'Models', 'Media',
     'Connections', 'Source description', 'Filename', 'Bounding boxes', 'Source connections',
-    'Test connection', 'Save', 'Reset', 'Cancel', 'min="50" max="95"',
+    'Fetch models', 'Save', 'Reset', 'Cancel', 'min="50" max="95"',
     'Ollama', 'Ollama URL']) assert.ok(html.includes(text), text);
   assert.ok(!html.includes('OpenAI-compatible'));
   assert.ok(!html.includes('<option value="chatgpt"'));

@@ -66,10 +66,19 @@ try {
   await page.getByRole('button', { name: 'Settings', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Settings' }); await page.waitForTimeout(250);
   const modalFrame = await frame(dialog), sections = dialog.getByRole('navigation', { name: 'Settings sections' }), sectionsFrame = await frame(sections);
-  for (const section of ['Models', 'Viewer', 'Updates', 'Appearance', 'Models']) {
+  for (const section of ['Models','Advanced', 'Viewer', 'Updates', 'Appearance', 'Models']) {
     await sections.getByRole('button', { name: section, exact: true }).click();
     equalFrame(await frame(dialog), modalFrame, 'Settings'); equalFrame(await frame(sections), sectionsFrame, 'Settings sections');
   }
+  await sections.getByRole('button',{name:'Advanced',exact:true}).click();
+  await dialog.getByText(`Running on port ${port}`,{exact:true}).waitFor();
+  await dialog.getByRole('switch',{name:'Make available on network',exact:true}).check();
+  await dialog.getByLabel('Port',{exact:true}).fill('8334');
+  await dialog.getByRole('button',{name:'Save',exact:true}).click();
+  await dialog.getByText('Saved. Restart EVORA to apply.',{exact:true}).waitFor();
+  const runtime=await(await context.request.get(origin+'/api/v1/settings/runtime')).json();
+  assert.equal(runtime.network_available,true);assert.equal(runtime.port,8334);assert.equal(runtime.running_port,port);assert.equal(runtime.network_active,false);
+  await sections.getByRole('button',{name:'Models',exact:true}).click();
   assert.equal(await dialog.getByLabel('Ollama URL', { exact: true }).isVisible(), false);
   await dialog.getByText('Connection options', { exact: true }).click();
   await dialog.getByLabel('Ollama URL', { exact: true }).waitFor();
@@ -77,8 +86,8 @@ try {
   await dialog.getByLabel('Provider', { exact: true }).selectOption('openai');
   await dialog.getByLabel('API key', { exact: true }).fill('synthetic-navigation-key');
   await dialog.getByLabel('Model', { exact: true }).fill('fixture-chat');
-  await dialog.getByRole('button', { name: 'Test connection', exact: true }).click();
-  await dialog.getByRole('status').filter({ hasText: 'Connected' }).waitFor();
+  await dialog.getByRole('button', { name: 'Fetch models', exact: true }).click();
+  await dialog.getByRole('status').filter({ hasText: '2 models' }).waitFor();
   await dialog.getByLabel('Model list', { exact: true }).selectOption('vision');
   await dialog.getByRole('button', { name: 'Use fixture-vision for images', exact: true }).click();
   await dialog.getByRole('button', { name: 'Save', exact: true }).click();

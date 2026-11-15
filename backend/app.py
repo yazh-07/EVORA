@@ -38,7 +38,7 @@ from backend.chatgpt_connection import Connection, router as chatgpt_router
 from starlette.concurrency import run_in_threadpool
 from backend.local_auth import initialize_auth, router as local_auth_router
 from backend.errors import AccessError, access_error, invalid_request
-from backend import workstation_settings
+from backend import workstation_settings, runtime_settings
 from backend.updates import Updates, router as updates_router
 
 
@@ -122,6 +122,8 @@ def create_app(
     case_access: CaseAccess | None = None,
     storage_dir: str | Path | None = None,
     offline_mode: bool | None = None,
+    network_available: bool = False,
+    listen_port: int | None = None,
 ) -> FastAPI:
     """Configure an isolated app; opening SQLite is deferred until startup."""
     configured_path = (
@@ -190,11 +192,14 @@ def create_app(
     app.state.local_auth = token_verifier is None
     app.state.chatgpt_connection = Connection(app,database.path)
     app.state.offline_mode = (app.state.local_auth if offline_mode is None else offline_mode)
-    if app.state.local_auth:
-        from starlette.middleware.trustedhost import TrustedHostMiddleware
-        app.add_middleware(TrustedHostMiddleware, allowed_hosts=['localhost', '127.0.0.1', '[::1]'])
+    app.state.network_available=network_available
+    app.state.listen_port=listen_port
+    app.include_router(runtime_settings.router)
     @app.middleware('http')
     async def local_session_headers(request: Request, call_next):
+        if app.state.local_auth and not runtime_settings.valid_host(request,network_available):
+            from starlette.responses import PlainTextResponse
+            return PlainTextResponse('Invalid host header',status_code=400)
         if (request.method in ('POST','PUT','PATCH','DELETE') and request.url.path.startswith('/api/v1/cases')
                 and app.state.updates.state['status']=='installing'):
             from starlette.responses import JSONResponse

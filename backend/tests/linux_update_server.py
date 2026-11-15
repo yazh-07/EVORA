@@ -15,7 +15,7 @@ p=argparse.ArgumentParser()
 p.add_argument('--fixture',required=True);p.add_argument('--release-version',required=True)
 p.add_argument('--database',required=True);p.add_argument('--storage',required=True);p.add_argument('--port',type=int,required=True)
 p.add_argument('--shutdown-file',required=True);p.add_argument('--parent-pid',type=int,required=True)
-p.add_argument('--graph-mode');p.add_argument('--graph-data');p.add_argument('--no-browser',action='store_true')
+p.add_argument('--host',default='127.0.0.1');p.add_argument('--graph-mode');p.add_argument('--graph-data');p.add_argument('--no-browser',action='store_true')
 a=p.parse_args();fixture=Path(a.fixture)
 root=Path(os.environ['EVORA_TEST_INSTALL_ROOT'])
 updates.APP_VERSION=a.release_version

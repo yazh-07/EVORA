@@ -52,9 +52,15 @@ try {
   await input.fill('When did it disconnect?'); await page.getByRole('button', { name: 'Send message', exact: true }).click();
   await page.locator('.chat-answer .answer-markdown').getByText('Device D-7 disconnected at 10:00.', { exact: true }).waitFor();
   assert.equal(await page.locator('.question-result').count(), 2); assert.equal(calls.length, 4);
-  const references=page.getByRole('region',{name:'References'}).last();
+  const references=page.locator('details.chat-references').last();
+  assert.equal(await references.getAttribute('open'),null);await references.locator('summary').first().click();
   await references.getByRole('button',{name:'connections.txt',exact:true}).first().waitFor();
   assert.ok(await references.getByText(/Used/).count());
+  const tools=page.getByRole('group',{name:'Investigation tools',exact:true});
+  const fixedTop=await tools.evaluate(element=>element.getBoundingClientRect().top);
+  await page.locator('.conversation-stream').evaluate(element=>element.scrollTop=element.scrollHeight);
+  assert.equal(await tools.evaluate(element=>element.getBoundingClientRect().top),fixedTop);
+  assert.ok(await page.locator('.question-answer').evaluate(element=>element.clientWidth>900));
   await page.locator('.chat-sources > summary').last().click(); await page.locator('.chat-sources').last().getByRole('button', { name: 'Open source 1', exact: true }).click();
   await page.getByRole('heading', { name: 'Connection notes', exact: true }).waitFor();
   await page.getByRole('tab', { name: 'Findings', exact: true }).click(); await page.getByRole('button', { name: 'Ask', exact: true }).click();

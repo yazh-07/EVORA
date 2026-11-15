@@ -8,6 +8,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"github.com/yazh-07/evora/desktop/internal/launchconfig"
 	"io"
 	"net"
 	"net/http"
@@ -131,9 +132,23 @@ func run(root string, o options) error {
 			return err
 		}
 	}
-	listener, err := net.Listen("tcp", net.JoinHostPort("127.0.0.1", strconv.Itoa(o.Port)))
+	preferences := launchconfig.Load(o.Database, o.Port)
+	explicitPort := false
+	for _, arg := range os.Args[1:] {
+		if arg == "--port" || strings.HasPrefix(arg, "--port=") {
+			explicitPort = true
+		}
+	}
+	if !explicitPort || os.Getenv("EVORA_UPDATE_HEALTH_FILE") != "" {
+		o.Port = preferences.Port
+	}
+	host := "127.0.0.1"
+	if preferences.NetworkAvailable {
+		host = "0.0.0.0"
+	}
+	listener, err := net.Listen("tcp", net.JoinHostPort(host, strconv.Itoa(o.Port)))
 	if err != nil {
-		listener, err = net.Listen("tcp", "127.0.0.1:0")
+		listener, err = net.Listen("tcp", net.JoinHostPort(host, "0"))
 	}
 	if err != nil {
 		return err
@@ -157,7 +172,7 @@ func run(root string, o options) error {
 			backendArgs = append(backendArgs, arg)
 		}
 	}
-	backendArgs = append(backendArgs, "--no-browser", "--shutdown-file", marker, "--parent-pid", strconv.Itoa(os.Getpid()))
+	backendArgs = append(backendArgs, "--host", host, "--no-browser", "--shutdown-file", marker, "--parent-pid", strconv.Itoa(os.Getpid()))
 	cmd := exec.Command(filepath.Join(root, "backend/evora"), backendArgs...)
 	cmd.Dir = root
 	cmd.Stdout = log

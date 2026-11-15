@@ -6,6 +6,7 @@ import { defaultSettings, readSettings, saveSettings, saveViewerSettings, type S
 import './SettingsModal.css';
 import { ChatGPTConnection } from './ChatGPTConnection';
 import { AppearanceForm } from '../appearance/AppearanceModal';
+import {AdvancedSettings} from './AdvancedSettings';
 import { UpdatesPanel } from './Updates';
 
 const ollamaModels = [
@@ -20,11 +21,11 @@ const openaiModels = [
 ];
 const modelsFor = (provider: Settings['qa_provider']) => provider === 'chatgpt' ? [] : provider === 'openai' ? openaiModels : ollamaModels;
 
-export type SettingsSection = 'appearance' | 'models' | 'display' | 'updates';
+export type SettingsSection = 'appearance' | 'models' | 'display' | 'updates' | 'advanced';
 export function SettingsModal({ onClose, initialSection = 'appearance' }: { onClose: () => void; initialSection?: SettingsSection }) {
   const client = useApiClient();
   const canConfigure = !client.isLocalAuth() || client.getUser()?.role === 'administrator';
-  const [section, setSection] = useState<SettingsSection>(initialSection === 'models' && !canConfigure ? 'appearance' : initialSection);
+  const [section, setSection] = useState<SettingsSection>((initialSection === 'models'||initialSection==='advanced') && !canConfigure ? 'appearance' : initialSection);
   const dialog = useRef<HTMLDialogElement>(null);
   const closeDialog = useDialogClose(dialog, onClose);
   const [draft, setDraft] = useState(readSettings);
@@ -85,7 +86,7 @@ export function SettingsModal({ onClose, initialSection = 'appearance' }: { onCl
   function clearConnection() {
     testRequest.current?.abort(); setConnection('idle'); setModels([]); setVisionModels(undefined); setConnectionError(''); setModelSearch('');
   }
-  async function testConnection() {
+  async function fetchModels() {
     testRequest.current?.abort();
     const request = new AbortController(); testRequest.current = request;
     setConnection('testing'); setModelPicker('all'); setModelSearch(''); setModels([]); setConnectionError(''); setVisionModels(undefined);
@@ -97,7 +98,7 @@ export function SettingsModal({ onClose, initialSection = 'appearance' }: { onCl
       });
       if (!request.signal.aborted) { setModels(result.models); setVisionModels(result.vision_models); setConnection('connected'); }
     } catch (cause) { if (!request.signal.aborted) {
-      setConnectionError(cause instanceof ApiHttpError && cause.apiError ? cause.apiError.message : 'Connection failed. Retry.');
+      setConnectionError(cause instanceof ApiHttpError && cause.apiError ? cause.apiError.message : 'Could not fetch models. Retry.');
       setConnection('failed');
     } }
   }
@@ -121,9 +122,9 @@ export function SettingsModal({ onClose, initialSection = 'appearance' }: { onCl
       <header className="settings-heading"><div><h2 id="settings-title">Settings</h2></div>
         <button type="button" aria-label="Close settings" disabled={saving} onClick={closeDialog}>✕</button></header>
       <nav className="settings-sections" aria-label="Settings sections">
-        {(['appearance', ...(canConfigure ? ['models'] : []), ...(client.hasToken() ? ['display', 'updates'] : [])] as SettingsSection[]).map(item => <button key={item} type="button" aria-pressed={section === item} disabled={saving} onClick={() => setSection(item)}>{item === 'appearance' ? 'Appearance' : item === 'models' ? 'Models' : item === 'updates' ? 'Updates' : 'Viewer'}</button>)}
+        {(['appearance', ...(canConfigure ? ['models','advanced'] : []), ...(client.hasToken() ? ['display', 'updates'] : [])] as SettingsSection[]).map(item => <button key={item} type="button" aria-pressed={section === item} disabled={saving} onClick={() => setSection(item)}>{item === 'appearance' ? 'Appearance' : item === 'models' ? 'Models' : item === 'updates' ? 'Updates' : item==='advanced'?'Advanced':'Viewer'}</button>)}
       </nav>
-      {section === 'appearance' ? <AppearanceForm onClose={closeDialog} /> : section === 'updates' ? <><UpdatesPanel /><footer className="settings-actions"><button type="button" onClick={closeDialog}>Done</button></footer></> : <form onInvalidCapture={event => { const field = event.target as HTMLElement; const options = field.closest('details'); if (options) options.open = true; }} onSubmit={event => { event.preventDefault(); if (!disabled) void save(); }}>
+      {section==='advanced'?<AdvancedSettings/>:section === 'appearance' ? <AppearanceForm onClose={closeDialog} /> : section === 'updates' ? <><UpdatesPanel /><footer className="settings-actions"><button type="button" onClick={closeDialog}>Done</button></footer></> : <form onInvalidCapture={event => { const field = event.target as HTMLElement; const options = field.closest('details'); if (options) options.open = true; }} onSubmit={event => { event.preventDefault(); if (!disabled) void save(); }}>
       <div className="settings-content">
         {loading && section === 'models' && <p role="status">Loading settings…</p>}
         {error && <p role="alert">{error}</p>}
@@ -160,8 +161,8 @@ export function SettingsModal({ onClose, initialSection = 'appearance' }: { onCl
           </> : <><label htmlFor="vision-model">Vision model</label>
           <input id="vision-model" value={draft.vision_model ?? ''} maxLength={200} pattern="\S*" onChange={event => update('vision_model', event.target.value)} placeholder="Model name" />
 </>}
-          <div className="settings-connection"><button type="button" disabled={connection === 'testing'} onClick={() => void testConnection()}>{connection === 'testing' ? 'Checking…' : 'Test connection'}</button>
-            {connection === 'connected' && <span className="settings-connected" role="status">Connected</span>}</div>
+          <div className="settings-connection"><button type="button" disabled={connection === 'testing'} onClick={() => void fetchModels()}>{connection === 'testing' ? 'Fetching…' : 'Fetch models'}</button>
+            {connection === 'connected' && <span className="settings-connected" role="status">{models.length ? `${models.length} models` : 'No models found'}</span>}</div>
           {connection === 'failed' && <p role="alert">{connectionError}</p>}
           {connection === 'connected' && <section className="settings-models" aria-label="Available models">
             <label className="sr-only" htmlFor="model-list-kind">Model list</label>
