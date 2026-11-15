@@ -134,7 +134,7 @@ jobs:
       - name: Test native Windows update downloads
         env:
           EVORA_CONTRACT_BUNDLE: ${{ runner.temp }}/evora-openapi.json
-        run: python -m unittest backend.tests.test_updates backend.tests.test_incremental_updates backend.tests.test_runtime_settings.RuntimeSettingsTests backend.tests.test_managed_graph -q
+        run: python -m unittest backend.tests.test_updates backend.tests.test_incremental_updates backend.tests.test_runtime_settings.RuntimeSettingsTests backend.tests.test_managed_graph backend.tests.test_question_stream -q
 
       - name: Build standalone executable with PyInstaller
         run: |
